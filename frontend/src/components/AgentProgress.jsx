@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 const AGENTS = [
-  { key: 'scanner',      icon: '🔍', name: 'Repo Scanner',       desc: 'Cloning & indexing files',     color: '#06b6d4' },
-  { key: 'architecture', icon: '🏗',  name: 'Architecture Agent', desc: 'Mapping codebase structure',   color: '#6366f1' },
-  { key: 'api_docs',     icon: '📋',  name: 'API Doc Agent',      desc: 'Finding all endpoints',        color: '#8b5cf6' },
-  { key: 'security',     icon: '🛡',  name: 'Security Auditor',   desc: 'Scanning for vulnerabilities', color: '#f59e0b' },
-  { key: 'chat',         icon: '💬',  name: 'Knowledge Agent',    desc: 'Building searchable brain',     color: '#10b981' },
+  { key: 'scanner',      icon: '🔍', name: 'Repo Scanner',       desc: 'Cloning & indexing files',           color: '#06b6d4' },
+  { key: 'architecture', icon: '🏗',  name: 'Architecture Agent', desc: 'Mapping codebase structure',         color: '#6366f1' },
+  { key: 'api_docs',     icon: '📋',  name: 'API Doc Agent',      desc: 'Finding all endpoints',              color: '#8b5cf6' },
+  { key: 'security',     icon: '🛡',  name: 'Security Auditor',   desc: 'Scanning for vulnerabilities',       color: '#f59e0b' },
+  { key: 'cve_scanner',  icon: '🔒',  name: 'CVE Scanner',        desc: 'Checking dependency vulnerabilities', color: '#f97316' },
+  { key: 'chat',         icon: '💬',  name: 'Knowledge Agent',    desc: 'Building searchable brain',          color: '#10b981' },
 ];
 
 function useAgentTimers(status) {

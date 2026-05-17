@@ -3,13 +3,18 @@ import logging
 import os
 import re
 import shutil
+import time
 import uuid
 from collections import OrderedDict
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
 from fastapi.responses import StreamingResponse
+
+_ANALYSES_DIR = Path(__file__).parent / "analyses"
+_ANALYSES_DIR.mkdir(exist_ok=True)
 
 # load_dotenv MUST run before any LangChain / OpenAI import
 load_dotenv()
@@ -79,6 +84,14 @@ class ChatRequest(BaseModel):
 class SummaryRequest(BaseModel):
     session_id: str
 
+class PRReviewRequest(BaseModel):
+    pr_url: str
+    token:  str | None = None
+
+class FixRequest(BaseModel):
+    session_id: str
+    finding:    dict
+
 
 # ── State initialiser (single source of truth for initial RepoState) ──────────
 
@@ -110,11 +123,13 @@ _STATUS_MAP: dict[str, dict[str, str]] = {
     "scanner":      {
         "scanner": "done", "architecture": "running",
         "api_docs": "running", "security": "running", "chat": "running",
+        "cve_scanner": "running",
     },
     "architecture": {"architecture": "done"},
     "api_docs":     {"api_docs": "done"},
     "security":     {"security": "done"},
     "rag_setup":    {"chat": "done"},
+    "cve_scanner":  {"cve_scanner": "done"},
 }
 
 
@@ -155,6 +170,7 @@ async def ws_analyze(ws: WebSocket):
                     "architecture_diagram",
                     "api_docs",
                     "security_findings",
+                    "cve_findings",
                     "chroma_collection_name",
                 ):
                     if key in update:
@@ -197,8 +213,28 @@ async def ws_analyze(ws: WebSocket):
         "repo_name":              final_state["repo_name"],
         "chroma_collection_name": final_state["chroma_collection_name"],
         "security_findings":      final_state["security_findings"],
+        "cve_findings":           final_state.get("cve_findings", []),
+        "api_docs":               final_state.get("api_docs", []),
+        "architecture_diagram":   final_state.get("architecture_diagram"),
+        "repo_url":               repo_url,
         "chat_history":           [],
     })
+
+    # Persist analysis so it can be shared via /analysis/{session_id}
+    try:
+        snapshot = {
+            "session_id":           session_id,
+            "repo_name":            final_state["repo_name"],
+            "repo_url":             repo_url,
+            "architecture_diagram": final_state.get("architecture_diagram"),
+            "api_docs":             final_state.get("api_docs", []),
+            "security_findings":    final_state.get("security_findings", []),
+            "cve_findings":         final_state.get("cve_findings", []),
+            "saved_at":             time.time(),
+        }
+        (_ANALYSES_DIR / f"{session_id}.json").write_text(json.dumps(snapshot))
+    except Exception as exc:
+        logger.warning("Could not persist analysis snapshot: %s", exc)
 
     await ws.send_json({"done": True, "session_id": session_id})
     logger.info("Analysis complete  session=%s  repo=%s", session_id, final_state["repo_name"])
@@ -316,6 +352,89 @@ async def summary_endpoint(req: SummaryRequest):
         "summary": summary,
         "stats": {"findings": len(findings), "critical": n_critical, "high": n_high},
     }
+
+
+# ── Shared analysis (GET) ──────────────────────────────────────────────────────
+
+@app.get("/analysis/{session_id}")
+async def get_analysis(session_id: str):
+    path = _ANALYSES_DIR / f"{session_id}.json"
+    if not path.exists():
+        return {"error": "Analysis not found or has expired"}
+    try:
+        return json.loads(path.read_text())
+    except Exception:
+        return {"error": "Analysis file corrupted"}
+
+
+# ── PR Review ──────────────────────────────────────────────────────────────────
+
+@app.post("/pr-review")
+async def pr_review_endpoint(req: PRReviewRequest):
+    from agents.pr_review import run_pr_review
+    token = req.token or os.getenv("GITHUB_TOKEN")
+    try:
+        result = await asyncio.to_thread(run_pr_review, req.pr_url, token)
+        return result
+    except ValueError as exc:
+        return {"error": str(exc)}
+    except Exception as exc:
+        logger.error("PR review failed: %s", exc)
+        return {"error": f"Review failed — {exc}"}
+
+
+# ── Auto-fix generation ─────────────────────────────────────────────────────────
+
+@app.post("/fix")
+async def fix_endpoint(req: FixRequest):
+    from chroma_utils import search_codebase
+    from langchain_groq import ChatGroq
+
+    session = sessions.get(req.session_id)
+    if not session:
+        return {"error": "Session not found. Run /ws/analyze first."}
+
+    finding    = req.finding
+    collection = session.get("chroma_collection_name")
+    query      = " ".join(filter(None, [
+        finding.get("rule"), finding.get("file"),
+        finding.get("title"), finding.get("description", "")[:100],
+    ]))
+
+    chunks  = search_codebase(collection, query, n_results=4) if collection else []
+    context = "\n\n".join(f"--- {c['filepath']} ---\n{c['content']}" for c in chunks) or "No code context available."
+
+    prompt = (
+        f"Repo: {session['repo_name']}\n\n"
+        f"Security finding:\n"
+        f"  Rule: {finding.get('rule', 'unknown')}\n"
+        f"  Severity: {finding.get('severity', 'unknown')}\n"
+        f"  Title: {finding.get('title', '')}\n"
+        f"  Description: {finding.get('description') or finding.get('exploit_story', '')}\n"
+        f"  File: {finding.get('file', 'unknown')}  Line: {finding.get('line_start', '?')}\n\n"
+        f"Relevant code:\n{context}\n\n"
+        "Generate a fix for this vulnerability.\n"
+        "Format your response as:\n\n"
+        "**Fix explanation** (1 sentence)\n\n"
+        "```diff\n"
+        "--- a/path/to/file\n"
+        "+++ b/path/to/file\n"
+        "@@ ... @@\n"
+        " context line\n"
+        "-removed line\n"
+        "+added line\n"
+        " context line\n"
+        "```\n\n"
+        "Be precise. Only change what's needed to fix the vulnerability."
+    )
+
+    def _generate() -> str:
+        llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
+        return llm.invoke(prompt).content.strip()
+
+    fix = await asyncio.to_thread(_generate)
+    logger.info("Fix generated for session=%s rule=%s", req.session_id, finding.get("rule"))
+    return {"fix": fix, "finding_rule": finding.get("rule", "unknown")}
 
 
 # ── Crisis WebSocket (Section 9 stretch) ──────────────────────────────────────

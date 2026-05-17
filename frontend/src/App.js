@@ -1,14 +1,16 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import AgentProgress from './components/AgentProgress';
-import RepoList      from './components/RepoList';
-import DiagramTab    from './components/DiagramTab';
-import DocsTab       from './components/DocsTab';
-import SecurityTab   from './components/SecurityTab';
-import ChatTab       from './components/ChatTab';
-import SummaryTab    from './components/SummaryTab';
-import CrisisChat    from './components/CrisisChat';
-import { WS_BASE, fetchRepos } from './api';
+import AgentProgress  from './components/AgentProgress';
+import RepoList       from './components/RepoList';
+import DiagramTab     from './components/DiagramTab';
+import DocsTab        from './components/DocsTab';
+import SecurityTab    from './components/SecurityTab';
+import ChatTab        from './components/ChatTab';
+import SummaryTab     from './components/SummaryTab';
+import CveTab         from './components/CveTab';
+import PRReviewTab    from './components/PRReviewTab';
+import CrisisChat     from './components/CrisisChat';
+import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix } from './api';
 
 const LANG_COLOR = {
   JavaScript: '#f7df1e', TypeScript: '#3178c6', Python: '#3572A5',
@@ -23,7 +25,7 @@ const TIMEOUT_MS  = 180_000;
 
 const INITIAL_STATUS = {
   scanner: 'waiting', architecture: 'waiting',
-  api_docs: 'waiting', security: 'waiting', chat: 'waiting',
+  api_docs: 'waiting', security: 'waiting', cve_scanner: 'waiting', chat: 'waiting',
 };
 
 
@@ -60,6 +62,10 @@ export default function App() {
   const [elapsedSec,    setElapsedSec]    = useState(0);
   const [repoName,      setRepoName]      = useState('');
   const [crisisFinding, setCrisisFinding] = useState(null);
+  const [cveFindings,   setCveFindings]   = useState([]);
+  const [shareCopied,   setShareCopied]   = useState(false);
+  const [fixLoading,    setFixLoading]    = useState(null);  // finding.id while loading
+  const [fixResult,     setFixResult]     = useState(null);
   const [repoHistory,   setRepoHistory]   = useState(() => {
     try { return JSON.parse(localStorage.getItem('gitmind_history') || '[]'); }
     catch { return []; }
@@ -84,6 +90,22 @@ export default function App() {
   }, []);
 
   useEffect(() => () => cleanup(), [cleanup]);
+
+  // Load shared analysis from ?share=SESSION_ID URL param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const shareId = params.get('share');
+    if (!shareId) return;
+    loadSharedAnalysis(shareId).then(data => {
+      if (data.architecture_diagram) setDiagram(data.architecture_diagram);
+      if (data.api_docs?.length)     setApiDocs(data.api_docs);
+      if (data.security_findings)    setFindings(data.security_findings);
+      if (data.cve_findings)         setCveFindings(data.cve_findings);
+      if (data.repo_name)            setRepoName(data.repo_name);
+      setAnalyzed(true);
+      setActiveTab('summary');
+    }).catch(() => {/* shared link expired or not found — silent */});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Request notification permission once on first visit
   useEffect(() => {
@@ -140,6 +162,9 @@ export default function App() {
     setDiagram(null);
     setApiDocs([]);
     setFindings([]);
+    setCveFindings([]);
+    setFixResult(null);
+    setFixLoading(null);
     setAnalyzed(false);
     setElapsedSec(0);
     setAgentStatus(INITIAL_STATUS);
@@ -196,10 +221,10 @@ export default function App() {
       // Handle both legacy agent_status dict and new type-based protocol
       if (data.agent_status)         setAgentStatus(prev => ({ ...prev, ...data.agent_status }));
       if (data.architecture_diagram) setDiagram(data.architecture_diagram);
-      // api_docs (frontend key) OR api_endpoints (backend key)
       if (data.api_docs?.length)     setApiDocs(data.api_docs);
       if (data.api_endpoints?.length) setApiDocs(data.api_endpoints);
       if (data.security_findings)    setFindings(data.security_findings);
+      if (data.cve_findings)         setCveFindings(data.cve_findings);
       if (data.repo_name)            setRepoName(data.repo_name);
       if (data.agent_error) {
         const ev = data.agent_error;
@@ -212,6 +237,7 @@ export default function App() {
           if (data.architecture_diagram) setDiagram(data.architecture_diagram);
           if (data.api_endpoints?.length) setApiDocs(data.api_endpoints);
           if (data.security_findings)    setFindings(data.security_findings);
+          if (data.cve_findings)         setCveFindings(data.cve_findings);
         }
         clearInterval(timerRef.current);
         clearTimeout(timeoutRef.current);
@@ -236,7 +262,7 @@ export default function App() {
       setIsAnalyzing(false);
       analyzingRef.current = false;
       setGlobalError(
-        'Cannot reach the backend on port 8001. Start it with:\n  cd backend && uvicorn main:app --port 8001 --reload'
+        'Cannot reach the backend on port 8002. Start it with:\n  cd backend && uvicorn main:app --port 8002 --reload'
       );
     };
 
@@ -289,14 +315,44 @@ export default function App() {
     URL.revokeObjectURL(url);
   }, [analyzed, repoName, diagram, apiDocs, findings, elapsedSec]);
 
+  // ── Generate fix ───────────────────────────────────────────────────────────
+  const handleFix = useCallback(async (finding) => {
+    setFixLoading(finding.id ?? finding.rule);
+    setFixResult(null);
+    try {
+      const data = await generateFix(SESSION_ID, finding);
+      // Tag the result so SecurityTab can match it to the right card
+      setFixResult({ ...data, finding_id: finding.id ?? finding.rule });
+    } catch (err) {
+      setAgentWarnings(prev => [...prev, `Fix generation failed: ${err.message}`]);
+    } finally {
+      setFixLoading(null);
+    }
+  }, []);
+
+  // ── Share analysis ─────────────────────────────────────────────────────────
+  const handleShare = useCallback(() => {
+    const url = `${window.location.origin}${window.location.pathname}?share=${SESSION_ID}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2500);
+    }).catch(() => {
+      // clipboard denied — show URL in prompt
+      window.prompt('Copy this link:', url);
+    });
+  }, []);
+
   // ── Tab meta ───────────────────────────────────────────────────────────────
   const selectedRepo  = repos.find(r => r.url === selectedRepoUrl) ?? null;
   const hasCritical   = findings.some(f => f.severity === 'critical');
+  const hasCveCritical = cveFindings.some(f => f.worst_severity === 'critical');
   const tabs = [
     { key: 'summary',  icon: '📊', label: 'Summary' },
     { key: 'diagram',  icon: '🏗',  label: 'Architecture' },
-    { key: 'docs',     icon: '📋',  label: 'API Docs',  count: apiDocs.length  || null },
-    { key: 'security', icon: '🛡',  label: 'Security',  count: findings.length || null, alert: hasCritical },
+    { key: 'docs',     icon: '📋',  label: 'API Docs',   count: apiDocs.length    || null },
+    { key: 'security', icon: '🛡',  label: 'Security',   count: findings.length   || null, alert: hasCritical },
+    { key: 'cve',      icon: '🔒',  label: 'CVE Scanner', count: cveFindings.length || null, alert: hasCveCritical },
+    { key: 'pr',       icon: '🔍',  label: 'PR Review' },
     { key: 'chat',     icon: '💬',  label: 'Chat' },
   ];
 
@@ -425,7 +481,7 @@ export default function App() {
           />
 
           {/* Agent progress — fixed-height bottom section */}
-          <div style={{ height: 268, flexShrink: 0, borderTop: '1px solid var(--gm-border)' }}>
+          <div style={{ height: 310, flexShrink: 0, borderTop: '1px solid var(--gm-border)' }}>
             <AgentProgress
               status={agentStatus}
               isAnalyzing={isAnalyzing}
@@ -484,22 +540,42 @@ export default function App() {
               );
             })}
 
-            {/* Export button — right-aligned */}
-            <button
-              onClick={handleExport}
-              disabled={!analyzed}
-              title="Download analysis as Markdown"
-              style={{
-                marginLeft: 'auto', padding: '6px 14px', borderRadius: 8,
-                background: analyzed ? 'rgba(99,102,241,0.1)' : 'transparent',
-                border: `1px solid ${analyzed ? 'rgba(99,102,241,0.3)' : 'transparent'}`,
-                color: analyzed ? 'var(--gm-primary)' : '#475569',
-                fontSize: 12, fontWeight: 500, cursor: analyzed ? 'pointer' : 'default',
-                transition: 'all 0.15s', whiteSpace: 'nowrap',
-              }}
-            >
-              ↓ Export
-            </button>
+            {/* Right-aligned actions */}
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+              {/* Share button */}
+              <button
+                onClick={handleShare}
+                disabled={!analyzed}
+                title="Copy shareable link to clipboard"
+                style={{
+                  padding: '6px 14px', borderRadius: 8,
+                  background: shareCopied ? 'rgba(16,185,129,0.1)' : analyzed ? 'rgba(99,102,241,0.07)' : 'transparent',
+                  border: `1px solid ${shareCopied ? 'rgba(16,185,129,0.3)' : analyzed ? 'rgba(99,102,241,0.2)' : 'transparent'}`,
+                  color: shareCopied ? '#6ee7b7' : analyzed ? 'var(--gm-primary)' : '#475569',
+                  fontSize: 12, fontWeight: 500, cursor: analyzed ? 'pointer' : 'default',
+                  transition: 'all 0.2s', whiteSpace: 'nowrap',
+                }}
+              >
+                {shareCopied ? '✓ Copied!' : '🔗 Share'}
+              </button>
+
+              {/* Export button */}
+              <button
+                onClick={handleExport}
+                disabled={!analyzed}
+                title="Download analysis as Markdown"
+                style={{
+                  padding: '6px 14px', borderRadius: 8,
+                  background: analyzed ? 'rgba(99,102,241,0.1)' : 'transparent',
+                  border: `1px solid ${analyzed ? 'rgba(99,102,241,0.3)' : 'transparent'}`,
+                  color: analyzed ? 'var(--gm-primary)' : '#475569',
+                  fontSize: 12, fontWeight: 500, cursor: analyzed ? 'pointer' : 'default',
+                  transition: 'all 0.15s', whiteSpace: 'nowrap',
+                }}
+              >
+                ↓ Export
+              </button>
+            </div>
           </nav>
 
           {/* Repo stats strip */}
@@ -532,7 +608,9 @@ export default function App() {
             {activeTab === 'summary'  && <SummaryTab  sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} findings={findings} apiDocs={apiDocs} elapsedSec={elapsedSec} />}
             {activeTab === 'diagram'  && <DiagramTab  diagram={diagram}   isAnalyzing={isAnalyzing} analyzed={analyzed} />}
             {activeTab === 'docs'     && <DocsTab     docs={apiDocs}      isAnalyzing={isAnalyzing} analyzed={analyzed} />}
-            {activeTab === 'security' && <SecurityTab findings={findings} isAnalyzing={isAnalyzing} analyzed={analyzed} sessionId={SESSION_ID} onCrisis={setCrisisFinding} />}
+            {activeTab === 'security' && <SecurityTab findings={findings} isAnalyzing={isAnalyzing} analyzed={analyzed} onCrisis={setCrisisFinding} onFix={handleFix} fixLoading={fixLoading} fixResult={fixResult} />}
+            {activeTab === 'cve'      && <CveTab      findings={cveFindings} isAnalyzing={isAnalyzing} analyzed={analyzed} />}
+            {activeTab === 'pr'       && <PRReviewTab />}
             {activeTab === 'chat'     && <ChatTab     sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} />}
           </div>
         </main>

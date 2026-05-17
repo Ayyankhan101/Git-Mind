@@ -5,6 +5,7 @@ from langgraph.graph import END, START, StateGraph
 
 from agents.api_doc import run_api_doc_agent
 from agents.architecture import run_architecture_agent
+from agents.cve_scanner import run_cve_scanner
 from agents.rag_setup import run_rag_setup
 from agents.scanner import clone_and_scan
 from agents.security import _synthetic_finding, run_security_agent
@@ -83,6 +84,15 @@ def rag_setup_node(state: RepoState) -> dict:
         }
 
 
+def cve_node(state: RepoState) -> dict:
+    try:
+        findings = run_cve_scanner(state["file_contents"])
+        return {"cve_findings": findings, "events": [_event("cve_scanner", "done")]}
+    except Exception as exc:
+        logger.error("cve_node failed: %s", exc)
+        return {"cve_findings": [], "events": [_event("cve_scanner", "error", str(exc))]}
+
+
 # ── Graph definition ───────────────────────────────────────────────────────────
 
 def build_graph() -> StateGraph:
@@ -93,11 +103,12 @@ def build_graph() -> StateGraph:
     g.add_node("api_docs",     api_doc_node)
     g.add_node("security",     security_node)
     g.add_node("rag_setup",    rag_setup_node)
+    g.add_node("cve_scanner",  cve_node)
 
     g.add_edge(START, "scanner")
 
-    # Parallel fan-out: all four run concurrently once scanner finishes
-    for node in ("architecture", "api_docs", "security", "rag_setup"):
+    # Parallel fan-out after scanner
+    for node in ("architecture", "api_docs", "security", "rag_setup", "cve_scanner"):
         g.add_edge("scanner", node)
         g.add_edge(node, END)
 

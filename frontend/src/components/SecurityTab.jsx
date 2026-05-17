@@ -23,11 +23,26 @@ function SeverityBadge({ severity }) {
   );
 }
 
-function FindingCard({ finding, idx, onCrisis }) {
+function parseFix(fixText) {
+  if (!fixText) return { explanation: '', patch: '' };
+  const diffIdx = fixText.indexOf('```diff');
+  if (diffIdx === -1) return { explanation: fixText.replace(/\*\*/g, '').trim(), patch: '' };
+  const explanation = fixText.slice(0, diffIdx).replace(/\*\*/g, '').trim();
+  const patchStart  = diffIdx + 7; // skip ```diff\n
+  const patchEnd    = fixText.indexOf('```', patchStart);
+  const patch       = patchEnd === -1 ? fixText.slice(patchStart) : fixText.slice(patchStart, patchEnd);
+  return { explanation, patch: patch.trim() };
+}
+
+function FindingCard({ finding, idx, onCrisis, onFix, fixLoading, fixResult }) {
   const [expanded, setExpanded] = useState(false);
   const sev     = finding.severity?.toLowerCase() || 'low';
   const sevInfo = SEV[sev] || SEV.low;
   const canCrisis = sev === 'critical' || sev === 'high';
+  const cardId   = finding.id ?? finding.rule;
+  const isFixing = fixLoading === cardId;
+  const myFix    = fixResult?.finding_id === cardId ? fixResult : null;
+  const parsed   = myFix ? parseFix(myFix.fix) : null;
 
   return (
     <div
@@ -114,15 +129,51 @@ function FindingCard({ finding, idx, onCrisis }) {
             )}
           </div>
 
-          {/* Crisis button */}
-          {canCrisis && (
-            <button
-              className="gm-btn-danger"
-              style={{ marginTop: 14, width: '100%', justifyContent: 'center', padding: '10px' }}
-              onClick={(e) => { e.stopPropagation(); onCrisis(finding); }}
-            >
-              ⚡ Simulate Crisis — What happens when this leaks at 2 a.m.?
-            </button>
+          {/* Action buttons */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+            {canCrisis && (
+              <button
+                className="gm-btn-danger"
+                style={{ flex: 1, justifyContent: 'center', padding: '10px' }}
+                onClick={(e) => { e.stopPropagation(); onCrisis(finding); }}
+              >
+                ⚡ Simulate Crisis
+              </button>
+            )}
+            {onFix && (
+              <button
+                className="gm-btn-primary"
+                style={{ flex: 1, justifyContent: 'center', padding: '10px', opacity: isFixing ? 0.7 : 1 }}
+                disabled={isFixing}
+                onClick={(e) => { e.stopPropagation(); onFix(finding); }}
+              >
+                {isFixing ? '⏳ Generating…' : '🔧 Generate Fix'}
+              </button>
+            )}
+          </div>
+
+          {/* Fix patch display */}
+          {parsed && (
+            <div style={{ marginTop: 12 }} onClick={e => e.stopPropagation()}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#6ee7b7', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+                Suggested Fix
+              </div>
+              {parsed.explanation && (
+                <div style={{ fontSize: 12, color: 'var(--gm-text-2)', lineHeight: 1.6, marginBottom: 8 }}>
+                  {parsed.explanation}
+                </div>
+              )}
+              {parsed.patch && (
+                <pre style={{
+                  fontFamily: 'JetBrains Mono, monospace', fontSize: 11, lineHeight: 1.6,
+                  padding: '12px 14px', borderRadius: 8, overflowX: 'auto',
+                  background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.15)',
+                  color: '#d1fae5', whiteSpace: 'pre', margin: 0,
+                }}>
+                  {parsed.patch}
+                </pre>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -172,7 +223,7 @@ function Skeleton() {
   );
 }
 
-export default function SecurityTab({ findings, isAnalyzing, analyzed, onCrisis }) {
+export default function SecurityTab({ findings, isAnalyzing, analyzed, onCrisis, onFix, fixLoading, fixResult }) {
   const [filter, setFilter] = useState('all');
 
   const sorted = useMemo(() => {
@@ -255,7 +306,7 @@ export default function SecurityTab({ findings, isAnalyzing, analyzed, onCrisis 
       {/* Cards */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {sorted.map((f, i) => (
-          <FindingCard key={f.id || i} finding={f} idx={i} onCrisis={onCrisis} />
+          <FindingCard key={f.id || i} finding={f} idx={i} onCrisis={onCrisis} onFix={onFix} fixLoading={fixLoading} fixResult={fixResult} />
         ))}
       </div>
     </div>

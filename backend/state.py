@@ -16,6 +16,7 @@ class RepoState(TypedDict):
     architecture_diagram:   str | None
     api_docs:               list[dict]
     security_findings:      list[dict]
+    cve_findings:           list[dict]
     chroma_collection_name: str | None
 
     # ── Chat (mutated per /chat HTTP request, not by the graph) ───────────────

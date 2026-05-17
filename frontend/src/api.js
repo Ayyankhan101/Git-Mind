@@ -1,15 +1,15 @@
 // Derive backend base URL.
 //   1. REACT_APP_API_BASE env var wins (set at build time).
 //   2. Cloud Shell preview: hostnames are like "3000-cs-xxxx.cloudshell.dev" —
-//      swap the leading port with 8001 so frontend and backend share host.
-//   3. Default to localhost:8001 for dev.
+//      swap the leading port with 8002 so frontend and backend share host.
+//   3. Default to localhost:8002 for dev.
 function deriveHttpBase() {
   if (process.env.REACT_APP_API_BASE) return process.env.REACT_APP_API_BASE;
   if (typeof window !== 'undefined') {
     const { protocol, host } = window.location;
-    if (/^\d+-/.test(host)) return `${protocol}//${host.replace(/^\d+-/, '8001-')}`;
+    if (/^\d+-/.test(host)) return `${protocol}//${host.replace(/^\d+-/, '8002-')}`;
   }
-  return 'http://localhost:8001';
+  return 'http://localhost:8002';
 }
 
 export const BASE    = deriveHttpBase();
@@ -32,7 +32,7 @@ export async function postChat(sessionId, question) {
     if (err.name === 'TimeoutError') {
       throw new Error('Request timed out — the backend took too long to respond.');
     }
-    throw new Error('Cannot reach the backend. Make sure it is running on port 8001.');
+    throw new Error('Cannot reach the backend. Make sure it is running on port 8002.');
   }
 
   if (!res.ok) {
@@ -59,7 +59,7 @@ export async function fetchRepos(username) {
     });
   } catch (err) {
     if (err.name === 'TimeoutError') throw new Error('GitHub API request timed out.');
-    throw new Error('Cannot reach the backend. Make sure it is running on port 8001.');
+    throw new Error('Cannot reach the backend. Make sure it is running on port 8002.');
   }
 
   if (!res.ok) {
@@ -139,4 +139,79 @@ export async function checkHealth() {
   } catch {
     return false;
   }
+}
+
+/**
+ * GET /analysis/{session_id} — load a previously-saved analysis snapshot.
+ */
+export async function loadSharedAnalysis(sessionId) {
+  let res;
+  try {
+    res = await fetch(`${BASE}/analysis/${encodeURIComponent(sessionId)}`, {
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (err) {
+    if (err.name === 'TimeoutError') throw new Error('Request timed out.');
+    throw new Error('Cannot reach the backend.');
+  }
+  if (!res.ok) {
+    let msg = `Server error ${res.status}`;
+    try { const j = await res.json(); msg = j.error || j.detail || msg; } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+/**
+ * POST /pr-review — review a GitHub PR by URL.
+ */
+export async function reviewPR(prUrl, token = null) {
+  let res;
+  try {
+    res = await fetch(`${BASE}/pr-review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pr_url: prUrl, ...(token ? { token } : {}) }),
+      signal: AbortSignal.timeout(90_000),
+    });
+  } catch (err) {
+    if (err.name === 'TimeoutError') throw new Error('PR review timed out — large diffs may take longer.');
+    throw new Error('Cannot reach the backend.');
+  }
+  if (!res.ok) {
+    let msg = `Server error ${res.status}`;
+    try { const j = await res.json(); msg = j.error || j.detail || msg; } catch {}
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+/**
+ * POST /fix — generate an auto-fix patch for a security finding.
+ * @param {string} sessionId
+ * @param {object} finding — the full finding object from the security scan
+ */
+export async function generateFix(sessionId, finding) {
+  let res;
+  try {
+    res = await fetch(`${BASE}/fix`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, finding }),
+      signal: AbortSignal.timeout(60_000),
+    });
+  } catch (err) {
+    if (err.name === 'TimeoutError') throw new Error('Fix generation timed out.');
+    throw new Error('Cannot reach the backend.');
+  }
+  if (!res.ok) {
+    let msg = `Server error ${res.status}`;
+    try { const j = await res.json(); msg = j.error || j.detail || msg; } catch {}
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
 }
