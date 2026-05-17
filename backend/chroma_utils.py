@@ -18,6 +18,9 @@ def embed_codebase(file_contents: dict[str, str], collection_name: str) -> str:
         if collection_name in _collections:
             logger.debug("Collection '%s' already embedded — skipping", collection_name)
             return collection_name
+        # Mark as in-progress under the lock so concurrent callers skip embedding.
+        # The sentinel value is replaced with the real collection object below.
+        _collections[collection_name] = None
 
     collection = _client.create_collection(name=collection_name, get_or_create=True)
 
@@ -68,7 +71,11 @@ def search_codebase(collection_name: str, query: str, n_results: int = 5) -> lis
         with _lock:
             _collections[collection_name] = collection
 
-    result = collection.query(query_texts=[query], n_results=n_results)
+    count = collection.count()
+    if count == 0:
+        return []
+    n = min(n_results, count)
+    result = collection.query(query_texts=[query], n_results=n)
     return [
         {"filepath": m["filepath"], "content": d}
         for d, m in zip(result["documents"][0], result["metadatas"][0])

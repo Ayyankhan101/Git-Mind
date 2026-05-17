@@ -6,7 +6,7 @@ const SEV_ORDER = ['critical', 'high', 'medium', 'low'];
 function PkgRow({ pkg }) {
   const [expanded, setExpanded] = useState(false);
   const sev = (pkg.worst_severity || 'low').toLowerCase();
-  const vulnCount = pkg.vulnerabilities?.length || 0;
+  const vulnCount = pkg.vulns?.length || 0;
 
   return (
     <>
@@ -26,13 +26,13 @@ function PkgRow({ pkg }) {
 
       {expanded && (
         <div className="row-expand">
-          {pkg.vulnerabilities?.map((v, i) => (
-            <div key={i} style={{ borderBottom: i < pkg.vulnerabilities.length - 1 ? '1px solid var(--border)' : 'none', paddingBottom: i < pkg.vulnerabilities.length - 1 ? 14 : 0, marginBottom: i < pkg.vulnerabilities.length - 1 ? 14 : 0 }}>
+          {pkg.vulns?.map((v, i) => (
+            <div key={i} style={{ borderBottom: i < pkg.vulns.length - 1 ? '1px solid var(--border)' : 'none', paddingBottom: i < pkg.vulns.length - 1 ? 14 : 0, marginBottom: i < pkg.vulns.length - 1 ? 14 : 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                 <span className="label">{v.id}</span>
-                {v.fix_version && (
+                {v.fixed_in && (
                   <span style={{ fontSize: 12, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
-                    → {v.fix_version}
+                    → {v.fixed_in}
                   </span>
                 )}
                 {v.url && (

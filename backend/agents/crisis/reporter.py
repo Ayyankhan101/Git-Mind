@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 INTERVAL_SEC = int(os.getenv("REPORTER_INTERVAL_SEC", "45"))
 _MODEL = "llama-3.3-70b-versatile"
 
+_llm = ChatGroq(model=_MODEL, temperature=0.5)
+
 REPORTER_PROMPT = """You are a senior reporter at a major tech publication. A source has tipped you
 off about a possible security incident at a company. You have partial information.
 
@@ -50,7 +52,7 @@ async def reporter_loop(state_ref: dict, ws_send) -> None:
         )
 
         try:
-            story = ChatGroq(model=_MODEL, temperature=0.5).invoke(prompt).content
+            story = _llm.invoke(prompt).content
         except Exception as exc:
             logger.error("reporter LLM failed: %s", exc)
             return

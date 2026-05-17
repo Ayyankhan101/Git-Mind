@@ -256,7 +256,7 @@ export default function App() {
 
   // ── Global keyboard shortcuts ─────────────────────────────────────────────────
   useEffect(() => {
-    const isMac = /Mac/.test(navigator.platform);
+    const isMac = /Mac/i.test(navigator.userAgentData?.platform ?? navigator.platform);
     const onKey = (e) => {
       const mod = isMac ? e.metaKey : e.ctrlKey;
       if (showPalette) return; // palette handles its own keys
@@ -490,7 +490,7 @@ export default function App() {
     ? `Analyzing · ${elapsedSec}s`
     : 'Ready';
 
-  const isMac = /Mac/.test(navigator.platform);
+  const isMac = /Mac/i.test(navigator.userAgentData?.platform ?? navigator.platform);
   const mod = isMac ? '⌘' : 'Ctrl';
 
   return (

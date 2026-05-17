@@ -95,7 +95,7 @@ def _build_prompt(file_tree: list[str], file_contents: dict[str, str]) -> str:
 
 
 def _strip_fences(text: str) -> str:
-    """Remove markdown code fences that GPT-4o-mini sometimes adds."""
+    """Remove markdown code fences that the LLM sometimes adds."""
     if "```" not in text:
         return text
     for block in text.split("```"):

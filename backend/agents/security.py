@@ -114,7 +114,7 @@ def _triage_with_llm(raw_results: list[dict]) -> list[dict]:
             findings = json.loads(raw).get("findings", [])
             set_cached(_CACHE_NAMESPACE, prompt, raw)
         except (json.JSONDecodeError, Exception) as exc:
-            logger.error("Security triage LLM failed: %s", exc)
+            logger.error("Security triage LLM failed: %s — dropping %d semgrep findings, using demo fallback", exc, len(raw_results))
             return _synthetic_finding()
 
     # Guarantee every finding has a valid id and normalized severity

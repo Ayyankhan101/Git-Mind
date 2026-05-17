@@ -47,7 +47,10 @@ def clone_and_scan(repo_url: str) -> dict:
     total_bytes = 0
     dest_path   = Path(dest)
 
+    cap_reached = False
     for root, dirs, files in os.walk(dest):
+        if cap_reached:
+            break
         # Prune irrelevant directories in-place (modifies dirs to control os.walk)
         dirs[:] = sorted(
             d for d in dirs
@@ -57,6 +60,7 @@ def clone_and_scan(repo_url: str) -> dict:
         for filename in sorted(files):
             if len(file_tree) >= _MAX_FILES:
                 logger.warning("300-file cap reached — stopping walk")
+                cap_reached = True
                 break
 
             ext = Path(filename).suffix.lower()

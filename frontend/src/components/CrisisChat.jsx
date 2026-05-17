@@ -83,7 +83,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
         </div>
 
         {/* Role legend */}
-        <div style={{ display: 'flex', gap: 16, padding: '10px 26px', borderBottom: '1px solid #2a1717' }}>
+        <div style={{ display: 'flex', gap: 16, padding: '10px 26px', borderBottom: '1px solid var(--border)' }}>
           {[['CEO', ROLE_COLOR.CEO], ['Legal', ROLE_COLOR.Legal], ['Engineering', ROLE_COLOR.Engineering]].map(([role, color]) => (
             <div key={role} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-3)' }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }} />
@@ -133,7 +133,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '14px 26px', borderTop: '1px solid #2a1717', flexShrink: 0 }}>
+        <div style={{ padding: '14px 26px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
           <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center' }} onClick={onClose}>
             Close Crisis Room
           </button>

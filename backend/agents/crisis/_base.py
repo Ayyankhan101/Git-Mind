@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 _MODEL = "llama-3.3-70b-versatile"
 
 _LEAK_TRIGGER_WORDS = ["breach", "leaked", "exposed", "customers affected", "data exposed"]
+_llm = ChatGroq(model=_MODEL, temperature=0.7)
 
 
 def make_crisis_agent(name: str, system_prompt: str, leaks: bool = True):
@@ -51,7 +52,7 @@ def make_crisis_agent(name: str, system_prompt: str, leaks: bool = True):
         )
 
         try:
-            text = ChatGroq(model=_MODEL, temperature=0.7).invoke(prompt).content
+            text = _llm.invoke(prompt).content
         except Exception as exc:
             logger.error("crisis agent %s failed: %s", name, exc)
             text = f"[{name} unavailable — investigating]"

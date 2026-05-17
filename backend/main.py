@@ -24,10 +24,10 @@ _ANALYSES_DIR.mkdir(exist_ok=True)
 load_dotenv()
 
 from agents.chat import run_chat_agent
-
-_UUID_RE = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.IGNORECASE)
 from agents.crisis.reporter import reporter_loop
 from orchestrator import graph, crisis_graph
+
+_UUID_RE = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.IGNORECASE)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -546,7 +546,7 @@ async def ws_crisis(ws: WebSocket):
                         "kind":      "message",
                         "content":   msg.get("content"),
                         "turn":      msg.get("turn"),
-                        "timestamp": __import__("time").time(),
+                        "timestamp": time.time(),
                     })
 
                 if state_ref.get("reporter_published"):
