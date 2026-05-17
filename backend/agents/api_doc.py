@@ -2,16 +2,16 @@ import json
 import logging
 import re
 
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 
 from llm_cache import get_cached, set_cached
 
 logger = logging.getLogger(__name__)
 
-_MODEL           = "gpt-4o-mini"
+_MODEL           = "llama-3.3-70b-versatile"
 _MAX_FILES       = 5
 _MAX_FILE_CHARS  = 3_000
-_CACHE_NAMESPACE = "gpt-4o-mini:json"
+_CACHE_NAMESPACE = "llama-3.3-70b-versatile:json"
 
 # Compiled once at module load — scanning 300 files per request benefits from this
 _ROUTE_PATTERNS: list[re.Pattern] = [
@@ -54,7 +54,7 @@ def run_api_doc_agent(file_contents: dict[str, str]) -> list[dict]:
             "parameters": "N/A",
         }]
 
-    llm = ChatOpenAI(model=_MODEL, temperature=0).bind(
+    llm = ChatGroq(model=_MODEL, temperature=0).bind(
         response_format={"type": "json_object"}
     )
 

@@ -1,12 +1,12 @@
 import logging
 
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 
 from chroma_utils import search_codebase
 
 logger = logging.getLogger(__name__)
 
-_MODEL = "gpt-4o-mini"
+_MODEL = "llama-3.3-70b-versatile"
 
 _SYSTEM_TEMPLATE = """\
 You are a senior software engineer who has read every file in the '{repo_name}' codebase.
@@ -47,7 +47,7 @@ def run_chat_agent(
         history=history,
     )
 
-    llm    = ChatOpenAI(model=_MODEL, temperature=0.2)
+    llm    = ChatGroq(model=_MODEL, temperature=0.2)
     answer = llm.invoke([
         {"role": "system",  "content": system},
         {"role": "user",    "content": question},

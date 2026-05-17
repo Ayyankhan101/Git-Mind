@@ -1,11 +1,11 @@
 import time
 import logging
 
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 
 logger = logging.getLogger(__name__)
 
-_MODEL = "gpt-4o-mini"
+_MODEL = "llama-3.3-70b-versatile"
 
 _LEAK_TRIGGER_WORDS = ["breach", "leaked", "exposed", "customers affected", "data exposed"]
 
@@ -51,7 +51,7 @@ def make_crisis_agent(name: str, system_prompt: str, leaks: bool = True):
         )
 
         try:
-            text = ChatOpenAI(model=_MODEL, temperature=0.7).invoke(prompt).content
+            text = ChatGroq(model=_MODEL, temperature=0.7).invoke(prompt).content
         except Exception as exc:
             logger.error("crisis agent %s failed: %s", name, exc)
             text = f"[{name} unavailable — investigating]"

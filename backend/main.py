@@ -33,12 +33,12 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if not os.getenv("OPENAI_API_KEY"):
+    if not os.getenv("GROQ_API_KEY"):
         raise RuntimeError(
-            "OPENAI_API_KEY is not set.\n"
-            "Create backend/.env with:  OPENAI_API_KEY=sk-..."
+            "GROQ_API_KEY is not set.\n"
+            "Create backend/.env with:  GROQ_API_KEY=gsk_..."
         )
-    logger.info("GitMind backend starting — OPENAI_API_KEY present")
+    logger.info("GitMind backend starting — GROQ_API_KEY present")
     yield
     logger.info("GitMind backend shutting down")
 

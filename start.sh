@@ -20,9 +20,9 @@ if [ ! -d "backend/venv" ]; then
   # shellcheck disable=SC1091
   source backend/venv/bin/activate
   pip install -q --upgrade pip
-  pip install -q "fastapi[standard]" uvicorn langgraph langchain langchain-openai \
+  pip install -q "fastapi[standard]" uvicorn langgraph langchain langchain-groq \
     langchain-text-splitters chromadb gitpython tiktoken python-dotenv diskcache \
-    websockets semgrep
+    websockets semgrep httpx
   deactivate
 fi
 

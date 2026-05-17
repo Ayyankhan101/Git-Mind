@@ -3,12 +3,12 @@ import logging
 import os
 import time
 
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 
 logger = logging.getLogger(__name__)
 
 INTERVAL_SEC = int(os.getenv("REPORTER_INTERVAL_SEC", "45"))
-_MODEL = "gpt-4o-mini"
+_MODEL = "llama-3.3-70b-versatile"
 
 REPORTER_PROMPT = """You are a senior reporter at a major tech publication. A source has tipped you
 off about a possible security incident at a company. You have partial information.
@@ -50,7 +50,7 @@ async def reporter_loop(state_ref: dict, ws_send) -> None:
         )
 
         try:
-            story = ChatOpenAI(model=_MODEL, temperature=0.5).invoke(prompt).content
+            story = ChatGroq(model=_MODEL, temperature=0.5).invoke(prompt).content
         except Exception as exc:
             logger.error("reporter LLM failed: %s", exc)
             return

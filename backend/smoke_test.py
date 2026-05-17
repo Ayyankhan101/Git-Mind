@@ -37,9 +37,9 @@ print("════════════════════════�
 # ── 1. Environment ─────────────────────────────────────────────────────────────
 print("[ Environment ]")
 
-api_key = os.getenv("OPENAI_API_KEY", "")
-check("OPENAI_API_KEY is set",         bool(api_key),               "Add to backend/.env")
-check("OPENAI_API_KEY format (sk-...)", api_key.startswith("sk-"),  f"Got prefix: {api_key[:6]!r}")
+api_key = os.getenv("GROQ_API_KEY", "")
+check("GROQ_API_KEY is set",           bool(api_key),               "Add to backend/.env")
+check("GROQ_API_KEY format (gsk_...)", api_key.startswith("gsk_"),  f"Got prefix: {api_key[:6]!r}")
 check("semgrep in PATH",               shutil.which("semgrep") is not None, "pip install semgrep")
 
 # ── 2. ChromaDB ────────────────────────────────────────────────────────────────
@@ -68,24 +68,24 @@ except Exception as exc:
 print("\n[ tiktoken ]")
 try:
     import tiktoken
-    enc    = tiktoken.encoding_for_model("gpt-4o-mini")
+    enc    = tiktoken.get_encoding("cl100k_base")
     tokens = enc.encode("Hello, world!")
-    check("tiktoken encodes gpt-4o-mini", len(tokens) > 0)
+    check("tiktoken encodes text (cl100k_base)", len(tokens) > 0)
 except Exception as exc:
-    check("tiktoken encodes gpt-4o-mini", False, str(exc))
+    check("tiktoken encodes text (cl100k_base)", False, str(exc))
 
-# ── 5. OpenAI API reachability ─────────────────────────────────────────────────
-print("\n[ OpenAI API ]")
+# ── 5. Groq API reachability ───────────────────────────────────────────────────
+print("\n[ Groq API ]")
 if api_key:
     try:
-        from langchain_openai import ChatOpenAI
-        llm  = ChatOpenAI(model="gpt-4o-mini", temperature=0, max_tokens=5)
+        from langchain_groq import ChatGroq
+        llm  = ChatGroq(model="llama-3.3-70b-versatile", temperature=0, max_tokens=5)
         resp = llm.invoke("Reply with the single word: OK")
-        check("OpenAI API reachable", len(resp.content) > 0, resp.content)
+        check("Groq API reachable", len(resp.content) > 0, resp.content)
     except Exception as exc:
-        check("OpenAI API reachable", False, str(exc))
+        check("Groq API reachable", False, str(exc))
 else:
-    check("OpenAI API reachable", False, "Skipped — OPENAI_API_KEY not set")
+    check("Groq API reachable", False, "Skipped — GROQ_API_KEY not set")
 
 # ── 6. GitPython clone ─────────────────────────────────────────────────────────
 print("\n[ GitPython ]")

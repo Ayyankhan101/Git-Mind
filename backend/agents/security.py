@@ -5,14 +5,14 @@ import subprocess
 import uuid
 from pathlib import Path
 
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 
 from llm_cache import get_cached, set_cached
 
 logger = logging.getLogger(__name__)
 
-_MODEL           = "gpt-4o-mini"
-_CACHE_NAMESPACE = "gpt-4o-mini:json"
+_MODEL           = "llama-3.3-70b-versatile"
+_CACHE_NAMESPACE = "llama-3.3-70b-versatile:json"
 _MAX_FINDINGS    = 30
 _MAX_MSG_CHARS   = 200
 _VALID_SEVERITIES = frozenset({"low", "medium", "high", "critical"})
@@ -106,7 +106,7 @@ def _triage_with_llm(raw_results: list[dict]) -> list[dict]:
         logger.debug("Security agent: cache hit")
         findings = json.loads(cached).get("findings", [])
     else:
-        llm = ChatOpenAI(model=_MODEL, temperature=0).bind(
+        llm = ChatGroq(model=_MODEL, temperature=0).bind(
             response_format={"type": "json_object"}
         )
         try:

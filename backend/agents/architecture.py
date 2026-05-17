@@ -1,13 +1,13 @@
 import logging
 
 import tiktoken
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 
 from llm_cache import get_cached, set_cached
 
 logger = logging.getLogger(__name__)
 
-_MODEL         = "gpt-4o-mini"
+_MODEL         = "llama-3.3-70b-versatile"
 _TOKEN_BUDGET  = 12_000   # leaves headroom for system prompt + completion
 _MAX_TREE_LINES  = 150
 _MAX_KEY_FILES   = 8
@@ -52,7 +52,7 @@ def run_architecture_agent(file_tree: list[str], file_contents: dict[str, str]) 
         logger.debug("Architecture agent: cache hit")
         return cached
 
-    llm    = ChatOpenAI(model=_MODEL, temperature=0)
+    llm    = ChatGroq(model=_MODEL, temperature=0)
     result = llm.invoke(prompt).content.strip()
     result = _strip_fences(result)
 
@@ -67,7 +67,7 @@ def run_architecture_agent(file_tree: list[str], file_contents: dict[str, str]) 
 # ── Private helpers ────────────────────────────────────────────────────────────
 
 def _build_prompt(file_tree: list[str], file_contents: dict[str, str]) -> str:
-    enc    = tiktoken.encoding_for_model(_MODEL)
+    enc    = tiktoken.get_encoding("cl100k_base")  # approximation for Llama token counts
     budget = _TOKEN_BUDGET
 
     tree_str = "\n".join(file_tree[:_MAX_TREE_LINES])
