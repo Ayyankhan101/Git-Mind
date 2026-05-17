@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, FileCode2, ShieldAlert, Zap, TrendingUp, TrendingDown } from 'lucide-react';
+import { BarChart3, FileCode2, ShieldAlert, Zap, TrendingUp } from 'lucide-react';
 import { fetchSummary } from '../api';
 
 const SEV_COLORS = {
@@ -68,8 +68,6 @@ function Donut({ segments, size = 120, thickness = 14 }) {
   );
 }
 
-// Mock trend data for the sparkline
-const TREND_DATA = [12, 15, 11, 18, 14, 20, 16, 19, 22, 18, 21, 24, 20, 23];
 
 export default function SummaryTab({ sessionId, enabled, repoName, findings, apiDocs, elapsedSec, isAnalyzing }) {
   const [data,    setData]    = useState(null);
@@ -129,7 +127,7 @@ export default function SummaryTab({ sessionId, enabled, repoName, findings, api
     { value: nLow,      color: 'var(--sev-low)' },
   ].filter(s => s.value > 0);
 
-  const trend = TREND_DATA[TREND_DATA.length - 1] > TREND_DATA[0];
+  const sevSparkData = [nLow, nMedium, nHigh, nCritical].filter((_, i, a) => a.some(v => v > 0));
 
   return (
     <div className="summary">
@@ -155,19 +153,19 @@ export default function SummaryTab({ sessionId, enabled, repoName, findings, api
       {/* Charts */}
       {(findings.length > 0 || apiDocs.length > 0) && (
         <div className="summary-charts">
-          {/* Sparkline card */}
+          {/* Severity distribution sparkline (real data: low→critical) */}
           <div className="chart-card">
             <div className="chart-card-head">
               <div>
-                <div className="chart-title">SCAN ACTIVITY</div>
-                <div className="chart-value">{apiDocs.length}</div>
-                <div className={`chart-trend ${trend ? 'up' : 'down'}`}>
-                  {trend ? <TrendingUp size={12} strokeWidth={1.5} /> : <TrendingDown size={12} strokeWidth={1.5} />}
-                  endpoints detected
+                <div className="chart-title">SEVERITY DISTRIBUTION</div>
+                <div className="chart-value">{findings.length}</div>
+                <div className="chart-trend">
+                  <TrendingUp size={12} strokeWidth={1.5} />
+                  findings across {[nCritical && 'critical', nHigh && 'high', nMedium && 'medium', nLow && 'low'].filter(Boolean).join(', ') || 'none'}
                 </div>
               </div>
             </div>
-            <Sparkline data={TREND_DATA} height={60} />
+            {sevSparkData.length >= 2 && <Sparkline data={sevSparkData} height={60} color="var(--sev-high)" />}
           </div>
 
           {/* Donut card */}

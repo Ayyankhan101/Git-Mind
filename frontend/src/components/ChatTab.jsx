@@ -21,6 +21,11 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
   const [busy,     setBusy]     = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef   = useRef(null);
+  const abortRef      = useRef(null);
+
+  useEffect(() => {
+    return () => abortRef.current?.abort();
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -34,14 +39,17 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
     const botSlot  = { role: 'assistant', content: '', streaming: true };
     setMessages(prev => [...prev, userMsg, botSlot]);
     setBusy(true);
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
       let full = '';
       await postChatStream(sessionId, text, (chunk) => {
         full += chunk;
         setMessages(prev => prev.map((m, i) => i === prev.length - 1 ? { ...m, content: full } : m));
-      });
+      }, controller.signal);
       setMessages(prev => prev.map((m, i) => i === prev.length - 1 ? { ...m, streaming: false } : m));
     } catch (err) {
+      if (err.name === 'AbortError') return;
       setMessages(prev => prev.map((m, i) => i === prev.length - 1 ? { role: 'error', content: `Error: ${err.message}` } : m));
     } finally {
       setBusy(false);

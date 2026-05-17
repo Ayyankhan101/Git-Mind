@@ -21,12 +21,7 @@ import FilePreviewDrawer from './components/FilePreviewDrawer';
 import CommandPalette  from './components/CommandPalette';
 import ToastSystem     from './components/ToastSystem';
 import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix } from './api';
-
-const LANG_COLOR = {
-  JavaScript: '#f7df1e', TypeScript: '#3178c6', Python: '#3572A5',
-  Java: '#b07219', Go: '#00ADD8', Ruby: '#701516', Rust: '#dea584',
-  'C++': '#f34b7d', C: '#555555', 'C#': '#178600', Shell: '#89e051',
-};
+import { LANG_COLOR } from './constants';
 
 const SESSION_ID = crypto.randomUUID();
 const WS_URL     = `${WS_BASE}/ws/analyze`;
@@ -289,7 +284,7 @@ export default function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [showPalette, analyzed, selectedRepoUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [showPalette, analyzed, selectedRepoUrl, handleAnalyze]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Load repos ────────────────────────────────────────────────────────────────
   const handleLoadRepos = useCallback(async (user) => {

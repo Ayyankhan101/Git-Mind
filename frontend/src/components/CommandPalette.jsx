@@ -51,7 +51,7 @@ export default function CommandPalette({ open, onClose, onAction, repos, recents
   const listRef  = useRef(null);
 
   useEffect(() => {
-    if (open) { setQuery(''); setCursor(0); setTimeout(() => inputRef.current?.focus(), 0); }
+    if (open) { setQuery(''); setCursor(0); requestAnimationFrame(() => inputRef.current?.focus()); }
   }, [open]);
 
   useEffect(() => {
@@ -91,7 +91,7 @@ export default function CommandPalette({ open, onClose, onAction, repos, recents
     return g;
   }, [query, recents, repos]);
 
-  const flatItems = groups.flatMap(g => g.items);
+  const flatItems = useMemo(() => groups.flatMap(g => g.items), [groups]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); setCursor(c => Math.min(c + 1, flatItems.length - 1)); }

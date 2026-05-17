@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import { Zap, Sparkles, Lock, Command, Star } from 'lucide-react';
-
-const LANG_COLOR = {
-  JavaScript: '#f7df1e', TypeScript: '#3178c6', Python: '#3572A5',
-  Go: '#00ADD8', Ruby: '#701516', Rust: '#dea584',
-};
+import { LANG_COLOR } from '../constants';
 
 const EXAMPLE_REPOS = [
   {

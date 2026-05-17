@@ -70,12 +70,16 @@ export async function fetchSummary(sessionId) {
 /**
  * POST /chat/stream — streaming chat via SSE. Calls onToken(token) for each chunk.
  */
-export async function postChatStream(sessionId, question, onToken) {
+export async function postChatStream(sessionId, question, onToken, signal) {
+  const timeout = AbortSignal.timeout(90_000);
+  const combined = signal
+    ? AbortSignal.any([signal, timeout])
+    : timeout;
   const res = await fetch(`${BASE}/chat/stream`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ session_id: sessionId, question }),
-    signal: AbortSignal.timeout(90_000),
+    signal: combined,
   });
   if (!res.ok) {
     let msg = `Server error ${res.status}`;

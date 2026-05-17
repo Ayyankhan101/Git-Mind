@@ -9,11 +9,13 @@ from collections import OrderedDict
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-_UUID_RE = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.IGNORECASE)
-
+import asyncio
 import httpx
 from dotenv import load_dotenv
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 _ANALYSES_DIR = Path(__file__).parent / "analyses"
 _ANALYSES_DIR.mkdir(exist_ok=True)
@@ -21,13 +23,9 @@ _ANALYSES_DIR.mkdir(exist_ok=True)
 # load_dotenv MUST run before any LangChain / OpenAI import
 load_dotenv()
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-
-import asyncio
-
 from agents.chat import run_chat_agent
+
+_UUID_RE = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.IGNORECASE)
 from agents.crisis.reporter import reporter_loop
 from orchestrator import graph, crisis_graph
 
@@ -62,7 +60,7 @@ async def lifespan(app: FastAPI):
             "GROQ_API_KEY is not set.\n"
             "Create backend/.env with:  GROQ_API_KEY=gsk_..."
         )
-    _prune_old_analyses()
+    await asyncio.to_thread(_prune_old_analyses)
     logger.info("GitMind backend starting — GROQ_API_KEY present")
     yield
     logger.info("GitMind backend shutting down")
