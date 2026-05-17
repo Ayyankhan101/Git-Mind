@@ -1,12 +1,13 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import AgentProgress from './components/AgentProgress';
+import RepoList      from './components/RepoList';
 import DiagramTab    from './components/DiagramTab';
 import DocsTab       from './components/DocsTab';
 import SecurityTab   from './components/SecurityTab';
 import ChatTab       from './components/ChatTab';
 import CrisisChat    from './components/CrisisChat';
-import { WS_BASE }   from './api';
+import { WS_BASE, fetchRepos } from './api';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const SESSION_ID  = uuidv4();
@@ -18,22 +19,6 @@ const INITIAL_STATUS = {
   api_docs: 'waiting', security: 'waiting', chat: 'waiting',
 };
 
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
-function isValidGitHubUrl(url) {
-  try {
-    const u = new URL(url.trim());
-    const parts = u.pathname.split('/').filter(Boolean);
-    return u.hostname === 'github.com' && parts.length >= 2;
-  } catch { return false; }
-}
-
-function extractRepoName(url) {
-  try {
-    const parts = new URL(url.trim()).pathname.split('/').filter(Boolean);
-    return parts[1] || 'repository';
-  } catch { return 'repository'; }
-}
 
 // ── Spinner ────────────────────────────────────────────────────────────────────
 function Spinner() {
@@ -51,8 +36,11 @@ function Spinner() {
 // ── App ────────────────────────────────────────────────────────────────────────
 export default function App() {
   // ── State ──────────────────────────────────────────────────────────────────
-  const [repoUrl,       setRepoUrl]       = useState('https://github.com/OWASP/NodeGoat');
-  const [urlError,      setUrlError]      = useState('');
+  const [githubUser,    setGithubUser]    = useState('');
+  const [repos,         setRepos]         = useState([]);
+  const [reposLoading,  setReposLoading]  = useState(false);
+  const [reposError,    setReposError]    = useState(null);
+  const [selectedRepoUrl, setSelectedRepoUrl] = useState(null);
   const [activeTab,     setActiveTab]     = useState('diagram');
   const [agentStatus,   setAgentStatus]   = useState(INITIAL_STATUS);
   const [diagram,       setDiagram]       = useState(null);
@@ -86,23 +74,34 @@ export default function App() {
 
   useEffect(() => () => cleanup(), [cleanup]);
 
+  // ── Load repos ─────────────────────────────────────────────────────────────
+  const handleLoadRepos = useCallback(async () => {
+    const user = githubUser.trim();
+    if (!user) { setReposError('Enter a GitHub username.'); return; }
+    setReposError(null);
+    setReposLoading(true);
+    setRepos([]);
+    try {
+      const list = await fetchRepos(user);
+      setRepos(list);
+      if (list.length === 0) setReposError('No public repositories found for this user.');
+    } catch (err) {
+      setReposError(err.message);
+    } finally {
+      setReposLoading(false);
+    }
+  }, [githubUser]);
+
+  // ── Select + analyze ───────────────────────────────────────────────────────
+  const handleSelectRepo = useCallback((url) => {
+    setSelectedRepoUrl(url);
+    handleAnalyze(url);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Analyze ────────────────────────────────────────────────────────────────
-  const handleAnalyze = useCallback(() => {
-    const url = repoUrl.trim();
-
-    // client-side validation
-    if (!url) {
-      setUrlError('Please enter a GitHub repository URL.');
-      return;
-    }
-    if (!isValidGitHubUrl(url)) {
-      setUrlError('Enter a valid GitHub URL — e.g. https://github.com/owner/repo');
-      return;
-    }
-
+  const handleAnalyze = useCallback((url) => {
     // reset everything
     cleanup();
-    setUrlError('');
     setGlobalError(null);
     setAgentWarnings([]);
     setDiagram(null);
@@ -111,7 +110,7 @@ export default function App() {
     setAnalyzed(false);
     setElapsedSec(0);
     setAgentStatus(INITIAL_STATUS);
-    setRepoName(extractRepoName(url));
+    setRepoName(url.split('/').slice(-1)[0] || 'repository');
     setIsAnalyzing(true);
     analyzingRef.current = true;
 
@@ -217,7 +216,7 @@ export default function App() {
         setGlobalError('Connection dropped unexpectedly. Check the backend terminal for errors.');
       }
     };
-  }, [repoUrl, cleanup]);
+  }, [cleanup]);
 
   // ── Tab meta ───────────────────────────────────────────────────────────────
   const hasCritical = findings.some(f => f.severity === 'critical');
@@ -260,50 +259,29 @@ export default function App() {
           }}>GitMind</span>
         </div>
 
-        {/* URL Input */}
-        <div style={{ position: 'relative', flex: 1, zIndex: 1 }}
+        {/* Username input */}
+        <div style={{ position: 'relative', flex: 1, zIndex: 1, maxWidth: 340 }}
              className={isAnalyzing ? 'scan-sweep' : ''}>
           <input
             className="gm-input"
-            style={{ paddingRight: urlError ? 42 : 16 }}
-            placeholder="https://github.com/owner/repository"
-            value={repoUrl}
-            onChange={e => { setRepoUrl(e.target.value); if (urlError) setUrlError(''); }}
-            onKeyDown={e => { if (e.key === 'Enter' && !isAnalyzing) handleAnalyze(); }}
+            placeholder="GitHub username — e.g. torvalds"
+            value={githubUser}
+            onChange={e => { setGithubUser(e.target.value); setReposError(null); }}
+            onKeyDown={e => { if (e.key === 'Enter' && !reposLoading && !isAnalyzing) handleLoadRepos(); }}
             disabled={isAnalyzing}
-            aria-label="GitHub repository URL"
-            aria-describedby={urlError ? 'url-error' : undefined}
+            aria-label="GitHub username"
           />
-          {urlError && (
-            <span style={{
-              position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-              color: 'var(--gm-danger)', fontSize: 16, cursor: 'default',
-            }} title={urlError}>⚠</span>
-          )}
         </div>
 
-        {/* URL validation error tooltip */}
-        {urlError && (
-          <div id="url-error" role="alert" style={{
-            position: 'absolute', top: 66, left: 180,
-            background: '#2d0f0f', border: '1px solid #ef4444',
-            borderRadius: 8, padding: '8px 14px',
-            fontSize: 12, color: '#fca5a5', zIndex: 100,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-          }}>
-            ⚠ {urlError}
-          </div>
-        )}
-
-        {/* Analyze button */}
+        {/* Load repos button */}
         <button
           className="gm-btn-primary"
           style={{ position: 'relative', zIndex: 1 }}
-          onClick={handleAnalyze}
-          disabled={isAnalyzing}
-          aria-label={isAnalyzing ? 'Analysis in progress' : 'Start analysis'}
+          onClick={handleLoadRepos}
+          disabled={reposLoading || isAnalyzing}
+          aria-label={reposLoading ? 'Loading repositories…' : 'Load repositories'}
         >
-          {isAnalyzing ? <><Spinner /> Analyzing…</> : '⚡ Analyze'}
+          {reposLoading ? <><Spinner /> Loading…</> : isAnalyzing ? <><Spinner /> Analyzing…</> : '📂 Load Repos'}
         </button>
 
         {/* Backend status dot */}
@@ -362,13 +340,25 @@ export default function App() {
           display: 'flex', flexDirection: 'column',
           overflow: 'hidden',
         }}>
-          <AgentProgress
-            status={agentStatus}
-            isAnalyzing={isAnalyzing}
-            analyzed={analyzed}
-            elapsedSec={elapsedSec}
-            repoName={repoName}
+          {/* Repo list — scrollable top section */}
+          <RepoList
+            repos={repos}
+            onSelect={handleSelectRepo}
+            selectedUrl={selectedRepoUrl}
+            loading={reposLoading}
+            error={reposError}
           />
+
+          {/* Agent progress — fixed-height bottom section */}
+          <div style={{ height: 268, flexShrink: 0, borderTop: '1px solid var(--gm-border)' }}>
+            <AgentProgress
+              status={agentStatus}
+              isAnalyzing={isAnalyzing}
+              analyzed={analyzed}
+              elapsedSec={elapsedSec}
+              repoName={repoName}
+            />
+          </div>
         </aside>
 
         {/* ── Main panel ──────────────────────────────────────────────────── */}

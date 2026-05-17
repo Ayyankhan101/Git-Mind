@@ -47,6 +47,32 @@ export async function postChat(sessionId, question) {
   return data.answer;
 }
 
+/**
+ * GET /repos/{username} — fetch public repos for a GitHub user.
+ * Returns array of repo objects or throws with a user-readable message.
+ */
+export async function fetchRepos(username) {
+  let res;
+  try {
+    res = await fetch(`${BASE}/repos/${encodeURIComponent(username)}`, {
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (err) {
+    if (err.name === 'TimeoutError') throw new Error('GitHub API request timed out.');
+    throw new Error('Cannot reach the backend. Make sure it is running on port 8001.');
+  }
+
+  if (!res.ok) {
+    let msg = `Server error ${res.status}`;
+    try { const j = await res.json(); msg = j.error || j.detail || msg; } catch {}
+    throw new Error(msg);
+  }
+
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data.repos;
+}
+
 export async function checkHealth() {
   try {
     const res = await fetch(`${BASE}/health`, { signal: AbortSignal.timeout(3_000) });

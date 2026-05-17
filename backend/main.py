@@ -1,10 +1,12 @@
 import logging
 import os
+import re
 import shutil
 import uuid
 from collections import OrderedDict
 from contextlib import asynccontextmanager
 
+import httpx
 from dotenv import load_dotenv
 
 # load_dotenv MUST run before any LangChain / OpenAI import
@@ -325,6 +327,55 @@ async def ws_crisis(ws: WebSocket):
             pass
         await ws_send({"kind": "end"})
         await ws.close()
+
+
+# ── GitHub repo listing ────────────────────────────────────────────────────────
+
+_USERNAME_RE = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9\-]{0,38}$')
+
+@app.get("/repos/{username}")
+async def list_repos(username: str):
+    if not _USERNAME_RE.match(username):
+        return {"error": "Invalid GitHub username"}
+
+    headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}
+    token = os.getenv("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                f"https://api.github.com/users/{username}/repos",
+                params={"per_page": 100, "sort": "updated"},
+                headers=headers,
+            )
+    except httpx.TimeoutException:
+        return {"error": "GitHub API timed out"}
+    except httpx.RequestError as exc:
+        return {"error": f"GitHub API unreachable: {exc}"}
+
+    if resp.status_code == 404:
+        return {"error": f"GitHub user '{username}' not found"}
+    if resp.is_error:
+        return {"error": f"GitHub API error {resp.status_code}"}
+
+    repos = [
+        {
+            "name":        r["name"],
+            "full_name":   r["full_name"],
+            "description": r.get("description") or "",
+            "language":    r.get("language") or "",
+            "stars":       r["stargazers_count"],
+            "url":         r["html_url"],
+            "fork":        r["fork"],
+            "updated_at":  r["updated_at"],
+        }
+        for r in resp.json()
+        if not r["private"]
+    ]
+    logger.info("Listed %d repos for user=%s", len(repos), username)
+    return {"repos": repos, "username": username}
 
 
 # ── Health check ───────────────────────────────────────────────────────────────
