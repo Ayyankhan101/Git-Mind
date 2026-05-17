@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { postChat } from '../api';
+import { postChatStream } from '../api';
 
 const SUGGESTED = [
   'How does user authentication work?',
@@ -18,6 +18,7 @@ function TypingIndicator() {
 }
 
 function Message({ msg }) {
+  if (msg.role === 'assistant' && !msg.content) return null; // empty streaming placeholder
   const isUser = msg.role === 'user';
   const isErr  = msg.role === 'error';
   return (
@@ -63,15 +64,26 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
     const q = question.trim();
     if (!q || loading || !enabled) return;
 
-    setMessages(prev => [...prev, { role: 'user', content: q }]);
+    // Add user message + empty assistant placeholder immediately
+    setMessages(prev => [...prev, { role: 'user', content: q }, { role: 'assistant', content: '' }]);
     setInput('');
     setLoading(true);
 
     try {
-      const answer = await postChat(sessionId, q);
-      setMessages(prev => [...prev, { role: 'assistant', content: answer }]);
+      await postChatStream(sessionId, q, (token) => {
+        setMessages(prev => {
+          const msgs = [...prev];
+          const last = msgs[msgs.length - 1];
+          msgs[msgs.length - 1] = { ...last, content: last.content + token };
+          return msgs;
+        });
+      });
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'error', content: err.message || 'Something went wrong. Please try again.' }]);
+      setMessages(prev => {
+        const msgs = [...prev];
+        msgs[msgs.length - 1] = { role: 'error', content: err.message || 'Something went wrong. Please try again.' };
+        return msgs;
+      });
     } finally {
       setLoading(false);
       setTimeout(() => inputRef.current?.focus(), 50);
@@ -132,10 +144,12 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
         )}
 
         {messages.map((msg, i) => <Message key={i} msg={msg} />)}
-        {loading && <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
-          <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>🧠</div>
-          <TypingIndicator />
-        </div>}
+        {loading && !messages[messages.length - 1]?.content && (
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>🧠</div>
+            <TypingIndicator />
+          </div>
+        )}
         <div ref={bottomRef} />
       </div>
 

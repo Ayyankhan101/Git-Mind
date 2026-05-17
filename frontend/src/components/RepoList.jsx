@@ -81,7 +81,29 @@ function Skeleton() {
   );
 }
 
-export default function RepoList({ repos, onSelect, selectedUrl, loading, error }) {
+function HistoryChip({ item, onSelect }) {
+  return (
+    <button
+      onClick={() => onSelect(item.url)}
+      title={item.url}
+      style={{
+        width: '100%', textAlign: 'left', padding: '7px 10px',
+        borderRadius: 8, cursor: 'pointer', marginBottom: 4,
+        background: 'rgba(99,102,241,0.06)',
+        border: '1px solid rgba(99,102,241,0.2)',
+        display: 'flex', alignItems: 'center', gap: 8,
+        transition: 'all 0.15s',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.12)'; }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.06)'; }}
+    >
+      <span style={{ fontSize: 12 }}>🕐</span>
+      <span style={{ fontSize: 11, color: '#a5b4fc', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{item.name}</span>
+    </button>
+  );
+}
+
+export default function RepoList({ repos, onSelect, selectedUrl, loading, error, history = [], onHistorySelect }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
       <div style={{
@@ -108,14 +130,20 @@ export default function RepoList({ repos, onSelect, selectedUrl, loading, error 
         )}
 
         {!loading && !error && repos.length === 0 && (
-          <div style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            justifyContent: 'center', padding: '28px 12px', gap: 8, textAlign: 'center',
-          }}>
-            <div style={{ fontSize: 24 }}>📂</div>
-            <div style={{ fontSize: 11, color: 'var(--gm-text-3)', lineHeight: 1.5 }}>
-              Enter a GitHub username above and click <strong style={{ color: 'var(--gm-text-2)' }}>Load</strong> to browse repos.
-            </div>
+          <div>
+            {history.length > 0 && onHistorySelect ? (
+              <div style={{ padding: '8px 2px' }}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--gm-text-3)', marginBottom: 6, paddingLeft: 2 }}>Recent</div>
+                {history.map(h => <HistoryChip key={h.url} item={h} onSelect={onHistorySelect} />)}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '28px 12px', gap: 8, textAlign: 'center' }}>
+                <div style={{ fontSize: 24 }}>📂</div>
+                <div style={{ fontSize: 11, color: 'var(--gm-text-3)', lineHeight: 1.5 }}>
+                  Enter a GitHub username above and click <strong style={{ color: 'var(--gm-text-2)' }}>Load</strong> to browse repos.
+                </div>
+              </div>
+            )}
           </div>
         )}
 

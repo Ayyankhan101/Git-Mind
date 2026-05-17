@@ -1,0 +1,14 @@
+fastapi[standard]
+uvicorn[standard]
+langgraph
+langchain
+langchain-groq
+langchain-text-splitters
+chromadb
+gitpython
+tiktoken
+python-dotenv
+diskcache
+websockets
+semgrep
+httpx

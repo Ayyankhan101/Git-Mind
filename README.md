@@ -1,3 +1,13 @@
+---
+title: GitMind API
+emoji: 🧠
+colorFrom: indigo
+colorTo: blue
+sdk: docker
+pinned: false
+app_port: 7860
+---
+
 # GitMind — Crisis Room
 
 Multi-agent repo intelligence system. Paste a GitHub URL → 4 agents run in parallel → architecture diagram, API docs, security findings, chat-with-the-repo. Optional Crisis Mode dramatises a security leak with CEO/Legal/Engineering/Reporter role-play.

@@ -6,8 +6,15 @@ import DiagramTab    from './components/DiagramTab';
 import DocsTab       from './components/DocsTab';
 import SecurityTab   from './components/SecurityTab';
 import ChatTab       from './components/ChatTab';
+import SummaryTab    from './components/SummaryTab';
 import CrisisChat    from './components/CrisisChat';
 import { WS_BASE, fetchRepos } from './api';
+
+const LANG_COLOR = {
+  JavaScript: '#f7df1e', TypeScript: '#3178c6', Python: '#3572A5',
+  Java: '#b07219', Go: '#00ADD8', Ruby: '#701516', Rust: '#dea584',
+  'C++': '#f34b7d', C: '#555555', 'C#': '#178600', Shell: '#89e051',
+};
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const SESSION_ID  = uuidv4();
@@ -53,6 +60,10 @@ export default function App() {
   const [elapsedSec,    setElapsedSec]    = useState(0);
   const [repoName,      setRepoName]      = useState('');
   const [crisisFinding, setCrisisFinding] = useState(null);
+  const [repoHistory,   setRepoHistory]   = useState(() => {
+    try { return JSON.parse(localStorage.getItem('gitmind_history') || '[]'); }
+    catch { return []; }
+  });
 
   // ── Refs ───────────────────────────────────────────────────────────────────
   const wsRef         = useRef(null);
@@ -73,6 +84,28 @@ export default function App() {
   }, []);
 
   useEffect(() => () => cleanup(), [cleanup]);
+
+  // Request notification permission once on first visit
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // On analysis complete: fire browser notification + save to history
+  useEffect(() => {
+    if (!analyzed) return;
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('GitMind', { body: `${repoName} analysis complete`, icon: '/logo.jpeg' });
+    }
+    if (!selectedRepoUrl || !repoName) return;
+    const entry = { url: selectedRepoUrl, name: repoName, ts: Date.now() };
+    setRepoHistory(prev => {
+      const next = [entry, ...prev.filter(h => h.url !== selectedRepoUrl)].slice(0, 5);
+      try { localStorage.setItem('gitmind_history', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, [analyzed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Load repos ─────────────────────────────────────────────────────────────
   const handleLoadRepos = useCallback(async () => {
@@ -218,9 +251,49 @@ export default function App() {
     };
   }, [cleanup]);
 
+  // ── Export report ──────────────────────────────────────────────────────────
+  const handleExport = useCallback(() => {
+    if (!analyzed) return;
+    const lines = [
+      `# GitMind Analysis: ${repoName}`,
+      `> Generated ${new Date().toLocaleString()}`,
+      '',
+      '## Architecture',
+      '```mermaid',
+      diagram || '(no diagram)',
+      '```',
+      '',
+      '## API Endpoints',
+      '',
+      ...(apiDocs.length
+        ? apiDocs.map(e => `- **${e.method || ''}** \`${e.route || ''}\` — ${e.description || ''}`)
+        : ['No endpoints detected.']),
+      '',
+      '## Security Findings',
+      '',
+      ...(findings.length
+        ? findings.map(f =>
+            `### [${(f.severity || 'info').toUpperCase()}] ${f.rule || f.check || 'Finding'}\n${f.description || f.message || ''}\n${f.file ? `File: ${f.file}${f.line ? `:${f.line}` : ''}` : ''}`
+          )
+        : ['No findings.']),
+      '',
+      '---',
+      `_Scanned in ${elapsedSec}s by GitMind_`,
+    ];
+    const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `gitmind-${repoName}-${Date.now()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [analyzed, repoName, diagram, apiDocs, findings, elapsedSec]);
+
   // ── Tab meta ───────────────────────────────────────────────────────────────
-  const hasCritical = findings.some(f => f.severity === 'critical');
+  const selectedRepo  = repos.find(r => r.url === selectedRepoUrl) ?? null;
+  const hasCritical   = findings.some(f => f.severity === 'critical');
   const tabs = [
+    { key: 'summary',  icon: '📊', label: 'Summary' },
     { key: 'diagram',  icon: '🏗',  label: 'Architecture' },
     { key: 'docs',     icon: '📋',  label: 'API Docs',  count: apiDocs.length  || null },
     { key: 'security', icon: '🛡',  label: 'Security',  count: findings.length || null, alert: hasCritical },
@@ -347,6 +420,8 @@ export default function App() {
             selectedUrl={selectedRepoUrl}
             loading={reposLoading}
             error={reposError}
+            history={repoHistory}
+            onHistorySelect={url => { setSelectedRepoUrl(url); handleAnalyze(url); }}
           />
 
           {/* Agent progress — fixed-height bottom section */}
@@ -389,7 +464,7 @@ export default function App() {
                     cursor: 'pointer',
                     transition: 'all 0.15s',
                     whiteSpace: 'nowrap',
-                    marginBottom: -1, // overlap border
+                    marginBottom: -1,
                   }}
                   onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'var(--gm-text-1)'; }}
                   onMouseLeave={e => { if (!active) e.currentTarget.style.color = 'var(--gm-text-2)'; }}
@@ -408,10 +483,53 @@ export default function App() {
                 </button>
               );
             })}
+
+            {/* Export button — right-aligned */}
+            <button
+              onClick={handleExport}
+              disabled={!analyzed}
+              title="Download analysis as Markdown"
+              style={{
+                marginLeft: 'auto', padding: '6px 14px', borderRadius: 8,
+                background: analyzed ? 'rgba(99,102,241,0.1)' : 'transparent',
+                border: `1px solid ${analyzed ? 'rgba(99,102,241,0.3)' : 'transparent'}`,
+                color: analyzed ? 'var(--gm-primary)' : '#475569',
+                fontSize: 12, fontWeight: 500, cursor: analyzed ? 'pointer' : 'default',
+                transition: 'all 0.15s', whiteSpace: 'nowrap',
+              }}
+            >
+              ↓ Export
+            </button>
           </nav>
+
+          {/* Repo stats strip */}
+          {selectedRepo && analyzed && (
+            <div style={{
+              flexShrink: 0, display: 'flex', alignItems: 'center', gap: 14,
+              padding: '5px 24px', borderBottom: '1px solid var(--gm-border)',
+              background: 'rgba(99,102,241,0.03)', fontSize: 11, color: 'var(--gm-text-3)',
+            }}>
+              <a href={selectedRepo.url} target="_blank" rel="noopener noreferrer"
+                style={{ color: 'var(--gm-primary)', fontWeight: 600, fontSize: 12, textDecoration: 'none' }}>
+                {selectedRepo.full_name}
+              </a>
+              {selectedRepo.language && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: LANG_COLOR[selectedRepo.language] || '#64748b' }} />
+                  {selectedRepo.language}
+                </span>
+              )}
+              {selectedRepo.stars > 0 && <span>⭐ {selectedRepo.stars.toLocaleString()}</span>}
+              {selectedRepo.fork && <span style={{ color: '#64748b' }}>fork</span>}
+              <span style={{ marginLeft: 'auto' }}>
+                Updated {new Date(selectedRepo.updated_at).toLocaleDateString()}
+              </span>
+            </div>
+          )}
 
           {/* Tab content */}
           <div role="tabpanel" style={{ flex: 1, overflow: 'auto', padding: 24 }}>
+            {activeTab === 'summary'  && <SummaryTab  sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} findings={findings} apiDocs={apiDocs} elapsedSec={elapsedSec} />}
             {activeTab === 'diagram'  && <DiagramTab  diagram={diagram}   isAnalyzing={isAnalyzing} analyzed={analyzed} />}
             {activeTab === 'docs'     && <DocsTab     docs={apiDocs}      isAnalyzing={isAnalyzing} analyzed={analyzed} />}
             {activeTab === 'security' && <SecurityTab findings={findings} isAnalyzing={isAnalyzing} analyzed={analyzed} sessionId={SESSION_ID} onCrisis={setCrisisFinding} />}
