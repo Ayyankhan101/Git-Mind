@@ -1,181 +1,103 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { GitPullRequest, ChevronDown, Check, AlertTriangle, MessageSquare } from 'lucide-react';
 import { reviewPR } from '../api';
 
-function Spinner() {
-  return (
-    <span style={{ display: 'inline-block', width: 13, height: 13 }}>
-      <svg viewBox="0 0 24 24" fill="none" style={{ animation: 'spin 0.8s linear infinite', width: '100%', height: '100%' }}>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeLinecap="round"
-          strokeDasharray="40" strokeDashoffset="15" />
-      </svg>
-    </span>
-  );
-}
-
-const VERDICT_STYLE = {
-  'APPROVE':           { color: '#6ee7b7', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)', icon: '✅' },
-  'REQUEST CHANGES':   { color: '#fca5a5', bg: 'rgba(239,68,68,0.1)',  border: 'rgba(239,68,68,0.25)',  icon: '⚠️' },
-  'NEEDS DISCUSSION':  { color: '#fcd34d', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)', icon: '💬' },
+const VERDICT_CLASS = {
+  'APPROVE':          'approve',
+  'REQUEST CHANGES':  'changes',
+  'NEEDS DISCUSSION': 'discuss',
 };
 
-const SEV_COLOR = {
-  CRITICAL: '#ef4444', HIGH: '#f97316', MEDIUM: '#f59e0b', LOW: '#06b6d4',
-};
-
-function parseReview(reviewText) {
+function parseReview(text) {
   const sections = { summary: '', issues: [], verdict: '', verdictLine: '' };
-  const lines = reviewText.split('\n');
+  const lines = text.split('\n');
   let current = null;
   for (const line of lines) {
     if (line.startsWith('## Summary')) { current = 'summary'; continue; }
-    if (line.startsWith('## Issues'))  { current = 'issues';  continue; }
+    if (line.startsWith('## Issues'))  { current = 'issues'; continue; }
     if (line.startsWith('## Verdict')) { current = 'verdict'; continue; }
     if (current === 'summary') sections.summary += (sections.summary ? '\n' : '') + line;
     if (current === 'issues') {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-      if (trimmed === 'No significant issues found.') { sections.issues = []; current = null; continue; }
-      // parse: path/file.ext:LINE — [SEVERITY] Title — explanation
-      const m = trimmed.match(/^(.+?):(\d+)\s*[—–-]+\s*\[([A-Z]+)\]\s*(.+?)\s*[—–-]+\s*(.+)$/);
-      if (m) {
-        sections.issues.push({ file: m[1], line: m[2], severity: m[3], title: m[4], explanation: m[5] });
-      } else {
-        // fallback: treat as raw text
-        sections.issues.push({ raw: trimmed });
-      }
+      const t = line.trim();
+      if (!t) continue;
+      if (t === 'No significant issues found.') { sections.issues = []; current = null; continue; }
+      const m = t.match(/^(.+?):(\d+)\s*[—–-]+\s*\[([A-Z]+)\]\s*(.+?)\s*[—–-]+\s*(.+)$/);
+      if (m) sections.issues.push({ file: m[1], line: m[2], severity: m[3], title: m[4], explanation: m[5] });
+      else sections.issues.push({ raw: t });
     }
     if (current === 'verdict') sections.verdictLine += (sections.verdictLine ? '\n' : '') + line;
   }
-  // extract verdict keyword
   const vMatch = sections.verdictLine.match(/APPROVE|REQUEST CHANGES|NEEDS DISCUSSION/);
   sections.verdict = vMatch ? vMatch[0] : '';
   return sections;
 }
 
 function IssueRow({ issue }) {
+  const sev = issue.severity || '';
+  const sevClass = sev.toLowerCase();
   if (issue.raw) {
     return (
-      <div style={{ padding: '9px 0', borderBottom: '1px solid rgba(30,45,74,0.5)', fontSize: 12, color: 'var(--gm-text-2)', lineHeight: 1.5 }}>
-        {issue.raw}
+      <div className={`row ${sevClass || 'low'}`} style={{ cursor: 'default' }}>
+        <div className="row-line">
+          <div className="row-main">
+            <span className="row-sub">{issue.raw}</span>
+          </div>
+        </div>
       </div>
     );
   }
-  const sevColor = SEV_COLOR[issue.severity] ?? '#94a3b8';
   return (
-    <div style={{ padding: '10px 0', borderBottom: '1px solid rgba(30,45,74,0.5)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-        <span style={{
-          padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 800,
-          letterSpacing: '0.08em', textTransform: 'uppercase',
-          background: `${sevColor}18`, color: sevColor, border: `1px solid ${sevColor}35`,
-        }}>
-          {issue.severity}
+    <div className={`row ${sevClass || 'low'}`} style={{ cursor: 'default' }}>
+      <div className="row-line">
+        <span className="row-sev">
+          <span className="glyph" />
+          {sev || 'INFO'}
         </span>
-        <code style={{ fontSize: 11, color: '#818cf8', fontFamily: 'JetBrains Mono, monospace' }}>
-          {issue.file}:{issue.line}
-        </code>
-        <span style={{ fontSize: 12, fontWeight: 600, color: sevColor }}>{issue.title}</span>
-      </div>
-      <div style={{ fontSize: 12, color: 'var(--gm-text-3)', lineHeight: 1.6, paddingLeft: 4 }}>
-        {issue.explanation}
+        <div className="row-main">
+          <span className="row-title">{issue.title}</span>
+          {issue.explanation && <span className="row-sub">{issue.explanation}</span>}
+        </div>
+        {issue.file && (
+          <span className="row-path">{issue.file}:{issue.line}</span>
+        )}
       </div>
     </div>
   );
 }
 
-function ReviewCard({ result }) {
-  const parsed = parseReview(result.review ?? '');
-  const vStyle = VERDICT_STYLE[parsed.verdict] ?? { color: '#94a3b8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.2)', icon: '💬' };
+export default function PRReviewTab({ prAutoUrl, onAutoUrlUsed }) {
+  const [prUrl,       setPrUrl]       = useState('');
+  const [token,       setToken]       = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [loading,     setLoading]     = useState(false);
+  const [error,       setError]       = useState(null);
+  const [result,      setResult]      = useState(null);
 
-  return (
-    <div className="gm-card fade-up" style={{ padding: '20px 22px', marginTop: 20 }}>
-      {/* PR meta header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 18 }}>
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', marginBottom: 4 }}>
-            <a href={result.pr_url} target="_blank" rel="noopener noreferrer"
-              style={{ color: '#818cf8', textDecoration: 'none' }}>
-              {result.repo}#{result.pr_num}
-            </a>
-            {' '}· {result.title}
-          </div>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 11, color: 'var(--gm-text-3)' }}>
-            <span>👤 {result.author}</span>
-            <span style={{ color: '#6ee7b7' }}>+{result.additions}</span>
-            <span style={{ color: '#fca5a5' }}>-{result.deletions}</span>
-            <span>{result.changed_files} files</span>
-          </div>
-        </div>
-        {/* Verdict pill */}
-        <div style={{
-          padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 700,
-          background: vStyle.bg, color: vStyle.color, border: `1px solid ${vStyle.border}`,
-          flexShrink: 0, whiteSpace: 'nowrap',
-        }}>
-          {vStyle.icon} {parsed.verdict || 'REVIEWED'}
-        </div>
-      </div>
-
-      {/* Summary */}
-      {parsed.summary.trim() && (
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--gm-text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
-            Summary
-          </div>
-          <div style={{ fontSize: 13, color: 'var(--gm-text-2)', lineHeight: 1.7, padding: '12px 14px', borderRadius: 8, background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.12)' }}>
-            {parsed.summary.trim()}
-          </div>
-        </div>
-      )}
-
-      {/* Issues */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--gm-text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-          Issues
-          <span style={{
-            padding: '1px 8px', borderRadius: 999, fontSize: 10,
-            background: parsed.issues.length ? 'rgba(249,115,22,0.12)' : 'rgba(16,185,129,0.1)',
-            color: parsed.issues.length ? '#f97316' : '#6ee7b7',
-          }}>
-            {parsed.issues.length || 'None'}
-          </span>
-        </div>
-        {parsed.issues.length === 0
-          ? <div style={{ fontSize: 12, color: '#6ee7b7', padding: '10px 0' }}>No significant issues found.</div>
-          : parsed.issues.map((iss, i) => <IssueRow key={i} issue={iss} />)
-        }
-      </div>
-
-      {/* Verdict detail */}
-      {parsed.verdictLine.trim() && (
-        <div style={{
-          padding: '10px 14px', borderRadius: 8,
-          background: vStyle.bg, border: `1px solid ${vStyle.border}`,
-          fontSize: 12, color: vStyle.color, lineHeight: 1.6,
-        }}>
-          {parsed.verdictLine.replace(/✅|⚠️|💬/g, '').trim()}
-        </div>
-      )}
-    </div>
-  );
-}
-
-export default function PRReviewTab() {
-  const [prUrl,   setPrUrl]   = useState('');
-  const [token,   setToken]   = useState('');
-  const [loading, setLoading] = useState(false);
-  const [result,  setResult]  = useState(null);
-  const [error,   setError]   = useState(null);
+  // Auto-fill + trigger review when a PR URL is pasted anywhere
+  useEffect(() => {
+    if (!prAutoUrl) return;
+    setPrUrl(prAutoUrl);
+    onAutoUrlUsed?.();
+    const t = setTimeout(() => {
+      setError(null);
+      setLoading(true);
+      setResult(null);
+      reviewPR(prAutoUrl, undefined)
+        .then(data => setResult(data))
+        .catch(err => setError(err.message))
+        .finally(() => setLoading(false));
+    }, 120);
+    return () => clearTimeout(t);
+  }, [prAutoUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleReview = async () => {
     const url = prUrl.trim();
     if (!url) { setError('Enter a GitHub PR URL.'); return; }
-    setLoading(true);
     setError(null);
+    setLoading(true);
     setResult(null);
     try {
-      const data = await reviewPR(url, token.trim() || null);
+      const data = await reviewPR(url, token || undefined);
       setResult(data);
     } catch (err) {
       setError(err.message);
@@ -184,61 +106,150 @@ export default function PRReviewTab() {
     }
   };
 
+  const parsed = result?.review ? parseReview(result.review) : null;
+  const verdictClass = parsed?.verdict ? VERDICT_CLASS[parsed.verdict] : '';
+
   return (
-    <div style={{ maxWidth: 760 }}>
-      {/* Input card */}
-      <div className="gm-card" style={{ padding: '20px 22px', marginBottom: 8 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', marginBottom: 14 }}>
-          🔍 Pull Request Review
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <input
-            className="gm-input"
-            style={{ width: '100%', boxSizing: 'border-box' }}
-            placeholder="https://github.com/owner/repo/pull/123"
-            value={prUrl}
-            onChange={e => { setPrUrl(e.target.value); setError(null); }}
-            onKeyDown={e => { if (e.key === 'Enter' && !loading) handleReview(); }}
-            disabled={loading}
-            aria-label="GitHub PR URL"
-          />
-          <input
-            className="gm-input"
-            style={{ width: '100%', boxSizing: 'border-box' }}
-            placeholder="GitHub token (optional — raises rate limit to 5 000 req/hr)"
-            value={token}
-            onChange={e => setToken(e.target.value)}
-            type="password"
-            disabled={loading}
-            aria-label="GitHub token"
-          />
-          <button
-            className="gm-btn-primary"
-            style={{ alignSelf: 'flex-start', gap: 8 }}
-            onClick={handleReview}
-            disabled={loading}
-          >
-            {loading ? <><Spinner /> Reviewing PR…</> : '🔍 Review PR'}
-          </button>
-        </div>
-
-        {error && (
-          <div style={{
-            marginTop: 12, padding: '10px 14px', borderRadius: 8,
-            background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
-            fontSize: 12, color: '#fca5a5', lineHeight: 1.5,
-          }}>
-            {error}
+    <div className="pr-tab">
+      {/* Tab header */}
+      <div className="tab-header" style={{ position: 'static', marginBottom: 28 }}>
+        <div className="tab-header-main">
+          <span className="tab-header-icon"><GitPullRequest size={15} strokeWidth={1.5} /></span>
+          <div className="tab-header-text">
+            <div className="tab-header-title">PR Review</div>
+            <div className="tab-header-sub">AI-powered pull request analysis</div>
           </div>
-        )}
-
-        <div style={{ marginTop: 12, fontSize: 11, color: 'var(--gm-text-3)', lineHeight: 1.6 }}>
-          Fetches the diff from GitHub's API and runs a senior-engineer-level review via LLM.
-          Works on any public PR. Private repos require a token with <code style={{ fontSize: 10 }}>repo</code> scope.
         </div>
       </div>
 
-      {result && <ReviewCard result={result} />}
+      {/* Input */}
+      <div className="pr-input">
+        <input
+          className="pr-url"
+          placeholder="https://github.com/owner/repo/pull/123"
+          value={prUrl}
+          onChange={e => { setPrUrl(e.target.value); setError(null); }}
+          onKeyDown={e => e.key === 'Enter' && handleReview()}
+        />
+        <button className="btn btn-primary" onClick={handleReview} disabled={loading || !prUrl.trim()}>
+          {loading ? <><span className="spinner" /> Reviewing…</> : 'Review PR'}
+        </button>
+      </div>
+
+      {/* Advanced toggle */}
+      <button className="pr-advanced" onClick={() => setShowAdvanced(o => !o)}>
+        <ChevronDown size={12} strokeWidth={1.5} style={{ transform: showAdvanced ? 'none' : 'rotate(-90deg)', transition: 'transform 0.15s' }} />
+        Advanced
+      </button>
+
+      {showAdvanced && (
+        <input
+          className="pr-token"
+          type="password"
+          placeholder="GitHub personal access token (optional)"
+          value={token}
+          onChange={e => setToken(e.target.value)}
+        />
+      )}
+
+      {error && (
+        <div className="error-banner" style={{ marginBottom: 16, marginTop: 8, borderRadius: 6 }}>
+          <AlertTriangle size={13} strokeWidth={1.5} />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* Result */}
+      {parsed && result && (
+        <>
+          <div className="pr-result">
+            {/* PR Meta */}
+            <div className="pr-meta">
+              <div>
+                <div className="key">REPOSITORY</div>
+                <div className="val">{result.repo || '—'}</div>
+              </div>
+              <div>
+                <div className="key">PR NUMBER</div>
+                <div className="val mono">#{result.pr_num || '—'}</div>
+              </div>
+              {(result.additions != null || result.deletions != null) && (
+                <div>
+                  <div className="key">CHANGES</div>
+                  <div className="val mono">
+                    <span style={{ color: 'var(--success)' }}>+{result.additions || 0}</span>
+                    {' / '}
+                    <span style={{ color: 'var(--danger)' }}>-{result.deletions || 0}</span>
+                  </div>
+                </div>
+              )}
+              {result.changed_files != null && (
+                <div>
+                  <div className="key">FILES</div>
+                  <div className="val">{result.changed_files} changed</div>
+                </div>
+              )}
+            </div>
+
+            {/* Summary + Verdict */}
+            <div className="pr-summary">
+              {parsed.summary && (
+                <p>{parsed.summary}</p>
+              )}
+
+              {parsed.verdict && (
+                <div className={`pr-verdict ${verdictClass}`}>
+                  <div className="pr-issues-header" style={{ margin: '0 0 8px' }}>
+                    <span className="t-label">VERDICT</span>
+                  </div>
+                  <div className="verdict-line">
+                    {verdictClass === 'approve' && <Check size={24} strokeWidth={2} />}
+                    {verdictClass === 'changes' && <AlertTriangle size={24} strokeWidth={2} />}
+                    {verdictClass === 'discuss' && <MessageSquare size={24} strokeWidth={2} />}
+                    {parsed.verdict}
+                  </div>
+                  {parsed.verdictLine && parsed.verdictLine !== parsed.verdict && (
+                    <div className="verdict-just">
+                      {parsed.verdictLine.replace(parsed.verdict, '').replace(/[—–:]/g, '').trim()}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Issues */}
+          {parsed.issues.length > 0 && (
+            <>
+              <div className="pr-issues-header">
+                <span className="t-label">ISSUES ({parsed.issues.length})</span>
+              </div>
+              <div className="row-list">
+                {parsed.issues.map((issue, i) => (
+                  <IssueRow key={i} issue={issue} />
+                ))}
+              </div>
+            </>
+          )}
+        </>
+      )}
+
+      {/* Loading skeleton */}
+      {loading && (
+        <div style={{ marginTop: 24 }}>
+          {[0, 1, 2].map(i => (
+            <div key={i} className="sk-row">
+              <div className="sk-row-line">
+                <span className="sk" style={{ height: 14, width: 78 }} />
+                <div className="sk-stack">
+                  <span className="sk" style={{ height: 14, width: '60%' }} />
+                  <span className="sk" style={{ height: 12, width: '80%' }} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

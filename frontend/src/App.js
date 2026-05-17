@@ -1,15 +1,25 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import AgentProgress  from './components/AgentProgress';
-import RepoList       from './components/RepoList';
-import DiagramTab     from './components/DiagramTab';
-import DocsTab        from './components/DocsTab';
-import SecurityTab    from './components/SecurityTab';
-import ChatTab        from './components/ChatTab';
-import SummaryTab     from './components/SummaryTab';
-import CveTab         from './components/CveTab';
-import PRReviewTab    from './components/PRReviewTab';
-import CrisisChat     from './components/CrisisChat';
+import {
+  Search, FolderOpen, Share2, Download, Command,
+  Check, X, AlertTriangle, ChevronDown,
+  GitBranch, FileCode2, ShieldAlert, Lock, MessageSquare,
+  BarChart3, GitPullRequest,
+} from 'lucide-react';
+
+import Sidebar         from './components/Sidebar';
+import DiagramTab      from './components/DiagramTab';
+import DocsTab         from './components/DocsTab';
+import SecurityTab     from './components/SecurityTab';
+import ChatTab         from './components/ChatTab';
+import SummaryTab      from './components/SummaryTab';
+import CveTab          from './components/CveTab';
+import PRReviewTab     from './components/PRReviewTab';
+import CrisisChat      from './components/CrisisChat';
+import Onboarding      from './components/Onboarding';
+import KeyboardHelp    from './components/KeyboardHelp';
+import FilePreviewDrawer from './components/FilePreviewDrawer';
+import CommandPalette  from './components/CommandPalette';
+import ToastSystem     from './components/ToastSystem';
 import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix } from './api';
 
 const LANG_COLOR = {
@@ -18,39 +28,90 @@ const LANG_COLOR = {
   'C++': '#f34b7d', C: '#555555', 'C#': '#178600', Shell: '#89e051',
 };
 
-// ── Constants ──────────────────────────────────────────────────────────────────
-const SESSION_ID  = uuidv4();
-const WS_URL      = `${WS_BASE}/ws/analyze`;
-const TIMEOUT_MS  = 180_000;
+const SESSION_ID = crypto.randomUUID();
+const WS_URL     = `${WS_BASE}/ws/analyze`;
+const TIMEOUT_MS = 180_000;
 
 const INITIAL_STATUS = {
   scanner: 'waiting', architecture: 'waiting',
   api_docs: 'waiting', security: 'waiting', cve_scanner: 'waiting', chat: 'waiting',
 };
 
+const THEMES = [
+  { id: 'obsidian', name: 'Obsidian', sub: 'Default dark', colors: ['#09090b', '#7c6fe0'] },
+  { id: 'daylight', name: 'Daylight', sub: 'Light mode',   colors: ['#fafafa', '#6366f1'] },
+  { id: 'amber',    name: 'Amber',    sub: 'Warm paper',   colors: ['#1a1612', '#f59e0b'] },
+  { id: 'verdant',  name: 'Verdant',  sub: 'Forest dark',  colors: ['#0a100d', '#10b981'] },
+  { id: 'glacier',  name: 'Glacier',  sub: 'Cool blue',    colors: ['#0b1220', '#38bdf8'] },
+  { id: 'aurora',   name: 'Aurora',   sub: 'Glass violet', colors: ['#0a0a18', '#a78bfa'] },
+  { id: 'mist',     name: 'Mist',     sub: 'Light glass',  colors: ['#eef1f8', '#6366f1'] },
+];
 
-// ── Spinner ────────────────────────────────────────────────────────────────────
-function Spinner() {
+function ThemeSwitcher({ theme, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+  const current = THEMES.find(t => t.id === theme) || THEMES[0];
   return (
-    <span style={{ display: 'inline-block', width: 14, height: 14 }}>
-      <svg viewBox="0 0 24 24" fill="none" style={{ animation: 'spin 0.8s linear infinite', width: '100%', height: '100%' }}>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeLinecap="round"
-          strokeDasharray="40" strokeDashoffset="15" />
-      </svg>
-    </span>
+    <div className="theme-switcher" ref={ref}>
+      <button className="theme-btn" onClick={() => setOpen(o => !o)} title="Change theme">
+        <span className="swatch" style={{ background: `linear-gradient(135deg, ${current.colors[0]} 50%, ${current.colors[1]} 50%)` }} />
+        {current.name}
+        <ChevronDown size={11} style={{ opacity: 0.6 }} />
+      </button>
+      {open && (
+        <div className="theme-pop">
+          {THEMES.map(t => (
+            <div key={t.id} className={`theme-opt${t.id === theme ? ' active' : ''}`}
+              onClick={() => { onChange(t.id); setOpen(false); }}>
+              <div className="theme-opt-swatch">
+                <span style={{ background: t.colors[0] }} />
+                <span style={{ background: t.colors[1] }} />
+              </div>
+              <div>
+                <div className="theme-opt-name">{t.name}</div>
+                <div className="theme-opt-sub">{t.sub}</div>
+              </div>
+              {t.id === theme && <Check size={13} className="theme-opt-check" />}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
-// ── App ────────────────────────────────────────────────────────────────────────
 export default function App() {
-  // ── State ──────────────────────────────────────────────────────────────────
+  // ── Theme & density ──────────────────────────────────────────────────────────
+  const [theme, setTheme] = useState(() => localStorage.getItem('gm-theme') || 'obsidian');
+  const [density, setDensity] = useState(() => localStorage.getItem('gm-density') || 'comfortable');
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'obsidian') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', theme);
+    localStorage.setItem('gm-theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (density === 'comfortable') root.removeAttribute('data-density');
+    else root.setAttribute('data-density', density);
+    localStorage.setItem('gm-density', density);
+  }, [density]);
+
+  // ── Core state ───────────────────────────────────────────────────────────────
   const [githubUser,    setGithubUser]    = useState('');
   const [repos,         setRepos]         = useState([]);
   const [reposLoading,  setReposLoading]  = useState(false);
   const [reposError,    setReposError]    = useState(null);
   const [selectedRepoUrl, setSelectedRepoUrl] = useState(null);
-  const [activeTab,     setActiveTab]     = useState('diagram');
+  const [activeTab,     setActiveTab]     = useState('summary');
   const [agentStatus,   setAgentStatus]   = useState(INITIAL_STATUS);
   const [diagram,       setDiagram]       = useState(null);
   const [apiDocs,       setApiDocs]       = useState([]);
@@ -63,22 +124,73 @@ export default function App() {
   const [repoName,      setRepoName]      = useState('');
   const [crisisFinding, setCrisisFinding] = useState(null);
   const [cveFindings,   setCveFindings]   = useState([]);
-  const [shareCopied,   setShareCopied]   = useState(false);
-  const [fixLoading,    setFixLoading]    = useState(null);  // finding.id while loading
+  const [fixLoading,    setFixLoading]    = useState(null);
   const [fixResult,     setFixResult]     = useState(null);
   const [repoHistory,   setRepoHistory]   = useState(() => {
     try { return JSON.parse(localStorage.getItem('gitmind_history') || '[]'); }
     catch { return []; }
   });
 
-  // ── Refs ───────────────────────────────────────────────────────────────────
+  // ── UI state ─────────────────────────────────────────────────────────────────
+  const [showOnboarding, setShowOnboarding] = useState(true);
+  const [showKbHelp,     setShowKbHelp]     = useState(false);
+  const [showPalette,    setShowPalette]    = useState(false);
+  const [filePreview,    setFilePreview]    = useState(null); // { path, line }
+  const [toasts,         setToasts]         = useState([]);
+  const [recents,        setRecents]        = useState(() => {
+    try { return JSON.parse(localStorage.getItem('gm-recents') || '[]'); }
+    catch { return []; }
+  });
+  const [shareCopied,   setShareCopied]   = useState(false);
+  const [prAutoUrl,     setPrAutoUrl]     = useState(null);
+  const [loadedUsers,   setLoadedUsers]   = useState(() => {
+    try { return JSON.parse(localStorage.getItem('gm-users') || '[]'); }
+    catch { return []; }
+  });
+
+  // ── Refs ──────────────────────────────────────────────────────────────────────
   const wsRef         = useRef(null);
   const timerRef      = useRef(null);
   const timeoutRef    = useRef(null);
   const startRef      = useRef(null);
-  const analyzingRef  = useRef(false); // shadow for ws.onclose closure
+  const analyzingRef  = useRef(false);
+  const usernameRef   = useRef(null);
+  const toastTimers   = useRef({});
 
-  // ── Cleanup ────────────────────────────────────────────────────────────────
+  // ── Toast helpers ─────────────────────────────────────────────────────────────
+  const addToast = useCallback((toast) => {
+    setToasts(arr => {
+      const key = `${toast.kind || 'info'}::${toast.title}`;
+      const existing = arr.find(x => x.key === key);
+      if (existing) {
+        return arr.map(x => x.id === existing.id ? { ...x, count: (x.count || 1) + 1 } : x);
+      }
+      const id = Date.now() + Math.random();
+      const newToast = { ...toast, id, key };
+      toastTimers.current[id] = setTimeout(() => {
+        setToasts(a => a.filter(t => t.id !== id));
+        delete toastTimers.current[id];
+      }, toast.duration || 4000);
+      return [...arr, newToast];
+    });
+  }, []);
+
+  const dismissToast = useCallback((id) => {
+    clearTimeout(toastTimers.current[id]);
+    delete toastTimers.current[id];
+    setToasts(arr => arr.filter(t => t.id !== id));
+  }, []);
+
+  // ── Recent commands ────────────────────────────────────────────────────────────
+  const addRecent = useCallback((cmd) => {
+    setRecents(prev => {
+      const next = [cmd, ...prev.filter(r => r.id !== cmd.id)].slice(0, 5);
+      try { localStorage.setItem('gm-recents', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, []);
+
+  // ── Cleanup ───────────────────────────────────────────────────────────────────
   const cleanup = useCallback(() => {
     wsRef.current?.close();
     wsRef.current = null;
@@ -91,7 +203,7 @@ export default function App() {
 
   useEffect(() => () => cleanup(), [cleanup]);
 
-  // Load shared analysis from ?share=SESSION_ID URL param
+  // ── Load shared analysis ───────────────────────────────────────────────────────
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const shareId = params.get('share');
@@ -103,22 +215,40 @@ export default function App() {
       if (data.cve_findings)         setCveFindings(data.cve_findings);
       if (data.repo_name)            setRepoName(data.repo_name);
       setAnalyzed(true);
+      setShowOnboarding(false);
       setActiveTab('summary');
-    }).catch(() => {/* shared link expired or not found — silent */});
+    }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Request notification permission once on first visit
+  // ── Notification permission ───────────────────────────────────────────────────
   useEffect(() => {
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
   }, []);
 
-  // On analysis complete: fire browser notification + save to history
+  // ── Global paste → PR auto-load ──────────────────────────────────────────────
+  useEffect(() => {
+    const onPaste = (e) => {
+      const text = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+      const prMatch = text.match(/https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+/);
+      if (prMatch) {
+        setPrAutoUrl(prMatch[0]);
+        setActiveTab('pr');
+        setShowOnboarding(false);
+        addToast({ kind: 'info', title: 'PR URL detected', sub: 'Opened PR Review tab' });
+      }
+    };
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  }, [addToast]);
+
+  // ── Analysis complete side-effects ────────────────────────────────────────────
   useEffect(() => {
     if (!analyzed) return;
+    addToast({ kind: 'success', title: 'Analysis complete', sub: `${repoName} · ${elapsedSec}s` });
     if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification('GitMind', { body: `${repoName} analysis complete`, icon: '/logo.jpeg' });
+      new Notification('GitMind', { body: `${repoName} analysis complete` });
     }
     if (!selectedRepoUrl || !repoName) return;
     const entry = { url: selectedRepoUrl, name: repoName, ts: Date.now() };
@@ -129,33 +259,70 @@ export default function App() {
     });
   }, [analyzed]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Load repos ─────────────────────────────────────────────────────────────
-  const handleLoadRepos = useCallback(async () => {
-    const user = githubUser.trim();
-    if (!user) { setReposError('Enter a GitHub username.'); return; }
+  // ── Global keyboard shortcuts ─────────────────────────────────────────────────
+  useEffect(() => {
+    const isMac = /Mac/.test(navigator.platform);
+    const onKey = (e) => {
+      const mod = isMac ? e.metaKey : e.ctrlKey;
+      if (showPalette) return; // palette handles its own keys
+
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey && !['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) {
+        e.preventDefault(); setShowKbHelp(h => !h);
+      }
+      if (mod && e.key === 'k') { e.preventDefault(); setShowPalette(true); }
+      if (e.key === 'Escape') {
+        setShowKbHelp(false);
+        setFilePreview(null);
+        setGlobalError(null);
+      }
+      if (mod && e.key === '1') { e.preventDefault(); setActiveTab('summary'); }
+      if (mod && e.key === '2') { e.preventDefault(); setActiveTab('diagram'); }
+      if (mod && e.key === '3') { e.preventDefault(); setActiveTab('docs'); }
+      if (mod && e.key === '4') { e.preventDefault(); setActiveTab('security'); }
+      if (mod && e.key === '5') { e.preventDefault(); setActiveTab('cve'); }
+      if (mod && e.key === '6') { e.preventDefault(); setActiveTab('pr'); }
+      if (mod && e.key === '7') { e.preventDefault(); setActiveTab('chat'); }
+      if (mod && e.key === 'r' && analyzed) { e.preventDefault(); handleAnalyze(selectedRepoUrl); }
+      if (e.key === '/' && !['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) {
+        e.preventDefault(); usernameRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showPalette, analyzed, selectedRepoUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Load repos ────────────────────────────────────────────────────────────────
+  const handleLoadRepos = useCallback(async (user) => {
+    const u = (user || githubUser).trim();
+    if (!u) { setReposError('Enter a GitHub username.'); return; }
     setReposError(null);
     setReposLoading(true);
     setRepos([]);
+    setShowOnboarding(false);
+    addRecent({ id: `user:${u}`, label: u, sub: 'GitHub user', icon: 'user' });
     try {
-      const list = await fetchRepos(user);
+      const list = await fetchRepos(u);
       setRepos(list);
-      if (list.length === 0) setReposError('No public repositories found for this user.');
+      if (list.length === 0) setReposError('No public repositories found.');
+      else {
+        addToast({ kind: 'info', title: `Loaded ${list.length} repos`, sub: u });
+        setLoadedUsers(prev => {
+          const next = [u, ...prev.filter(x => x !== u)].slice(0, 6);
+          try { localStorage.setItem('gm-users', JSON.stringify(next)); } catch {}
+          return next;
+        });
+      }
     } catch (err) {
       setReposError(err.message);
+      addToast({ kind: 'danger', title: 'Failed to load repos', sub: err.message });
     } finally {
       setReposLoading(false);
     }
-  }, [githubUser]);
+  }, [githubUser, addToast, addRecent]);
 
-  // ── Select + analyze ───────────────────────────────────────────────────────
-  const handleSelectRepo = useCallback((url) => {
-    setSelectedRepoUrl(url);
-    handleAnalyze(url);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Analyze ────────────────────────────────────────────────────────────────
+  // ── Analyze ───────────────────────────────────────────────────────────────────
   const handleAnalyze = useCallback((url) => {
-    // reset everything
+    if (!url) return;
     cleanup();
     setGlobalError(null);
     setAgentWarnings([]);
@@ -171,455 +338,408 @@ export default function App() {
     setRepoName(url.split('/').slice(-1)[0] || 'repository');
     setIsAnalyzing(true);
     analyzingRef.current = true;
+    setShowOnboarding(false);
+    setActiveTab('summary');
 
-    // elapsed timer
     startRef.current = Date.now();
     timerRef.current = setInterval(() => {
       setElapsedSec(Math.floor((Date.now() - startRef.current) / 1000));
     }, 1000);
 
-    // open WebSocket
     let ws;
-    try {
-      ws = new WebSocket(WS_URL);
-    } catch {
+    try { ws = new WebSocket(WS_URL); }
+    catch {
       setGlobalError('WebSocket is not supported or the backend URL is misconfigured.');
-      setIsAnalyzing(false);
-      cleanup();
-      return;
+      setIsAnalyzing(false); cleanup(); return;
     }
-
     wsRef.current = ws;
 
     ws.onopen = () => {
       ws.send(JSON.stringify({ repo_url: url, session_id: SESSION_ID }));
-
-      // analysis timeout guard
       timeoutRef.current = setTimeout(() => {
-        setGlobalError('Analysis timed out after 3 minutes. The repository may be too large or the backend stalled.');
-        setIsAnalyzing(false);
-        analyzingRef.current = false;
-        clearInterval(timerRef.current);
-        ws.close();
+        setGlobalError('Analysis timed out after 3 minutes.');
+        setIsAnalyzing(false); analyzingRef.current = false;
+        clearInterval(timerRef.current); ws.close();
       }, TIMEOUT_MS);
     };
 
     ws.onmessage = (event) => {
       let data;
       try { data = JSON.parse(event.data); }
-      catch { console.warn('[WS] Non-JSON message received:', event.data); return; }
+      catch { return; }
 
-      // Handle backend event-style messages: {type:"event", agent:"scanner", message:"..."}
-      if (data.type === 'event' && data.agent) {
-        const agentKey = data.agent === 'api_doc' ? 'api_docs' : data.agent;
-        setAgentStatus(prev => ({ ...prev, [agentKey]: 'done' }));
-      }
-      if (data.type === 'status') {
-        setAgentStatus(prev => ({ ...prev, scanner: 'running' }));
-      }
-
-      // Handle both legacy agent_status dict and new type-based protocol
       if (data.agent_status)         setAgentStatus(prev => ({ ...prev, ...data.agent_status }));
       if (data.architecture_diagram) setDiagram(data.architecture_diagram);
       if (data.api_docs?.length)     setApiDocs(data.api_docs);
-      if (data.api_endpoints?.length) setApiDocs(data.api_endpoints);
       if (data.security_findings)    setFindings(data.security_findings);
       if (data.cve_findings)         setCveFindings(data.cve_findings);
-      if (data.repo_name)            setRepoName(data.repo_name);
       if (data.agent_error) {
         const ev = data.agent_error;
         setAgentWarnings(prev => [...prev, `${ev.agent} agent failed: ${ev.detail || 'check backend logs'}`]);
       }
 
-      // done: true (legacy) OR type:"result" (new backend protocol)
-      if (data.done || data.type === 'result') {
-        if (data.type === 'result') {
-          if (data.architecture_diagram) setDiagram(data.architecture_diagram);
-          if (data.api_endpoints?.length) setApiDocs(data.api_endpoints);
-          if (data.security_findings)    setFindings(data.security_findings);
-          if (data.cve_findings)         setCveFindings(data.cve_findings);
-        }
-        clearInterval(timerRef.current);
-        clearTimeout(timeoutRef.current);
-        setIsAnalyzing(false);
-        setAnalyzed(true);
-        analyzingRef.current = false;
+      if (data.done) {
+        clearInterval(timerRef.current); clearTimeout(timeoutRef.current);
+        setIsAnalyzing(false); setAnalyzed(true); analyzingRef.current = false;
         ws.close();
       }
-
-      if (data.error || data.type === 'error') {
-        setGlobalError(`Backend error: ${data.error || data.message}`);
-        clearInterval(timerRef.current);
-        setIsAnalyzing(false);
-        analyzingRef.current = false;
-        ws.close();
+      if (data.error) {
+        setGlobalError(`Backend error: ${data.error}`);
+        clearInterval(timerRef.current); setIsAnalyzing(false);
+        analyzingRef.current = false; ws.close();
       }
     };
 
     ws.onerror = () => {
       if (!analyzingRef.current) return;
-      clearInterval(timerRef.current);
-      setIsAnalyzing(false);
-      analyzingRef.current = false;
-      setGlobalError(
-        'Cannot reach the backend on port 8002. Start it with:\n  cd backend && uvicorn main:app --port 8002 --reload'
-      );
+      clearInterval(timerRef.current); setIsAnalyzing(false); analyzingRef.current = false;
+      setGlobalError('Cannot reach the backend on port 8002. Start it with:\n  cd backend && uvicorn main:app --port 8002 --reload');
     };
 
     ws.onclose = (evt) => {
-      // Ignore intentional closes; surface unexpected ones
       if (!evt.wasClean && analyzingRef.current) {
-        clearInterval(timerRef.current);
-        setIsAnalyzing(false);
-        analyzingRef.current = false;
+        clearInterval(timerRef.current); setIsAnalyzing(false); analyzingRef.current = false;
         setGlobalError('Connection dropped unexpectedly. Check the backend terminal for errors.');
       }
     };
   }, [cleanup]);
 
-  // ── Export report ──────────────────────────────────────────────────────────
+  // ── Select + analyze ──────────────────────────────────────────────────────────
+  const handleSelectRepo = useCallback((url) => {
+    setSelectedRepoUrl(url);
+    handleAnalyze(url);
+  }, [handleAnalyze]);
+
+  // ── Export ────────────────────────────────────────────────────────────────────
   const handleExport = useCallback(() => {
     if (!analyzed) return;
     const lines = [
       `# GitMind Analysis: ${repoName}`,
-      `> Generated ${new Date().toLocaleString()}`,
-      '',
-      '## Architecture',
-      '```mermaid',
-      diagram || '(no diagram)',
-      '```',
-      '',
-      '## API Endpoints',
-      '',
-      ...(apiDocs.length
-        ? apiDocs.map(e => `- **${e.method || ''}** \`${e.route || ''}\` — ${e.description || ''}`)
-        : ['No endpoints detected.']),
-      '',
-      '## Security Findings',
-      '',
-      ...(findings.length
-        ? findings.map(f =>
-            `### [${(f.severity || 'info').toUpperCase()}] ${f.rule || f.check || 'Finding'}\n${f.description || f.message || ''}\n${f.file ? `File: ${f.file}${f.line ? `:${f.line}` : ''}` : ''}`
-          )
-        : ['No findings.']),
-      '',
-      '---',
-      `_Scanned in ${elapsedSec}s by GitMind_`,
+      `> Generated ${new Date().toLocaleString()}`, '',
+      '## Architecture', '```mermaid', diagram || '(no diagram)', '```', '',
+      '## API Endpoints', '',
+      ...(apiDocs.length ? apiDocs.map(e => `- **${e.method||''}** \`${e.route||''}\` — ${e.description||''}`) : ['No endpoints detected.']),
+      '', '## Security Findings', '',
+      ...(findings.length ? findings.map(f => `### [${(f.severity||'info').toUpperCase()}] ${f.rule||f.check||'Finding'}\n${f.description||f.message||''}\n${f.file ? `File: ${f.file}${f.line ? `:${f.line}` : ''}` : ''}`) : ['No findings.']),
+      '', '---', `_Scanned in ${elapsedSec}s by GitMind_`,
     ];
     const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `gitmind-${repoName}-${Date.now()}.md`;
-    a.click();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `gitmind-${repoName}-${Date.now()}.md`; a.click();
     URL.revokeObjectURL(url);
-  }, [analyzed, repoName, diagram, apiDocs, findings, elapsedSec]);
+    addToast({ kind: 'success', title: 'Report exported', sub: `${repoName}.md` });
+    addRecent({ id: 'action:export', label: 'Export report', sub: 'Action', icon: 'download' });
+  }, [analyzed, repoName, diagram, apiDocs, findings, elapsedSec, addToast, addRecent]);
 
-  // ── Generate fix ───────────────────────────────────────────────────────────
+  // ── Generate fix ──────────────────────────────────────────────────────────────
   const handleFix = useCallback(async (finding) => {
     setFixLoading(finding.id ?? finding.rule);
     setFixResult(null);
     try {
       const data = await generateFix(SESSION_ID, finding);
-      // Tag the result so SecurityTab can match it to the right card
       setFixResult({ ...data, finding_id: finding.id ?? finding.rule });
+      addToast({ kind: 'success', title: 'Fix generated', sub: finding.rule || finding.id });
     } catch (err) {
-      setAgentWarnings(prev => [...prev, `Fix generation failed: ${err.message}`]);
+      addToast({ kind: 'danger', title: 'Fix generation failed', sub: err.message });
     } finally {
       setFixLoading(null);
     }
-  }, []);
+  }, [addToast]);
 
-  // ── Share analysis ─────────────────────────────────────────────────────────
+  // ── Share ─────────────────────────────────────────────────────────────────────
   const handleShare = useCallback(() => {
     const url = `${window.location.origin}${window.location.pathname}?share=${SESSION_ID}`;
     navigator.clipboard.writeText(url).then(() => {
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2500);
-    }).catch(() => {
-      // clipboard denied — show URL in prompt
-      window.prompt('Copy this link:', url);
-    });
-  }, []);
+      addToast({ kind: 'success', title: 'Link copied', sub: 'Share URL in clipboard' });
+      addRecent({ id: 'action:share', label: 'Share analysis', sub: 'Action', icon: 'share' });
+    }).catch(() => { window.prompt('Copy this link:', url); });
+  }, [addToast, addRecent]);
 
-  // ── Tab meta ───────────────────────────────────────────────────────────────
-  const selectedRepo  = repos.find(r => r.url === selectedRepoUrl) ?? null;
-  const hasCritical   = findings.some(f => f.severity === 'critical');
+  const clearPrAutoUrl = useCallback(() => setPrAutoUrl(null), []);
+
+  // ── Palette action handler ─────────────────────────────────────────────────────
+  const handlePaletteAction = useCallback((action) => {
+    setShowPalette(false);
+    if (action.tab)     { setActiveTab(action.tab); addRecent(action); }
+    if (action.density) { setDensity(action.density); addRecent(action); }
+    if (action.theme)   { setTheme(action.theme); addRecent(action); }
+    if (action.id === 'action:share')  handleShare();
+    if (action.id === 'action:export') handleExport();
+    if (action.repo)    { handleSelectRepo(action.repo.url); addRecent(action); }
+    if (action.id === 'action:kbhelp') setShowKbHelp(true);
+  }, [addRecent, handleShare, handleExport, handleSelectRepo]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Tab metadata ──────────────────────────────────────────────────────────────
+  const hasCritical    = findings.some(f => f.severity === 'critical');
   const hasCveCritical = cveFindings.some(f => f.worst_severity === 'critical');
+  const selectedRepo   = repos.find(r => r.url === selectedRepoUrl) ?? null;
+
   const tabs = [
-    { key: 'summary',  icon: '📊', label: 'Summary' },
-    { key: 'diagram',  icon: '🏗',  label: 'Architecture' },
-    { key: 'docs',     icon: '📋',  label: 'API Docs',   count: apiDocs.length    || null },
-    { key: 'security', icon: '🛡',  label: 'Security',   count: findings.length   || null, alert: hasCritical },
-    { key: 'cve',      icon: '🔒',  label: 'CVE Scanner', count: cveFindings.length || null, alert: hasCveCritical },
-    { key: 'pr',       icon: '🔍',  label: 'PR Review' },
-    { key: 'chat',     icon: '💬',  label: 'Chat' },
+    { key: 'summary',  Icon: BarChart3,      label: 'Summary' },
+    { key: 'diagram',  Icon: GitBranch,       label: 'Architecture' },
+    { key: 'docs',     Icon: FileCode2,       label: 'API Docs',    count: apiDocs.length    || null },
+    { key: 'security', Icon: ShieldAlert,     label: 'Security',    count: findings.length   || null, alert: hasCritical },
+    { key: 'cve',      Icon: Lock,            label: 'CVE',         count: cveFindings.length|| null, alert: hasCveCritical },
+    { key: 'pr',       Icon: GitPullRequest,  label: 'PR Review' },
+    { key: 'chat',     Icon: MessageSquare,   label: 'Chat' },
   ];
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Status text ───────────────────────────────────────────────────────────────
+  const statusClass = analyzed ? 'done' : isAnalyzing ? 'running' : '';
+  const statusText  = analyzed
+    ? `Done · ${elapsedSec}s`
+    : isAnalyzing
+    ? `Analyzing · ${elapsedSec}s`
+    : 'Ready';
+
+  const isMac = /Mac/.test(navigator.platform);
+  const mod = isMac ? '⌘' : 'Ctrl';
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <header className="header-glow" style={{
-        position: 'relative', flexShrink: 0,
-        display: 'flex', alignItems: 'center', gap: 16,
-        padding: '0 28px', height: 64,
-        background: 'rgba(8,11,20,0.85)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #1e2d4a',
-        zIndex: 10,
-      }}>
-        {/* Logo */}
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <img
-            src="/logo.jpeg"
-            alt="GitMind"
-            style={{
-              width: 32, height: 32, borderRadius: 8,
-              objectFit: 'cover',
-              boxShadow: '0 4px 14px rgba(99,102,241,0.4)',
-            }}
-          />
-          <span style={{
-            fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em',
-            background: 'linear-gradient(135deg,#818cf8,#c084fc)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>GitMind</span>
-        </div>
-
+    <div className="app">
+      {/* ── Command Bar ──────────────────────────────────────────────────────── */}
+      <div className="command-bar">
         {/* Username input */}
-        <div style={{ position: 'relative', flex: 1, zIndex: 1, maxWidth: 340 }}
-             className={isAnalyzing ? 'scan-sweep' : ''}>
+        <div className="cb-input">
+          <Search size={14} />
           <input
-            className="gm-input"
-            placeholder="GitHub username — e.g. torvalds"
+            ref={usernameRef}
+            placeholder="github username"
             value={githubUser}
             onChange={e => { setGithubUser(e.target.value); setReposError(null); }}
             onKeyDown={e => { if (e.key === 'Enter' && !reposLoading && !isAnalyzing) handleLoadRepos(); }}
             disabled={isAnalyzing}
-            aria-label="GitHub username"
           />
         </div>
 
-        {/* Load repos button */}
+        {/* Load button */}
         <button
-          className="gm-btn-primary"
-          style={{ position: 'relative', zIndex: 1 }}
-          onClick={handleLoadRepos}
-          disabled={reposLoading || isAnalyzing}
-          aria-label={reposLoading ? 'Loading repositories…' : 'Load repositories'}
+          className="btn btn-ghost"
+          onClick={() => handleLoadRepos()}
+          disabled={reposLoading || isAnalyzing || !githubUser.trim()}
         >
-          {reposLoading ? <><Spinner /> Loading…</> : isAnalyzing ? <><Spinner /> Analyzing…</> : '📂 Load Repos'}
+          <FolderOpen size={13} />
+          {reposLoading ? 'Loading…' : 'Load Repos'}
         </button>
 
-        {/* Backend status dot */}
-        <div title={analyzed ? 'Analysis complete' : isAnalyzing ? 'Analyzing…' : 'Ready'} style={{
-          width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-          background: analyzed ? 'var(--gm-success)' : isAnalyzing ? 'var(--gm-warning)' : '#475569',
-          boxShadow: analyzed ? '0 0 8px var(--gm-success)' : isAnalyzing ? '0 0 8px var(--gm-warning)' : 'none',
-          transition: 'all 0.3s',
-        }} />
-      </header>
+        {/* Command palette button */}
+        <button className="btn-icon" title={`${mod}+K`} onClick={() => setShowPalette(true)}>
+          <Command size={14} />
+        </button>
 
-      {/* ── Global error banner ──────────────────────────────────────────────── */}
-      {globalError && (
-        <div role="alert" style={{
-          flexShrink: 0, display: 'flex', alignItems: 'flex-start', gap: 12,
-          padding: '12px 28px',
-          background: 'rgba(239,68,68,0.08)',
-          borderBottom: '1px solid rgba(239,68,68,0.25)',
-        }}>
-          <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>🔴</span>
-          <pre style={{
-            margin: 0, fontSize: 13, color: '#fca5a5',
-            fontFamily: 'JetBrains Mono, monospace', whiteSpace: 'pre-wrap',
-          }}>{globalError}</pre>
-          <button onClick={() => setGlobalError(null)} style={{
-            marginLeft: 'auto', background: 'none', border: 'none',
-            color: '#94a3b8', cursor: 'pointer', fontSize: 18, flexShrink: 0,
-          }} aria-label="Dismiss error">×</button>
-        </div>
-      )}
+        <span style={{ flex: 1 }} />
 
-      {/* ── Agent warning banners (non-fatal — analysis continues) ──────────── */}
-      {agentWarnings.map((w, i) => (
-        <div key={i} role="status" style={{
-          flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12,
-          padding: '8px 28px',
-          background: 'rgba(245,158,11,0.07)',
-          borderBottom: '1px solid rgba(245,158,11,0.2)',
-        }}>
-          <span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span>
-          <span style={{ fontSize: 12, color: '#fcd34d', flex: 1 }}>{w}</span>
-          <button onClick={() => setAgentWarnings(prev => prev.filter((_, j) => j !== i))} style={{
-            background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 16, flexShrink: 0,
-          }} aria-label="Dismiss warning">×</button>
-        </div>
-      ))}
+        {/* Status */}
+        <span className={`cb-status ${statusClass}`}>{statusText}</span>
 
-      {/* ── Body ────────────────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* Share */}
+        <button
+          className="btn-icon"
+          onClick={handleShare}
+          disabled={!analyzed}
+          title="Share analysis"
+        >
+          {shareCopied ? <Check size={14} style={{ color: 'var(--success)' }} /> : <Share2 size={14} />}
+        </button>
 
-        {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-        <aside style={{
-          width: 300, flexShrink: 0,
-          background: 'rgba(15,22,41,0.6)',
-          borderRight: '1px solid var(--gm-border)',
-          display: 'flex', flexDirection: 'column',
-          overflow: 'hidden',
-        }}>
-          {/* Repo list — scrollable top section */}
-          <RepoList
-            repos={repos}
-            onSelect={handleSelectRepo}
-            selectedUrl={selectedRepoUrl}
-            loading={reposLoading}
-            error={reposError}
-            history={repoHistory}
-            onHistorySelect={url => { setSelectedRepoUrl(url); handleAnalyze(url); }}
-          />
+        {/* Export */}
+        <button
+          className="btn-icon"
+          onClick={handleExport}
+          disabled={!analyzed}
+          title="Export report"
+        >
+          <Download size={14} />
+        </button>
 
-          {/* Agent progress — fixed-height bottom section */}
-          <div style={{ height: 310, flexShrink: 0, borderTop: '1px solid var(--gm-border)' }}>
-            <AgentProgress
-              status={agentStatus}
-              isAnalyzing={isAnalyzing}
-              analyzed={analyzed}
-              elapsedSec={elapsedSec}
-              repoName={repoName}
-            />
-          </div>
-        </aside>
+        {/* Theme switcher */}
+        <ThemeSwitcher theme={theme} onChange={setTheme} />
 
-        {/* ── Main panel ──────────────────────────────────────────────────── */}
-        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Wordmark */}
+        <span className="cb-wordmark">GitMind</span>
+      </div>
 
-          {/* Tab bar */}
-          <nav style={{
-            flexShrink: 0, display: 'flex', alignItems: 'center',
-            padding: '0 24px',
-            borderBottom: '1px solid var(--gm-border)',
-            background: 'rgba(15,22,41,0.4)',
-          }} role="tablist">
-            {tabs.map(tab => {
-              const active = activeTab === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setActiveTab(tab.key)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '14px 16px',
-                    background: 'none', border: 'none',
-                    borderBottom: active ? '2px solid var(--gm-primary)' : '2px solid transparent',
-                    color: active ? 'var(--gm-primary)' : 'var(--gm-text-2)',
-                    fontSize: 13, fontWeight: active ? 600 : 400,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                    whiteSpace: 'nowrap',
-                    marginBottom: -1,
-                  }}
-                  onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'var(--gm-text-1)'; }}
-                  onMouseLeave={e => { if (!active) e.currentTarget.style.color = 'var(--gm-text-2)'; }}
-                >
-                  <span>{tab.icon}</span>
-                  <span>{tab.label}</span>
-                  {tab.count > 0 && (
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      minWidth: 18, height: 18, padding: '0 5px',
-                      borderRadius: 999, fontSize: 10, fontWeight: 700,
-                      background: tab.alert ? 'rgba(239,68,68,0.2)' : 'var(--gm-primary-20)',
-                      color: tab.alert ? '#fca5a5' : 'var(--gm-primary)',
-                    }}>{tab.count}</span>
-                  )}
-                </button>
-              );
-            })}
+      {/* ── Body ─────────────────────────────────────────────────────────────── */}
+      <div className="body" style={{ gridTemplateColumns: `auto 1fr` }}>
 
-            {/* Right-aligned actions */}
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-              {/* Share button */}
+        {/* Sidebar */}
+        <Sidebar
+          repos={repos}
+          onSelect={handleSelectRepo}
+          selectedUrl={selectedRepoUrl}
+          loading={reposLoading}
+          error={reposError}
+          history={repoHistory}
+          onHistorySelect={url => { setSelectedRepoUrl(url); handleAnalyze(url); }}
+          agentStatus={agentStatus}
+          isAnalyzing={isAnalyzing}
+          analyzed={analyzed}
+          elapsedSec={elapsedSec}
+          repoName={repoName}
+          onLoadUser={handleLoadRepos}
+          currentUser={githubUser || loadedUsers[0] || ''}
+          loadedUsers={loadedUsers}
+        />
+
+        {/* Main panel */}
+        <div className="main">
+
+          {/* Tab rail */}
+          <div className="tab-rail" role="tablist">
+            {tabs.map(({ key, Icon, label, count, alert }) => (
               <button
-                onClick={handleShare}
-                disabled={!analyzed}
-                title="Copy shareable link to clipboard"
-                style={{
-                  padding: '6px 14px', borderRadius: 8,
-                  background: shareCopied ? 'rgba(16,185,129,0.1)' : analyzed ? 'rgba(99,102,241,0.07)' : 'transparent',
-                  border: `1px solid ${shareCopied ? 'rgba(16,185,129,0.3)' : analyzed ? 'rgba(99,102,241,0.2)' : 'transparent'}`,
-                  color: shareCopied ? '#6ee7b7' : analyzed ? 'var(--gm-primary)' : '#475569',
-                  fontSize: 12, fontWeight: 500, cursor: analyzed ? 'pointer' : 'default',
-                  transition: 'all 0.2s', whiteSpace: 'nowrap',
-                }}
+                key={key}
+                className={`tab${activeTab === key ? ' active' : ''}`}
+                role="tab"
+                aria-selected={activeTab === key}
+                onClick={() => setActiveTab(key)}
               >
-                {shareCopied ? '✓ Copied!' : '🔗 Share'}
+                <Icon size={13} strokeWidth={1.5} />
+                {label}
+                {count > 0 && (
+                  <span className={`tab-badge${alert ? ' danger' : ''}`}>{count}</span>
+                )}
               </button>
-
-              {/* Export button */}
-              <button
-                onClick={handleExport}
-                disabled={!analyzed}
-                title="Download analysis as Markdown"
-                style={{
-                  padding: '6px 14px', borderRadius: 8,
-                  background: analyzed ? 'rgba(99,102,241,0.1)' : 'transparent',
-                  border: `1px solid ${analyzed ? 'rgba(99,102,241,0.3)' : 'transparent'}`,
-                  color: analyzed ? 'var(--gm-primary)' : '#475569',
-                  fontSize: 12, fontWeight: 500, cursor: analyzed ? 'pointer' : 'default',
-                  transition: 'all 0.15s', whiteSpace: 'nowrap',
-                }}
-              >
-                ↓ Export
+            ))}
+            <div className="tab-rail-right">
+              <button className="btn-icon" onClick={handleShare} disabled={!analyzed} title="Share">
+                {shareCopied ? <Check size={13} style={{ color: 'var(--success)' }} /> : <Share2 size={13} />}
+              </button>
+              <button className="btn-icon" onClick={handleExport} disabled={!analyzed} title="Export">
+                <Download size={13} />
               </button>
             </div>
-          </nav>
+          </div>
 
-          {/* Repo stats strip */}
+          {/* Error banners */}
+          {globalError && (
+            <div className="error-banner" role="alert">
+              <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+              <span style={{ flex: 1, whiteSpace: 'pre-wrap' }}>{globalError}</span>
+              <button className="btn-icon" onClick={() => setGlobalError(null)}><X size={12} /></button>
+            </div>
+          )}
+          {agentWarnings.map((w, i) => (
+            <div key={i} className="error-banner" role="status" style={{ borderColor: 'rgba(234,179,8,0.2)', background: 'rgba(234,179,8,0.06)', color: '#fcd34d' }}>
+              <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+              <span style={{ flex: 1 }}>{w}</span>
+              <button className="btn-icon" onClick={() => setAgentWarnings(p => p.filter((_, j) => j !== i))}><X size={12} /></button>
+            </div>
+          ))}
+
+          {/* Repo meta strip */}
           {selectedRepo && analyzed && (
-            <div style={{
-              flexShrink: 0, display: 'flex', alignItems: 'center', gap: 14,
-              padding: '5px 24px', borderBottom: '1px solid var(--gm-border)',
-              background: 'rgba(99,102,241,0.03)', fontSize: 11, color: 'var(--gm-text-3)',
-            }}>
-              <a href={selectedRepo.url} target="_blank" rel="noopener noreferrer"
-                style={{ color: 'var(--gm-primary)', fontWeight: 600, fontSize: 12, textDecoration: 'none' }}>
+            <div className="meta-strip">
+              <a href={selectedRepo.url} target="_blank" rel="noopener noreferrer">
                 {selectedRepo.full_name}
               </a>
+              <span className="meta-sep">·</span>
               {selectedRepo.language && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: LANG_COLOR[selectedRepo.language] || '#64748b' }} />
+                <>
+                  <span className="lang-dot" style={{ background: LANG_COLOR[selectedRepo.language] || '#64748b', width: 8, height: 8 }} />
                   {selectedRepo.language}
-                </span>
+                  <span className="meta-sep">·</span>
+                </>
               )}
-              {selectedRepo.stars > 0 && <span>⭐ {selectedRepo.stars.toLocaleString()}</span>}
-              {selectedRepo.fork && <span style={{ color: '#64748b' }}>fork</span>}
-              <span style={{ marginLeft: 'auto' }}>
-                Updated {new Date(selectedRepo.updated_at).toLocaleDateString()}
-              </span>
+              {selectedRepo.stars > 0 && <><span>★ {selectedRepo.stars.toLocaleString()}</span><span className="meta-sep">·</span></>}
+              {selectedRepo.fork && <><span>fork</span><span className="meta-sep">·</span></>}
+              <span>Updated {new Date(selectedRepo.updated_at).toLocaleDateString()}</span>
             </div>
           )}
 
           {/* Tab content */}
-          <div role="tabpanel" style={{ flex: 1, overflow: 'auto', padding: 24 }}>
-            {activeTab === 'summary'  && <SummaryTab  sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} findings={findings} apiDocs={apiDocs} elapsedSec={elapsedSec} />}
-            {activeTab === 'diagram'  && <DiagramTab  diagram={diagram}   isAnalyzing={isAnalyzing} analyzed={analyzed} />}
-            {activeTab === 'docs'     && <DocsTab     docs={apiDocs}      isAnalyzing={isAnalyzing} analyzed={analyzed} />}
-            {activeTab === 'security' && <SecurityTab findings={findings} isAnalyzing={isAnalyzing} analyzed={analyzed} onCrisis={setCrisisFinding} onFix={handleFix} fixLoading={fixLoading} fixResult={fixResult} />}
-            {activeTab === 'cve'      && <CveTab      findings={cveFindings} isAnalyzing={isAnalyzing} analyzed={analyzed} />}
-            {activeTab === 'pr'       && <PRReviewTab />}
-            {activeTab === 'chat'     && <ChatTab     sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} />}
+          <div className="tab-content" role="tabpanel">
+            {showOnboarding && !repos.length ? (
+              <Onboarding onLoad={handleLoadRepos} onAnalyzeUrl={handleSelectRepo} />
+            ) : (
+              <>
+                {activeTab === 'summary'  && <SummaryTab  sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} findings={findings} apiDocs={apiDocs} elapsedSec={elapsedSec} isAnalyzing={isAnalyzing} />}
+                {activeTab === 'diagram'  && <DiagramTab  diagram={diagram}   isAnalyzing={isAnalyzing} analyzed={analyzed} />}
+                {activeTab === 'docs'     && <DocsTab     docs={apiDocs}      isAnalyzing={isAnalyzing} analyzed={analyzed} onPickFile={setFilePreview} />}
+                {activeTab === 'security' && <SecurityTab findings={findings} isAnalyzing={isAnalyzing} analyzed={analyzed} onCrisis={setCrisisFinding} onFix={handleFix} fixLoading={fixLoading} fixResult={fixResult} onPickFile={setFilePreview} />}
+                {activeTab === 'cve'      && <CveTab      findings={cveFindings} isAnalyzing={isAnalyzing} analyzed={analyzed} />}
+                {activeTab === 'pr'       && <PRReviewTab prAutoUrl={prAutoUrl} onAutoUrlUsed={clearPrAutoUrl} />}
+                {activeTab === 'chat'     && <ChatTab     sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} />}
+              </>
+            )}
           </div>
-        </main>
+        </div>
       </div>
 
-      {/* Crisis Room overlay */}
+      {/* ── Status Bar ───────────────────────────────────────────────────────── */}
+      <div className="status-bar">
+        {selectedRepo && (
+          <>
+            <span className="status-item">
+              <GitBranch size={11} />
+              {selectedRepo.full_name}
+            </span>
+            <span className="status-sep">·</span>
+          </>
+        )}
+        {analyzed && (
+          <>
+            <span className="status-item green">
+              <Check size={11} />
+              {Object.values(agentStatus).filter(s => s === 'done').length}/6 agents
+            </span>
+            {hasCritical && (
+              <><span className="status-sep">·</span>
+              <span className="status-item danger">
+                <AlertTriangle size={11} />
+                {findings.filter(f => f.severity === 'critical').length} critical
+              </span></>
+            )}
+          </>
+        )}
+        {isAnalyzing && (
+          <span className="status-item warn">
+            <span className="spinner" style={{ width: 10, height: 10 }} />
+            Analyzing…
+          </span>
+        )}
+        <span className="status-spacer" />
+        <button
+          className="status-item button"
+          onClick={() => setShowPalette(true)}
+          title={`${mod}+K`}
+        >
+          <span className="status-kbd">
+            <span className="k">{mod}</span>
+            <span className="k">K</span>
+          </span>
+          palette
+        </button>
+        <span className="status-sep">·</span>
+        <button
+          className="status-item button"
+          onClick={() => setShowKbHelp(true)}
+          title="Keyboard shortcuts"
+        >
+          <span className="status-kbd"><span className="k">?</span></span>
+          shortcuts
+        </button>
+      </div>
+
+      {/* ── Overlays ──────────────────────────────────────────────────────────── */}
       {crisisFinding && (
         <CrisisChat finding={crisisFinding} sessionId={SESSION_ID} onClose={() => setCrisisFinding(null)} />
       )}
+      <KeyboardHelp open={showKbHelp} onClose={() => setShowKbHelp(false)} />
+      <FilePreviewDrawer path={filePreview?.path} line={filePreview?.line} repoUrl={selectedRepoUrl} onClose={() => setFilePreview(null)} />
+      <CommandPalette
+        open={showPalette}
+        onClose={() => setShowPalette(false)}
+        onAction={handlePaletteAction}
+        repos={repos}
+        recents={recents}
+        theme={theme}
+        density={density}
+      />
+      <ToastSystem toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }

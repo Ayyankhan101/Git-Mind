@@ -1,14 +1,15 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import mermaid from 'mermaid';
+import { GitBranch, ZoomOut, ZoomIn, Maximize2, AlertTriangle } from 'lucide-react';
 
 mermaid.initialize({
   startOnLoad: false,
   theme: 'dark',
   themeVariables: {
     primaryColor: '#1e2d4a', primaryTextColor: '#f1f5f9',
-    primaryBorderColor: '#6366f1', lineColor: '#475569',
+    primaryBorderColor: '#7c6fe0', lineColor: '#3f3f52',
     secondaryColor: '#161f38', tertiaryColor: '#0f1629',
-    edgeLabelBackground: '#0f1629', titleColor: '#818cf8',
+    edgeLabelBackground: '#0f1629', titleColor: '#a78bfa',
   },
   flowchart: { curve: 'basis', padding: 20 },
   securityLevel: 'loose',
@@ -16,29 +17,11 @@ mermaid.initialize({
 
 let seq = 0;
 
-function Skeleton() {
-  const rows = [[240, 180], [180, 220], [200]];
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center', padding: 24 }}>
-      {rows.map((cols, i) => (
-        <div key={i} style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
-          {cols.map((w, j) => (
-            <React.Fragment key={j}>
-              <div className="skeleton" style={{ width: w, height: 44, borderRadius: 10 }} />
-              {j < cols.length - 1 && <div className="skeleton" style={{ width: 48, height: 2 }} />}
-            </React.Fragment>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-export default function DiagramTab({ diagram, isAnalyzing }) {
-  const ref        = useRef(null);
-  const [scale, setScale]       = useState(1);
+export default function DiagramTab({ diagram, isAnalyzing, analyzed }) {
+  const ref = useRef(null);
+  const [scale, setScale]     = useState(1);
   const [hasError, setHasError] = useState(false);
-  const [ready, setReady]       = useState(false);
+  const [ready, setReady]     = useState(false);
 
   const render = useCallback(async (src) => {
     if (!ref.current) return;
@@ -55,77 +38,77 @@ export default function DiagramTab({ diagram, isAnalyzing }) {
     } catch (err) {
       console.error('[DiagramTab] Mermaid parse error:', err);
       setHasError(true);
-      if (ref.current)
-        ref.current.innerHTML = `<pre style="color:#94a3b8;font-size:11px;padding:16px;white-space:pre-wrap;font-family:'JetBrains Mono',monospace;line-height:1.6">${diagram}</pre>`;
+      if (ref.current) {
+        ref.current.innerHTML = `<pre style="color:var(--text-3);font-size:12px;padding:20px;white-space:pre-wrap;font-family:var(--font-mono);line-height:1.6">${diagram}</pre>`;
+      }
       setReady(true);
     }
   }, []); // eslint-disable-line
 
   useEffect(() => { if (diagram) render(diagram); }, [diagram, render]);
 
-  const btnStyle = {
-    width: 30, height: 30, borderRadius: 7, background: 'var(--gm-surface-2)',
-    border: '1px solid var(--gm-border)', color: 'var(--gm-text-2)', cursor: 'pointer',
-    fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    transition: 'all 0.15s',
-  };
-
   if (!diagram && !isAnalyzing) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: 16 }}>
-        <div style={{ width: 72, height: 72, borderRadius: 18, background: 'var(--gm-surface)', border: '2px dashed var(--gm-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30 }}>🏗</div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--gm-text-2)', marginBottom: 6 }}>No diagram yet</div>
-          <div style={{ fontSize: 13, color: 'var(--gm-text-3)' }}>Analyze a repository to auto-generate the architecture</div>
-        </div>
+      <div className="empty">
+        <GitBranch size={20} className="empty-icon" strokeWidth={1.5} />
+        <div className="empty-title">Architecture not available</div>
+        <div className="empty-sub">Analyze a repository to get started</div>
       </div>
     );
   }
 
   if (isAnalyzing && !diagram) {
     return (
-      <div>
-        <div style={{ fontSize: 13, color: 'var(--gm-primary)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ animation: 'gm-glow-pulse 1.5s ease-in-out infinite', display: 'inline-block' }}>🏗</span>
-          Architecture Agent is mapping the codebase…
+      <div className="diagram-wrap">
+        <div className="diagram-canvas" style={{ flexDirection: 'column', gap: 24 }}>
+          {[0, 1, 2].map(i => (
+            <span key={i} className="sk" style={{ height: 110, width: '92%', maxWidth: 1020, display: 'block' }} />
+          ))}
         </div>
-        <div style={{ background: 'var(--gm-surface)', border: '1px solid var(--gm-border)', borderRadius: 14 }}><Skeleton /></div>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <div style={{ fontSize: 12, color: 'var(--gm-text-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span>🏗 Auto-generated by Architecture Agent</span>
-          {hasError && <span style={{ color: 'var(--gm-warning)' }}>· Parse error — showing raw Mermaid</span>}
-        </div>
-        {ready && !hasError && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <button style={btnStyle} onClick={() => setScale(s => Math.max(s - 0.15, 0.3))} title="Zoom out">−</button>
-            <span style={{ fontSize: 11, color: 'var(--gm-text-3)', width: 38, textAlign: 'center', fontFamily: 'JetBrains Mono,monospace' }}>{Math.round(scale * 100)}%</span>
-            <button style={btnStyle} onClick={() => setScale(s => Math.min(s + 0.15, 3))} title="Zoom in">+</button>
-            <button style={{ ...btnStyle, width: 'auto', padding: '0 10px', fontSize: 11 }} onClick={() => setScale(1)}>⊡ Fit</button>
+    <div className="diagram-wrap">
+      {/* Controls */}
+      {ready && (
+        <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
+          {hasError && (
+            <span style={{ fontSize: 12, color: 'var(--warning)', marginRight: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <AlertTriangle size={12} strokeWidth={1.5} /> Raw Mermaid
+            </span>
+          )}
+          <div className="diagram-controls">
+            <button className="btn-icon" onClick={() => setScale(s => Math.max(s - 0.15, 0.3))} title="Zoom out">
+              <ZoomOut size={13} strokeWidth={1.5} />
+            </button>
+            <span style={{ fontSize: 11, color: 'var(--text-3)', width: 36, textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
+              {Math.round(scale * 100)}%
+            </span>
+            <button className="btn-icon" onClick={() => setScale(s => Math.min(s + 0.15, 3))} title="Zoom in">
+              <ZoomIn size={13} strokeWidth={1.5} />
+            </button>
+            <button className="btn-icon" onClick={() => setScale(1)} title="Reset zoom">
+              <Maximize2 size={13} strokeWidth={1.5} />
+            </button>
           </div>
-        )}
+        </div>
+      )}
+
+      <div className="diagram-canvas">
+        <div style={{ display: 'inline-block', transformOrigin: 'top center', transform: `scale(${scale})`, transition: 'transform 0.2s ease' }}>
+          <div ref={ref} />
+        </div>
       </div>
-      {/* Outer scroll container */}
-      <div style={{ flex: 1, overflow: 'auto', background: 'var(--gm-surface)', border: '1px solid var(--gm-border)', borderRadius: 14, boxShadow: 'inset 0 0 40px rgba(0,0,0,0.2)' }}>
-        {/* Inner wrapper grows to fit scaled content so scroll works */}
-        <div style={{ display: 'inline-block', minWidth: '100%', padding: 24, boxSizing: 'border-box' }}>
-          <div
-            ref={ref}
-            className="diagram-canvas fade-up"
-            style={{
-              transformOrigin: 'top left',
-              transform: `scale(${scale})`,
-              transition: 'transform 0.2s ease',
-              /* push the scroll container to match real scaled size */
-              width:  `${Math.round(100 / scale)}%`,
-              height: scale !== 1 ? `${Math.round(100 / scale)}%` : 'auto',
-            }}
-          />
+
+      {/* Legend strip */}
+      <div className="arch-legend-row">
+        <div className="group">
+          <span>Auto-generated by Architecture Agent</span>
+        </div>
+        <div className="group">
+          <span>Scroll to navigate · Use controls to zoom</span>
         </div>
       </div>
     </div>

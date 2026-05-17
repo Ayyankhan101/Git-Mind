@@ -9,6 +9,8 @@ from collections import OrderedDict
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+_UUID_RE = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.IGNORECASE)
+
 import httpx
 from dotenv import load_dotenv
 from fastapi.responses import StreamingResponse
@@ -38,6 +40,21 @@ logger = logging.getLogger(__name__)
 
 # ── Startup validation ─────────────────────────────────────────────────────────
 
+_ANALYSIS_TTL_SECONDS = 60 * 60 * 24 * 7  # 7 days
+
+def _prune_old_analyses() -> None:
+    cutoff = time.time() - _ANALYSIS_TTL_SECONDS
+    removed = 0
+    for p in _ANALYSES_DIR.glob("*.json"):
+        try:
+            if p.stat().st_mtime < cutoff:
+                p.unlink()
+                removed += 1
+        except Exception:
+            pass
+    if removed:
+        logger.info("Pruned %d expired analysis file(s)", removed)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if not os.getenv("GROQ_API_KEY"):
@@ -45,6 +62,7 @@ async def lifespan(app: FastAPI):
             "GROQ_API_KEY is not set.\n"
             "Create backend/.env with:  GROQ_API_KEY=gsk_..."
         )
+    _prune_old_analyses()
     logger.info("GitMind backend starting — GROQ_API_KEY present")
     yield
     logger.info("GitMind backend shutting down")
@@ -221,20 +239,23 @@ async def ws_analyze(ws: WebSocket):
     })
 
     # Persist analysis so it can be shared via /analysis/{session_id}
-    try:
-        snapshot = {
-            "session_id":           session_id,
-            "repo_name":            final_state["repo_name"],
-            "repo_url":             repo_url,
-            "architecture_diagram": final_state.get("architecture_diagram"),
-            "api_docs":             final_state.get("api_docs", []),
-            "security_findings":    final_state.get("security_findings", []),
-            "cve_findings":         final_state.get("cve_findings", []),
-            "saved_at":             time.time(),
-        }
-        (_ANALYSES_DIR / f"{session_id}.json").write_text(json.dumps(snapshot))
-    except Exception as exc:
-        logger.warning("Could not persist analysis snapshot: %s", exc)
+    if _UUID_RE.match(session_id):
+        try:
+            snapshot = {
+                "session_id":           session_id,
+                "repo_name":            final_state["repo_name"],
+                "repo_url":             repo_url,
+                "architecture_diagram": final_state.get("architecture_diagram"),
+                "api_docs":             final_state.get("api_docs", []),
+                "security_findings":    final_state.get("security_findings", []),
+                "cve_findings":         final_state.get("cve_findings", []),
+                "saved_at":             time.time(),
+            }
+            (_ANALYSES_DIR / f"{session_id}.json").write_text(json.dumps(snapshot))
+        except Exception as exc:
+            logger.warning("Could not persist analysis snapshot: %s", exc)
+    else:
+        logger.warning("session_id is not a UUID, skipping persist: %s", session_id)
 
     await ws.send_json({"done": True, "session_id": session_id})
     logger.info("Analysis complete  session=%s  repo=%s", session_id, final_state["repo_name"])
@@ -244,6 +265,8 @@ async def ws_analyze(ws: WebSocket):
 
 @app.post("/chat")
 async def chat_endpoint(req: ChatRequest):
+    if not _UUID_RE.match(req.session_id):
+        return {"error": "Invalid session ID"}
     session = sessions.get(req.session_id)
     if not session:
         return {"error": "Session not found. Run /ws/analyze first."}
@@ -271,6 +294,11 @@ async def chat_endpoint(req: ChatRequest):
 @app.post("/chat/stream")
 async def chat_stream_endpoint(req: ChatRequest):
     from agents.chat import run_chat_agent_stream
+
+    if not _UUID_RE.match(req.session_id):
+        async def _bad():
+            yield f"data: {json.dumps({'error': 'Invalid session ID'})}\n\n"
+        return StreamingResponse(_bad(), media_type="text/event-stream")
 
     session = sessions.get(req.session_id)
 
@@ -312,6 +340,8 @@ async def summary_endpoint(req: SummaryRequest):
     from chroma_utils import search_codebase
     from langchain_groq import ChatGroq
 
+    if not _UUID_RE.match(req.session_id):
+        return {"error": "Invalid session ID"}
     session = sessions.get(req.session_id)
     if not session:
         return {"error": "Session not found. Run /ws/analyze first."}
@@ -358,6 +388,8 @@ async def summary_endpoint(req: SummaryRequest):
 
 @app.get("/analysis/{session_id}")
 async def get_analysis(session_id: str):
+    if not _UUID_RE.match(session_id):
+        return {"error": "Invalid session ID"}
     path = _ANALYSES_DIR / f"{session_id}.json"
     if not path.exists():
         return {"error": "Analysis not found or has expired"}
@@ -390,6 +422,8 @@ async def fix_endpoint(req: FixRequest):
     from chroma_utils import search_codebase
     from langchain_groq import ChatGroq
 
+    if not _UUID_RE.match(req.session_id):
+        return {"error": "Invalid session ID"}
     session = sessions.get(req.session_id)
     if not session:
         return {"error": "Session not found. Run /ws/analyze first."}

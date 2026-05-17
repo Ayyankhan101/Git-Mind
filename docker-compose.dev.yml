@@ -25,6 +25,7 @@ services:
       - REACT_APP_API_BASE=http://localhost:8002
       - BROWSER=none
       - CHOKIDAR_USEPOLLING=true
+      - WDS_SOCKET_PORT=3002
     command: sh -c "npm install && npm start"
     depends_on:
       - backend
