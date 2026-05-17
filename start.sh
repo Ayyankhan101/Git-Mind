@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # GitMind launcher — Linux / macOS
-# Starts FastAPI backend (port 8000) + React dev server (port 3000)
+# Starts FastAPI backend (port 8001) + React dev server (port 3000)
 
 set -e
 
@@ -47,18 +47,18 @@ trap cleanup INT TERM EXIT
 
 # ── Backend ──────────────────────────────────────────────────────────────────
 
-echo "Starting backend on http://127.0.0.1:8000 ..."
+echo "Starting backend on http://127.0.0.1:8001 ..."
 (
   cd backend
   # shellcheck disable=SC1091
   source venv/bin/activate
-  exec uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+  exec uvicorn main:app --host 127.0.0.1 --port 8001 --reload
 ) &
 BACKEND_PID=$!
 
 # Wait for backend health
 for i in {1..30}; do
-  if curl -sf http://127.0.0.1:8000/health >/dev/null 2>&1; then
+  if curl -sf http://127.0.0.1:8001/health >/dev/null 2>&1; then
     echo "Backend ready."
     break
   fi
@@ -74,7 +74,7 @@ FRONTEND_PID=$!
 echo ""
 echo "──────────────────────────────────────────────"
 echo "  GitMind running"
-echo "  Backend:  http://127.0.0.1:8000"
+echo "  Backend:  http://127.0.0.1:8001"
 echo "  Frontend: http://localhost:3000"
 echo "  Ctrl+C to stop both"
 echo "──────────────────────────────────────────────"

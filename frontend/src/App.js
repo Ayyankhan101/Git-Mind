@@ -61,6 +61,7 @@ export default function App() {
   const [isAnalyzing,   setIsAnalyzing]   = useState(false);
   const [analyzed,      setAnalyzed]      = useState(false);
   const [globalError,   setGlobalError]   = useState(null);
+  const [agentWarnings, setAgentWarnings] = useState([]);
   const [elapsedSec,    setElapsedSec]    = useState(0);
   const [repoName,      setRepoName]      = useState('');
   const [crisisFinding, setCrisisFinding] = useState(null);
@@ -103,6 +104,7 @@ export default function App() {
     cleanup();
     setUrlError('');
     setGlobalError(null);
+    setAgentWarnings([]);
     setDiagram(null);
     setApiDocs([]);
     setFindings([]);
@@ -167,6 +169,10 @@ export default function App() {
       if (data.api_endpoints?.length) setApiDocs(data.api_endpoints);
       if (data.security_findings)    setFindings(data.security_findings);
       if (data.repo_name)            setRepoName(data.repo_name);
+      if (data.agent_error) {
+        const ev = data.agent_error;
+        setAgentWarnings(prev => [...prev, `${ev.agent} agent failed: ${ev.detail || 'check backend logs'}`]);
+      }
 
       // done: true (legacy) OR type:"result" (new backend protocol)
       if (data.done || data.type === 'result') {
@@ -328,6 +334,22 @@ export default function App() {
           }} aria-label="Dismiss error">×</button>
         </div>
       )}
+
+      {/* ── Agent warning banners (non-fatal — analysis continues) ──────────── */}
+      {agentWarnings.map((w, i) => (
+        <div key={i} role="status" style={{
+          flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12,
+          padding: '8px 28px',
+          background: 'rgba(245,158,11,0.07)',
+          borderBottom: '1px solid rgba(245,158,11,0.2)',
+        }}>
+          <span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span>
+          <span style={{ fontSize: 12, color: '#fcd34d', flex: 1 }}>{w}</span>
+          <button onClick={() => setAgentWarnings(prev => prev.filter((_, j) => j !== i))} style={{
+            background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 16, flexShrink: 0,
+          }} aria-label="Dismiss warning">×</button>
+        </div>
+      ))}
 
       {/* ── Body ────────────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>

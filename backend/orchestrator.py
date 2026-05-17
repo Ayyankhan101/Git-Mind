@@ -73,7 +73,7 @@ def security_node(state: RepoState) -> dict:
 
 def rag_setup_node(state: RepoState) -> dict:
     try:
-        name = run_rag_setup(state["file_contents"], state["repo_name"])
+        name = run_rag_setup(state["file_contents"], state["repo_name"], state["repo_url"])
         return {"chroma_collection_name": name, "events": [_event("chat", "done")]}
     except Exception as exc:
         logger.error("rag_setup_node failed: %s", exc)

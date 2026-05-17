@@ -1,12 +1,14 @@
 import logging
 import threading
+from pathlib import Path
 
 import chromadb
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 logger = logging.getLogger(__name__)
 
-_client = chromadb.Client()
+_CHROMA_PATH = Path(__file__).parent / ".chroma"
+_client = chromadb.PersistentClient(path=str(_CHROMA_PATH))
 _collections: dict[str, chromadb.Collection] = {}
 _lock = threading.Lock()   # guards _collections under concurrent WebSocket sessions
 
@@ -18,6 +20,13 @@ def embed_codebase(file_contents: dict[str, str], collection_name: str) -> str:
             return collection_name
 
     collection = _client.create_collection(name=collection_name, get_or_create=True)
+
+    # Skip re-embedding if the collection already has documents (e.g. after server restart)
+    if collection.count() > 0:
+        logger.debug("Collection '%s' has %d docs — skipping re-embed", collection_name, collection.count())
+        with _lock:
+            _collections[collection_name] = collection
+        return collection_name
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=800,

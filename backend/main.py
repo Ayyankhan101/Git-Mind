@@ -1,6 +1,8 @@
 import logging
 import os
+import shutil
 import uuid
+from collections import OrderedDict
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
@@ -50,9 +52,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# In-memory session store — keyed by session_id UUID
+# Session store — keyed by session_id UUID, capped at 50 entries (LRU eviction)
 # Shape: {repo_name, chroma_collection_name, security_findings, chat_history}
-sessions: dict[str, dict] = {}
+_MAX_SESSIONS = 50
+sessions: OrderedDict[str, dict] = OrderedDict()
+
+
+def _put_session(session_id: str, data: dict) -> None:
+    sessions[session_id] = data
+    sessions.move_to_end(session_id)
+    while len(sessions) > _MAX_SESSIONS:
+        evicted = sessions.popitem(last=False)
+        logger.debug("Session evicted (LRU cap): %s", evicted[0])
 
 
 # ── Request models ─────────────────────────────────────────────────────────────
@@ -126,8 +137,9 @@ async def ws_analyze(ws: WebSocket):
 
     await ws.send_json({"agent_status": {"scanner": "running"}})
 
+    astream = graph.astream(initial, stream_mode="updates")
     try:
-        async for chunk in graph.astream(initial, stream_mode="updates"):
+        async for chunk in astream:
             for node, update in chunk.items():
                 msg: dict = {"agent_status": _STATUS_MAP.get(node, {})}
 
@@ -144,6 +156,8 @@ async def ws_analyze(ws: WebSocket):
 
                 if "repo_name" in update:
                     final_state["repo_name"] = update["repo_name"]
+                if "local_path" in update and update["local_path"]:
+                    final_state["local_path"] = update["local_path"]
 
                 # Surface agent errors to the frontend without crashing the stream
                 for ev in update.get("events", []):
@@ -161,13 +175,23 @@ async def ws_analyze(ws: WebSocket):
         await ws.send_json({"error": str(exc)})
         await ws.close()
         return
+    finally:
+        # Cancel any pending LangGraph work and delete the cloned repo
+        try:
+            await astream.aclose()
+        except Exception:
+            pass
+        local_path = final_state.get("local_path")
+        if local_path:
+            shutil.rmtree(local_path, ignore_errors=True)
+            logger.info("Cleaned up temp dir  session=%s  path=%s", session_id, local_path)
 
-    sessions[session_id] = {
+    _put_session(session_id, {
         "repo_name":              final_state["repo_name"],
         "chroma_collection_name": final_state["chroma_collection_name"],
         "security_findings":      final_state["security_findings"],
         "chat_history":           [],
-    }
+    })
 
     await ws.send_json({"done": True, "session_id": session_id})
     logger.info("Analysis complete  session=%s  repo=%s", session_id, final_state["repo_name"])
