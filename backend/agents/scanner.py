@@ -36,8 +36,10 @@ def clone_and_scan(repo_url: str) -> dict:
     dest = tempfile.mkdtemp(prefix="gitmind_")
     logger.info("Cloning %s → %s", repo_url, dest)
 
+    head_sha = None
     try:
         repo = git.Repo.clone_from(repo_url, dest, depth=1, no_single_branch=True)
+        head_sha = repo.head.commit.hexsha
         repo.close()   # prevents resource leak on Windows
     except git.exc.GitCommandError as exc:
         raise RuntimeError(f"Git clone failed: {exc}") from exc
@@ -95,6 +97,7 @@ def clone_and_scan(repo_url: str) -> dict:
         "file_tree":     file_tree,
         "file_contents": file_contents,
         "repo_name":     repo_name,
+        "head_sha":      head_sha,
     }
 
 

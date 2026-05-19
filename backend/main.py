@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import shutil
+import subprocess
 import threading
 import time
 import uuid
@@ -20,6 +21,52 @@ from pydantic import BaseModel
 
 _ANALYSES_DIR = Path(__file__).parent / "analyses"
 _ANALYSES_DIR.mkdir(exist_ok=True)
+
+_SHA_INDEX_PATH = _ANALYSES_DIR / "_sha_index.json"
+_sha_index_lock = threading.Lock()
+
+def _get_remote_sha(repo_url: str) -> str | None:
+    """Return HEAD commit SHA via git ls-remote without cloning (~1 s)."""
+    try:
+        result = subprocess.run(
+            ["git", "ls-remote", "--quiet", "--exit-code", repo_url, "HEAD"],
+            capture_output=True, text=True, timeout=10, shell=False,
+        )
+        if result.returncode == 0 and result.stdout:
+            return result.stdout.split()[0]
+    except Exception:
+        pass
+    return None
+
+def _load_sha_index() -> dict:
+    try:
+        return json.loads(_SHA_INDEX_PATH.read_text())
+    except Exception:
+        return {}
+
+def _save_sha_index(idx: dict) -> None:
+    try:
+        tmp = _SHA_INDEX_PATH.with_suffix(".tmp")
+        tmp.write_text(json.dumps(idx))
+        tmp.replace(_SHA_INDEX_PATH)
+    except Exception:
+        pass
+
+def _find_cached_snapshot(repo_url: str, sha: str) -> dict | None:
+    idx = _load_sha_index()
+    sid = idx.get(sha)
+    if not sid:
+        return None
+    path = _ANALYSES_DIR / f"{sid}.json"
+    if not path.exists():
+        return None
+    try:
+        snap = json.loads(path.read_text())
+        if snap.get("repo_url") == repo_url:
+            return snap
+    except Exception:
+        pass
+    return None
 
 # load_dotenv MUST run before any LangChain / OpenAI import
 load_dotenv()
@@ -235,6 +282,7 @@ async def ws_analyze(ws: WebSocket):
 
     repo_url   = (payload.get("repo_url") or "").strip()
     session_id = payload.get("session_id") or str(uuid.uuid4())
+    sha        = None
 
     if not repo_url:
         await ws.send_json({"error": "repo_url is required"})
@@ -244,6 +292,33 @@ async def ws_analyze(ws: WebSocket):
     logger.info("Analysis started  session=%s  repo=%s", session_id, repo_url)
     initial    = _initial_state(repo_url)
     final_state = dict(initial)
+
+    # ── SHA cache check ────────────────────────────────────────────────────────
+    sha = await asyncio.to_thread(_get_remote_sha, repo_url)
+    if sha:
+        cached = _find_cached_snapshot(repo_url, sha)
+        if cached:
+            logger.info("Cache hit SHA=%s session=%s", sha[:8], session_id)
+            all_done = {k: "done" for k in ("scanner", "architecture", "api_docs", "security", "chat", "cve_scanner")}
+            await ws.send_json({"agent_status": all_done})
+            await ws.send_json({
+                "architecture_diagram": cached.get("architecture_diagram"),
+                "api_docs":             cached.get("api_docs", []),
+                "security_findings":    cached.get("security_findings", []),
+                "cve_findings":         cached.get("cve_findings", []),
+            })
+            _put_session(session_id, {
+                "repo_name":              cached.get("repo_name", ""),
+                "chroma_collection_name": cached.get("chroma_collection_name"),
+                "security_findings":      cached.get("security_findings", []),
+                "cve_findings":           cached.get("cve_findings", []),
+                "api_docs":               cached.get("api_docs", []),
+                "architecture_diagram":   cached.get("architecture_diagram"),
+                "repo_url":               repo_url,
+                "chat_history":           [],
+            })
+            await ws.send_json({"done": True, "session_id": session_id, "cached": True})
+            return
 
     await ws.send_json({"agent_status": {"scanner": "running"}})
 
@@ -329,9 +404,16 @@ async def ws_analyze(ws: WebSocket):
                 "security_findings":      final_state.get("security_findings", []),
                 "cve_findings":           final_state.get("cve_findings", []),
                 "chroma_collection_name": final_state.get("chroma_collection_name"),
+                "head_sha":               sha,
                 "saved_at":               time.time(),
             }
             (_ANALYSES_DIR / f"{session_id}.json").write_text(json.dumps(snapshot))
+            # Update SHA index for instant cache on next request for same commit
+            if sha:
+                with _sha_index_lock:
+                    idx = _load_sha_index()
+                    idx[sha] = session_id
+                    _save_sha_index(idx)
         except Exception as exc:
             logger.warning("Could not persist analysis snapshot: %s", exc)
     else:

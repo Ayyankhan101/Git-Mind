@@ -11,6 +11,7 @@ class RepoState(TypedDict):
     file_tree:     list[str]
     file_contents: dict[str, str]
     repo_name:     str
+    head_sha:      str | None
 
     # ── Parallel agent outputs (each written by exactly one agent) ────────────
     architecture_diagram:   str | None

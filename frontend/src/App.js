@@ -314,6 +314,9 @@ export default function App() {
 
       if (data.done) {
         clearInterval(timerRef.current); clearTimeout(timeoutRef.current);
+        if (data.cached) {
+          addToast({ kind: 'info', title: 'Instant result', sub: 'Served from cache — same commit' });
+        }
         setIsAnalyzing(false); setAnalyzed(true); analyzingRef.current = false;
         ws.close();
       }
