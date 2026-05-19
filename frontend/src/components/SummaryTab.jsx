@@ -153,15 +153,15 @@ export default function SummaryTab({ sessionId, enabled, repoName, findings, api
       {/* Charts */}
       {(findings.length > 0 || apiDocs.length > 0) && (
         <div className="summary-charts">
-          {/* Severity distribution sparkline (real data: low→critical) */}
+          {/* Severity distribution — bars ordered low → critical */}
           <div className="chart-card">
             <div className="chart-card-head">
               <div>
-                <div className="chart-title">SEVERITY DISTRIBUTION</div>
+                <div className="chart-title">FINDINGS BY SEVERITY</div>
                 <div className="chart-value">{findings.length}</div>
-                <div className="chart-trend">
-                  <TrendingUp size={12} strokeWidth={1.5} />
-                  findings across {[nCritical && 'critical', nHigh && 'high', nMedium && 'medium', nLow && 'low'].filter(Boolean).join(', ') || 'none'}
+                <div className="chart-trend" style={{ color: 'var(--text-3)', gap: 4 }}>
+                  <span style={{ fontSize: 10 }}>LOW → CRITICAL</span>
+                  {[nCritical && 'critical', nHigh && 'high', nMedium && 'medium', nLow && 'low'].filter(Boolean).join(', ') || 'none'}
                 </div>
               </div>
             </div>

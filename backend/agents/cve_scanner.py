@@ -80,21 +80,124 @@ def _parse_go_sum(content: str) -> list[dict]:
     return deps[:100]
 
 
+def _parse_yarn_lock(content: str) -> list[dict]:
+    """Parse yarn.lock — split into package blocks, extract name + version."""
+    deps, seen = [], set()
+    for block in re.split(r'\n(?=\S)', content):
+        block = block.strip()
+        if not block or block.startswith('#'):
+            continue
+        m_name = re.match(r'^"?(@?[^@"\s,]+)@', block)
+        m_ver  = re.search(r'^\s+version "([^"]+)"', block, re.MULTILINE)
+        if not m_name or not m_ver:
+            continue
+        name, version = m_name.group(1), m_ver.group(1)
+        key = (name.lower(), version)
+        if key not in seen and re.match(r'^\d', version):
+            seen.add(key)
+            deps.append({"name": name, "version": version, "ecosystem": "npm"})
+    return deps[:150]
+
+
+def _parse_pnpm_lock(content: str) -> list[dict]:
+    """Parse pnpm-lock.yaml — matches /name@version: and name@version: entries."""
+    deps, seen = [], set()
+    for m in re.finditer(r'^\s+/?(@?[^@\s/]+)@(\d[^/:"\s]+)', content, re.MULTILINE):
+        name, version = m.group(1), m.group(2).strip()
+        key = (name.lower(), version)
+        if key not in seen:
+            seen.add(key)
+            deps.append({"name": name, "version": version, "ecosystem": "npm"})
+    return deps[:150]
+
+
+def _parse_poetry_lock(content: str) -> list[dict]:
+    """Parse poetry.lock TOML — extract [[package]] blocks."""
+    deps: list[dict] = []
+    name = version = None
+    for line in content.splitlines():
+        stripped = line.strip()
+        if stripped == "[[package]]":
+            name = version = None
+        elif stripped.startswith("name = "):
+            m = re.search(r'"([^"]+)"', stripped)
+            name = m.group(1) if m else None
+        elif stripped.startswith("version = "):
+            m = re.search(r'"([^"]+)"', stripped)
+            version = m.group(1) if m else None
+            if name and version and re.match(r'^\d', version):
+                deps.append({"name": name, "version": version, "ecosystem": "PyPI"})
+                name = version = None
+    return deps
+
+
+def _parse_pipfile_lock(content: str) -> list[dict]:
+    """Parse Pipfile.lock JSON."""
+    try:
+        data = json.loads(content)
+    except Exception:
+        return []
+    deps = []
+    for section in ("default", "develop"):
+        for name, info in data.get(section, {}).items():
+            ver = re.sub(r'^[=<>!^~*\s]+', '', info.get("version", ""))
+            if ver and re.match(r'^\d', ver):
+                deps.append({"name": name, "version": ver, "ecosystem": "PyPI"})
+    return deps
+
+
+def _parse_gemfile_lock(content: str) -> list[dict]:
+    """Parse Gemfile.lock — extract gems from the specs: block."""
+    deps, seen, in_specs = [], set(), False
+    for line in content.splitlines():
+        if line.strip() == "specs:":
+            in_specs = True
+            continue
+        if in_specs and line and not line[0].isspace():
+            in_specs = False
+        if in_specs:
+            m = re.match(r'^\s{4}([a-zA-Z0-9_\-]+)\s+\(([^\)]+)\)', line)
+            if m:
+                name, version = m.group(1), m.group(2)
+                key = (name.lower(), version)
+                if key not in seen and re.match(r'^\d', version):
+                    seen.add(key)
+                    deps.append({"name": name, "version": version, "ecosystem": "RubyGems"})
+    return deps[:100]
+
+
 def _collect_deps(file_contents: dict[str, str]) -> list[dict]:
-    has_lock = any("package-lock.json" in fp for fp in file_contents)
+    has_npm_lock = any(
+        fp.split("/")[-1] in ("package-lock.json", "yarn.lock", "pnpm-lock.yaml")
+        for fp in file_contents
+    )
+    has_py_lock = any(
+        fp.split("/")[-1] in ("poetry.lock", "Pipfile.lock")
+        for fp in file_contents
+    )
     deps = []
     for filepath, content in file_contents.items():
         fname = filepath.split("/")[-1]
-        if fname == "requirements.txt":
+        if fname == "requirements.txt" and not has_py_lock:
             deps.extend(_parse_requirements_txt(content))
+        elif fname == "poetry.lock":
+            deps.extend(_parse_poetry_lock(content))
+        elif fname == "Pipfile.lock":
+            deps.extend(_parse_pipfile_lock(content))
         elif fname == "package-lock.json":
             deps.extend(_parse_package_lock(content))
-        elif fname == "package.json" and not has_lock:
+        elif fname == "yarn.lock":
+            deps.extend(_parse_yarn_lock(content))
+        elif fname == "pnpm-lock.yaml":
+            deps.extend(_parse_pnpm_lock(content))
+        elif fname == "package.json" and not has_npm_lock:
             deps.extend(_parse_package_json(content))
         elif fname == "Cargo.lock":
             deps.extend(_parse_cargo_lock(content))
         elif fname == "go.sum":
             deps.extend(_parse_go_sum(content))
+        elif fname == "Gemfile.lock":
+            deps.extend(_parse_gemfile_lock(content))
     # Deduplicate
     seen: set[tuple] = set()
     unique = []
@@ -103,7 +206,7 @@ def _collect_deps(file_contents: dict[str, str]) -> list[dict]:
         if key not in seen:
             seen.add(key)
             unique.append(d)
-    return unique[:60]
+    return unique[:80]
 
 
 # ── OSV.dev query ──────────────────────────────────────────────────────────────

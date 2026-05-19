@@ -254,67 +254,6 @@ export default function App() {
     });
   }, [analyzed]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Global keyboard shortcuts ─────────────────────────────────────────────────
-  useEffect(() => {
-    const isMac = /Mac/i.test(navigator.userAgentData?.platform ?? navigator.platform);
-    const onKey = (e) => {
-      const mod = isMac ? e.metaKey : e.ctrlKey;
-      if (showPalette) return; // palette handles its own keys
-
-      if (e.key === '?' && !e.ctrlKey && !e.metaKey && !['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) {
-        e.preventDefault(); setShowKbHelp(h => !h);
-      }
-      if (mod && e.key === 'k') { e.preventDefault(); setShowPalette(true); }
-      if (e.key === 'Escape') {
-        setShowKbHelp(false);
-        setFilePreview(null);
-        setGlobalError(null);
-      }
-      if (mod && e.key === '1') { e.preventDefault(); setActiveTab('summary'); }
-      if (mod && e.key === '2') { e.preventDefault(); setActiveTab('diagram'); }
-      if (mod && e.key === '3') { e.preventDefault(); setActiveTab('docs'); }
-      if (mod && e.key === '4') { e.preventDefault(); setActiveTab('security'); }
-      if (mod && e.key === '5') { e.preventDefault(); setActiveTab('cve'); }
-      if (mod && e.key === '6') { e.preventDefault(); setActiveTab('pr'); }
-      if (mod && e.key === '7') { e.preventDefault(); setActiveTab('chat'); }
-      if (mod && e.key === 'r' && analyzed) { e.preventDefault(); handleAnalyze(selectedRepoUrl); }
-      if (e.key === '/' && !['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) {
-        e.preventDefault(); usernameRef.current?.focus();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [showPalette, analyzed, selectedRepoUrl, handleAnalyze]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Load repos ────────────────────────────────────────────────────────────────
-  const handleLoadRepos = useCallback(async (user) => {
-    const u = (user || githubUser).trim();
-    if (!u) { setReposError('Enter a GitHub username.'); return; }
-    setReposError(null);
-    setReposLoading(true);
-    setRepos([]);
-    setShowOnboarding(false);
-    addRecent({ id: `user:${u}`, label: u, sub: 'GitHub user', icon: 'user' });
-    try {
-      const list = await fetchRepos(u);
-      setRepos(list);
-      if (list.length === 0) setReposError('No public repositories found.');
-      else {
-        addToast({ kind: 'info', title: `Loaded ${list.length} repos`, sub: u });
-        setLoadedUsers(prev => {
-          const next = [u, ...prev.filter(x => x !== u)].slice(0, 6);
-          try { localStorage.setItem('gm-users', JSON.stringify(next)); } catch {}
-          return next;
-        });
-      }
-    } catch (err) {
-      setReposError(err.message);
-      addToast({ kind: 'danger', title: 'Failed to load repos', sub: err.message });
-    } finally {
-      setReposLoading(false);
-    }
-  }, [githubUser, addToast, addRecent]);
-
   // ── Analyze ───────────────────────────────────────────────────────────────────
   const handleAnalyze = useCallback((url) => {
     if (!url) return;
@@ -399,6 +338,67 @@ export default function App() {
     };
   }, [cleanup]);
 
+  // ── Global keyboard shortcuts ─────────────────────────────────────────────────
+  useEffect(() => {
+    const isMac = /Mac/i.test(navigator.userAgentData?.platform ?? navigator.platform);
+    const onKey = (e) => {
+      const mod = isMac ? e.metaKey : e.ctrlKey;
+      if (showPalette) return; // palette handles its own keys
+
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey && !['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) {
+        e.preventDefault(); setShowKbHelp(h => !h);
+      }
+      if (mod && e.key === 'k') { e.preventDefault(); setShowPalette(true); }
+      if (e.key === 'Escape') {
+        setShowKbHelp(false);
+        setFilePreview(null);
+        setGlobalError(null);
+      }
+      if (mod && e.key === '1') { e.preventDefault(); setActiveTab('summary'); }
+      if (mod && e.key === '2') { e.preventDefault(); setActiveTab('diagram'); }
+      if (mod && e.key === '3') { e.preventDefault(); setActiveTab('docs'); }
+      if (mod && e.key === '4') { e.preventDefault(); setActiveTab('security'); }
+      if (mod && e.key === '5') { e.preventDefault(); setActiveTab('cve'); }
+      if (mod && e.key === '6') { e.preventDefault(); setActiveTab('pr'); }
+      if (mod && e.key === '7') { e.preventDefault(); setActiveTab('chat'); }
+      if (mod && e.key === 'r' && analyzed) { e.preventDefault(); handleAnalyze(selectedRepoUrl); }
+      if (e.key === '/' && !['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) {
+        e.preventDefault(); usernameRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showPalette, analyzed, selectedRepoUrl, handleAnalyze]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Load repos ────────────────────────────────────────────────────────────────
+  const handleLoadRepos = useCallback(async (user) => {
+    const u = (user || githubUser).trim();
+    if (!u) { setReposError('Enter a GitHub username.'); return; }
+    setReposError(null);
+    setReposLoading(true);
+    setRepos([]);
+    setShowOnboarding(false);
+    addRecent({ id: `user:${u}`, label: u, sub: 'GitHub user', icon: 'user' });
+    try {
+      const list = await fetchRepos(u);
+      setRepos(list);
+      if (list.length === 0) setReposError('No public repositories found.');
+      else {
+        addToast({ kind: 'info', title: `Loaded ${list.length} repos`, sub: u });
+        setLoadedUsers(prev => {
+          const next = [u, ...prev.filter(x => x !== u)].slice(0, 6);
+          try { localStorage.setItem('gm-users', JSON.stringify(next)); } catch {}
+          return next;
+        });
+      }
+    } catch (err) {
+      setReposError(err.message);
+      addToast({ kind: 'danger', title: 'Failed to load repos', sub: err.message });
+    } finally {
+      setReposLoading(false);
+    }
+  }, [githubUser, addToast, addRecent]);
+
   // ── Select + analyze ──────────────────────────────────────────────────────────
   const handleSelectRepo = useCallback((url) => {
     setSelectedRepoUrl(url);
@@ -415,7 +415,12 @@ export default function App() {
       '## API Endpoints', '',
       ...(apiDocs.length ? apiDocs.map(e => `- **${e.method||''}** \`${e.route||''}\` — ${e.description||''}`) : ['No endpoints detected.']),
       '', '## Security Findings', '',
-      ...(findings.length ? findings.map(f => `### [${(f.severity||'info').toUpperCase()}] ${f.rule||f.check||'Finding'}\n${f.description||f.message||''}\n${f.file ? `File: ${f.file}${f.line ? `:${f.line}` : ''}` : ''}`) : ['No findings.']),
+      ...(findings.length ? findings.map(f => `### [${(f.severity||'info').toUpperCase()}] ${f.rule||f.check||'Finding'}\n${f.description||f.message||f.exploit_story||''}\n${f.file ? `File: ${f.file}${f.line_start ? `:${f.line_start}` : ''}` : ''}`) : ['No findings.']),
+      '', '## CVE Vulnerabilities', '',
+      ...(cveFindings.length ? cveFindings.map(pkg =>
+        `### ${pkg.package} v${pkg.version} (${pkg.ecosystem}) — ${pkg.worst_severity}\n` +
+        pkg.vulns.map(v => `- **${v.id}** [${v.severity}]: ${v.summary}${v.fixed_in ? ` *(fix: ${v.fixed_in})*` : ''}`).join('\n')
+      ) : ['No CVE vulnerabilities found.']),
       '', '---', `_Scanned in ${elapsedSec}s by GitMind_`,
     ];
     const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
@@ -425,7 +430,7 @@ export default function App() {
     URL.revokeObjectURL(url);
     addToast({ kind: 'success', title: 'Report exported', sub: `${repoName}.md` });
     addRecent({ id: 'action:export', label: 'Export report', sub: 'Action', icon: 'download' });
-  }, [analyzed, repoName, diagram, apiDocs, findings, elapsedSec, addToast, addRecent]);
+  }, [analyzed, repoName, diagram, apiDocs, findings, cveFindings, elapsedSec, addToast, addRecent]);
 
   // ── Generate fix ──────────────────────────────────────────────────────────────
   const handleFix = useCallback(async (finding) => {

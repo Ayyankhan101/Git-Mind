@@ -59,7 +59,6 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
   }, [resolved, leaked, error]);
 
   const timerDanger = countdown <= 10 && !resolved && !leaked;
-  const sev = (finding.severity || 'critical').toLowerCase();
 
   return (
     <div className="crisis-backdrop" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>

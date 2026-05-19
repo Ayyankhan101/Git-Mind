@@ -4,7 +4,7 @@ import re
 
 from langchain_groq import ChatGroq
 
-from llm_cache import get_cached, set_cached
+from llm_cache import get_cached, set_cached, invoke_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ def run_api_doc_agent(file_contents: dict[str, str]) -> list[dict]:
             logger.debug("API doc agent: cache hit for %s", fp)
         else:
             try:
-                raw       = llm.invoke(prompt).content
+                raw       = invoke_with_retry(llm, prompt).content
                 endpoints = json.loads(raw).get("endpoints", [])
                 set_cached(_CACHE_NAMESPACE, prompt, raw)
             except (json.JSONDecodeError, Exception) as exc:

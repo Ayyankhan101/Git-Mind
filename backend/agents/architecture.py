@@ -3,7 +3,7 @@ import logging
 import tiktoken
 from langchain_groq import ChatGroq
 
-from llm_cache import get_cached, set_cached
+from llm_cache import get_cached, set_cached, invoke_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ def run_architecture_agent(file_tree: list[str], file_contents: dict[str, str]) 
         return cached
 
     llm    = ChatGroq(model=_MODEL, temperature=0)
-    result = llm.invoke(prompt).content.strip()
+    result = invoke_with_retry(llm, prompt).content.strip()
     result = _strip_fences(result)
 
     if not result.startswith("graph"):

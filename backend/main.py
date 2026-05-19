@@ -3,9 +3,10 @@ import logging
 import os
 import re
 import shutil
+import threading
 import time
 import uuid
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -61,6 +62,14 @@ async def lifespan(app: FastAPI):
             "Create backend/.env with:  GROQ_API_KEY=gsk_..."
         )
     await asyncio.to_thread(_prune_old_analyses)
+    # Prune ChromaDB collections older than 7 days
+    try:
+        from chroma_utils import prune_old_collections
+        removed = await asyncio.to_thread(prune_old_collections)
+        if removed:
+            logger.info("Startup: pruned %d old ChromaDB collection(s)", removed)
+    except Exception as exc:
+        logger.warning("Could not prune old collections: %s", exc)
     logger.info("GitMind backend starting — GROQ_API_KEY present")
     yield
     logger.info("GitMind backend shutting down")
@@ -70,15 +79,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="GitMind API", lifespan=lifespan)
 
+_CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "*").split(",")]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Session store — keyed by session_id UUID, capped at 50 entries (LRU eviction)
-# Shape: {repo_name, chroma_collection_name, security_findings, chat_history}
+# Shape: {repo_name, chroma_collection_name, security_findings, chat_history, ...}
 _MAX_SESSIONS = 50
 sessions: OrderedDict[str, dict] = OrderedDict()
 
@@ -89,6 +99,31 @@ def _put_session(session_id: str, data: dict) -> None:
     while len(sessions) > _MAX_SESSIONS:
         evicted = sessions.popitem(last=False)
         logger.debug("Session evicted (LRU cap): %s", evicted[0])
+
+
+# ── Simple rate limiter ────────────────────────────────────────────────────────
+# Sliding-window per (endpoint, session_id). No external deps.
+
+_rate_data: dict[str, list[float]] = defaultdict(list)
+_rate_lock = threading.Lock()
+_RATE_WINDOWS: dict[str, tuple[int, int]] = {
+    "summary": (60, 5),    # 5 calls per 60 s
+    "chat":    (60, 20),   # 20 calls per 60 s
+    "fix":     (60, 10),   # 10 calls per 60 s
+    "pr":      (60, 5),    # 5 calls per 60 s
+}
+
+def _rate_ok(endpoint: str, key: str) -> bool:
+    window, limit = _RATE_WINDOWS.get(endpoint, (60, 20))
+    now = time.time()
+    bucket = f"{endpoint}:{key}"
+    with _rate_lock:
+        hits = [t for t in _rate_data[bucket] if t > now - window]
+        if len(hits) >= limit:
+            return False
+        hits.append(now)
+        _rate_data[bucket] = hits
+        return True
 
 
 # ── Request models ─────────────────────────────────────────────────────────────
@@ -131,6 +166,43 @@ def _initial_state(repo_url: str) -> dict:
         "crisis_resolved":        False,
         "events":                 [],
     }
+
+
+# ── Lazy session restore from disk ────────────────────────────────────────────
+
+def _restore_session_from_disk(session_id: str) -> dict | None:
+    """Rebuild an in-memory session from a persisted analysis snapshot."""
+    if not _UUID_RE.match(session_id):
+        return None
+    path = _ANALYSES_DIR / f"{session_id}.json"
+    if not path.exists():
+        return None
+    try:
+        snap = json.loads(path.read_text())
+    except Exception:
+        return None
+    return {
+        "repo_name":              snap.get("repo_name", ""),
+        "chroma_collection_name": snap.get("chroma_collection_name"),
+        "security_findings":      snap.get("security_findings", []),
+        "cve_findings":           snap.get("cve_findings", []),
+        "api_docs":               snap.get("api_docs", []),
+        "architecture_diagram":   snap.get("architecture_diagram"),
+        "repo_url":               snap.get("repo_url", ""),
+        "chat_history":           [],
+    }
+
+
+def _get_session(session_id: str) -> dict | None:
+    """Return session from memory, restoring from disk if needed."""
+    session = sessions.get(session_id)
+    if session:
+        return session
+    restored = _restore_session_from_disk(session_id)
+    if restored:
+        _put_session(session_id, restored)
+        logger.info("Session restored from disk: %s", session_id)
+    return restored
 
 
 # ── Agent → frontend status mapping ───────────────────────────────────────────
@@ -179,7 +251,16 @@ async def ws_analyze(ws: WebSocket):
     try:
         async for chunk in astream:
             for node, update in chunk.items():
-                msg: dict = {"agent_status": _STATUS_MAP.get(node, {})}
+                # Determine if this node completed with an error
+                has_error = any(
+                    ev.get("status") == "error" for ev in update.get("events", [])
+                )
+                raw_statuses = _STATUS_MAP.get(node, {})
+                node_statuses = (
+                    {k: ("error" if v == "done" else v) for k, v in raw_statuses.items()}
+                    if has_error else raw_statuses
+                )
+                msg: dict = {"agent_status": node_statuses}
 
                 # Relay result payloads to the frontend as they arrive
                 for key in (
@@ -240,14 +321,15 @@ async def ws_analyze(ws: WebSocket):
     if _UUID_RE.match(session_id):
         try:
             snapshot = {
-                "session_id":           session_id,
-                "repo_name":            final_state["repo_name"],
-                "repo_url":             repo_url,
-                "architecture_diagram": final_state.get("architecture_diagram"),
-                "api_docs":             final_state.get("api_docs", []),
-                "security_findings":    final_state.get("security_findings", []),
-                "cve_findings":         final_state.get("cve_findings", []),
-                "saved_at":             time.time(),
+                "session_id":             session_id,
+                "repo_name":              final_state["repo_name"],
+                "repo_url":               repo_url,
+                "architecture_diagram":   final_state.get("architecture_diagram"),
+                "api_docs":               final_state.get("api_docs", []),
+                "security_findings":      final_state.get("security_findings", []),
+                "cve_findings":           final_state.get("cve_findings", []),
+                "chroma_collection_name": final_state.get("chroma_collection_name"),
+                "saved_at":               time.time(),
             }
             (_ANALYSES_DIR / f"{session_id}.json").write_text(json.dumps(snapshot))
         except Exception as exc:
@@ -265,14 +347,17 @@ async def ws_analyze(ws: WebSocket):
 async def chat_endpoint(req: ChatRequest):
     if not _UUID_RE.match(req.session_id):
         return {"error": "Invalid session ID"}
-    session = sessions.get(req.session_id)
+    if not _rate_ok("chat", req.session_id):
+        return {"error": "Rate limit exceeded — slow down"}
+
+    session = _get_session(req.session_id)
     if not session:
         return {"error": "Session not found. Run /ws/analyze first."}
-
     if not session.get("chroma_collection_name"):
         return {"error": "Knowledge base not ready — RAG setup may have failed."}
 
-    answer = run_chat_agent(
+    answer = await asyncio.to_thread(
+        run_chat_agent,
         question=req.question,
         collection_name=session["chroma_collection_name"],
         chat_history=session["chat_history"],
@@ -298,7 +383,12 @@ async def chat_stream_endpoint(req: ChatRequest):
             yield f"data: {json.dumps({'error': 'Invalid session ID'})}\n\n"
         return StreamingResponse(_bad(), media_type="text/event-stream")
 
-    session = sessions.get(req.session_id)
+    if not _rate_ok("chat", req.session_id):
+        async def _limited():
+            yield f"data: {json.dumps({'error': 'Rate limit exceeded — slow down'})}\n\n"
+        return StreamingResponse(_limited(), media_type="text/event-stream")
+
+    session = _get_session(req.session_id)
 
     async def generate():
         if not session:
@@ -340,15 +430,19 @@ async def summary_endpoint(req: SummaryRequest):
 
     if not _UUID_RE.match(req.session_id):
         return {"error": "Invalid session ID"}
-    session = sessions.get(req.session_id)
+    if not _rate_ok("summary", req.session_id):
+        return {"error": "Rate limit exceeded — slow down"}
+
+    session = _get_session(req.session_id)
     if not session:
         return {"error": "Session not found. Run /ws/analyze first."}
 
     collection = session.get("chroma_collection_name")
-    chunks = (
-        search_codebase(collection, "main entry point purpose overview README architecture", n_results=6)
-        if collection else []
-    )
+    chunks = await asyncio.to_thread(
+        search_codebase, collection,
+        "main entry point purpose overview README architecture", 6,
+    ) if collection else []
+
     context = "\n\n".join(
         f"--- {c['filepath']} ---\n{c['content'][:350]}" for c in chunks
     ) or "No code context available."
@@ -373,8 +467,11 @@ async def summary_endpoint(req: SummaryRequest):
           "No bullet points. No headers. Just 3 sentences. Be precise and technical."
     )
 
-    llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
-    summary = llm.invoke(prompt).content.strip()
+    def _gen() -> str:
+        llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
+        return llm.invoke(prompt).content.strip()
+
+    summary = await asyncio.to_thread(_gen)
     logger.info("Summary generated for session=%s", req.session_id)
     return {
         "summary": summary,
@@ -402,6 +499,8 @@ async def get_analysis(session_id: str):
 @app.post("/pr-review")
 async def pr_review_endpoint(req: PRReviewRequest):
     from agents.pr_review import run_pr_review
+    if not _rate_ok("pr", req.pr_url):
+        return {"error": "Rate limit exceeded — slow down"}
     token = req.token or os.getenv("GITHUB_TOKEN")
     try:
         result = await asyncio.to_thread(run_pr_review, req.pr_url, token)
@@ -422,7 +521,10 @@ async def fix_endpoint(req: FixRequest):
 
     if not _UUID_RE.match(req.session_id):
         return {"error": "Invalid session ID"}
-    session = sessions.get(req.session_id)
+    if not _rate_ok("fix", req.session_id):
+        return {"error": "Rate limit exceeded — slow down"}
+
+    session = _get_session(req.session_id)
     if not session:
         return {"error": "Session not found. Run /ws/analyze first."}
 
@@ -433,7 +535,7 @@ async def fix_endpoint(req: FixRequest):
         finding.get("title"), finding.get("description", "")[:100],
     ]))
 
-    chunks  = search_codebase(collection, query, n_results=4) if collection else []
+    chunks  = await asyncio.to_thread(search_codebase, collection, query, 4) if collection else []
     context = "\n\n".join(f"--- {c['filepath']} ---\n{c['content']}" for c in chunks) or "No code context available."
 
     prompt = (
@@ -490,7 +592,7 @@ async def ws_crisis(ws: WebSocket):
 
     session_id = payload.get("session_id")
     finding_id = payload.get("finding_id")
-    session    = sessions.get(session_id)
+    session    = _get_session(session_id)
 
     if not session:
         await ws.send_json({"error": "Session not found. Run /ws/analyze first."})

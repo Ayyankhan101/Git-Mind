@@ -22,7 +22,7 @@ RUN npm run build
 # Stage 3: Production Runner
 # ============================================
 FROM python:3.11-slim-bookworm
-RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates nginx && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates nginx curl && rm -rf /var/lib/apt/lists/*
 
 # Backend
 WORKDIR /app

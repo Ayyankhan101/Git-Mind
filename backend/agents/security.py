@@ -7,7 +7,7 @@ from pathlib import Path
 
 from langchain_groq import ChatGroq
 
-from llm_cache import get_cached, set_cached
+from llm_cache import get_cached, set_cached, invoke_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +110,7 @@ def _triage_with_llm(raw_results: list[dict]) -> list[dict]:
             response_format={"type": "json_object"}
         )
         try:
-            raw      = llm.invoke(prompt).content
+            raw      = invoke_with_retry(llm, prompt).content
             findings = json.loads(raw).get("findings", [])
             set_cached(_CACHE_NAMESPACE, prompt, raw)
         except (json.JSONDecodeError, Exception) as exc:
