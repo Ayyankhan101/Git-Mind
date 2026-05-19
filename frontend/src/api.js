@@ -152,6 +152,32 @@ export async function reviewPR(prUrl, token = null) {
 }
 
 /**
+ * POST /fix/pr — apply an AI-generated fix as a real GitHub PR.
+ */
+export async function createFixPR(sessionId, finding, token) {
+  let res;
+  try {
+    res = await fetch(`${BASE}/fix/pr`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, finding, token }),
+      signal: AbortSignal.timeout(120_000),
+    });
+  } catch (err) {
+    if (err.name === 'TimeoutError') throw new Error('Auto-PR timed out.');
+    throw new Error('Cannot reach the backend.');
+  }
+  if (!res.ok) {
+    let msg = `Server error ${res.status}`;
+    try { const j = await res.json(); msg = j.error || msg; } catch {}
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+/**
  * POST /fix — generate an auto-fix patch for a security finding.
  * @param {string} sessionId
  * @param {object} finding — the full finding object from the security scan

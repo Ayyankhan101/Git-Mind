@@ -14,8 +14,10 @@ function parseFix(fixText) {
   return { explanation, patch: patch.trim() };
 }
 
-function FindingRow({ finding, onCrisis, onFix, fixLoading, fixResult, onPickFile }) {
+function FindingRow({ finding, onCrisis, onFix, fixLoading, fixResult, onPickFile, sessionId, onPR }) {
   const [expanded, setExpanded] = useState(false);
+  const [prLoading, setPrLoading] = useState(false);
+  const [prUrl,     setPrUrl]     = useState(null);
   const sev    = (finding.severity || 'low').toLowerCase();
   const cardId = finding.id ?? finding.rule;
   const isFixing = fixLoading === cardId;
@@ -24,6 +26,22 @@ function FindingRow({ finding, onCrisis, onFix, fixLoading, fixResult, onPickFil
   const canCrisis = sev === 'critical' || sev === 'high';
   const filePath  = finding.file;
   const fileLine  = finding.line_start;
+
+  const handleOpenPR = async () => {
+    const tok = window.prompt('Enter a GitHub token with repo write access:');
+    if (!tok) return;
+    setPrLoading(true);
+    try {
+      const { createFixPR } = await import('../api');
+      const result = await createFixPR(sessionId, finding, tok);
+      setPrUrl(result.pr_url);
+      window.open(result.pr_url, '_blank');
+    } catch (err) {
+      alert(`PR failed: ${err.message}`);
+    } finally {
+      setPrLoading(false);
+    }
+  };
 
   return (
     <>
@@ -98,6 +116,22 @@ function FindingRow({ finding, onCrisis, onFix, fixLoading, fixResult, onPickFil
                 {isFixing ? 'Generating…' : 'Generate Fix'}
               </button>
             )}
+            {onPR && canCrisis && (
+              <button
+                className="btn-text"
+                style={{ color: 'var(--primary)' }}
+                disabled={prLoading}
+                onClick={handleOpenPR}
+              >
+                {prLoading ? 'Opening PR…' : prUrl ? '✓ PR Opened' : 'Open PR'}
+              </button>
+            )}
+            {prUrl && (
+              <a href={prUrl} target="_blank" rel="noopener noreferrer"
+                 style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                {prUrl}
+              </a>
+            )}
           </div>
 
           {parsed && (
@@ -143,7 +177,7 @@ function SkeletonRows() {
   );
 }
 
-export default function SecurityTab({ findings, isAnalyzing, analyzed, onCrisis, onFix, fixLoading, fixResult, onPickFile }) {
+export default function SecurityTab({ findings, isAnalyzing, analyzed, onCrisis, onFix, fixLoading, fixResult, onPickFile, sessionId }) {
   const [filter, setFilter] = useState('all');
 
   const sorted = useMemo(() => {
@@ -212,6 +246,8 @@ export default function SecurityTab({ findings, isAnalyzing, analyzed, onCrisis,
             fixLoading={fixLoading}
             fixResult={fixResult}
             onPickFile={onPickFile}
+            sessionId={sessionId}
+            onPR={true}
           />
         ))}
       </div>
