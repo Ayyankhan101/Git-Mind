@@ -11,8 +11,8 @@ from llm_cache import get_cached, set_cached, invoke_with_retry
 
 logger = logging.getLogger(__name__)
 
-_MODEL           = "llama-3.3-70b-versatile"
-_CACHE_NAMESPACE = "llama-3.3-70b-versatile:json"
+_MODEL           = "llama-3.1-8b-instant"
+_CACHE_NAMESPACE = "llama-3.1-8b-instant:json"
 _MAX_FINDINGS    = 30
 _MAX_MSG_CHARS   = 200
 _VALID_SEVERITIES = frozenset({"low", "medium", "high", "critical"})

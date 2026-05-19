@@ -8,10 +8,10 @@ from llm_cache import get_cached, set_cached, invoke_with_retry
 
 logger = logging.getLogger(__name__)
 
-_MODEL           = "llama-3.3-70b-versatile"
+_MODEL           = "llama-3.1-8b-instant"
 _MAX_FILES       = 5
 _MAX_FILE_CHARS  = 3_000
-_CACHE_NAMESPACE = "llama-3.3-70b-versatile:json"
+_CACHE_NAMESPACE = "llama-3.1-8b-instant:json"
 
 # Compiled once at module load — scanning 300 files per request benefits from this
 _ROUTE_PATTERNS: list[re.Pattern] = [
