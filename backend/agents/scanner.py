@@ -21,7 +21,7 @@ _SKIP_DIRS = {
 
 _MAX_TOTAL_BYTES = 50 * 1024 * 1024   # 50 MB hard cap across all files
 _MAX_FILE_BYTES  = 100 * 1024          # 100 KB — skips minified / generated files
-_MAX_FILES       = 300
+_MAX_FILES       = 150
 
 
 def clone_and_scan(repo_url: str) -> dict:
@@ -61,7 +61,7 @@ def clone_and_scan(repo_url: str) -> dict:
 
         for filename in sorted(files):
             if len(file_tree) >= _MAX_FILES:
-                logger.warning("300-file cap reached — stopping walk")
+                logger.warning("150-file cap reached — stopping walk")
                 cap_reached = True
                 break
 

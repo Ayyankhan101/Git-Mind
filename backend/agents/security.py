@@ -60,10 +60,16 @@ def _run_semgrep(local_path: str) -> list[dict]:
     posix_path = Path(local_path).as_posix()
     try:
         proc = subprocess.run(
-            ["semgrep", "--config=auto", "--json", "--quiet", posix_path],
+            [
+                "semgrep", "--config=auto", "--json", "--quiet",
+                "--timeout", "30",          # per-rule timeout (seconds)
+                "--timeout-threshold", "3", # skip a rule after 3 file timeouts
+                "--max-target-bytes", "524288",  # skip files > 512 KB
+                posix_path,
+            ],
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=90,    # reduced from 120 s — parallel agents reclaim time
             shell=False,   # never shell=True with external paths
         )
         # semgrep exit 0 = no findings, exit 1 = findings found — both are success
@@ -79,7 +85,7 @@ def _run_semgrep(local_path: str) -> list[dict]:
         logger.info("semgrep returned %d raw findings", len(results))
         return results
     except subprocess.TimeoutExpired:
-        logger.warning("semgrep timed out after 120 s")
+        logger.warning("semgrep timed out after 90 s")
         return []
     except (json.JSONDecodeError, OSError) as exc:
         logger.error("semgrep execution error: %s", exc)

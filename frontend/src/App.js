@@ -290,16 +290,22 @@ export default function App() {
     }
     wsRef.current = ws;
 
-    ws.onopen = () => {
-      ws.send(JSON.stringify({ repo_url: url, session_id: SESSION_ID }));
+    const resetInactivityTimer = () => {
+      clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => {
-        setGlobalError('Analysis timed out after 3 minutes.');
+        setGlobalError('Analysis timed out — no response from backend for 3 minutes. Large repos may take longer; try again.');
         setIsAnalyzing(false); analyzingRef.current = false;
         clearInterval(timerRef.current); ws.close();
       }, TIMEOUT_MS);
     };
 
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ repo_url: url, session_id: SESSION_ID }));
+      resetInactivityTimer();
+    };
+
     ws.onmessage = (event) => {
+      resetInactivityTimer();
       let data;
       try { data = JSON.parse(event.data); }
       catch { return; }
