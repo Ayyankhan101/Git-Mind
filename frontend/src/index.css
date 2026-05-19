@@ -743,7 +743,10 @@ input, textarea, select { font-family: inherit; color: inherit; }
     radial-gradient(circle at 1px 1px, var(--border) 0.5px, transparent 0);
   background-size: 22px 22px;
   background-position: -1px -1px;
+  cursor: grab;
+  user-select: none;
 }
+.diagram-canvas:active { cursor: grabbing; }
 .arch-legend-row {
   display: flex;
   align-items: center;

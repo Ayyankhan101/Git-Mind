@@ -1,27 +1,124 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import mermaid from 'mermaid';
-import { GitBranch, ZoomOut, ZoomIn, Maximize2, AlertTriangle } from 'lucide-react';
+import { GitBranch, ZoomOut, ZoomIn, Maximize2, AlertTriangle, Scan, Copy, Expand, Check } from 'lucide-react';
 
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'dark',
-  themeVariables: {
-    primaryColor: '#1e2d4a', primaryTextColor: '#f1f5f9',
-    primaryBorderColor: '#7c6fe0', lineColor: '#3f3f52',
-    secondaryColor: '#161f38', tertiaryColor: '#0f1629',
-    edgeLabelBackground: '#0f1629', titleColor: '#a78bfa',
-  },
-  flowchart: { curve: 'basis', padding: 20 },
-  securityLevel: 'loose',
-});
+const LIGHT_THEMES = new Set(['daylight', 'mist']);
+
+function getMermaidConfig(theme) {
+  const isLight = LIGHT_THEMES.has(theme);
+  return {
+    startOnLoad: false,
+    theme: isLight ? 'default' : 'dark',
+    themeVariables: isLight
+      ? {
+          primaryColor: '#e0e7ff', primaryTextColor: '#1e1b4b',
+          primaryBorderColor: '#6366f1', lineColor: '#94a3b8',
+          secondaryColor: '#f1f5f9', tertiaryColor: '#e2e8f0',
+          edgeLabelBackground: '#f8fafc', titleColor: '#6366f1',
+        }
+      : {
+          primaryColor: '#1e2d4a', primaryTextColor: '#f1f5f9',
+          primaryBorderColor: '#7c6fe0', lineColor: '#3f3f52',
+          secondaryColor: '#161f38', tertiaryColor: '#0f1629',
+          edgeLabelBackground: '#0f1629', titleColor: '#a78bfa',
+        },
+    flowchart: { curve: 'basis', padding: 20 },
+    securityLevel: 'loose',
+  };
+}
 
 let seq = 0;
 
-export default function DiagramTab({ diagram, isAnalyzing, analyzed }) {
+export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme }) {
   const ref = useRef(null);
-  const [scale, setScale]     = useState(1);
   const [hasError, setHasError] = useState(false);
   const [ready, setReady]     = useState(false);
+  const [copied, setCopied]   = useState(false);
+  const transformRef = useRef({ x: 0, y: 0, scale: 1 });
+  const [displayScale, setDisplayScale] = useState(1);
+  const dragRef      = useRef(null);
+  const canvasRef    = useRef(null);
+  const rafRef       = useRef(null);
+
+  const applyTransform = useCallback((x, y, scale) => {
+    transformRef.current = { x, y, scale };
+    if (ref.current) {
+      ref.current.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+      ref.current.style.transformOrigin = '0 0';
+    }
+    // Throttle React state update to one per animation frame
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      setDisplayScale(scale);
+      rafRef.current = null;
+    });
+  }, []);
+
+  const onPointerDown = useCallback((e) => {
+    if (e.button !== 0) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const { x, y } = transformRef.current;
+    dragRef.current = { startX: e.clientX, startY: e.clientY, originX: x, originY: y };
+  }, []);
+
+  const onPointerMove = useCallback((e) => {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    const { scale } = transformRef.current;
+    applyTransform(dragRef.current.originX + dx, dragRef.current.originY + dy, scale);
+  }, [applyTransform]);
+
+  const onPointerUp = useCallback((e) => {
+    if (dragRef.current && e.currentTarget) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+    dragRef.current = null;
+  }, []);
+
+  const fitToScreen = useCallback(() => {
+    const canvas = canvasRef.current;
+    const svg    = ref.current?.querySelector('svg');
+    if (!canvas || !svg) return;
+    const cw = canvas.clientWidth  - 64;
+    const ch = canvas.clientHeight - 64;
+    // Get natural (unscaled) SVG dimensions
+    const currentScale = transformRef.current.scale;
+    const sw = svg.getBoundingClientRect().width  / currentScale;
+    const sh = svg.getBoundingClientRect().height / currentScale;
+    const newScale = Math.min(cw / sw, ch / sh, 2);
+    const newX = (canvas.clientWidth  - sw * newScale) / 2;
+    const newY = (canvas.clientHeight - sh * newScale) / 2;
+    applyTransform(newX, newY, newScale);
+  }, [applyTransform]);
+
+  const onWheel = useCallback((e) => {
+    e.preventDefault();
+    const { x, y, scale } = transformRef.current;
+    const delta    = e.deltaY < 0 ? 1.1 : 0.9;
+    const newScale = Math.min(Math.max(scale * delta, 0.2), 4);
+    const rect     = canvasRef.current.getBoundingClientRect();
+    const mouseX   = e.clientX - rect.left;
+    const mouseY   = e.clientY - rect.top;
+    // Keep the point under the cursor fixed during zoom
+    const newX = mouseX - (mouseX - x) * (newScale / scale);
+    const newY = mouseY - (mouseY - y) * (newScale / scale);
+    applyTransform(newX, newY, newScale);
+  }, [applyTransform]);
+
+  const handleCopy = useCallback(async () => {
+    if (!diagram) return;
+    await navigator.clipboard.writeText(diagram);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }, [diagram]);
+
+  const handleFullscreen = useCallback(() => {
+    const el = canvasRef.current?.closest?.('.diagram-wrap') ?? canvasRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) document.exitFullscreen();
+    else el.requestFullscreen?.();
+  }, []);
 
   const render = useCallback(async (src) => {
     if (!ref.current) return;
@@ -37,7 +134,8 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed }) {
       if (!ref.current) return;
       ref.current.innerHTML = svg;
       const svgEl = ref.current.querySelector('svg');
-      if (svgEl) { svgEl.style.maxWidth = '100%'; svgEl.style.height = 'auto'; }
+      if (svgEl) { svgEl.style.maxWidth = 'none'; svgEl.style.height = 'auto'; }
+      applyTransform(0, 0, 1);
       setReady(true);
     } catch (err) {
       console.error('[DiagramTab] Mermaid parse error:', err);
@@ -47,9 +145,48 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed }) {
       }
       setReady(true);
     }
+  }, [applyTransform]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, []);
+
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [onWheel]);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === '+' || e.key === '=') {
+        const { x, y, scale } = transformRef.current;
+        applyTransform(x, y, Math.min(scale + 0.2, 4));
+      } else if (e.key === '-') {
+        const { x, y, scale } = transformRef.current;
+        applyTransform(x, y, Math.max(scale - 0.2, 0.2));
+      } else if (e.key === '0') {
+        applyTransform(0, 0, 1);
+      } else if (e.key === 'f' || e.key === 'F') {
+        fitToScreen();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [applyTransform, fitToScreen]);
+
+  useEffect(() => {
+    mermaid.initialize(getMermaidConfig(theme));
   }, []); // eslint-disable-line
 
   useEffect(() => { if (diagram) render(diagram); }, [diagram, render]);
+
+  useEffect(() => {
+    mermaid.initialize(getMermaidConfig(theme));
+    if (diagram) render(diagram);
+  }, [theme, render]); // eslint-disable-line react-hooks/exhaustive-deps — diagram intentionally omitted (theme change should re-render whatever is currently loaded)
 
   if (!diagram && !isAnalyzing) {
     return (
@@ -75,44 +212,48 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed }) {
 
   return (
     <div className="diagram-wrap">
-      {/* Controls */}
-      {ready && (
-        <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
-          {hasError && (
-            <span style={{ fontSize: 12, color: 'var(--warning)', marginRight: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <AlertTriangle size={12} strokeWidth={1.5} /> Raw Mermaid
-            </span>
-          )}
-          <div className="diagram-controls">
-            <button className="btn-icon" onClick={() => setScale(s => Math.max(s - 0.15, 0.3))} title="Zoom out">
-              <ZoomOut size={13} strokeWidth={1.5} />
-            </button>
-            <span style={{ fontSize: 11, color: 'var(--text-3)', width: 36, textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
-              {Math.round(scale * 100)}%
-            </span>
-            <button className="btn-icon" onClick={() => setScale(s => Math.min(s + 0.15, 3))} title="Zoom in">
-              <ZoomIn size={13} strokeWidth={1.5} />
-            </button>
-            <button className="btn-icon" onClick={() => setScale(1)} title="Reset zoom">
-              <Maximize2 size={13} strokeWidth={1.5} />
-            </button>
-          </div>
-        </div>
-      )}
 
-      <div className="diagram-canvas">
-        <div style={{ display: 'inline-block', transformOrigin: 'top center', transform: `scale(${scale})`, transition: 'transform 0.2s ease' }}>
-          <div ref={ref} />
-        </div>
+      <div
+        className="diagram-canvas"
+        ref={canvasRef}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerLeave={onPointerUp}
+      >
+        <div ref={ref} style={{ display: 'inline-block', transformOrigin: '0 0', willChange: 'transform' }} />
       </div>
 
-      {/* Legend strip */}
+      {/* Bottom toolbar */}
       <div className="arch-legend-row">
         <div className="group">
           <span>Auto-generated by Architecture Agent</span>
+          {hasError && ready && (
+            <span style={{ color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <AlertTriangle size={12} strokeWidth={1.5} /> Raw Mermaid
+            </span>
+          )}
         </div>
         <div className="group">
-          <span>Scroll to navigate · Use controls to zoom</span>
+          {ready ? (
+            <>
+              <div className="diagram-controls">
+                <button className="btn-icon" onClick={() => { const { x, y, scale } = transformRef.current; applyTransform(x, y, Math.max(scale - 0.2, 0.2)); }} title="Zoom out (-)"><ZoomOut size={13} strokeWidth={1.5} /></button>
+                <span style={{ fontSize: 11, color: 'var(--text-3)', width: 36, textAlign: 'center', fontFamily: 'var(--font-mono)' }}>{Math.round(displayScale * 100)}%</span>
+                <button className="btn-icon" onClick={() => { const { x, y, scale } = transformRef.current; applyTransform(x, y, Math.min(scale + 0.2, 4)); }} title="Zoom in (+)"><ZoomIn size={13} strokeWidth={1.5} /></button>
+                <button className="btn-icon" onClick={() => applyTransform(0, 0, 1)} title="Reset zoom (0)"><Maximize2 size={13} strokeWidth={1.5} /></button>
+                <button className="btn-icon" onClick={fitToScreen} title="Fit to screen (F)"><Scan size={13} strokeWidth={1.5} /></button>
+              </div>
+              <div className="diagram-controls">
+                <button className="btn-icon" onClick={handleCopy} title="Copy source">
+                  {copied ? <Check size={13} strokeWidth={1.5} /> : <Copy size={13} strokeWidth={1.5} />}
+                </button>
+                <button className="btn-icon" onClick={handleFullscreen} title="Fullscreen"><Expand size={13} strokeWidth={1.5} /></button>
+              </div>
+            </>
+          ) : (
+            <span>Scroll to navigate · Use controls to zoom</span>
+          )}
         </div>
       </div>
     </div>
