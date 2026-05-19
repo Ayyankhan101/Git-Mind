@@ -1,4 +1,5 @@
 import logging
+import re
 
 import tiktoken
 from langchain_groq import ChatGroq
@@ -55,6 +56,7 @@ def run_architecture_agent(file_tree: list[str], file_contents: dict[str, str]) 
     llm    = ChatGroq(model=_MODEL, temperature=0)
     result = invoke_with_retry(llm, prompt).content.strip()
     result = _strip_fences(result)
+    result = _sanitize_mermaid(result)
 
     if not result.startswith("graph"):
         logger.warning("Architecture agent: unexpected LLM output — using fallback diagram")
@@ -102,6 +104,35 @@ def _strip_fences(text: str) -> str:
         block = block.strip()
         if block.startswith("mermaid"):
             return block[len("mermaid"):].strip()
-        if block.startswith("graph"):
+        if block.startswith("graph") or block.startswith("flowchart"):
             return block
     return text
+
+
+def _sanitize_mermaid(diagram: str) -> str:
+    """Fix common LLM mistakes that cause Mermaid v11 parse errors."""
+    diagram = diagram.replace("\r\n", "\n").strip()
+
+    # Accept flowchart TD as well — normalise to graph TD
+    diagram = re.sub(r"^flowchart\s+", "graph ", diagram, flags=re.MULTILINE)
+
+    # Drop directives Mermaid v11 is strict about
+    diagram = re.sub(r"^\s*click\s+\S+.*$",    "", diagram, flags=re.MULTILINE)
+    diagram = re.sub(r"^\s*style\s+.*$",        "", diagram, flags=re.MULTILINE)
+    diagram = re.sub(r"^\s*classDef\s+.*$",     "", diagram, flags=re.MULTILINE)
+    diagram = re.sub(r"^\s*class\s+.*$",        "", diagram, flags=re.MULTILINE)
+    diagram = re.sub(r":::[\w-]+",              "", diagram)
+
+    def _clean_label(m: re.Match) -> str:
+        content = m.group(1)
+        content = re.sub(r"\([^)]*\)", "", content)      # remove func-call parens
+        content = re.sub(r'[<>&"\'#%\\]', "", content)   # strip chars that break parser
+        content = content.replace("/", " ").replace("_", " ")
+        content = re.sub(r"\s+", " ", content).strip()
+        return f"[{content or 'Node'}]"
+
+    diagram = re.sub(r"\[([^\]\[]+)\]", _clean_label, diagram)
+
+    # Drop now-blank lines, keep at most one blank between any two lines
+    lines = [l for l in diagram.splitlines() if l.strip()]
+    return "\n".join(lines)

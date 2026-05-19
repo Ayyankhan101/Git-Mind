@@ -30,6 +30,10 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed }) {
     try {
       const id = `gm-d-${++seq}`;
       const { svg } = await mermaid.render(id, src);
+      // Mermaid v11 returns an SVG with error text instead of throwing
+      if (svg.includes('Syntax error') || svg.includes('Parse error')) {
+        throw new Error('Mermaid syntax error in generated diagram');
+      }
       if (!ref.current) return;
       ref.current.innerHTML = svg;
       const svgEl = ref.current.querySelector('svg');
