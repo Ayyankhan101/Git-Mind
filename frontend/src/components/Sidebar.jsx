@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Star, Clock, Search, ChevronDown, FolderOpen, Filter, Bookmark } from 'lucide-react';
+import { Star, Clock, Search, ChevronDown, FolderOpen, Filter, Bookmark, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import AgentPipeline from './AgentPipeline';
 import { LANG_COLOR } from '../constants';
 
@@ -106,6 +106,7 @@ export default function Sidebar({
   const [showSavedViews, setShowSavedViews]       = useState(false);
   const [hoverRepo, setHoverRepo]     = useState(null);
   const [hoverRect, setHoverRect]     = useState(null);
+  const [collapsed, setCollapsed]     = useState(false);
   const filterRef = useRef(null);
 
   const view = SAVED_VIEWS.find(v => v.id === savedView) || SAVED_VIEWS[0];
@@ -132,9 +133,18 @@ export default function Sidebar({
   const safeLoadedUsers = loadedUsers || [];
 
   return (
-    <aside className="sidebar" style={{ width: 260 }}>
+    <aside className={`sidebar${collapsed ? ' collapsed' : ''}`} style={{ width: collapsed ? 56 : 260 }}>
+      {/* Collapse toggle */}
+      <button
+        className="sidebar-toggle"
+        onClick={() => setCollapsed(c => !c)}
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        {collapsed ? <PanelLeftOpen size={14} strokeWidth={1.5} /> : <PanelLeftClose size={14} strokeWidth={1.5} />}
+      </button>
+
       {/* Workspace switcher */}
-      <div className="workspace">
+      <div className="workspace" onClick={collapsed ? () => setCollapsed(false) : undefined}>
         {currentUser || safeLoadedUsers.length > 0 ? (
           <WorkspaceSwitcher
             currentUser={currentUser}

@@ -152,7 +152,28 @@ input, textarea, select { font-family: inherit; color: inherit; }
   backdrop-filter: var(--chrome-blur);
   -webkit-backdrop-filter: var(--chrome-blur);
   min-height: 0;
+  transition: width 0.2s ease;
+  overflow: hidden;
 }
+.sidebar-toggle {
+  position: absolute;
+  top: 10px;
+  right: 8px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.sidebar-toggle:hover { background: var(--surface-2); color: var(--text-1); }
+.sidebar.collapsed .sidebar-toggle { right: 50%; transform: translateX(50%); top: 10px; }
 
 .sb-section { display: flex; flex-direction: column; min-height: 0; }
 .sb-list {
@@ -1255,7 +1276,7 @@ input, textarea, select { font-family: inherit; color: inherit; }
 
 /* ── Sidebar workspace section ────────────────────────────── */
 .workspace {
-  padding: 18px 16px 12px;
+  padding: 18px 36px 12px 16px;
   border-bottom: 1px solid var(--border);
 }
 .workspace .logo {
@@ -1297,6 +1318,10 @@ input, textarea, select { font-family: inherit; color: inherit; }
 .sidebar.collapsed { width: 56px !important; }
 .sidebar.collapsed .workspace .logo span:not(.logo-mark),
 .sidebar.collapsed .workspace .ws-row,
+.sidebar.collapsed .workspace-switcher .ws-btn > div,
+.sidebar.collapsed .workspace-switcher .ws-btn > svg,
+.sidebar.collapsed .workspace-switcher .ws-pop,
+.sidebar.collapsed .sb-list,
 .sidebar.collapsed .sb-section,
 .sidebar.collapsed .pipeline { display: none; }
 .sidebar.collapsed .workspace {
