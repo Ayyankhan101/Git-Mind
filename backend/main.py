@@ -71,6 +71,7 @@ def _find_cached_snapshot(repo_url: str, sha: str) -> dict | None:
 # load_dotenv MUST run before any LangChain / OpenAI import
 load_dotenv()
 
+from agents.blame import enrich_findings_with_blame
 from agents.chat import run_chat_agent
 from agents.crisis.reporter import reporter_loop
 from orchestrator import graph, crisis_graph
@@ -370,6 +371,21 @@ async def ws_analyze(ws: WebSocket):
         await ws.send_json({"error": str(exc)})
         await ws.close()
         return
+    else:
+        # ── Blame enrichment (runs only on success, before finally cleanup) ──
+        local_path_for_blame = final_state.get("local_path")
+        if local_path_for_blame and final_state.get("security_findings"):
+            try:
+                enriched = await asyncio.to_thread(
+                    enrich_findings_with_blame,
+                    final_state["security_findings"],
+                    local_path_for_blame,
+                )
+                final_state["security_findings"] = enriched
+                await ws.send_json({"security_findings": enriched})
+                logger.info("Blame enrichment complete  session=%s", session_id)
+            except Exception as exc:
+                logger.warning("Blame enrichment failed: %s", exc)
     finally:
         # Cancel any pending LangGraph work and delete the cloned repo
         try:

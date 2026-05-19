@@ -65,6 +65,24 @@ function FindingRow({ finding, onCrisis, onFix, fixLoading, fixResult, onPickFil
             {filePath && <span>FILE <code>{filePath}{fileLine ? `:${fileLine}` : ''}</code></span>}
             {finding.id && <span>RULE <code>{finding.id || finding.rule}</code></span>}
           </div>
+          {finding.blame && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--text-3)', marginTop: 6, flexWrap: 'wrap' }}>
+              <span style={{ background: 'var(--surface-2)', borderRadius: 4, padding: '2px 6px', fontFamily: 'monospace' }}>
+                {finding.blame.commit_hash}
+              </span>
+              {finding.blame.author && (
+                <span>{finding.blame.author}</span>
+              )}
+              {finding.blame.date && (
+                <span>· {finding.blame.date}</span>
+              )}
+              {finding.blame.commit_message && (
+                <span style={{ fontStyle: 'italic', overflow: 'hidden', maxWidth: 280, whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                  "{finding.blame.commit_message}"
+                </span>
+              )}
+            </div>
+          )}
           <div className="actions">
             {canCrisis && (
               <button className="btn-text danger" onClick={() => onCrisis?.(finding)}>
