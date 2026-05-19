@@ -74,6 +74,7 @@ load_dotenv()
 from agents.blame import enrich_findings_with_blame
 from agents.chat import run_chat_agent
 from agents.crisis.reporter import reporter_loop
+from agents.health import compute_health
 from orchestrator import graph, crisis_graph
 
 _UUID_RE = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.IGNORECASE)
@@ -307,6 +308,7 @@ async def ws_analyze(ws: WebSocket):
                 "api_docs":             cached.get("api_docs", []),
                 "security_findings":    cached.get("security_findings", []),
                 "cve_findings":         cached.get("cve_findings", []),
+                "health":               cached.get("health"),
             })
             _put_session(session_id, {
                 "repo_name":              cached.get("repo_name", ""),
@@ -386,6 +388,17 @@ async def ws_analyze(ws: WebSocket):
                 logger.info("Blame enrichment complete  session=%s", session_id)
             except Exception as exc:
                 logger.warning("Blame enrichment failed: %s", exc)
+
+        # ── Health score ───────────────────────────────────────────────────────
+        health_score = compute_health(
+            file_contents=final_state.get("file_contents", {}),
+            security_findings=final_state.get("security_findings", []),
+            cve_findings=final_state.get("cve_findings", []),
+            api_docs=final_state.get("api_docs", []),
+        )
+        final_state["health"] = health_score
+        await ws.send_json({"health": health_score})
+        logger.info("Health score  session=%s  grade=%s  score=%d", session_id, health_score["grade"], health_score["score"])
     finally:
         # Cancel any pending LangGraph work and delete the cloned repo
         try:
@@ -406,6 +419,7 @@ async def ws_analyze(ws: WebSocket):
         "architecture_diagram":   final_state.get("architecture_diagram"),
         "repo_url":               repo_url,
         "chat_history":           [],
+        "health":                 final_state.get("health"),
     })
 
     # Persist analysis so it can be shared via /analysis/{session_id}
@@ -420,6 +434,7 @@ async def ws_analyze(ws: WebSocket):
                 "security_findings":      final_state.get("security_findings", []),
                 "cve_findings":           final_state.get("cve_findings", []),
                 "chroma_collection_name": final_state.get("chroma_collection_name"),
+                "health":                 final_state.get("health"),
                 "head_sha":               sha,
                 "saved_at":               time.time(),
             }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart3, FileCode2, ShieldAlert, Zap, TrendingUp } from 'lucide-react';
 import { fetchSummary } from '../api';
+import HealthCard from './HealthCard';
 
 const SEV_COLORS = {
   critical: 'var(--sev-critical)',
@@ -69,7 +70,7 @@ function Donut({ segments, size = 120, thickness = 14 }) {
 }
 
 
-export default function SummaryTab({ sessionId, enabled, repoName, findings, apiDocs, elapsedSec, isAnalyzing }) {
+export default function SummaryTab({ sessionId, enabled, repoName, findings, apiDocs, elapsedSec, isAnalyzing, health }) {
   const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState(null);
@@ -132,6 +133,7 @@ export default function SummaryTab({ sessionId, enabled, repoName, findings, api
   return (
     <div className="summary">
       <h2>Executive Summary</h2>
+      <HealthCard health={health} />
       {loading && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: 'var(--text-3)', fontSize: 14, marginBottom: 24 }}>
           <span className="spinner" />

@@ -121,6 +121,7 @@ export default function App() {
   const [cveFindings,   setCveFindings]   = useState([]);
   const [fixLoading,    setFixLoading]    = useState(null);
   const [fixResult,     setFixResult]     = useState(null);
+  const [health,        setHealth]        = useState(null);
   const [repoHistory,   setRepoHistory]   = useState(() => {
     try { return JSON.parse(localStorage.getItem('gitmind_history') || '[]'); }
     catch { return []; }
@@ -266,6 +267,7 @@ export default function App() {
     setCveFindings([]);
     setFixResult(null);
     setFixLoading(null);
+    setHealth(null);
     setAnalyzed(false);
     setElapsedSec(0);
     setAgentStatus(INITIAL_STATUS);
@@ -307,6 +309,7 @@ export default function App() {
       if (data.api_docs?.length)     setApiDocs(data.api_docs);
       if (data.security_findings)    setFindings(data.security_findings);
       if (data.cve_findings)         setCveFindings(data.cve_findings);
+      if (data.health)               setHealth(data.health);
       if (data.agent_error) {
         const ev = data.agent_error;
         setAgentWarnings(prev => [...prev, `${ev.agent} agent failed: ${ev.detail || 'check backend logs'}`]);
@@ -659,7 +662,7 @@ export default function App() {
               <Onboarding onLoad={handleLoadRepos} onAnalyzeUrl={handleSelectRepo} />
             ) : (
               <>
-                {activeTab === 'summary'  && <SummaryTab  sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} findings={findings} apiDocs={apiDocs} elapsedSec={elapsedSec} isAnalyzing={isAnalyzing} />}
+                {activeTab === 'summary'  && <SummaryTab  sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} findings={findings} apiDocs={apiDocs} elapsedSec={elapsedSec} isAnalyzing={isAnalyzing} health={health} />}
                 {activeTab === 'diagram'  && <DiagramTab  diagram={diagram}   isAnalyzing={isAnalyzing} analyzed={analyzed} />}
                 {activeTab === 'docs'     && <DocsTab     docs={apiDocs}      isAnalyzing={isAnalyzing} analyzed={analyzed} onPickFile={setFilePreview} />}
                 {activeTab === 'security' && <SecurityTab findings={findings} isAnalyzing={isAnalyzing} analyzed={analyzed} onCrisis={setCrisisFinding} onFix={handleFix} fixLoading={fixLoading} fixResult={fixResult} onPickFile={setFilePreview} />}
