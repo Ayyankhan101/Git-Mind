@@ -67,7 +67,7 @@ function IssueRow({ issue }) {
 
 export default function PRReviewTab({ prAutoUrl, onAutoUrlUsed }) {
   const [prUrl,       setPrUrl]       = useState('');
-  const [token,       setToken]       = useState('');
+  const [token,       setToken]       = useState(() => sessionStorage.getItem('gm-gh-token') || '');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState(null);
@@ -148,7 +148,7 @@ export default function PRReviewTab({ prAutoUrl, onAutoUrlUsed }) {
           type="password"
           placeholder="GitHub personal access token (optional)"
           value={token}
-          onChange={e => setToken(e.target.value)}
+          onChange={e => { setToken(e.target.value); sessionStorage.setItem('gm-gh-token', e.target.value); }}
         />
       )}
 

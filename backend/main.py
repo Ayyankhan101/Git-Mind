@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 _ANALYSES_DIR = Path(__file__).parent / "analyses"
 _ANALYSES_DIR.mkdir(exist_ok=True)
@@ -140,7 +140,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="GitMind API", lifespan=lifespan)
 
-_CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "*").split(",")]
+_CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_CORS_ORIGINS,
@@ -192,7 +192,7 @@ def _rate_ok(endpoint: str, key: str) -> bool:
 
 class ChatRequest(BaseModel):
     session_id: str
-    question:   str
+    question:   str = Field(..., max_length=2000)
 
 class SummaryRequest(BaseModel):
     session_id: str
@@ -518,6 +518,7 @@ async def chat_endpoint(req: ChatRequest):
         {"role": "user",      "content": req.question},
         {"role": "assistant", "content": answer},
     ])
+    session["chat_history"] = session["chat_history"][-50:]
 
     return {"answer": answer}
 
@@ -562,6 +563,7 @@ async def chat_stream_endpoint(req: ChatRequest):
             {"role": "user",      "content": req.question},
             {"role": "assistant", "content": full_answer},
         ])
+        session["chat_history"] = session["chat_history"][-50:]
         yield f"data: {json.dumps({'done': True})}\n\n"
 
     return StreamingResponse(
@@ -823,9 +825,10 @@ async def auto_pr_endpoint(req: AutoPRRequest):
     if not session:
         return {"error": "Session not found. Run /ws/analyze first."}
 
+    from agents.scanner import _GITHUB_URL_RE
     repo_url = session.get("repo_url", "")
-    if not repo_url.startswith("https://github.com/"):
-        return {"error": "Auto-PR requires a GitHub repo"}
+    if not _GITHUB_URL_RE.match(repo_url):
+        return {"error": "Auto-PR requires a valid GitHub repo URL (https://github.com/owner/repo)"}
 
     finding    = req.finding
     collection = session.get("chroma_collection_name")

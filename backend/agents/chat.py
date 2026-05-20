@@ -79,9 +79,14 @@ async def run_chat_agent_stream(
         context=context,
         history=history,
     )
-    llm = ChatGroq(model=_MODEL, temperature=0.2)
-    async for chunk in llm.astream([
+    messages = [
         {"role": "system", "content": system},
         {"role": "user",   "content": question},
-    ]):
-        yield chunk.content
+    ]
+    llm = ChatGroq(model=_MODEL, temperature=0.2)
+    try:
+        async for chunk in llm.astream(messages):
+            yield chunk.content
+    except Exception as exc:
+        logger.warning("astream failed (%s), falling back to invoke_with_retry", exc)
+        yield invoke_with_retry(llm, messages).content
