@@ -1,6 +1,6 @@
 # GitMind
 
-Multi-agent repo intelligence platform. Enter a GitHub username, pick a repo → 6 agents run in parallel → architecture diagram, API docs, security audit, CVE scan, RAG chat, shareable report. Optional Crisis Mode role-plays a security incident with CEO / Legal / Engineering / Reporter agents.
+Multi-agent repo intelligence platform. Enter a GitHub username (and optionally a PAT for private repos), pick a repo → 6 agents run in parallel → architecture diagram, API docs, security audit, CVE scan, RAG chat, shareable report. Optional Crisis Mode role-plays a security incident with CEO / Legal / Engineering / Reporter agents.
 
 **Stack:** FastAPI · LangGraph · Groq (llama-3.3-70b-versatile) · ChromaDB · React · Mermaid · semgrep · OSV.dev
 
@@ -10,16 +10,18 @@ Multi-agent repo intelligence platform. Enter a GitHub username, pick a repo →
 
 | Feature | Description |
 |---|---|
-| **Architecture diagram** | Mermaid graph of the repo's component relationships |
+| **Architecture diagram** | Mermaid graph of the repo's component relationships; pan/zoom/fullscreen with keyboard shortcuts |
 | **API doc agent** | Extracts every HTTP endpoint with method, route, and description |
 | **Security auditor** | semgrep SAST scan; findings ranked Critical → Low with exploit scenarios |
 | **CVE scanner** | Checks dependency lockfiles against [OSV.dev](https://osv.dev) — supports PyPI, npm, Cargo, Go |
 | **Auto-fix patches** | Click "Generate Fix" on any finding → unified diff patch from LLM + RAG context |
-| **PR Review** | Paste any public GitHub PR URL → structured review with file:line issues and verdict |
+| **PR Review** | Paste any GitHub PR URL → structured review with file:line issues and verdict |
 | **RAG chat** | Ask anything about the codebase; ChromaDB + streaming SSE responses |
 | **Crisis Mode** | Escalation simulation: CEO / Legal / Engineering debate a live incident |
 | **Shareable links** | Analysis snapshots saved server-side; share via `?share=SESSION_ID` URL |
 | **Export report** | Download full analysis as Markdown |
+| **Private repo access** | Enter a GitHub PAT in the command bar to load and analyze private repositories |
+| **Sort by last commit** | Repos sorted by `pushed_at` descending — most recently committed on top |
 | **Repo history** | Recent repos persisted in localStorage |
 | **Browser notifications** | Desktop alert when long analysis completes |
 
@@ -62,16 +64,20 @@ IM-Hackathon/
 │       ├── App.js
 │       ├── api.js
 │       └── components/
-│           ├── AgentProgress.jsx
-│           ├── DiagramTab.jsx
-│           ├── DocsTab.jsx
-│           ├── SecurityTab.jsx   ← with Generate Fix button
-│           ├── CveTab.jsx        ← OSV.dev CVE results
-│           ├── PRReviewTab.jsx   ← PR review UI
-│           ├── SummaryTab.jsx
-│           ├── ChatTab.jsx       ← SSE streaming chat
-│           ├── RepoList.jsx      ← with history chips
-│           └── CrisisChat.jsx
+│           ├── Sidebar.jsx           ← repo list, saved views, workspace switcher
+│           ├── AgentPipeline.jsx     ← live agent progress display
+│           ├── DiagramTab.jsx        ← Mermaid pan/zoom diagram
+│           ├── DocsTab.jsx           ← API endpoint browser
+│           ├── SecurityTab.jsx       ← SAST findings + Generate Fix
+│           ├── CveTab.jsx            ← OSV.dev CVE results
+│           ├── PRReviewTab.jsx       ← PR review UI
+│           ├── SummaryTab.jsx        ← health score + executive summary
+│           ├── ChatTab.jsx           ← SSE streaming RAG chat
+│           ├── CrisisChat.jsx        ← crisis escalation role-play
+│           ├── ErrorBoundary.jsx     ← per-tab crash isolation
+│           ├── KeyboardHelp.jsx      ← keyboard shortcut modal
+│           ├── Onboarding.jsx        ← first-run guide
+│           └── FilePreviewDrawer.jsx ← source file viewer
 ├── Dockerfile               ← multi-stage: backend + nginx frontend
 ├── docker-compose.yml
 ├── docker-compose.dev.yml   ← hot-reload dev setup
@@ -122,7 +128,8 @@ REACT_APP_API_BASE=http://localhost:8002 npm start   # http://localhost:3000
 | Variable | Required | Description |
 |---|---|---|
 | `GROQ_API_KEY` | Yes | Groq API key — get one free at [console.groq.com](https://console.groq.com) |
-| `GITHUB_TOKEN` | No | GitHub PAT — raises API rate limit to 5 000 req/hr; required for private repo PR reviews |
+| `GITHUB_TOKEN` | No | Server-side GitHub PAT — raises rate limit to 5 000 req/hr for all users; see also in-UI token below |
+| `CORS_ORIGINS` | No | Comma-separated allowed origins (default: `http://localhost:3000,http://localhost:3001`) |
 | `REACT_APP_API_BASE` | No | Backend base URL (default: auto-derived from `window.location`) |
 
 ---
@@ -138,7 +145,7 @@ REACT_APP_API_BASE=http://localhost:8002 npm start   # http://localhost:3000
 | `/pr-review` | POST | `{pr_url, token?}` → structured LLM code review |
 | `/fix` | POST | `{session_id, finding}` → unified diff patch for a security finding |
 | `/analysis/{session_id}` | GET | Load a saved analysis snapshot (used by share links) |
-| `/repos/{username}` | GET | List public GitHub repos for a user |
+| `/repos/{username}` | GET | List repos — public only by default; pass `X-GH-Token` header to include private repos (sorted by `pushed_at` desc) |
 | `/ws/crisis` | WS | Crisis Mode — streams CEO/Legal/Engineering role-play |
 | `/health` | GET | `{status, sessions_active}` |
 
@@ -166,6 +173,38 @@ All 6 post-scanner nodes run in parallel. Each is fully error-isolated — a fai
 ```bash
 cd backend && source venv/bin/activate && python smoke_test.py
 ```
+
+---
+
+## GitHub Authentication (private repos)
+
+GitMind supports two levels of GitHub auth:
+
+**1. In-UI token (per user, recommended)**
+
+Enter a Personal Access Token in the token input field (lock icon, next to the username box). Stored in `sessionStorage` — clears on browser close.
+
+- Create at: `github.com/settings/tokens/new` → select **`repo`** scope
+- Enables: loading private repos in sidebar, analyzing private repos (authenticated clone), PR review of private repos
+
+**2. Server-side `GITHUB_TOKEN` env var**
+
+Set on the backend host. Applies to all users — useful for raising the public API rate limit (60 → 5 000 req/hr) without requiring every user to provide a token. Does **not** grant access to private repos of individual users.
+
+> **Note:** GitHub removed basic username+password API auth in August 2021. Only PATs (or OAuth) work.
+
+---
+
+## Keyboard shortcuts
+
+| Shortcut | Action |
+|---|---|
+| `⌘/Ctrl + K` | Open command palette |
+| `⌘/Ctrl + R` | Re-analyze current repo |
+| `?` | Toggle keyboard shortcut help |
+| `+` / `-` | Zoom in / out (Architecture tab) |
+| `0` | Reset zoom (Architecture tab) |
+| `F` | Fit diagram to screen (Architecture tab) |
 
 ---
 
