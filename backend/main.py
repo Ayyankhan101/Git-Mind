@@ -93,15 +93,26 @@ _ANALYSIS_TTL_SECONDS = 60 * 60 * 24 * 7  # 7 days
 def _prune_old_analyses() -> None:
     cutoff = time.time() - _ANALYSIS_TTL_SECONDS
     removed = 0
+    removed_ids: set[str] = set()
     for p in _ANALYSES_DIR.glob("*.json"):
+        if p.name == "_sha_index.json":
+            continue
         try:
             if p.stat().st_mtime < cutoff:
+                removed_ids.add(p.stem)
                 p.unlink()
                 removed += 1
         except Exception:
             pass
     if removed:
         logger.info("Pruned %d expired analysis file(s)", removed)
+    if removed_ids:
+        with _sha_index_lock:
+            idx = _load_sha_index()
+            cleaned = {sha: sid for sha, sid in idx.items() if sid not in removed_ids}
+            if len(cleaned) < len(idx):
+                _save_sha_index(cleaned)
+                logger.info("Pruned %d stale SHA index entries", len(idx) - len(cleaned))
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -160,6 +171,7 @@ _RATE_WINDOWS: dict[str, tuple[int, int]] = {
     "chat":    (60, 20),   # 20 calls per 60 s
     "fix":     (60, 10),   # 10 calls per 60 s
     "pr":      (60, 5),    # 5 calls per 60 s
+    "analyze": (60, 3),    # 3 analyses per 60 s per IP
 }
 
 def _rate_ok(endpoint: str, key: str) -> bool:
@@ -296,6 +308,12 @@ async def ws_analyze(ws: WebSocket):
         await ws.close()
         return
 
+    client_ip = getattr(ws.client, "host", "unknown")
+    if not _rate_ok("analyze", client_ip):
+        await ws.send_json({"error": "Rate limit exceeded — max 3 analyses per minute. Please wait."})
+        await ws.close()
+        return
+
     logger.info("Analysis started  session=%s  repo=%s", session_id, repo_url)
     initial    = _initial_state(repo_url)
     final_state = dict(initial)
@@ -306,14 +324,27 @@ async def ws_analyze(ws: WebSocket):
         cached = _find_cached_snapshot(repo_url, sha)
         if cached:
             logger.info("Cache hit SHA=%s session=%s", sha[:8], session_id)
-            all_done = {k: "done" for k in ("scanner", "architecture", "api_docs", "security", "chat", "cve_scanner")}
-            await ws.send_json({"agent_status": all_done})
+            # Stagger agent completions so the pipeline animates naturally on the frontend
+            await ws.send_json({"agent_status": {
+                "scanner": "done", "architecture": "running", "api_docs": "running",
+                "security": "running", "chat": "running", "cve_scanner": "running",
+            }})
+            await asyncio.sleep(0.2)
             await ws.send_json({
+                "agent_status": {"architecture": "done", "api_docs": "done"},
                 "architecture_diagram": cached.get("architecture_diagram"),
                 "api_docs":             cached.get("api_docs", []),
-                "security_findings":    cached.get("security_findings", []),
-                "cve_findings":         cached.get("cve_findings", []),
-                "health":               cached.get("health"),
+            })
+            await asyncio.sleep(0.15)
+            await ws.send_json({
+                "agent_status": {"security": "done", "cve_scanner": "done"},
+                "security_findings": cached.get("security_findings", []),
+                "cve_findings":      cached.get("cve_findings", []),
+            })
+            await asyncio.sleep(0.1)
+            await ws.send_json({
+                "agent_status": {"chat": "done"},
+                "health":        cached.get("health"),
             })
             _put_session(session_id, {
                 "repo_name":              cached.get("repo_name", ""),

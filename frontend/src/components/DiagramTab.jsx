@@ -135,7 +135,7 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme }) {
       ref.current.innerHTML = svg;
       const svgEl = ref.current.querySelector('svg');
       if (svgEl) { svgEl.style.maxWidth = 'none'; svgEl.style.height = 'auto'; }
-      applyTransform(0, 0, 1);
+      fitToScreen();
       setReady(true);
     } catch (err) {
       console.error('[DiagramTab] Mermaid parse error:', err);
@@ -149,7 +149,7 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme }) {
       }
       setReady(true);
     }
-  }, [applyTransform]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [applyTransform, fitToScreen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };

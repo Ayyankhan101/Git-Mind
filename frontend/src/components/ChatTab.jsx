@@ -35,6 +35,7 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
     const text = input.trim();
     if (!text || busy || !enabled) return;
     setInput('');
+    if (textareaRef.current) textareaRef.current.style.height = 'auto';
     const userMsg  = { role: 'user', content: text };
     const botSlot  = { role: 'assistant', content: '', streaming: true };
     setMessages(prev => [...prev, userMsg, botSlot]);
@@ -91,6 +92,10 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
           className="chat-input"
           value={input}
           onChange={e => setInput(e.target.value)}
+          onInput={e => {
+            e.target.style.height = 'auto';
+            e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+          }}
           onKeyDown={handleKeyDown}
           disabled={busy}
           placeholder="Ask anything about the repo — Enter to send"

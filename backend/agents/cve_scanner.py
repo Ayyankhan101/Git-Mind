@@ -16,9 +16,11 @@ def _parse_requirements_txt(content: str) -> list[dict]:
     deps = []
     for line in content.splitlines():
         line = line.strip().split("#")[0].strip()
-        m = re.match(r'^([A-Za-z0-9_\-\.]+)==([^\s;,]+)', line)
+        # Match pinned (==) and ranged (>=, ~=, <=) — use first version as proxy
+        m = re.match(r'^([A-Za-z0-9_\-\.]+)\s*(?:==|>=|~=|<=)\s*([0-9][^\s;,]*)', line)
         if m:
-            deps.append({"name": m.group(1), "version": m.group(2), "ecosystem": "PyPI"})
+            ver = m.group(2).split(',')[0].strip()
+            deps.append({"name": m.group(1), "version": ver, "ecosystem": "PyPI"})
     return deps
 
 

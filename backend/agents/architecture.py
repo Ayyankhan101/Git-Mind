@@ -1,5 +1,7 @@
 import logging
 import re
+from collections import Counter
+from pathlib import Path
 
 import tiktoken
 from langchain_groq import ChatGroq
@@ -42,11 +44,31 @@ graph TD
 """
 
 
+_EXT_TO_LANG = {
+    ".py": "Python", ".js": "JavaScript", ".ts": "TypeScript",
+    ".jsx": "JavaScript/React", ".tsx": "TypeScript/React",
+    ".java": "Java", ".go": "Go", ".rb": "Ruby", ".php": "PHP",
+    ".rs": "Rust", ".cs": "C#", ".cpp": "C++", ".c": "C",
+    ".swift": "Swift", ".kt": "Kotlin",
+}
+
+def _detect_primary_language(file_tree: list[str]) -> str:
+    counts: Counter = Counter()
+    for f in file_tree:
+        ext = Path(f).suffix.lower()
+        if ext in _EXT_TO_LANG:
+            counts[ext] += 1
+    if not counts:
+        return "Unknown"
+    return _EXT_TO_LANG[counts.most_common(1)[0][0]]
+
+
 def run_architecture_agent(file_tree: list[str], file_contents: dict[str, str]) -> str:
     if not file_tree:
         return "graph TD\n    A[Empty Repository]"
 
-    prompt = _build_prompt(file_tree, file_contents)
+    primary_lang = _detect_primary_language(file_tree)
+    prompt = _build_prompt(file_tree, file_contents, primary_lang)
 
     cached = get_cached(_MODEL, prompt)
     if cached:
@@ -68,7 +90,7 @@ def run_architecture_agent(file_tree: list[str], file_contents: dict[str, str]) 
 
 # ── Private helpers ────────────────────────────────────────────────────────────
 
-def _build_prompt(file_tree: list[str], file_contents: dict[str, str]) -> str:
+def _build_prompt(file_tree: list[str], file_contents: dict[str, str], primary_lang: str = "Unknown") -> str:
     enc    = tiktoken.get_encoding("cl100k_base")  # approximation for Llama token counts
     budget = _TOKEN_BUDGET
 
@@ -93,7 +115,7 @@ def _build_prompt(file_tree: list[str], file_contents: dict[str, str]) -> str:
         key_content += block
         budget      -= cost
 
-    return f"{_SYSTEM_PROMPT}\n\nFILE TREE:\n{tree_str}\n\nKEY FILES:{key_content}"
+    return f"{_SYSTEM_PROMPT}\n\nPRIMARY LANGUAGE: {primary_lang}\n\nFILE TREE:\n{tree_str}\n\nKEY FILES:{key_content}"
 
 
 def _strip_fences(text: str) -> str:
