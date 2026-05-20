@@ -5,10 +5,11 @@ const SEV_ORDER = ['critical', 'high', 'medium', 'low'];
 
 function parseFix(fixText) {
   if (!fixText) return { explanation: '', patch: '' };
-  const diffIdx = fixText.indexOf('```diff');
-  if (diffIdx === -1) return { explanation: fixText.replace(/\*\*/g, '').trim(), patch: '' };
-  const explanation = fixText.slice(0, diffIdx).replace(/\*\*/g, '').trim();
-  const patchStart  = diffIdx + 7;
+  // Match any opening code fence (```diff, ```python, ```js, bare ```, etc.)
+  const match = /```(\w*)\n?/.exec(fixText);
+  if (!match) return { explanation: fixText.replace(/\*\*/g, '').trim(), patch: '' };
+  const explanation = fixText.slice(0, match.index).replace(/\*\*/g, '').trim();
+  const patchStart  = match.index + match[0].length;
   const patchEnd    = fixText.indexOf('```', patchStart);
   const patch       = patchEnd === -1 ? fixText.slice(patchStart) : fixText.slice(patchStart, patchEnd);
   return { explanation, patch: patch.trim() };

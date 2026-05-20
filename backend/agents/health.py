@@ -55,11 +55,7 @@ def _docs_score(file_contents: dict) -> float:
 def _api_score(api_docs: list) -> float:
     if not api_docs:
         return 50.0
-    with_desc = sum(
-        1 for e in api_docs
-        if (e.get("description") or "").strip()
-        and e.get("description") != "No standard routing patterns found in this codebase."
-    )
+    with_desc = sum(1 for e in api_docs if (e.get("description") or "").strip())
     return round(with_desc / len(api_docs) * 100, 1)
 
 

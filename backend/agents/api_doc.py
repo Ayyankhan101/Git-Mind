@@ -47,12 +47,7 @@ def run_api_doc_agent(file_contents: dict[str, str]) -> list[dict]:
 
     if not api_files:
         logger.info("API doc agent: no route patterns detected")
-        return [{
-            "method": "N/A",
-            "route": "No routes detected",
-            "description": "No standard routing patterns found in this codebase.",
-            "parameters": "N/A",
-        }]
+        return []
 
     llm = ChatGroq(model=_MODEL, temperature=0).bind(
         response_format={"type": "json_object"}

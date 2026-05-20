@@ -39,6 +39,7 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme }) {
   const dragRef      = useRef(null);
   const canvasRef    = useRef(null);
   const rafRef       = useRef(null);
+  const mountedRef   = useRef(false);
 
   const applyTransform = useCallback((x, y, scale) => {
     transformRef.current = { x, y, scale };
@@ -82,6 +83,7 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme }) {
     if (!canvas || !svg) return;
     const cw = canvas.clientWidth  - 64;
     const ch = canvas.clientHeight - 64;
+    if (cw <= 0 || ch <= 0) return;
     // Get natural (unscaled) SVG dimensions
     const currentScale = transformRef.current.scale;
     const sw = svg.getBoundingClientRect().width  / currentScale;
@@ -188,6 +190,7 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme }) {
   useEffect(() => { if (diagram) render(diagram); }, [diagram, render]);
 
   useEffect(() => {
+    if (!mountedRef.current) { mountedRef.current = true; return; }
     mermaid.initialize(getMermaidConfig(theme));
     if (diagram) render(diagram);
   }, [theme, render]); // eslint-disable-line react-hooks/exhaustive-deps — diagram intentionally omitted (theme change should re-render whatever is currently loaded)

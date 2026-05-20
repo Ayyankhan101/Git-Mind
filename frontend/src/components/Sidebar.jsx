@@ -106,7 +106,7 @@ export default function Sidebar({
   const [showSavedViews, setShowSavedViews]       = useState(false);
   const [hoverRepo, setHoverRepo]     = useState(null);
   const [hoverRect, setHoverRect]     = useState(null);
-  const [collapsed, setCollapsed]     = useState(false);
+  const [collapsed, setCollapsed]     = useState(() => localStorage.getItem('gm-sidebar') === '1');
   const filterRef = useRef(null);
 
   const view = SAVED_VIEWS.find(v => v.id === savedView) || SAVED_VIEWS[0];
@@ -137,7 +137,7 @@ export default function Sidebar({
       {/* Collapse toggle */}
       <button
         className="sidebar-toggle"
-        onClick={() => setCollapsed(c => !c)}
+        onClick={() => setCollapsed(c => { const next = !c; localStorage.setItem('gm-sidebar', next ? '1' : '0'); return next; })}
         title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         {collapsed ? <PanelLeftOpen size={14} strokeWidth={1.5} /> : <PanelLeftClose size={14} strokeWidth={1.5} />}

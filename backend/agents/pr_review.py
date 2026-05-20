@@ -4,6 +4,8 @@ import re
 import httpx
 from langchain_groq import ChatGroq
 
+from llm_cache import invoke_with_retry
+
 logger = logging.getLogger(__name__)
 
 _MODEL         = "llama-3.3-70b-versatile"
@@ -87,7 +89,7 @@ def run_pr_review(pr_url: str, token: str | None = None) -> dict:
     )
 
     llm    = ChatGroq(model=_MODEL, temperature=0.1)
-    review = llm.invoke(prompt).content.strip()
+    review = invoke_with_retry(llm, prompt).content.strip()
     logger.info("PR review complete for %s/%s#%s", pr["owner"], pr["repo"], pr["pr_num"])
 
     return {

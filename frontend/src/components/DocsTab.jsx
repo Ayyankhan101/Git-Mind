@@ -69,6 +69,16 @@ export default function DocsTab({ docs, isAnalyzing, analyzed, onPickFile }) {
 
   if (isAnalyzing && !docs?.length) return <SkeletonRows />;
 
+  if (analyzed && !isAnalyzing && !docs?.length) {
+    return (
+      <div className="empty">
+        <FileCode2 size={20} className="empty-icon" strokeWidth={1.5} />
+        <div className="empty-title">No API endpoints detected</div>
+        <div className="empty-sub">No standard routing patterns found in this codebase</div>
+      </div>
+    );
+  }
+
   return (
     <div>
       {/* Tab header */}

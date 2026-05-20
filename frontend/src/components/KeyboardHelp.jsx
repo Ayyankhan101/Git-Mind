@@ -41,7 +41,6 @@ const SHORTCUTS = [
       { desc: 'Navigate repos (up)',   keys: ['↑'] },
       { desc: 'Navigate repos (down)', keys: ['↓'] },
       { desc: 'Select focused repo',   keys: ['Enter'] },
-      { desc: 'Pin/unpin repo',        keys: ['P'] },
     ],
   },
 ];
