@@ -72,7 +72,6 @@ def clone_and_scan(repo_url: str) -> dict:
             filepath = Path(root) / filename
             # Always use forward slashes — semgrep and LLMs expect POSIX paths
             rel = filepath.relative_to(dest_path).as_posix()
-            file_tree.append(rel)
 
             try:
                 size = filepath.stat().st_size
@@ -83,6 +82,7 @@ def clone_and_scan(repo_url: str) -> dict:
                     logger.warning("50 MB cap reached — stopping file reads")
                     break
                 file_contents[rel] = filepath.read_text(errors="ignore")
+                file_tree.append(rel)           # only after successful read — keeps tree and contents in sync
             except OSError:
                 pass   # unreadable file — skip silently
 

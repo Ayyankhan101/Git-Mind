@@ -8,7 +8,7 @@ from agents.architecture import run_architecture_agent
 from agents.cve_scanner import run_cve_scanner
 from agents.rag_setup import run_rag_setup
 from agents.scanner import clone_and_scan
-from agents.security import _synthetic_finding, run_security_agent
+from agents.security import run_security_agent
 from state import RepoState
 
 logger = logging.getLogger(__name__)

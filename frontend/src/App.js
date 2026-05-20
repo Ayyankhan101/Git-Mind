@@ -210,6 +210,7 @@ export default function App() {
       if (data.security_findings)    setFindings(data.security_findings);
       if (data.cve_findings)         setCveFindings(data.cve_findings);
       if (data.repo_name)            setRepoName(data.repo_name);
+      if (data.health)               setHealth(data.health);
       setAnalyzed(true);
       setShowOnboarding(false);
       setActiveTab('summary');
@@ -226,6 +227,7 @@ export default function App() {
   // ── Global paste → PR auto-load ──────────────────────────────────────────────
   useEffect(() => {
     const onPaste = (e) => {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
       const text = (e.clipboardData || window.clipboardData)?.getData('text') || '';
       const prMatch = text.match(/https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+/);
       if (prMatch) {
@@ -433,6 +435,17 @@ export default function App() {
         `### ${pkg.package} v${pkg.version} (${pkg.ecosystem}) — ${pkg.worst_severity}\n` +
         pkg.vulns.map(v => `- **${v.id}** [${v.severity}]: ${v.summary}${v.fixed_in ? ` *(fix: ${v.fixed_in})*` : ''}`).join('\n')
       ) : ['No CVE vulnerabilities found.']),
+      '', '## Health Score', '',
+      ...(health ? [
+        `**Grade: ${health.grade}** (${health.score}/100)`,
+        '',
+        `| Dimension | Score |`,
+        `|-----------|-------|`,
+        `| Security | ${health.breakdown?.security ?? '—'} |`,
+        `| Documentation | ${health.breakdown?.documentation ?? '—'} |`,
+        `| API Coverage | ${health.breakdown?.api_coverage ?? '—'} |`,
+        `| Dependency Freshness | ${health.breakdown?.dependency_freshness ?? '—'} |`,
+      ] : ['Health score not available.']),
       '', '---', `_Scanned in ${elapsedSec}s by GitMind_`,
     ];
     const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
@@ -442,7 +455,7 @@ export default function App() {
     URL.revokeObjectURL(url);
     addToast({ kind: 'success', title: 'Report exported', sub: `${repoName}.md` });
     addRecent({ id: 'action:export', label: 'Export report', sub: 'Action', icon: 'download' });
-  }, [analyzed, repoName, diagram, apiDocs, findings, cveFindings, elapsedSec, addToast, addRecent]);
+  }, [analyzed, repoName, diagram, apiDocs, findings, cveFindings, health, elapsedSec, addToast, addRecent]);
 
   // ── Generate fix ──────────────────────────────────────────────────────────────
   const handleFix = useCallback(async (finding) => {

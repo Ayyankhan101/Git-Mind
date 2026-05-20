@@ -141,7 +141,11 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme }) {
       console.error('[DiagramTab] Mermaid parse error:', err);
       setHasError(true);
       if (ref.current) {
-        ref.current.innerHTML = `<pre style="color:var(--text-3);font-size:12px;padding:20px;white-space:pre-wrap;font-family:var(--font-mono);line-height:1.6">${diagram}</pre>`;
+        const pre = document.createElement('pre');
+        pre.style.cssText = 'color:var(--text-3);font-size:12px;padding:20px;white-space:pre-wrap;font-family:var(--font-mono);line-height:1.6';
+        pre.textContent = diagram;
+        ref.current.innerHTML = '';
+        ref.current.appendChild(pre);
       }
       setReady(true);
     }

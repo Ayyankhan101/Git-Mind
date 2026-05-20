@@ -48,8 +48,8 @@ def run_security_agent(local_path: str) -> list[dict]:
 
     raw_results = _run_semgrep(local_path)
     if not raw_results:
-        logger.info("semgrep returned zero findings — using synthetic fallback")
-        return _synthetic_finding()
+        logger.info("semgrep returned zero findings — repo is clean")
+        return []
 
     return _triage_with_llm(raw_results)
 

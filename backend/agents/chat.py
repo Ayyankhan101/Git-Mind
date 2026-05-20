@@ -3,6 +3,7 @@ import logging
 from langchain_groq import ChatGroq
 
 from chroma_utils import search_codebase
+from llm_cache import invoke_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ def run_chat_agent(
         or "No relevant code found."
     )
     history = (
-        "\n".join(f"{m['role'].upper()}: {m['content']}" for m in chat_history[-4:])
+        "\n".join(f"{m['role'].upper()}: {m['content']}" for m in chat_history[-10:])
         or "None."
     )
     system = _SYSTEM_TEMPLATE.format(
@@ -48,7 +49,7 @@ def run_chat_agent(
     )
 
     llm    = ChatGroq(model=_MODEL, temperature=0.2)
-    answer = llm.invoke([
+    answer = invoke_with_retry(llm, [
         {"role": "system",  "content": system},
         {"role": "user",    "content": question},
     ]).content
@@ -70,7 +71,7 @@ async def run_chat_agent_stream(
         or "No relevant code found."
     )
     history = (
-        "\n".join(f"{m['role'].upper()}: {m['content']}" for m in chat_history[-4:])
+        "\n".join(f"{m['role'].upper()}: {m['content']}" for m in chat_history[-10:])
         or "None."
     )
     system = _SYSTEM_TEMPLATE.format(

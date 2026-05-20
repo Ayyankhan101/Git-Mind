@@ -15,9 +15,12 @@ function parseFix(fixText) {
 }
 
 function FindingRow({ finding, onCrisis, onFix, fixLoading, fixResult, onPickFile, sessionId, onPR }) {
-  const [expanded, setExpanded] = useState(false);
-  const [prLoading, setPrLoading] = useState(false);
-  const [prUrl,     setPrUrl]     = useState(null);
+  const [expanded,       setExpanded]       = useState(false);
+  const [prLoading,      setPrLoading]      = useState(false);
+  const [prUrl,          setPrUrl]          = useState(null);
+  const [prError,        setPrError]        = useState('');
+  const [showTokenInput, setShowTokenInput] = useState(false);
+  const [tokenInput,     setTokenInput]     = useState('');
   const sev    = (finding.severity || 'low').toLowerCase();
   const cardId = finding.id ?? finding.rule;
   const isFixing = fixLoading === cardId;
@@ -28,16 +31,19 @@ function FindingRow({ finding, onCrisis, onFix, fixLoading, fixResult, onPickFil
   const fileLine  = finding.line_start;
 
   const handleOpenPR = async () => {
-    const tok = window.prompt('Enter a GitHub token with repo write access:');
-    if (!tok) return;
+    const tok = tokenInput.trim();
+    if (!tok) { setShowTokenInput(true); return; }
     setPrLoading(true);
+    setPrError('');
     try {
       const { createFixPR } = await import('../api');
       const result = await createFixPR(sessionId, finding, tok);
       setPrUrl(result.pr_url);
+      setShowTokenInput(false);
+      setTokenInput('');
       window.open(result.pr_url, '_blank');
     } catch (err) {
-      alert(`PR failed: ${err.message}`);
+      setPrError(err.message);
     } finally {
       setPrLoading(false);
     }
@@ -116,22 +122,41 @@ function FindingRow({ finding, onCrisis, onFix, fixLoading, fixResult, onPickFil
                 {isFixing ? 'Generating…' : 'Generate Fix'}
               </button>
             )}
-            {onPR && canCrisis && (
-              <button
-                className="btn-text"
-                style={{ color: 'var(--primary)' }}
-                disabled={prLoading}
-                onClick={handleOpenPR}
-              >
-                {prLoading ? 'Opening PR…' : prUrl ? '✓ PR Opened' : 'Open PR'}
-              </button>
+            {onPR && canCrisis && !prUrl && (
+              showTokenInput ? (
+                <span style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <input
+                    type="password"
+                    placeholder="GitHub token (repo write)"
+                    value={tokenInput}
+                    onChange={e => setTokenInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleOpenPR()}
+                    autoFocus
+                    style={{ fontSize: 12, padding: '2px 8px', borderRadius: 4, border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--text-1)', width: 210 }}
+                  />
+                  <button className="btn-text primary" disabled={prLoading} onClick={handleOpenPR}>
+                    {prLoading ? 'Opening…' : 'Confirm'}
+                  </button>
+                  <button className="btn-text" onClick={() => { setShowTokenInput(false); setTokenInput(''); setPrError(''); }}>
+                    Cancel
+                  </button>
+                </span>
+              ) : (
+                <button className="btn-text" style={{ color: 'var(--primary)' }} onClick={() => setShowTokenInput(true)}>
+                  Open PR
+                </button>
+              )
             )}
             {prUrl && (
-              <a href={prUrl} target="_blank" rel="noopener noreferrer"
-                 style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                {prUrl}
-              </a>
+              <>
+                <span style={{ fontSize: 11, color: 'var(--success)' }}>✓ PR opened</span>
+                <a href={prUrl} target="_blank" rel="noopener noreferrer"
+                   style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                  {prUrl}
+                </a>
+              </>
             )}
+            {prError && <span style={{ fontSize: 11, color: 'var(--danger)' }}>{prError}</span>}
           </div>
 
           {parsed && (
