@@ -27,6 +27,15 @@ const SHORTCUTS = [
     ],
   },
   {
+    section: 'Architecture diagram',
+    items: [
+      { desc: 'Zoom in',        keys: ['+'] },
+      { desc: 'Zoom out',       keys: ['-'] },
+      { desc: 'Reset zoom',     keys: ['0'] },
+      { desc: 'Fit to screen',  keys: ['F'] },
+    ],
+  },
+  {
     section: 'Sidebar',
     items: [
       { desc: 'Navigate repos (up)',   keys: ['↑'] },
