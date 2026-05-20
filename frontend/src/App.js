@@ -3,7 +3,7 @@ import {
   Search, FolderOpen, Share2, Download, Command,
   Check, X, AlertTriangle, ChevronDown,
   GitBranch, FileCode2, ShieldAlert, Lock, MessageSquare,
-  BarChart3, GitPullRequest,
+  BarChart3, GitPullRequest, GitCommit,
 } from 'lucide-react';
 
 import Sidebar         from './components/Sidebar';
@@ -19,6 +19,7 @@ import Onboarding      from './components/Onboarding';
 import KeyboardHelp    from './components/KeyboardHelp';
 import FilePreviewDrawer from './components/FilePreviewDrawer';
 import ErrorBoundary     from './components/ErrorBoundary';
+import GitAuditTab      from './components/GitAuditTab';
 import CommandPalette  from './components/CommandPalette';
 import ToastSystem     from './components/ToastSystem';
 import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix } from './api';
@@ -30,7 +31,7 @@ const TIMEOUT_MS = 180_000;
 
 const INITIAL_STATUS = {
   scanner: 'waiting', architecture: 'waiting',
-  api_docs: 'waiting', security: 'waiting', cve_scanner: 'waiting', chat: 'waiting',
+  api_docs: 'waiting', security: 'waiting', cve_scanner: 'waiting', chat: 'waiting', git_audit: 'waiting',
 };
 
 const THEMES = [
@@ -124,6 +125,7 @@ export default function App() {
   const [fixLoading,    setFixLoading]    = useState(null);
   const [fixResult,     setFixResult]     = useState(null);
   const [health,        setHealth]        = useState(null);
+  const [gitAudit,      setGitAudit]      = useState(null);
   const [repoHistory,   setRepoHistory]   = useState(() => {
     try { return JSON.parse(localStorage.getItem('gitmind_history') || '[]'); }
     catch { return []; }
@@ -211,6 +213,7 @@ export default function App() {
       if (data.api_docs?.length)     setApiDocs(data.api_docs);
       if (data.security_findings)    setFindings(data.security_findings);
       if (data.cve_findings)         setCveFindings(data.cve_findings);
+      if (data.git_audit)            setGitAudit(data.git_audit);
       if (data.repo_name)            setRepoName(data.repo_name);
       if (data.health)               setHealth(data.health);
       setAnalyzed(true);
@@ -269,6 +272,7 @@ export default function App() {
     setApiDocs([]);
     setFindings([]);
     setCveFindings([]);
+    setGitAudit(null);
     setFixResult(null);
     setFixLoading(null);
     setHealth(null);
@@ -319,6 +323,7 @@ export default function App() {
       if (data.api_docs?.length)     setApiDocs(data.api_docs);
       if (data.security_findings)    setFindings(data.security_findings);
       if (data.cve_findings)         setCveFindings(data.cve_findings);
+      if (data.git_audit)            setGitAudit(data.git_audit);
       if (data.health)               setHealth(data.health);
       if (data.agent_error) {
         const ev = data.agent_error;
@@ -511,6 +516,7 @@ export default function App() {
     { key: 'docs',     Icon: FileCode2,       label: 'API Docs',    count: apiDocs.length    || null },
     { key: 'security', Icon: ShieldAlert,     label: 'Security',    count: findings.length   || null, alert: hasCritical },
     { key: 'cve',      Icon: Lock,            label: 'CVE',         count: cveFindings.length|| null, alert: hasCveCritical },
+    { key: 'git',      Icon: GitCommit,       label: 'Git Audit',   count: (gitAudit?.stats?.bad_messages || 0) + (gitAudit?.stats?.secrets_found || 0) + (gitAudit?.stats?.sensitive_files || 0) || null, alert: !!(gitAudit?.stats?.secrets_found || gitAudit?.stats?.sensitive_files) },
     { key: 'pr',       Icon: GitPullRequest,  label: 'PR Review' },
     { key: 'chat',     Icon: MessageSquare,   label: 'Chat' },
   ];
@@ -703,6 +709,7 @@ export default function App() {
                 {activeTab === 'docs'     && <DocsTab     docs={apiDocs}      isAnalyzing={isAnalyzing} analyzed={analyzed} onPickFile={setFilePreview} />}
                 {activeTab === 'security' && <SecurityTab findings={findings} isAnalyzing={isAnalyzing} analyzed={analyzed} onCrisis={setCrisisFinding} onFix={handleFix} fixLoading={fixLoading} fixResult={fixResult} onPickFile={setFilePreview} sessionId={SESSION_ID} />}
                 {activeTab === 'cve'      && <CveTab      findings={cveFindings} isAnalyzing={isAnalyzing} analyzed={analyzed} />}
+                {activeTab === 'git'      && <GitAuditTab audit={gitAudit}      isAnalyzing={isAnalyzing} analyzed={analyzed} />}
                 {activeTab === 'pr'       && <PRReviewTab prAutoUrl={prAutoUrl} onAutoUrlUsed={clearPrAutoUrl} />}
                 {activeTab === 'chat'     && <ChatTab     key={repoName} sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} />}
               </ErrorBoundary>
@@ -726,7 +733,7 @@ export default function App() {
           <>
             <span className="status-item green">
               <Check size={11} />
-              {Object.values(agentStatus).filter(s => s === 'done').length}/6 agents
+              {Object.values(agentStatus).filter(s => s === 'done').length}/7 agents
             </span>
             {hasCritical && (
               <><span className="status-sep">·</span>

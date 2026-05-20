@@ -227,6 +227,7 @@ def _initial_state(repo_url: str, gh_token: str | None = None) -> dict:
         "api_docs":               [],
         "security_findings":      [],
         "chroma_collection_name": None,
+        "git_audit":              None,
         "chat_history":           [],
         "selected_finding_id":    None,
         "crisis_messages":        [],
@@ -258,6 +259,7 @@ def _restore_session_from_disk(session_id: str) -> dict | None:
         "cve_findings":           snap.get("cve_findings", []),
         "api_docs":               snap.get("api_docs", []),
         "architecture_diagram":   snap.get("architecture_diagram"),
+        "git_audit":              snap.get("git_audit"),
         "repo_url":               snap.get("repo_url", ""),
         "chat_history":           [],
     }
@@ -281,13 +283,14 @@ _STATUS_MAP: dict[str, dict[str, str]] = {
     "scanner":      {
         "scanner": "done", "architecture": "running",
         "api_docs": "running", "security": "running", "chat": "running",
-        "cve_scanner": "running",
+        "cve_scanner": "running", "git_audit": "running",
     },
     "architecture": {"architecture": "done"},
     "api_docs":     {"api_docs": "done"},
     "security":     {"security": "done"},
     "rag_setup":    {"chat": "done"},
     "cve_scanner":  {"cve_scanner": "done"},
+    "git_audit":    {"git_audit": "done"},
 }
 
 
@@ -348,8 +351,9 @@ async def ws_analyze(ws: WebSocket):
             })
             await asyncio.sleep(0.1)
             await ws.send_json({
-                "agent_status": {"chat": "done"},
+                "agent_status": {"chat": "done", "git_audit": "done"},
                 "health":        cached.get("health"),
+                "git_audit":     cached.get("git_audit"),
             })
             _put_session(session_id, {
                 "repo_name":              cached.get("repo_name", ""),
@@ -358,6 +362,7 @@ async def ws_analyze(ws: WebSocket):
                 "cve_findings":           cached.get("cve_findings", []),
                 "api_docs":               cached.get("api_docs", []),
                 "architecture_diagram":   cached.get("architecture_diagram"),
+                "git_audit":              cached.get("git_audit"),
                 "repo_url":               repo_url,
                 "chat_history":           [],
             })
@@ -388,6 +393,7 @@ async def ws_analyze(ws: WebSocket):
                     "security_findings",
                     "cve_findings",
                     "chroma_collection_name",
+                    "git_audit",
                 ):
                     if key in update:
                         msg[key]           = update[key]
@@ -458,6 +464,7 @@ async def ws_analyze(ws: WebSocket):
         "cve_findings":           final_state.get("cve_findings", []),
         "api_docs":               final_state.get("api_docs", []),
         "architecture_diagram":   final_state.get("architecture_diagram"),
+        "git_audit":              final_state.get("git_audit"),
         "repo_url":               repo_url,
         "chat_history":           [],
         "health":                 final_state.get("health"),
@@ -475,6 +482,7 @@ async def ws_analyze(ws: WebSocket):
                 "security_findings":      final_state.get("security_findings", []),
                 "cve_findings":           final_state.get("cve_findings", []),
                 "chroma_collection_name": final_state.get("chroma_collection_name"),
+                "git_audit":              final_state.get("git_audit"),
                 "health":                 final_state.get("health"),
                 "head_sha":               sha,
                 "saved_at":               time.time(),

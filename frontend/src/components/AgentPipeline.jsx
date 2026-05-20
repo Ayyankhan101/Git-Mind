@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, GitBranch, FileCode2, ShieldAlert, Lock, Brain, ChevronDown } from 'lucide-react';
+import { Search, GitBranch, FileCode2, ShieldAlert, Lock, Brain, GitCommit, ChevronDown } from 'lucide-react';
 
 const AGENTS = [
   { key: 'scanner',      label: 'REPO SCANNER',   Icon: Search },
@@ -8,13 +8,14 @@ const AGENTS = [
   { key: 'security',     label: 'SECURITY',        Icon: ShieldAlert },
   { key: 'cve_scanner',  label: 'CVE SCANNER',     Icon: Lock },
   { key: 'chat',         label: 'KNOWLEDGE',       Icon: Brain },
+  { key: 'git_audit',    label: 'GIT AUDIT',       Icon: GitCommit },
 ];
 
 export default function AgentPipeline({ status, isAnalyzing, analyzed, elapsedSec, repoName }) {
   const [expanded, setExpanded] = useState(true);
 
   const doneCount = Object.values(status || {}).filter(s => s === 'done').length;
-  const allDone = doneCount === 6;
+  const allDone = doneCount === 7;
   const mini = allDone && !expanded;
 
   const getRowStatus = (key) => {
@@ -38,7 +39,7 @@ export default function AgentPipeline({ status, isAnalyzing, analyzed, elapsedSe
     <div className={`pipeline${mini ? ' mini' : ''}`}>
       <div className="pipeline-header">
         <span className="t-label" style={{ fontSize: 10 }}>
-          AGENTS · {doneCount}/6
+          AGENTS · {doneCount}/7
         </span>
         {allDone && (
           <button className="pipeline-toggle" onClick={() => setExpanded(e => !e)}>
@@ -51,7 +52,7 @@ export default function AgentPipeline({ status, isAnalyzing, analyzed, elapsedSe
       {mini && (
         <div className="pipeline-mini-summary">
           <span className="dot" />
-          <span>{doneCount}/6 agents complete</span>
+          <span>{doneCount}/7 agents complete</span>
           <span className="mono">· {formatTime(elapsedSec)}</span>
         </div>
       )}

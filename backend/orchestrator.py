@@ -6,6 +6,7 @@ from langgraph.graph import END, START, StateGraph
 from agents.api_doc import run_api_doc_agent
 from agents.architecture import run_architecture_agent
 from agents.cve_scanner import run_cve_scanner
+from agents.git_audit import run_git_audit
 from agents.rag_setup import run_rag_setup
 from agents.scanner import clone_and_scan
 from agents.security import run_security_agent
@@ -93,6 +94,20 @@ def cve_node(state: RepoState) -> dict:
         return {"cve_findings": [], "events": [_event("cve_scanner", "error", str(exc))]}
 
 
+def git_audit_node(state: RepoState) -> dict:
+    try:
+        result = run_git_audit(
+            state["repo_url"],
+            state["file_tree"],
+            state["file_contents"],
+            state.get("gh_token"),
+        )
+        return {"git_audit": result, "events": [_event("git_audit", "done")]}
+    except Exception as exc:
+        logger.error("git_audit_node failed: %s", exc)
+        return {"git_audit": None, "events": [_event("git_audit", "error", str(exc))]}
+
+
 # ── Graph definition ───────────────────────────────────────────────────────────
 
 def build_graph() -> StateGraph:
@@ -104,11 +119,12 @@ def build_graph() -> StateGraph:
     g.add_node("security",     security_node)
     g.add_node("rag_setup",    rag_setup_node)
     g.add_node("cve_scanner",  cve_node)
+    g.add_node("git_audit",    git_audit_node)
 
     g.add_edge(START, "scanner")
 
     # Parallel fan-out after scanner
-    for node in ("architecture", "api_docs", "security", "rag_setup", "cve_scanner"):
+    for node in ("architecture", "api_docs", "security", "rag_setup", "cve_scanner", "git_audit"):
         g.add_edge("scanner", node)
         g.add_edge(node, END)
 
