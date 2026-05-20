@@ -193,7 +193,8 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme }) {
     if (!mountedRef.current) { mountedRef.current = true; return; }
     mermaid.initialize(getMermaidConfig(theme));
     if (diagram) render(diagram);
-  }, [theme, render]); // eslint-disable-line react-hooks/exhaustive-deps — diagram intentionally omitted (theme change should re-render whatever is currently loaded)
+  // diagram intentionally omitted: theme change should re-render whatever is currently loaded
+  }, [theme, render]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!diagram && !isAnalyzing) {
     return (
