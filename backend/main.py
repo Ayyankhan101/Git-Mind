@@ -140,7 +140,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="GitMind API", lifespan=lifespan)
 
-_CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")]
+_CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS",
+    "http://localhost,http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:8002"
+).split(",")]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_CORS_ORIGINS,

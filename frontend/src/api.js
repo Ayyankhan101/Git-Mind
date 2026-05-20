@@ -6,8 +6,11 @@
 function deriveHttpBase() {
   if (process.env.REACT_APP_API_BASE) return process.env.REACT_APP_API_BASE;
   if (typeof window !== 'undefined') {
-    const { protocol, host } = window.location;
+    const { protocol, host, port, hostname } = window.location;
+    // Cloud Shell: swap leading port in hostname (e.g. 3000-cs-xxx → 8002-cs-xxx)
     if (/^\d+-/.test(host)) return `${protocol}//${host.replace(/^\d+-/, '8002-')}`;
+    // Port 80/443 or no port = behind nginx proxy → use same-origin (no explicit port)
+    if (!port || port === '80' || port === '443') return `${protocol}//${hostname}`;
   }
   return 'http://localhost:8002';
 }
