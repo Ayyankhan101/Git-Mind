@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import tempfile
 from pathlib import Path
 
@@ -101,8 +102,10 @@ def clone_and_scan(repo_url: str) -> dict:
     }
 
 
+_GITHUB_URL_RE = re.compile(r'^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+/?$')
+
 def _validate_url(repo_url: str) -> None:
-    if not repo_url.startswith("https://github.com/"):
+    if not _GITHUB_URL_RE.match(repo_url):
         raise ValueError(
-            f"Only public GitHub URLs are supported (https://github.com/...). Got: {repo_url!r}"
+            f"Only public GitHub URLs are supported (https://github.com/owner/repo). Got: {repo_url!r}"
         )

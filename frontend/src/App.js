@@ -18,6 +18,7 @@ import CrisisChat      from './components/CrisisChat';
 import Onboarding      from './components/Onboarding';
 import KeyboardHelp    from './components/KeyboardHelp';
 import FilePreviewDrawer from './components/FilePreviewDrawer';
+import ErrorBoundary     from './components/ErrorBoundary';
 import CommandPalette  from './components/CommandPalette';
 import ToastSystem     from './components/ToastSystem';
 import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix } from './api';
@@ -680,7 +681,7 @@ export default function App() {
             {showOnboarding && !repos.length ? (
               <Onboarding onLoad={handleLoadRepos} onAnalyzeUrl={handleSelectRepo} />
             ) : (
-              <>
+              <ErrorBoundary key={activeTab}>
                 {activeTab === 'summary'  && <SummaryTab  sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} findings={findings} apiDocs={apiDocs} elapsedSec={elapsedSec} isAnalyzing={isAnalyzing} health={health} />}
                 {activeTab === 'diagram'  && <DiagramTab  diagram={diagram}   isAnalyzing={isAnalyzing} analyzed={analyzed} theme={theme} />}
                 {activeTab === 'docs'     && <DocsTab     docs={apiDocs}      isAnalyzing={isAnalyzing} analyzed={analyzed} onPickFile={setFilePreview} />}
@@ -688,7 +689,7 @@ export default function App() {
                 {activeTab === 'cve'      && <CveTab      findings={cveFindings} isAnalyzing={isAnalyzing} analyzed={analyzed} />}
                 {activeTab === 'pr'       && <PRReviewTab prAutoUrl={prAutoUrl} onAutoUrlUsed={clearPrAutoUrl} />}
                 {activeTab === 'chat'     && <ChatTab     key={repoName} sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} />}
-              </>
+              </ErrorBoundary>
             )}
           </div>
         </div>

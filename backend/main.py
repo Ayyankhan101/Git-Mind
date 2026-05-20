@@ -71,6 +71,7 @@ def _find_cached_snapshot(repo_url: str, sha: str) -> dict | None:
 # load_dotenv MUST run before any LangChain / OpenAI import
 load_dotenv()
 
+from llm_cache import invoke_with_retry
 from agents.blame import enrich_findings_with_blame
 from agents.chat import run_chat_agent
 from agents.crisis.reporter import reporter_loop
@@ -618,7 +619,7 @@ async def summary_endpoint(req: SummaryRequest):
 
     def _gen() -> str:
         llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
-        return llm.invoke(prompt).content.strip()
+        return invoke_with_retry(llm, prompt).content.strip()
 
     summary = await asyncio.to_thread(_gen)
     logger.info("Summary generated for session=%s", req.session_id)
@@ -713,7 +714,7 @@ async def fix_endpoint(req: FixRequest):
 
     def _generate() -> str:
         llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
-        return llm.invoke(prompt).content.strip()
+        return invoke_with_retry(llm, prompt).content.strip()
 
     fix = await asyncio.to_thread(_generate)
     logger.info("Fix generated for session=%s rule=%s", req.session_id, finding.get("rule"))
@@ -847,7 +848,7 @@ async def auto_pr_endpoint(req: AutoPRRequest):
 
     def _gen_patch() -> str:
         llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
-        return llm.invoke(prompt).content.strip()
+        return invoke_with_retry(llm, prompt).content.strip()
 
     raw_patch = await asyncio.to_thread(_gen_patch)
 

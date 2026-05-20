@@ -82,7 +82,7 @@ export default function PRReviewTab({ prAutoUrl, onAutoUrlUsed }) {
       setError(null);
       setLoading(true);
       setResult(null);
-      reviewPR(prAutoUrl, undefined)
+      reviewPR(prAutoUrl, token || undefined)
         .then(data => setResult(data))
         .catch(err => setError(err.message))
         .finally(() => setLoading(false));
