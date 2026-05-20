@@ -16,13 +16,17 @@ export const BASE    = deriveHttpBase();
 export const WS_BASE = BASE.replace(/^http/, 'ws');
 
 /**
- * GET /repos/{username} — fetch public repos for a GitHub user.
+ * GET /repos/{username} — fetch repos for a GitHub user.
+ * Pass a PAT as `token` to include private repos.
  * Returns array of repo objects or throws with a user-readable message.
  */
-export async function fetchRepos(username) {
+export async function fetchRepos(username, token = null) {
   let res;
+  const headers = {};
+  if (token) headers['X-GH-Token'] = token;
   try {
     res = await fetch(`${BASE}/repos/${encodeURIComponent(username)}`, {
+      headers,
       signal: AbortSignal.timeout(15_000),
     });
   } catch (err) {

@@ -14,7 +14,7 @@ from pathlib import Path
 import asyncio
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
@@ -213,9 +213,10 @@ class AutoPRRequest(BaseModel):
 
 # ── State initialiser (single source of truth for initial RepoState) ──────────
 
-def _initial_state(repo_url: str) -> dict:
+def _initial_state(repo_url: str, gh_token: str | None = None) -> dict:
     return {
         "repo_url":               repo_url,
+        "gh_token":               gh_token,
         "local_path":             None,
         "file_tree":              [],
         "file_contents":          {},
@@ -302,6 +303,7 @@ async def ws_analyze(ws: WebSocket):
 
     repo_url   = (payload.get("repo_url") or "").strip()
     session_id = payload.get("session_id") or str(uuid.uuid4())
+    gh_token   = (payload.get("gh_token") or "").strip() or None
     sha        = None
 
     if not repo_url:
@@ -315,8 +317,8 @@ async def ws_analyze(ws: WebSocket):
         await ws.close()
         return
 
-    logger.info("Analysis started  session=%s  repo=%s", session_id, repo_url)
-    initial    = _initial_state(repo_url)
+    logger.info("Analysis started  session=%s  repo=%s  auth=%s", session_id, repo_url, bool(gh_token))
+    initial    = _initial_state(repo_url, gh_token)
     final_state = dict(initial)
 
     # ── SHA cache check ────────────────────────────────────────────────────────
@@ -975,27 +977,34 @@ async def ws_crisis(ws: WebSocket):
 _USERNAME_RE = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9\-]{0,38}$')
 
 @app.get("/repos/{username}")
-async def list_repos(username: str):
+async def list_repos(username: str, request: Request):
     if not _USERNAME_RE.match(username):
         return {"error": "Invalid GitHub username"}
 
-    headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}
-    token = os.getenv("GITHUB_TOKEN")
+    token = request.headers.get("X-GH-Token") or os.getenv("GITHUB_TOKEN")
+    gh_headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}
     if token:
-        headers["Authorization"] = f"Bearer {token}"
+        gh_headers["Authorization"] = f"Bearer {token}"
+
+    # Authenticated → fetch all repos (private + public) for the token owner
+    # Unauthenticated → public repos for the given username only
+    if token:
+        url    = "https://api.github.com/user/repos"
+        params = {"per_page": 100, "sort": "pushed", "visibility": "all", "affiliation": "owner"}
+    else:
+        url    = f"https://api.github.com/users/{username}/repos"
+        params = {"per_page": 100, "sort": "pushed"}
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(
-                f"https://api.github.com/users/{username}/repos",
-                params={"per_page": 100, "sort": "updated"},
-                headers=headers,
-            )
+            resp = await client.get(url, params=params, headers=gh_headers)
     except httpx.TimeoutException:
         return {"error": "GitHub API timed out"}
     except httpx.RequestError as exc:
         return {"error": f"GitHub API unreachable: {exc}"}
 
+    if resp.status_code == 401:
+        return {"error": "GitHub token is invalid or expired"}
     if resp.status_code == 404:
         return {"error": f"GitHub user '{username}' not found"}
     if resp.is_error:
@@ -1010,12 +1019,14 @@ async def list_repos(username: str):
             "stars":       r["stargazers_count"],
             "url":         r["html_url"],
             "fork":        r["fork"],
+            "private":     r["private"],
+            "pushed_at":   r.get("pushed_at") or r["updated_at"],
             "updated_at":  r["updated_at"],
         }
         for r in resp.json()
-        if not r["private"]
+        if token or not r["private"]   # without token: public only
     ]
-    logger.info("Listed %d repos for user=%s", len(repos), username)
+    logger.info("Listed %d repos for user=%s (auth=%s)", len(repos), username, bool(token))
     return {"repos": repos, "username": username}
 
 

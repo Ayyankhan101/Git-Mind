@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Star, Clock, Search, ChevronDown, FolderOpen, Filter, Bookmark, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Star, Clock, Search, ChevronDown, FolderOpen, Filter, Bookmark, PanelLeftClose, PanelLeftOpen, Lock } from 'lucide-react';
 import AgentPipeline from './AgentPipeline';
 import { LANG_COLOR } from '../constants';
 
@@ -17,8 +17,8 @@ const SAVED_VIEWS = [
 ];
 
 function RepoCard({ repo, selected, focused, onSelect, onMouseEnter, onMouseLeave }) {
-  const updatedAt = repo.updated_at
-    ? new Date(repo.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  const pushedAt = (repo.pushed_at || repo.updated_at)
+    ? new Date(repo.pushed_at || repo.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
     : '';
   return (
     <div
@@ -31,7 +31,10 @@ function RepoCard({ repo, selected, focused, onSelect, onMouseEnter, onMouseLeav
       aria-selected={selected}
     >
       <div className="repo-card-top">
-        <span className="repo-name">{repo.name}</span>
+        <span className="repo-name" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {repo.private && <Lock size={10} strokeWidth={1.5} style={{ color: 'var(--text-3)', flexShrink: 0 }} />}
+          {repo.name}
+        </span>
         {repo.stars > 0 && (
           <span className="repo-stars">
             <Star size={11} strokeWidth={1.5} />
@@ -48,7 +51,7 @@ function RepoCard({ repo, selected, focused, onSelect, onMouseEnter, onMouseLeav
             <span>·</span>
           </>
         )}
-        {updatedAt && <span>{updatedAt}</span>}
+        {pushedAt && <span>{pushedAt}</span>}
       </div>
     </div>
   );
@@ -111,10 +114,12 @@ export default function Sidebar({
 
   const view = SAVED_VIEWS.find(v => v.id === savedView) || SAVED_VIEWS[0];
 
+  const byPushed = (a, b) => new Date(b.pushed_at || b.updated_at) - new Date(a.pushed_at || a.updated_at);
+
   const filtered = repos
     .filter(r => view.filter(r))
     .filter(r => !filter || r.name.toLowerCase().includes(filter.toLowerCase()))
-    .sort(view.sort || undefined);
+    .sort(view.sort || byPushed);
 
   const handleKeyDown = useCallback((e) => {
     if (document.activeElement?.closest('.sidebar') === null) return;
@@ -318,7 +323,11 @@ function RepoHoverPreview({ repo, anchorRect }) {
   const top  = Math.max(16, Math.min(window.innerHeight - 220, anchorRect.top));
   return (
     <div className="repo-preview" style={{ left, top }}>
-      <div className="name">{repo.full_name || repo.name}</div>
+      <div className="name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        {repo.private && <Lock size={11} strokeWidth={1.5} style={{ color: 'var(--text-3)' }} />}
+        {repo.full_name || repo.name}
+        {repo.private && <span style={{ fontSize: 10, color: 'var(--text-3)', background: 'var(--surface-2)', padding: '1px 5px', borderRadius: 4 }}>private</span>}
+      </div>
       {repo.description && <div className="desc">{repo.description}</div>}
       <div className="row-stats">
         <span><Star size={11} strokeWidth={1.5} /> {repo.stars || 0}</span>
@@ -328,10 +337,10 @@ function RepoHoverPreview({ repo, anchorRect }) {
             {repo.language}
           </span>
         )}
-        {repo.updated_at && (
+        {(repo.pushed_at || repo.updated_at) && (
           <span>
             <Clock size={11} strokeWidth={1.5} />
-            {new Date(repo.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            {new Date(repo.pushed_at || repo.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
           </span>
         )}
       </div>

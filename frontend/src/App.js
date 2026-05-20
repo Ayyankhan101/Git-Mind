@@ -103,6 +103,7 @@ export default function App() {
 
   // ── Core state ───────────────────────────────────────────────────────────────
   const [githubUser,    setGithubUser]    = useState('');
+  const [ghToken,       setGhToken]       = useState(() => sessionStorage.getItem('gm-gh-token') || '');
   const [repos,         setRepos]         = useState([]);
   const [reposLoading,  setReposLoading]  = useState(false);
   const [reposError,    setReposError]    = useState(null);
@@ -303,7 +304,7 @@ export default function App() {
     };
 
     ws.onopen = () => {
-      ws.send(JSON.stringify({ repo_url: url, session_id: SESSION_ID }));
+      ws.send(JSON.stringify({ repo_url: url, session_id: SESSION_ID, ...(ghToken ? { gh_token: ghToken } : {}) }));
       resetInactivityTimer();
     };
 
@@ -395,11 +396,12 @@ export default function App() {
     setShowOnboarding(false);
     addRecent({ id: `user:${u}`, label: u, sub: 'GitHub user', icon: 'user' });
     try {
-      const list = await fetchRepos(u);
+      const list = await fetchRepos(u, ghToken || null);
       setRepos(list);
-      if (list.length === 0) setReposError('No public repositories found.');
+      if (list.length === 0) setReposError(ghToken ? 'No repositories found.' : 'No public repositories found.');
       else {
-        addToast({ kind: 'info', title: `Loaded ${list.length} repos`, sub: u });
+        const hasPrivate = list.some(r => r.private);
+        addToast({ kind: 'info', title: `Loaded ${list.length} repos${hasPrivate ? ' (incl. private)' : ''}`, sub: u });
         setLoadedUsers(prev => {
           const next = [u, ...prev.filter(x => x !== u)].slice(0, 6);
           try { localStorage.setItem('gm-users', JSON.stringify(next)); } catch {}
@@ -412,7 +414,7 @@ export default function App() {
     } finally {
       setReposLoading(false);
     }
-  }, [githubUser, addToast, addRecent]);
+  }, [githubUser, ghToken, addToast, addRecent]);
 
   // ── Select + analyze ──────────────────────────────────────────────────────────
   const handleSelectRepo = useCallback((url) => {
@@ -538,6 +540,20 @@ export default function App() {
             onChange={e => { setGithubUser(e.target.value); setReposError(null); }}
             onKeyDown={e => { if (e.key === 'Enter' && !reposLoading && !isAnalyzing) handleLoadRepos(); }}
             disabled={isAnalyzing}
+          />
+        </div>
+
+        {/* PAT input */}
+        <div className="cb-input" style={{ width: 200 }}>
+          <Lock size={14} style={{ color: ghToken ? 'var(--accent)' : 'var(--text-3)', flexShrink: 0 }} />
+          <input
+            type="password"
+            placeholder="token (private repos)"
+            value={ghToken}
+            onChange={e => { setGhToken(e.target.value); sessionStorage.setItem('gm-gh-token', e.target.value); }}
+            onKeyDown={e => { if (e.key === 'Enter' && !reposLoading && !isAnalyzing) handleLoadRepos(); }}
+            disabled={isAnalyzing}
+            style={{ minWidth: 0 }}
           />
         </div>
 

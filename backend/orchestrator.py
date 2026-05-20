@@ -26,7 +26,7 @@ def _event(agent: str, status: str, detail: str | None = None) -> dict:
 
 def scanner_node(state: RepoState) -> dict:
     try:
-        result = clone_and_scan(state["repo_url"])
+        result = clone_and_scan(state["repo_url"], state.get("gh_token"))
         return {**result, "events": [_event("scanner", "done")]}
     except Exception as exc:
         logger.error("scanner_node failed: %s", exc)

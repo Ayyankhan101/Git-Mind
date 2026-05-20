@@ -25,21 +25,27 @@ _MAX_FILE_BYTES  = 100 * 1024          # 100 KB — skips minified / generated f
 _MAX_FILES       = 150
 
 
-def clone_and_scan(repo_url: str) -> dict:
+def clone_and_scan(repo_url: str, token: str | None = None) -> dict:
     """
-    Shallow-clone a public GitHub repo and return the file inventory.
+    Shallow-clone a GitHub repo and return the file inventory.
+    Pass `token` (PAT) to clone private repos via x-access-token auth.
 
     Returns a dict with keys: local_path, file_tree, file_contents, repo_name.
     Raises ValueError for bad URLs, RuntimeError for clone failures.
     """
     _validate_url(repo_url)
 
+    # Build authenticated clone URL for private repos
+    clone_url = repo_url
+    if token:
+        clone_url = repo_url.replace("https://", f"https://x-access-token:{token}@")
+
     dest = tempfile.mkdtemp(prefix="gitmind_")
-    logger.info("Cloning %s → %s", repo_url, dest)
+    logger.info("Cloning %s → %s (auth=%s)", repo_url, dest, bool(token))
 
     head_sha = None
     try:
-        repo = git.Repo.clone_from(repo_url, dest, depth=1, no_single_branch=True)
+        repo = git.Repo.clone_from(clone_url, dest, depth=1, no_single_branch=True)
         head_sha = repo.head.commit.hexsha
         repo.close()   # prevents resource leak on Windows
     except git.exc.GitCommandError as exc:
