@@ -11,6 +11,7 @@ import os
 import shutil
 import sys
 import tempfile
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -40,7 +41,10 @@ print("[ Environment ]")
 api_key = os.getenv("GROQ_API_KEY", "")
 check("GROQ_API_KEY is set",           bool(api_key),               "Add to backend/.env")
 check("GROQ_API_KEY format (gsk_...)", api_key.startswith("gsk_"),  f"Got prefix: {api_key[:6]!r}")
-check("semgrep in PATH",               shutil.which("semgrep") is not None, "pip install semgrep")
+_venv_semgrep = Path(__file__).parent / "venv" / "bin" / "semgrep"
+check("semgrep available",
+      shutil.which("semgrep") is not None or _venv_semgrep.exists(),
+      "pip install semgrep")
 
 # ── 2. ChromaDB ────────────────────────────────────────────────────────────────
 print("\n[ ChromaDB ]")
