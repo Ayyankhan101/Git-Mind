@@ -3,7 +3,7 @@ import {
   Search, FolderOpen, Share2, Download, Command,
   Check, X, AlertTriangle, ChevronDown,
   GitBranch, FileCode2, ShieldAlert, Lock, MessageSquare,
-  BarChart3, GitPullRequest, GitCommit,
+  BarChart3, GitPullRequest, GitCommit, Building2,
 } from 'lucide-react';
 
 import Sidebar         from './components/Sidebar';
@@ -20,6 +20,7 @@ import KeyboardHelp    from './components/KeyboardHelp';
 import FilePreviewDrawer from './components/FilePreviewDrawer';
 import ErrorBoundary     from './components/ErrorBoundary';
 import GitAuditTab      from './components/GitAuditTab';
+import OrgAuditModal   from './components/OrgAuditModal';
 import CommandPalette  from './components/CommandPalette';
 import ToastSystem     from './components/ToastSystem';
 import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix } from './api';
@@ -143,6 +144,7 @@ export default function App() {
   });
   const [shareCopied,   setShareCopied]   = useState(false);
   const [prAutoUrl,     setPrAutoUrl]     = useState(null);
+  const [showOrgAudit,  setShowOrgAudit]  = useState(false);
   const [loadedUsers,   setLoadedUsers]   = useState(() => {
     try { return JSON.parse(localStorage.getItem('gm-users') || '[]'); }
     catch { return []; }
@@ -573,6 +575,19 @@ export default function App() {
           {reposLoading ? 'Loading…' : 'Load Repos'}
         </button>
 
+        {/* Org Audit button — shows when repos are loaded */}
+        {repos.length > 0 && (
+          <button
+            className="btn btn-ghost"
+            onClick={() => setShowOrgAudit(true)}
+            title="Scan all loaded repos for CVEs"
+            disabled={isAnalyzing}
+          >
+            <Building2 size={13} />
+            Org Audit
+          </button>
+        )}
+
         {/* Command palette button */}
         <button className="btn-icon" title={`${mod}+K`} onClick={() => setShowPalette(true)}>
           <Command size={14} />
@@ -710,7 +725,7 @@ export default function App() {
                 {activeTab === 'security' && <SecurityTab findings={findings} isAnalyzing={isAnalyzing} analyzed={analyzed} onCrisis={setCrisisFinding} onFix={handleFix} fixLoading={fixLoading} fixResult={fixResult} onPickFile={setFilePreview} sessionId={SESSION_ID} />}
                 {activeTab === 'cve'      && <CveTab      findings={cveFindings} isAnalyzing={isAnalyzing} analyzed={analyzed} />}
                 {activeTab === 'git'      && <GitAuditTab audit={gitAudit}      isAnalyzing={isAnalyzing} analyzed={analyzed} />}
-                {activeTab === 'pr'       && <PRReviewTab prAutoUrl={prAutoUrl} onAutoUrlUsed={clearPrAutoUrl} />}
+                {activeTab === 'pr'       && <PRReviewTab prAutoUrl={prAutoUrl} onAutoUrlUsed={clearPrAutoUrl} sessionId={SESSION_ID} analyzed={analyzed} />}
                 {activeTab === 'chat'     && <ChatTab     key={repoName} sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} />}
               </ErrorBoundary>
             )}
@@ -774,6 +789,14 @@ export default function App() {
       </div>
 
       {/* ── Overlays ──────────────────────────────────────────────────────────── */}
+      {showOrgAudit && (
+        <OrgAuditModal
+          repos={repos}
+          token={ghToken || null}
+          onClose={() => setShowOrgAudit(false)}
+        />
+      )}
+
       {crisisFinding && (
         <CrisisChat finding={crisisFinding} sessionId={SESSION_ID} onClose={() => setCrisisFinding(null)} />
       )}

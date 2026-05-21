@@ -212,6 +212,21 @@ class AutoPRRequest(BaseModel):
     finding:    dict
     token:      str
 
+class PRImpactRequest(BaseModel):
+    pr_url:     str
+    session_id: str
+    token:      str | None = None
+
+class OrgAuditRequest(BaseModel):
+    repos: list[str]
+    token: str | None = None
+
+class IncidentReportRequest(BaseModel):
+    session_id:      str
+    finding:         dict
+    crisis_messages: list[dict] = []
+    outcome:         str = "unknown"
+
 
 # ── State initialiser (single source of truth for initial RepoState) ──────────
 
@@ -1038,6 +1053,292 @@ async def list_repos(username: str, request: Request):
     ]
     logger.info("Listed %d repos for user=%s (auth=%s)", len(repos), username, bool(token))
     return {"repos": repos, "username": username}
+
+
+# ── PR Impact Analysis ─────────────────────────────────────────────────────────
+
+_PR_URL_RE = re.compile(
+    r'^https://github\.com/([A-Za-z0-9_.\-]+)/([A-Za-z0-9_.\-]+)/pull/(\d+)/?$'
+)
+
+@app.post("/pr-impact")
+async def pr_impact_endpoint(req: PRImpactRequest):
+    from agents.scanner import clone_and_scan, _GITHUB_URL_RE
+    from agents.security import run_security_agent
+    from agents.cve_scanner import run_cve_scanner
+    from agents.health import compute_health
+    from agents.impact import compute_impact
+
+    m = _PR_URL_RE.match(req.pr_url.strip())
+    if not m:
+        return {"error": "Invalid GitHub PR URL (expected https://github.com/owner/repo/pull/123)"}
+
+    owner, repo_name, pr_num = m.group(1), m.group(2), m.group(3)
+    repo_url = f"https://github.com/{owner}/{repo_name}"
+
+    if not _UUID_RE.match(req.session_id):
+        return {"error": "Invalid session ID"}
+    if not _rate_ok("pr", req.pr_url):
+        return {"error": "Rate limit exceeded — slow down"}
+
+    base_session = _get_session(req.session_id)
+    if not base_session:
+        return {"error": "Session not found — analyze the base repo first"}
+
+    token = req.token or os.getenv("GITHUB_TOKEN")
+    gh_headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}
+    if token:
+        gh_headers["Authorization"] = f"Bearer {token}"
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            pr_resp = await client.get(
+                f"https://api.github.com/repos/{owner}/{repo_name}/pulls/{pr_num}",
+                headers=gh_headers,
+            )
+    except Exception as exc:
+        return {"error": f"GitHub API error: {exc}"}
+
+    if pr_resp.status_code == 404:
+        return {"error": f"PR #{pr_num} not found — may be private or closed"}
+    if pr_resp.is_error:
+        return {"error": f"GitHub API error {pr_resp.status_code}"}
+
+    pr_data   = pr_resp.json()
+    head_ref  = pr_data.get("head", {}).get("ref")
+    head_sha  = pr_data.get("head", {}).get("sha", "")[:8]
+    pr_title  = pr_data.get("title", "")
+    additions = pr_data.get("additions", 0)
+    deletions = pr_data.get("deletions", 0)
+
+    if not head_ref:
+        return {"error": "Could not determine PR head branch from GitHub API"}
+
+    local_path = None
+    try:
+        scan = await asyncio.to_thread(clone_and_scan, repo_url, token, head_ref)
+        local_path = scan["local_path"]
+
+        sec_findings = await asyncio.to_thread(run_security_agent, local_path)
+        cve_findings = await asyncio.to_thread(run_cve_scanner, scan["file_contents"])
+        pr_health    = compute_health(
+            file_contents=scan["file_contents"],
+            security_findings=sec_findings,
+            cve_findings=cve_findings,
+            api_docs=[],
+        )
+
+        pr_snapshot = {
+            "health":             pr_health,
+            "security_findings":  sec_findings,
+            "cve_findings":       cve_findings,
+        }
+        base_snapshot = {
+            "health":             base_session.get("health"),
+            "security_findings":  base_session.get("security_findings", []),
+            "cve_findings":       base_session.get("cve_findings", []),
+        }
+
+        delta = compute_impact(base_snapshot, pr_snapshot)
+        logger.info(
+            "PR impact computed: session=%s pr=%s delta=%+d",
+            req.session_id, req.pr_url, delta["health_delta"],
+        )
+        return {
+            **delta,
+            "pr_title":  pr_title,
+            "head_ref":  head_ref,
+            "head_sha":  head_sha,
+            "additions": additions,
+            "deletions": deletions,
+        }
+    except Exception as exc:
+        logger.error("PR impact failed: %s", exc)
+        return {"error": str(exc)}
+    finally:
+        if local_path:
+            shutil.rmtree(local_path, ignore_errors=True)
+
+
+# ── Org-wide CVE Dashboard ─────────────────────────────────────────────────────
+
+_DEP_FILES = [
+    "requirements.txt", "package-lock.json", "package.json",
+    "Cargo.lock", "go.sum", "yarn.lock", "pnpm-lock.yaml",
+    "Pipfile.lock", "poetry.lock", "Gemfile.lock",
+]
+_REPO_URL_RE = re.compile(r'^https://github\.com/([A-Za-z0-9_.\-]+)/([A-Za-z0-9_.\-]+?)(?:\.git)?/?$')
+
+@app.post("/org-audit")
+async def org_audit_endpoint(req: OrgAuditRequest):
+    from agents.cve_scanner import run_cve_scanner
+    import base64
+
+    if not req.repos:
+        return {"error": "repos list is empty"}
+    if len(req.repos) > 20:
+        return {"error": "Maximum 20 repos per org audit"}
+
+    token = req.token or os.getenv("GITHUB_TOKEN")
+    gh_headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}
+    if token:
+        gh_headers["Authorization"] = f"Bearer {token}"
+
+    async def _fetch_dep_files(owner: str, repo: str) -> dict[str, str]:
+        contents: dict[str, str] = {}
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            for dep_file in _DEP_FILES:
+                try:
+                    r = await client.get(
+                        f"https://api.github.com/repos/{owner}/{repo}/contents/{dep_file}",
+                        headers=gh_headers,
+                    )
+                    if r.status_code == 200:
+                        data = r.json()
+                        if data.get("encoding") == "base64":
+                            contents[dep_file] = base64.b64decode(data["content"]).decode(errors="ignore")
+                except Exception:
+                    pass
+        return contents
+
+    async def _scan_repo(repo_url: str) -> dict:
+        m = _REPO_URL_RE.match(repo_url.strip())
+        if not m:
+            return {"repo_url": repo_url, "error": "Invalid GitHub URL", "cve_findings": [], "repo_name": repo_url}
+        owner, repo = m.group(1), m.group(2)
+        try:
+            file_contents = await _fetch_dep_files(owner, repo)
+            findings = await asyncio.to_thread(run_cve_scanner, file_contents)
+            return {
+                "repo_url":     repo_url,
+                "repo_name":    repo,
+                "cve_count":    len(findings),
+                "cve_findings": findings,
+                "dep_files_found": list(file_contents.keys()),
+                "error":        None,
+            }
+        except Exception as exc:
+            return {"repo_url": repo_url, "repo_name": repo_url.split("/")[-1], "error": str(exc), "cve_findings": [], "cve_count": 0}
+
+    results = await asyncio.gather(*[_scan_repo(url) for url in req.repos])
+
+    # Find CVEs shared across 2+ repos
+    cve_repo_map: dict[str, list[str]] = {}
+    for r in results:
+        for pkg in r.get("cve_findings", []):
+            for v in pkg.get("vulns", []):
+                vid = v.get("id", "")
+                if vid:
+                    cve_repo_map.setdefault(vid, []).append(r["repo_name"])
+
+    shared_cves = [
+        {"cve_id": vid, "repos": repos, "repo_count": len(repos)}
+        for vid, repos in sorted(cve_repo_map.items(), key=lambda x: -len(x[1]))
+        if len(repos) >= 2
+    ]
+
+    total_cves  = sum(r.get("cve_count", 0) for r in results)
+    repos_clean = sum(1 for r in results if r.get("cve_count", 0) == 0 and not r.get("error"))
+    logger.info("Org audit complete: %d repos, %d total CVEs, %d shared", len(req.repos), total_cves, len(shared_cves))
+
+    return {
+        "repos":       list(results),
+        "shared_cves": shared_cves,
+        "stats": {
+            "total_repos":  len(req.repos),
+            "total_cves":   total_cves,
+            "repos_clean":  repos_clean,
+            "shared_count": len(shared_cves),
+        },
+    }
+
+
+# ── Incident Close Loop ────────────────────────────────────────────────────────
+
+@app.post("/incident-report")
+async def incident_report_endpoint(req: IncidentReportRequest):
+    from langchain_groq import ChatGroq
+
+    if not _UUID_RE.match(req.session_id):
+        return {"error": "Invalid session ID"}
+    if not _rate_ok("summary", req.session_id):
+        return {"error": "Rate limit exceeded — slow down"}
+
+    session = _get_session(req.session_id)
+    if not session:
+        return {"error": "Session not found"}
+
+    finding  = req.finding
+    outcome  = req.outcome
+    messages = req.crisis_messages
+
+    timeline = "\n".join(
+        f"  [{m.get('role','?')}]: {m.get('text','')[:200]}"
+        for m in messages[:20]
+    ) or "  (no crisis messages recorded)"
+
+    outcome_str = "CONTAINED — team issued statement before reporter published" if outcome == "resolved" \
+        else "LEAKED — reporter published before team responded" if outcome == "leaked" \
+        else "UNKNOWN"
+
+    prompt = f"""You are a security incident response manager. Generate a complete incident report.
+
+Repository: {session.get('repo_name', 'Unknown')}
+Incident: {finding.get('title', 'Security Vulnerability')}
+Severity: {finding.get('severity', 'unknown').upper()}
+File: {finding.get('file', 'unknown')}  Line: {finding.get('line_start', '?')}
+Description: {finding.get('description') or finding.get('exploit_story', '')[:300]}
+Crisis Outcome: {outcome_str}
+
+Crisis Timeline:
+{timeline}
+
+Generate a professional incident report with these exact sections:
+
+## INCIDENT SUMMARY
+One paragraph: what happened, what was exposed, who was affected, outcome.
+
+## TIMELINE
+Bullet points with timestamps in relative format (T+0m, T+5m, etc):
+- Discovery
+- Escalation
+- Crisis response
+- Resolution/Publication
+
+## IMPACT ASSESSMENT
+- Data/systems at risk
+- Estimated exposure window
+- Affected users/services
+
+## STAKEHOLDER COMMUNICATION
+Draft a 3-sentence external statement suitable for posting (factual, calm, no admission of negligence).
+
+## REMEDIATION CHECKLIST
+- [ ] Immediate actions (0-24h)
+- [ ] Short-term (1-7 days)
+- [ ] Long-term (1-4 weeks)
+
+## LESSONS LEARNED
+2-3 bullet points on what to improve.
+
+Be specific and professional. Use the actual vulnerability details."""
+
+    def _generate() -> str:
+        llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2)
+        return invoke_with_retry(llm, prompt).content.strip()
+
+    try:
+        report = await asyncio.to_thread(_generate)
+        logger.info("Incident report generated session=%s outcome=%s", req.session_id, outcome)
+        return {
+            "report":   report,
+            "outcome":  outcome,
+            "finding":  finding.get("title", ""),
+            "repo":     session.get("repo_name", ""),
+        }
+    except Exception as exc:
+        logger.error("Incident report failed: %s", exc)
+        return {"error": str(exc)}
 
 
 # ── Health check ───────────────────────────────────────────────────────────────

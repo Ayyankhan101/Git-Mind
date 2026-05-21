@@ -185,6 +185,89 @@ export async function createFixPR(sessionId, finding, token) {
 }
 
 /**
+ * POST /pr-impact — compare a PR head branch against a base analysis session.
+ */
+export async function prImpact(prUrl, sessionId, token = null) {
+  let res;
+  try {
+    res = await fetch(`${BASE}/pr-impact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pr_url: prUrl, session_id: sessionId, ...(token ? { token } : {}) }),
+      signal: AbortSignal.timeout(120_000),
+    });
+  } catch (err) {
+    if (err.name === 'TimeoutError') throw new Error('Impact analysis timed out — large repos may take longer.');
+    throw new Error('Cannot reach the backend.');
+  }
+  if (!res.ok) {
+    let msg = `Server error ${res.status}`;
+    try { const j = await res.json(); msg = j.error || msg; } catch {}
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+/**
+ * POST /org-audit — cross-repo CVE scan for a list of GitHub repo URLs.
+ */
+export async function orgAudit(repos, token = null) {
+  let res;
+  try {
+    res = await fetch(`${BASE}/org-audit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repos, ...(token ? { token } : {}) }),
+      signal: AbortSignal.timeout(90_000),
+    });
+  } catch (err) {
+    if (err.name === 'TimeoutError') throw new Error('Org audit timed out.');
+    throw new Error('Cannot reach the backend.');
+  }
+  if (!res.ok) {
+    let msg = `Server error ${res.status}`;
+    try { const j = await res.json(); msg = j.error || msg; } catch {}
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+/**
+ * POST /incident-report — generate a full incident report from crisis data.
+ */
+export async function fetchIncidentReport(sessionId, finding, crisisMessages, outcome) {
+  let res;
+  try {
+    res = await fetch(`${BASE}/incident-report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id:      sessionId,
+        finding,
+        crisis_messages: crisisMessages,
+        outcome,
+      }),
+      signal: AbortSignal.timeout(60_000),
+    });
+  } catch (err) {
+    if (err.name === 'TimeoutError') throw new Error('Incident report timed out.');
+    throw new Error('Cannot reach the backend.');
+  }
+  if (!res.ok) {
+    let msg = `Server error ${res.status}`;
+    try { const j = await res.json(); msg = j.error || msg; } catch {}
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+/**
  * POST /fix — generate an auto-fix patch for a security finding.
  * @param {string} sessionId
  * @param {object} finding — the full finding object from the security scan

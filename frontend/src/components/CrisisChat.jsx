@@ -1,18 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
-import { WS_BASE } from '../api';
+import { X, FileText, AlertTriangle } from 'lucide-react';
+import { WS_BASE, fetchIncidentReport } from '../api';
 
 const ROLE_COLOR = { CEO: '#fbbf24', Legal: '#818cf8', Engineering: '#34d399', Reporter: '#f87171' };
 const WS_URL = `${WS_BASE}/ws/crisis`;
 const REPORTER_INTERVAL = 45;
 
 export default function CrisisChat({ finding, sessionId, onClose }) {
-  const [messages,  setMessages]  = useState([]);
-  const [countdown, setCountdown] = useState(REPORTER_INTERVAL);
-  const [resolved,  setResolved]  = useState(false);
-  const [leaked,    setLeaked]    = useState(false);
-  const [error,     setError]     = useState(null);
-  const [connected, setConnected] = useState(false);
+  const [messages,       setMessages]       = useState([]);
+  const [countdown,      setCountdown]      = useState(REPORTER_INTERVAL);
+  const [resolved,       setResolved]       = useState(false);
+  const [leaked,         setLeaked]         = useState(false);
+  const [error,          setError]          = useState(null);
+  const [connected,      setConnected]      = useState(false);
+  const [report,         setReport]         = useState(null);
+  const [reportLoading,  setReportLoading]  = useState(false);
+  const [reportError,    setReportError]    = useState(null);
   const bottomRef = useRef(null);
   const wsRef     = useRef(null);
 
@@ -59,6 +62,22 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
   }, [resolved, leaked, error]);
 
   const timerDanger = countdown <= 10 && !resolved && !leaked;
+  const crisisOver  = resolved || leaked;
+
+  const generateReport = async () => {
+    if (!crisisOver) return;
+    setReportLoading(true);
+    setReportError(null);
+    try {
+      const outcome = resolved ? 'resolved' : 'leaked';
+      const data = await fetchIncidentReport(sessionId, finding, messages, outcome);
+      setReport(data.report);
+    } catch (err) {
+      setReportError(err.message);
+    } finally {
+      setReportLoading(false);
+    }
+  };
 
   return (
     <div className="crisis-backdrop" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -128,12 +147,42 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
             </div>
           )}
 
+          {/* Incident report */}
+          {report && (
+            <div style={{ marginTop: 12, padding: '14px', background: 'var(--surface-1)', borderRadius: 8, border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <FileText size={11} strokeWidth={1.5} /> INCIDENT REPORT
+              </div>
+              <pre style={{ fontSize: 11, color: 'var(--text-2)', whiteSpace: 'pre-wrap', fontFamily: 'var(--font-mono)', lineHeight: 1.6, margin: 0 }}>
+                {report}
+              </pre>
+            </div>
+          )}
+
+          {reportError && (
+            <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(239,68,68,0.08)', borderRadius: 6, fontSize: 12, color: '#fca5a5', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <AlertTriangle size={11} strokeWidth={1.5} /> {reportError}
+            </div>
+          )}
+
           <div ref={bottomRef} />
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '14px 26px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
-          <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center' }} onClick={onClose}>
+        <div style={{ padding: '14px 26px', borderTop: '1px solid var(--border)', flexShrink: 0, display: 'flex', gap: 8 }}>
+          {crisisOver && !report && (
+            <button
+              className="btn btn-ghost"
+              onClick={generateReport}
+              disabled={reportLoading}
+              style={{ flex: 1 }}
+            >
+              {reportLoading
+                ? <><span className="spinner" /> Generating Report…</>
+                : <><FileText size={13} strokeWidth={1.5} /> Generate Incident Report</>}
+            </button>
+          )}
+          <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={onClose}>
             Close Crisis Room
           </button>
         </div>

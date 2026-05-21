@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { GitPullRequest, ChevronDown, Check, AlertTriangle, MessageSquare } from 'lucide-react';
-import { reviewPR } from '../api';
+import { GitPullRequest, ChevronDown, Check, AlertTriangle, MessageSquare, TrendingUp, TrendingDown, Minus, ShieldAlert, Package } from 'lucide-react';
+import { reviewPR, prImpact } from '../api';
 
 const VERDICT_CLASS = {
   'APPROVE':          'approve',
@@ -65,13 +65,114 @@ function IssueRow({ issue }) {
   );
 }
 
-export default function PRReviewTab({ prAutoUrl, onAutoUrlUsed }) {
+function ImpactPanel({ impact, loading, error }) {
+  if (loading) return (
+    <div style={{ marginTop: 16 }}>
+      {[0,1,2].map(i => (
+        <div key={i} className="sk-row"><div className="sk-row-line">
+          <span className="sk" style={{ height: 14, width: 60 }} />
+          <span className="sk" style={{ height: 14, width: '50%' }} />
+        </div></div>
+      ))}
+    </div>
+  );
+  if (error) return (
+    <div className="error-banner" style={{ marginTop: 12, borderRadius: 6 }}>
+      <AlertTriangle size={13} strokeWidth={1.5} /><span>{error}</span>
+    </div>
+  );
+  if (!impact) return null;
+
+  const delta = impact.health_delta ?? 0;
+  const DeltaIcon = delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : Minus;
+  const deltaColor = delta > 0 ? 'var(--success)' : delta < 0 ? 'var(--danger)' : 'var(--text-3)';
+
+  return (
+    <div style={{ marginTop: 20, padding: '16px 20px', background: 'var(--surface-1)', borderRadius: 10, border: '1px solid var(--border)' }}>
+      <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <TrendingUp size={11} strokeWidth={1.5} />
+        IMPACT PREVIEW · {impact.head_ref} ({impact.head_sha})
+      </div>
+
+      {/* Health score delta */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 120, padding: '10px 14px', background: 'var(--surface-0)', borderRadius: 8, border: '1px solid var(--border)' }}>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 4 }}>BASE SCORE</div>
+          <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{impact.base_score}<span style={{ fontSize: 13, color: 'var(--text-3)' }}> ({impact.base_grade})</span></div>
+        </div>
+        <div style={{ flex: 1, minWidth: 120, padding: '10px 14px', background: 'var(--surface-0)', borderRadius: 8, border: '1px solid var(--border)' }}>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 4 }}>PR SCORE</div>
+          <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{impact.pr_score}<span style={{ fontSize: 13, color: 'var(--text-3)' }}> ({impact.pr_grade})</span></div>
+        </div>
+        <div style={{ flex: 1, minWidth: 120, padding: '10px 14px', background: 'var(--surface-0)', borderRadius: 8, border: `1px solid ${deltaColor}40` }}>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 4 }}>DELTA</div>
+          <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', color: deltaColor, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <DeltaIcon size={18} strokeWidth={2} />
+            {delta > 0 ? `+${delta}` : delta}
+          </div>
+        </div>
+      </div>
+
+      {/* Findings delta */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+        {impact.new_findings?.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--danger)', padding: '6px 10px', background: 'rgba(239,68,68,0.08)', borderRadius: 6 }}>
+            <ShieldAlert size={11} strokeWidth={1.5} />
+            +{impact.new_findings.length} new finding{impact.new_findings.length !== 1 ? 's' : ''}
+          </div>
+        )}
+        {impact.fixed_findings?.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--success)', padding: '6px 10px', background: 'rgba(34,197,94,0.08)', borderRadius: 6 }}>
+            <Check size={11} strokeWidth={2} />
+            {impact.fixed_findings.length} finding{impact.fixed_findings.length !== 1 ? 's' : ''} fixed
+          </div>
+        )}
+        {impact.new_cves?.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--warning)', padding: '6px 10px', background: 'rgba(234,179,8,0.08)', borderRadius: 6 }}>
+            <Package size={11} strokeWidth={1.5} />
+            +{impact.new_cves.length} new CVE{impact.new_cves.length !== 1 ? 's' : ''}
+          </div>
+        )}
+        {impact.fixed_cves?.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--success)', padding: '6px 10px', background: 'rgba(34,197,94,0.08)', borderRadius: 6 }}>
+            <Check size={11} strokeWidth={2} />
+            {impact.fixed_cves.length} CVE{impact.fixed_cves.length !== 1 ? 's' : ''} resolved
+          </div>
+        )}
+        {!impact.new_findings?.length && !impact.fixed_findings?.length && !impact.new_cves?.length && !impact.fixed_cves?.length && (
+          <div style={{ fontSize: 12, color: 'var(--text-3)', padding: '6px 10px' }}>No security changes detected in this PR</div>
+        )}
+      </div>
+
+      {/* Per-dimension breakdown */}
+      {impact.breakdown_delta && Object.values(impact.breakdown_delta).some(v => v !== 0) && (
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 8 }}>SCORE BREAKDOWN</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {Object.entries(impact.breakdown_delta).map(([k, v]) => (
+              v !== 0 && (
+                <div key={k} style={{ fontSize: 11, padding: '4px 8px', borderRadius: 4, background: v > 0 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: v > 0 ? 'var(--success)' : 'var(--danger)' }}>
+                  {k.replace(/_/g, ' ')}: {v > 0 ? `+${v}` : v}
+                </div>
+              )
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function PRReviewTab({ prAutoUrl, onAutoUrlUsed, sessionId, analyzed }) {
   const [prUrl,       setPrUrl]       = useState('');
   const [token,       setToken]       = useState(() => sessionStorage.getItem('gm-gh-token') || '');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState(null);
   const [result,      setResult]      = useState(null);
+  const [impact,      setImpact]      = useState(null);
+  const [impactLoading, setImpactLoading] = useState(false);
+  const [impactError,   setImpactError]   = useState(null);
 
   // Auto-fill + trigger review when a PR URL is pasted anywhere
   useEffect(() => {
@@ -96,6 +197,8 @@ export default function PRReviewTab({ prAutoUrl, onAutoUrlUsed }) {
     setError(null);
     setLoading(true);
     setResult(null);
+    setImpact(null);
+    setImpactError(null);
     try {
       const data = await reviewPR(url, token || undefined);
       setResult(data);
@@ -103,6 +206,23 @@ export default function PRReviewTab({ prAutoUrl, onAutoUrlUsed }) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleImpact = async () => {
+    const url = prUrl.trim();
+    if (!url) { setImpactError('Enter a GitHub PR URL first.'); return; }
+    if (!sessionId || !analyzed) { setImpactError('Analyze a repository first to use as the base.'); return; }
+    setImpactError(null);
+    setImpact(null);
+    setImpactLoading(true);
+    try {
+      const data = await prImpact(url, sessionId, token || null);
+      setImpact(data);
+    } catch (err) {
+      setImpactError(err.message);
+    } finally {
+      setImpactLoading(false);
     }
   };
 
@@ -134,6 +254,11 @@ export default function PRReviewTab({ prAutoUrl, onAutoUrlUsed }) {
         <button className="btn btn-primary" onClick={handleReview} disabled={loading || !prUrl.trim()}>
           {loading ? <><span className="spinner" /> Reviewing…</> : 'Review PR'}
         </button>
+        {analyzed && (
+          <button className="btn btn-ghost" onClick={handleImpact} disabled={impactLoading || !prUrl.trim()} title="Compare PR head branch against current analysis">
+            {impactLoading ? <><span className="spinner" /> Predicting…</> : <><TrendingUp size={13} strokeWidth={1.5} /> Predict Impact</>}
+          </button>
+        )}
       </div>
 
       {/* Advanced toggle */}
@@ -158,6 +283,9 @@ export default function PRReviewTab({ prAutoUrl, onAutoUrlUsed }) {
           <span>{error}</span>
         </div>
       )}
+
+      {/* Impact panel */}
+      <ImpactPanel impact={impact} loading={impactLoading} error={impactError} />
 
       {/* Result */}
       {parsed && result && (
