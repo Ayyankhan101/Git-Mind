@@ -359,7 +359,7 @@ export default function App() {
         setGlobalError('Connection dropped unexpectedly. Check the backend terminal for errors.');
       }
     };
-  }, [cleanup]);
+  }, [cleanup, addToast, ghToken]);
 
   // ── Global keyboard shortcuts ─────────────────────────────────────────────────
   useEffect(() => {
