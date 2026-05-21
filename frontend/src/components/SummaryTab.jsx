@@ -59,10 +59,10 @@ function Donut({ segments, size = 120, thickness = 14 }) {
         const big = end - start > Math.PI ? 1 : 0;
         return <path key={i} d={arc(start, end, big)} fill={s.color} />;
       })}
-      <text x={r} y={r - 2} textAnchor="middle" fill="var(--text-1)" fontSize="22" fontWeight="600" fontFamily="Inter">
+      <text x={r} y={r - 2} textAnchor="middle" fill="var(--text-1)" fontSize="22" fontWeight="600" fontFamily="DM Sans, system-ui, sans-serif">
         {total}
       </text>
-      <text x={r} y={r + 16} textAnchor="middle" fill="var(--text-3)" fontSize="10" fontFamily="Inter" letterSpacing="0.14em">
+      <text x={r} y={r + 16} textAnchor="middle" fill="var(--text-3)" fontSize="10" fontFamily="DM Sans, system-ui, sans-serif" letterSpacing="0.14em">
         FINDINGS
       </text>
     </svg>

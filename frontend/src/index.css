@@ -39,8 +39,8 @@
   --bloom-2: transparent;
   --bloom-3: transparent;
 
-  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 * { box-sizing: border-box; }
@@ -52,7 +52,7 @@ body, #root {
   background: transparent;
   color: var(--text-2);
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -83,7 +83,7 @@ input, textarea, select { font-family: inherit; color: inherit; }
 /* ── Layout shell ─────────────────────────────────────────── */
 .app {
   display: grid;
-  grid-template-rows: 56px 1fr 28px;
+  grid-template-rows: 52px 1fr 26px;
   height: 100vh;
 }
 
@@ -91,9 +91,9 @@ input, textarea, select { font-family: inherit; color: inherit; }
 .command-bar {
   display: flex;
   align-items: center;
-  gap: 14px;
-  height: 56px;
-  padding: 0 20px;
+  gap: 10px;
+  height: 52px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--border);
   background: var(--chrome-bg);
   backdrop-filter: var(--chrome-blur);
@@ -105,35 +105,56 @@ input, textarea, select { font-family: inherit; color: inherit; }
   align-items: center;
   gap: 8px;
   width: 280px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border);
-  transition: border-color 0.15s;
+  padding: 6px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-.cb-input:focus-within { border-bottom-color: var(--primary); }
+.cb-input:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-dim);
+}
 .cb-input svg { color: var(--text-3); flex-shrink: 0; }
 .cb-input input {
   flex: 1;
   background: transparent;
   border: none;
   outline: none;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-1);
 }
 .cb-input input::placeholder { color: var(--text-3); }
 
 .cb-status {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-3);
   white-space: nowrap;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
 }
-.cb-status.done { color: var(--success); }
-.cb-status.running { color: var(--warning); }
+.cb-status.done {
+  color: var(--success);
+  background: rgba(34,197,94,0.08);
+  border-color: rgba(34,197,94,0.2);
+}
+.cb-status.running {
+  color: var(--warning);
+  background: rgba(234,179,8,0.08);
+  border-color: rgba(234,179,8,0.2);
+}
 
 .cb-wordmark {
   font-size: 14px;
   font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text-2);
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--text-1) 40%, var(--primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .body {
@@ -185,17 +206,18 @@ input, textarea, select { font-family: inherit; color: inherit; }
 .repo-card {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 11px 16px;
+  gap: 4px;
+  padding: 10px 16px;
   border-left: 2px solid transparent;
   cursor: pointer;
-  transition: background-color 0.1s;
+  transition: background-color 0.12s;
 }
 .repo-card:hover { background: var(--surface-2); }
 .repo-card.selected {
   background: var(--primary-dim);
   border-left-color: var(--primary);
 }
+.repo-card.selected .repo-name { color: var(--primary); }
 .repo-card.focused {
   background: var(--surface-2);
   outline: 1px solid var(--primary);
@@ -339,23 +361,26 @@ input, textarea, select { font-family: inherit; color: inherit; }
 .tab {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 0 14px;
-  font-size: 13px;
+  gap: 6px;
+  padding: 0 12px;
+  font-size: 12.5px;
+  font-weight: 500;
   color: var(--text-3);
   background: transparent;
   border: none;
-  border-bottom: 1px solid transparent;
+  border-bottom: 2px solid transparent;
   margin-bottom: -1px;
   cursor: pointer;
-  transition: color 0.1s;
+  transition: color 0.12s;
+  white-space: nowrap;
 }
 .tab:hover { color: var(--text-2); }
 .tab.active {
   color: var(--text-1);
   border-bottom-color: var(--primary);
 }
-.tab svg { opacity: 0.85; }
+.tab.active svg { color: var(--primary); }
+.tab svg { opacity: 0.7; }
 .tab-badge {
   font-size: 11px;
   padding: 1px 7px;
@@ -490,9 +515,12 @@ input, textarea, select { font-family: inherit; color: inherit; }
   flex-direction: column;
   gap: 14px;
   padding: 20px 22px;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
+  transition: border-color 0.15s;
 }
+.stat:hover { border-color: var(--border-2); }
 .stat-icon { color: var(--text-3); }
 .stat-value {
   font-size: 32px;
@@ -863,7 +891,7 @@ input, textarea, select { font-family: inherit; color: inherit; }
   display: flex;
   align-items: center;
   gap: 14px;
-  height: 28px;
+  height: 26px;
   padding: 0 16px;
   border-top: 1px solid var(--border);
   background: var(--chrome-bg);
@@ -1502,12 +1530,12 @@ input, textarea, select { font-family: inherit; color: inherit; }
   -webkit-backdrop-filter: var(--chrome-blur);
   border: 1px solid var(--border-2);
   border-left: 3px solid var(--primary);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 12px 14px;
   width: 320px;
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--text-1);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2);
   animation: gm-toast-in 0.18s ease-out;
 }
 @keyframes gm-toast-in {
@@ -1936,6 +1964,10 @@ textarea:focus-visible,
   max-width: 640px;
   padding: 48px 56px 44px;
   text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.3);
 }
 .onboarding-mark {
   width: 56px;
@@ -2296,6 +2328,7 @@ textarea:focus-visible,
 }
 .chart-card {
   padding: 22px 24px;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
   display: flex;

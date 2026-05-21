@@ -553,7 +553,7 @@ export default function App() {
 
         {/* PAT input */}
         <div className="cb-input" style={{ width: 200 }}>
-          <Lock size={14} style={{ color: ghToken ? 'var(--accent)' : 'var(--text-3)', flexShrink: 0 }} />
+          <Lock size={14} style={{ color: ghToken ? 'var(--primary)' : 'var(--text-3)', flexShrink: 0 }} />
           <input
             type="password"
             placeholder="token (private repos)"
