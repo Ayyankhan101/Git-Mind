@@ -1,5 +1,6 @@
 import json
 import logging
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -9,9 +10,31 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 logger = logging.getLogger(__name__)
 
-_CHROMA_PATH    = Path(__file__).parent / ".chroma"
-_REGISTRY_PATH  = Path(__file__).parent / ".chroma_registry.json"
 _COLLECTION_TTL = 60 * 60 * 24 * 7   # 7 days
+
+def _writable(path: Path) -> bool:
+    """Return True if path (or its parent) is writable by the current process."""
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        probe = path / ".write_test"
+        probe.touch()
+        probe.unlink()
+        return True
+    except OSError:
+        return False
+
+_PREFERRED_CHROMA    = Path(__file__).parent / ".chroma"
+_PREFERRED_REGISTRY  = Path(__file__).parent / ".chroma_registry.json"
+
+if _writable(_PREFERRED_CHROMA):
+    _CHROMA_PATH   = _PREFERRED_CHROMA
+    _REGISTRY_PATH = _PREFERRED_REGISTRY
+else:
+    _TMP_BASE      = Path(tempfile.gettempdir()) / "gitmind_chroma"
+    _TMP_BASE.mkdir(exist_ok=True)
+    _CHROMA_PATH   = _TMP_BASE
+    _REGISTRY_PATH = _TMP_BASE / "registry.json"
+    logger.warning("ChromaDB falling back to %s (preferred dir not writable)", _CHROMA_PATH)
 
 _client = chromadb.PersistentClient(path=str(_CHROMA_PATH))
 
