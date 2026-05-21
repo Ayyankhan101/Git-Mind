@@ -27,7 +27,7 @@ export default function HealthCard({ health }) {
     <div style={{
       border: '1px solid var(--border)', borderRadius: 10,
       padding: '18px 22px', marginBottom: 24,
-      background: 'var(--surface-1)',
+      background: 'var(--surface)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 16 }}>
         <div style={{

@@ -626,7 +626,7 @@ export default function App() {
       </div>
 
       {/* ── Body ─────────────────────────────────────────────────────────────── */}
-      <div className="body" style={{ gridTemplateColumns: `auto 1fr` }}>
+      <div className="body">
 
         {/* Sidebar */}
         <Sidebar

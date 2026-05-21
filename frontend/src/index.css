@@ -159,8 +159,9 @@ input, textarea, select { font-family: inherit; color: inherit; }
 
 .body {
   display: grid;
-  grid-template-columns: 288px 1fr;
+  grid-template-columns: auto 1fr;
   min-height: 0;
+  overflow: hidden;
 }
 
 /* ── Sidebar ──────────────────────────────────────────────── */
@@ -351,13 +352,17 @@ input, textarea, select { font-family: inherit; color: inherit; }
 .tab-rail {
   display: flex;
   align-items: stretch;
-  height: 48px;
+  height: 44px;
   border-bottom: 1px solid var(--border);
   background: var(--chrome-bg);
   backdrop-filter: var(--chrome-blur);
   -webkit-backdrop-filter: var(--chrome-blur);
-  padding: 0 12px;
+  padding: 0 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
 }
+.tab-rail::-webkit-scrollbar { display: none; }
 .tab {
   display: inline-flex;
   align-items: center;
