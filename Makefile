@@ -1,46 +1,52 @@
-.PHONY: up dev build logs restart ps down clean
+.PHONY: dev prod stop stop-prod restart restart-prod status logs logs-prod build build-prod clean start bare-stop bare-restart smoke
 
-up:
-	@echo "Checking ports..."
-	@for port in 8002 80 3002; do \
-		if lsof -i :$$port >/dev/null 2>&1; then \
-			echo "Killing process on port $$port"; \
-			lsof -ti :$$port | xargs -r kill -9; \
-		fi; \
-	done
-	docker compose up
-
+# ── Docker shortcuts ───────────────────────────────────────────────────────────
 dev:
-	@echo "Checking ports..."
-	@for port in 8002 80 3002; do \
-		if lsof -i :$$port >/dev/null 2>&1; then \
-			echo "Killing process on port $$port"; \
-			lsof -ti :$$port | xargs -r kill -9; \
-		fi; \
-	done
-	docker compose -f docker-compose.dev.yml up
+	./gitmind.sh start dev
 
-build:
-	docker compose build
-	docker compose -f docker-compose.dev.yml build
+prod:
+	./gitmind.sh start prod
 
-logs:
-	docker compose logs -f
-	docker compose -f docker-compose.dev.yml logs -f
+stop:
+	./gitmind.sh stop dev
+
+stop-prod:
+	./gitmind.sh stop prod
 
 restart:
-	docker compose restart
-	docker compose -f docker-compose.dev.yml restart
+	./gitmind.sh restart dev
 
-ps:
-	docker compose ps
-	docker compose -f docker-compose.dev.yml ps
+restart-prod:
+	./gitmind.sh restart prod
 
-down:
-	docker compose down
-	docker compose -f docker-compose.dev.yml down
+status:
+	./gitmind.sh status dev
+
+logs:
+	./gitmind.sh logs dev
+
+logs-prod:
+	./gitmind.sh logs prod
+
+build:
+	./gitmind.sh build dev
+
+build-prod:
+	./gitmind.sh build prod
 
 clean:
-	docker compose down -v
-	docker compose -f docker-compose.dev.yml down -v
-	docker system prune -f
+	./gitmind.sh clean dev
+
+# ── Bare-metal shortcuts ───────────────────────────────────────────────────────
+start:
+	./start.sh
+
+bare-stop:
+	./stop.sh
+
+bare-restart:
+	./stop.sh restart
+
+# ── Dev tooling ────────────────────────────────────────────────────────────────
+smoke:
+	cd backend && venv/bin/python3 smoke_test.py
