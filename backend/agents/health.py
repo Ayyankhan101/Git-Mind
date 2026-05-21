@@ -1,4 +1,5 @@
 import re
+from pathlib import Path
 
 _COMMENT_RE = re.compile(r'^\s*(#|//|/\*|\*|""")', re.MULTILINE)
 
@@ -35,13 +36,15 @@ def _security_score(findings: list) -> float:
     return max(0.0, 100.0 - total_penalty)
 
 
+_CODE_EXTS = frozenset({".py", ".js", ".ts", ".jsx", ".tsx", ".java", ".go", ".rb", ".php"})
+
+
 def _docs_score(file_contents: dict) -> float:
     if not file_contents:
         return 50.0
-    code_exts = {".py", ".js", ".ts", ".jsx", ".tsx", ".java", ".go", ".rb", ".php"}
     total_lines = comment_lines = 0
     for path, content in file_contents.items():
-        if not any(path.endswith(ext) for ext in code_exts):
+        if Path(path).suffix.lower() not in _CODE_EXTS:
             continue
         lines = content.splitlines()
         total_lines += len(lines)

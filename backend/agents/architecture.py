@@ -90,8 +90,11 @@ def run_architecture_agent(file_tree: list[str], file_contents: dict[str, str]) 
 
 # ── Private helpers ────────────────────────────────────────────────────────────
 
+_ENC = tiktoken.get_encoding("cl100k_base")  # load once at import time
+
+
 def _build_prompt(file_tree: list[str], file_contents: dict[str, str], primary_lang: str = "Unknown") -> str:
-    enc    = tiktoken.get_encoding("cl100k_base")  # approximation for Llama token counts
+    enc    = _ENC
     budget = _TOKEN_BUDGET
 
     tree_str = "\n".join(file_tree[:_MAX_TREE_LINES])

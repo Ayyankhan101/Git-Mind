@@ -45,9 +45,11 @@ def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None =
     logger.info("Cloning %s → %s (auth=%s, branch=%s)", repo_url, dest, bool(token), branch or "default")
 
     head_sha = None
-    clone_kwargs: dict = {"depth": 1, "no_single_branch": True}
+    clone_kwargs: dict = {"depth": 1}
     if branch:
         clone_kwargs["branch"] = branch
+    else:
+        clone_kwargs["no_single_branch"] = True
     try:
         repo = git.Repo.clone_from(clone_url, dest, **clone_kwargs)
         head_sha = repo.head.commit.hexsha
