@@ -7,8 +7,19 @@ import diskcache
 
 logger = logging.getLogger(__name__)
 
-# Absolute path relative to this file — safe regardless of where uvicorn is launched from
-_CACHE_DIR = Path(__file__).parent / ".llm_cache"
+# Prefer the project-local cache dir; fall back to /tmp if it's not writable (e.g. owned by root)
+_PREFERRED_DIR = Path(__file__).parent / ".llm_cache"
+try:
+    _PREFERRED_DIR.mkdir(exist_ok=True)
+    _test = _PREFERRED_DIR / ".write_test"
+    _test.touch(); _test.unlink()
+    _CACHE_DIR = _PREFERRED_DIR
+except OSError:
+    import tempfile
+    _CACHE_DIR = Path(tempfile.gettempdir()) / "gitmind_llm_cache"
+    _CACHE_DIR.mkdir(exist_ok=True)
+    logger.warning("LLM cache falling back to %s (preferred dir not writable)", _CACHE_DIR)
+
 _cache = diskcache.Cache(str(_CACHE_DIR))   # diskcache.Cache is thread-safe
 
 

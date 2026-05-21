@@ -1,6 +1,6 @@
 # GitMind
 
-Multi-agent repo intelligence platform. Enter a GitHub username (and optionally a PAT for private repos), pick a repo → 6 agents run in parallel → architecture diagram, API docs, security audit, CVE scan, RAG chat, shareable report. Optional Crisis Mode role-plays a security incident with CEO / Legal / Engineering / Reporter agents.
+Multi-agent repo intelligence platform. Enter a GitHub username (and optionally a PAT for private repos), pick a repo → 7 agents run in parallel → architecture diagram, API docs, security audit, CVE scan, git commit audit, RAG chat, shareable report. Optional Crisis Mode role-plays a security incident with CEO / Legal / Engineering / Reporter agents.
 
 **Stack:** FastAPI · LangGraph · Groq (llama-3.3-70b-versatile) · ChromaDB · React · Mermaid · semgrep · OSV.dev
 
@@ -14,10 +14,14 @@ Multi-agent repo intelligence platform. Enter a GitHub username (and optionally 
 | **API doc agent** | Extracts every HTTP endpoint with method, route, and description |
 | **Security auditor** | semgrep SAST scan; findings ranked Critical → Low with exploit scenarios |
 | **CVE scanner** | Checks dependency lockfiles against [OSV.dev](https://osv.dev) — supports PyPI, npm, Cargo, Go |
+| **Git Audit** | Commit log analysis: message quality (good/vague/poor), hardcoded secret detection, sensitive file tracker |
 | **Auto-fix patches** | Click "Generate Fix" on any finding → unified diff patch from LLM + RAG context |
 | **PR Review** | Paste any GitHub PR URL → structured review with file:line issues and verdict |
+| **Predictive PR Impact** | After analyzing a repo, enter a PR URL → health score delta, new/fixed findings, new/fixed CVEs compared to the base |
+| **Org-wide CVE Dashboard** | Scan all loaded repos for CVEs via GitHub API (no clone) — cross-repo shared vulnerability detection |
+| **Incident Close Loop** | After Crisis Mode ends, generate a full incident report (timeline, impact, stakeholder statement, remediation checklist, lessons learned) |
 | **RAG chat** | Ask anything about the codebase; ChromaDB + streaming SSE responses |
-| **Crisis Mode** | Escalation simulation: CEO / Legal / Engineering debate a live incident |
+| **Crisis Mode** | Escalation simulation: CEO / Legal / Engineering debate a live incident; reporter publishes if team is too slow |
 | **Shareable links** | Analysis snapshots saved server-side; share via `?share=SESSION_ID` URL |
 | **Export report** | Download full analysis as Markdown |
 | **Private repo access** | Enter a GitHub PAT in the command bar to load and analyze private repositories |
@@ -41,11 +45,13 @@ IM-Hackathon/
 │   ├── requirements.txt     ← pip dependencies
 │   ├── .env.example
 │   └── agents/
-│       ├── scanner.py       ← git clone + file indexing
+│       ├── scanner.py       ← git clone + file indexing (supports branch param for PR head)
 │       ├── architecture.py  ← Mermaid diagram generation
 │       ├── api_doc.py       ← endpoint extraction
 │       ├── security.py      ← semgrep SAST
 │       ├── cve_scanner.py   ← OSV.dev dependency CVE lookup
+│       ├── git_audit.py     ← commit log analysis + secret/sensitive-file detection
+│       ├── impact.py        ← compute_impact() — diffs two analysis snapshots
 │       ├── pr_review.py     ← GitHub PR diff + LLM review
 │       ├── rag_setup.py     ← ChromaDB ingestion
 │       ├── chat.py          ← RAG query + SSE streaming
@@ -65,15 +71,17 @@ IM-Hackathon/
 │       ├── api.js
 │       └── components/
 │           ├── Sidebar.jsx           ← repo list, saved views, workspace switcher
-│           ├── AgentPipeline.jsx     ← live agent progress display
+│           ├── AgentPipeline.jsx     ← live agent progress display (7 agents)
 │           ├── DiagramTab.jsx        ← Mermaid pan/zoom diagram
 │           ├── DocsTab.jsx           ← API endpoint browser
 │           ├── SecurityTab.jsx       ← SAST findings + Generate Fix
 │           ├── CveTab.jsx            ← OSV.dev CVE results
-│           ├── PRReviewTab.jsx       ← PR review UI
+│           ├── GitAuditTab.jsx       ← commit log, secret detection, sensitive files
+│           ├── PRReviewTab.jsx       ← PR review + Predict Impact panel
+│           ├── OrgAuditModal.jsx     ← cross-repo CVE dashboard
 │           ├── SummaryTab.jsx        ← health score + executive summary
 │           ├── ChatTab.jsx           ← SSE streaming RAG chat
-│           ├── CrisisChat.jsx        ← crisis escalation role-play
+│           ├── CrisisChat.jsx        ← crisis role-play + incident report generator
 │           ├── ErrorBoundary.jsx     ← per-tab crash isolation
 │           ├── KeyboardHelp.jsx      ← keyboard shortcut modal
 │           ├── Onboarding.jsx        ← first-run guide
@@ -138,12 +146,16 @@ REACT_APP_API_BASE=http://localhost:8002 npm start   # http://localhost:3000
 
 | Endpoint | Method | Description |
 |---|---|---|
-| `/ws/analyze` | WS | Streams agent events → `architecture_diagram`, `api_docs`, `security_findings`, `cve_findings` |
+| `/ws/analyze` | WS | Streams agent events → `architecture_diagram`, `api_docs`, `security_findings`, `cve_findings`, `git_audit` |
 | `/chat` | POST | `{session_id, question}` → `{answer}` |
 | `/chat/stream` | POST | SSE streaming chat — yields `data: {"token": "..."}` |
 | `/summary` | POST | `{session_id}` → executive summary |
 | `/pr-review` | POST | `{pr_url, token?}` → structured LLM code review |
+| `/pr-impact` | POST | `{pr_url, session_id, token?}` → health delta, new/fixed findings and CVEs vs base session |
+| `/org-audit` | POST | `{repos: [urls], token?}` → per-repo CVE counts + cross-repo shared vulnerabilities |
+| `/incident-report` | POST | `{session_id, finding, crisis_messages, outcome}` → full incident report (6 sections) |
 | `/fix` | POST | `{session_id, finding}` → unified diff patch for a security finding |
+| `/fix/pr` | POST | `{session_id, finding, token}` → auto-creates GitHub PR with the fix applied |
 | `/analysis/{session_id}` | GET | Load a saved analysis snapshot (used by share links) |
 | `/repos/{username}` | GET | List repos — public only by default; pass `X-GH-Token` header to include private repos (sorted by `pushed_at` desc) |
 | `/ws/crisis` | WS | Crisis Mode — streams CEO/Legal/Engineering role-play |
@@ -161,10 +173,11 @@ START
         ├─► security      (semgrep SAST)
         ├─► cve_scanner   (OSV.dev lookup)
         ├─► rag_setup     (ChromaDB ingestion)
+        ├─► git_audit     (commit log + secret detection)
         └─► END
 ```
 
-All 6 post-scanner nodes run in parallel. Each is fully error-isolated — a failure returns safe defaults and an error event; the rest of the pipeline continues.
+All 7 post-scanner nodes run in parallel. Each is fully error-isolated — a failure returns safe defaults and an error event; the rest of the pipeline continues.
 
 ---
 
