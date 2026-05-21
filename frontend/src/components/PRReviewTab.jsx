@@ -94,6 +94,14 @@ function ImpactPanel({ impact, loading, error }) {
         IMPACT PREVIEW · {impact.head_ref} ({impact.head_sha})
       </div>
 
+      {/* Warn if base health is missing (old session analyzed before health scoring) */}
+      {impact.base_grade === '?' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--warning)', padding: '6px 10px', background: 'rgba(234,179,8,0.08)', borderRadius: 6, marginBottom: 10 }}>
+          <AlertTriangle size={11} strokeWidth={1.5} />
+          Base session has no health score — re-analyze the repo to get an accurate delta
+        </div>
+      )}
+
       {/* Health score delta */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 120, padding: '10px 14px', background: 'var(--surface-0)', borderRadius: 8, border: '1px solid var(--border)' }}>

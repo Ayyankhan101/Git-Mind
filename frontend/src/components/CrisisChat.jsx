@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, FileText, AlertTriangle } from 'lucide-react';
+import { X, FileText, AlertTriangle, Copy, Check as CheckIcon } from 'lucide-react';
 import { WS_BASE, fetchIncidentReport } from '../api';
 
 const ROLE_COLOR = { CEO: '#fbbf24', Legal: '#818cf8', Engineering: '#34d399', Reporter: '#f87171' };
@@ -16,6 +16,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
   const [report,         setReport]         = useState(null);
   const [reportLoading,  setReportLoading]  = useState(false);
   const [reportError,    setReportError]    = useState(null);
+  const [reportCopied,   setReportCopied]   = useState(false);
   const bottomRef = useRef(null);
   const wsRef     = useRef(null);
 
@@ -151,7 +152,20 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
           {report && (
             <div style={{ marginTop: 12, padding: '14px', background: 'var(--surface-1)', borderRadius: 8, border: '1px solid var(--border)' }}>
               <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <FileText size={11} strokeWidth={1.5} /> INCIDENT REPORT
+                <FileText size={11} strokeWidth={1.5} />
+                INCIDENT REPORT
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(report).then(() => {
+                      setReportCopied(true);
+                      setTimeout(() => setReportCopied(false), 2000);
+                    });
+                  }}
+                  style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: reportCopied ? 'var(--success)' : 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, padding: '2px 6px', borderRadius: 4 }}
+                >
+                  {reportCopied ? <CheckIcon size={10} strokeWidth={2} /> : <Copy size={10} strokeWidth={1.5} />}
+                  {reportCopied ? 'Copied' : 'Copy'}
+                </button>
               </div>
               <pre style={{ fontSize: 11, color: 'var(--text-2)', whiteSpace: 'pre-wrap', fontFamily: 'var(--font-mono)', lineHeight: 1.6, margin: 0 }}>
                 {report}

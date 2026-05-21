@@ -106,6 +106,12 @@ print("\n[ LangGraph ]")
 try:
     from orchestrator import graph
     check("LangGraph analysis graph compiles", graph is not None)
+    # Verify all 7 post-scanner nodes are wired up
+    node_names = set(graph.nodes.keys()) if hasattr(graph, 'nodes') else set()
+    expected   = {"scanner", "architecture", "api_docs", "security", "cve_scanner", "rag_setup", "git_audit"}
+    missing    = expected - node_names
+    check("LangGraph: all 7 agent nodes present", not missing,
+          f"Missing: {missing}" if missing else "")
 except Exception as exc:
     check("LangGraph analysis graph compiles", False, str(exc))
 

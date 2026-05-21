@@ -170,11 +170,13 @@ def _put_session(session_id: str, data: dict) -> None:
 _rate_data: dict[str, list[float]] = defaultdict(list)
 _rate_lock = threading.Lock()
 _RATE_WINDOWS: dict[str, tuple[int, int]] = {
-    "summary": (60, 5),    # 5 calls per 60 s
-    "chat":    (60, 20),   # 20 calls per 60 s
-    "fix":     (60, 10),   # 10 calls per 60 s
-    "pr":      (60, 5),    # 5 calls per 60 s
-    "analyze": (60, 3),    # 3 analyses per 60 s per IP
+    "summary":   (60, 5),    # 5 calls per 60 s
+    "chat":      (60, 20),   # 20 calls per 60 s
+    "fix":       (60, 10),   # 10 calls per 60 s
+    "pr":        (60, 5),    # 5 PR reviews per 60 s
+    "pr_impact": (60, 3),    # 3 impact analyses per 60 s (clones a repo — expensive)
+    "org_audit": (60, 3),    # 3 org audits per 60 s per IP (fans out N×GitHub API calls)
+    "analyze":   (60, 3),    # 3 analyses per 60 s per IP
 }
 
 def _rate_ok(endpoint: str, key: str) -> bool:
@@ -1078,8 +1080,8 @@ async def pr_impact_endpoint(req: PRImpactRequest):
 
     if not _UUID_RE.match(req.session_id):
         return {"error": "Invalid session ID"}
-    if not _rate_ok("pr", req.pr_url):
-        return {"error": "Rate limit exceeded — slow down"}
+    if not _rate_ok("pr_impact", req.pr_url):
+        return {"error": "Rate limit exceeded — max 3 impact analyses per minute"}
 
     base_session = _get_session(req.session_id)
     if not base_session:
@@ -1170,7 +1172,7 @@ _DEP_FILES = [
 _REPO_URL_RE = re.compile(r'^https://github\.com/([A-Za-z0-9_.\-]+)/([A-Za-z0-9_.\-]+?)(?:\.git)?/?$')
 
 @app.post("/org-audit")
-async def org_audit_endpoint(req: OrgAuditRequest):
+async def org_audit_endpoint(req: OrgAuditRequest, request: Request):
     from agents.cve_scanner import run_cve_scanner
     import base64
 
@@ -1178,6 +1180,10 @@ async def org_audit_endpoint(req: OrgAuditRequest):
         return {"error": "repos list is empty"}
     if len(req.repos) > 20:
         return {"error": "Maximum 20 repos per org audit"}
+
+    client_ip = request.client.host if request.client else "unknown"
+    if not _rate_ok("org_audit", client_ip):
+        return {"error": "Rate limit exceeded — max 3 org audits per minute"}
 
     token = req.token or os.getenv("GITHUB_TOKEN")
     gh_headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}
