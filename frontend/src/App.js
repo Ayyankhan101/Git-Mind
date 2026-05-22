@@ -26,9 +26,10 @@ import ToastSystem     from './components/ToastSystem';
 import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix } from './api';
 import { LANG_COLOR } from './constants';
 
-const SESSION_ID = crypto.randomUUID();
-const WS_URL     = `${WS_BASE}/ws/analyze`;
-const TIMEOUT_MS = 180_000;
+const SESSION_ID  = crypto.randomUUID();
+const WS_URL      = `${WS_BASE}/ws/analyze`;
+const TIMEOUT_MS  = 180_000;
+const AGENT_KEYS  = ['scanner','architecture','api_docs','security','cve_scanner','chat','git_audit'];
 
 const INITIAL_STATUS = {
   scanner: 'waiting', architecture: 'waiting',
@@ -145,6 +146,7 @@ export default function App() {
   const [shareCopied,   setShareCopied]   = useState(false);
   const [prAutoUrl,     setPrAutoUrl]     = useState(null);
   const [showOrgAudit,  setShowOrgAudit]  = useState(false);
+  const [drawerOpen,    setDrawerOpen]    = useState(false);
   const [loadedUsers,   setLoadedUsers]   = useState(() => {
     try { return JSON.parse(localStorage.getItem('gm-users') || '[]'); }
     catch { return []; }
@@ -536,8 +538,13 @@ export default function App() {
 
   return (
     <div className="app">
-      {/* ── Command Bar ──────────────────────────────────────────────────────── */}
+
+      {/* ── Top bar (spans both columns) ─────────────────────────────────────── */}
       <div className="command-bar">
+        <span className="cb-wordmark">GitMind</span>
+
+        <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 4px' }} />
+
         {/* Username input */}
         <div className="cb-input">
           <Search size={14} />
@@ -552,11 +559,11 @@ export default function App() {
         </div>
 
         {/* PAT input */}
-        <div className="cb-input" style={{ width: 200 }}>
+        <div className="cb-input" style={{ width: 190 }}>
           <Lock size={14} style={{ color: ghToken ? 'var(--primary)' : 'var(--text-3)', flexShrink: 0 }} />
           <input
             type="password"
-            placeholder="token (private repos)"
+            placeholder="token (optional)"
             value={ghToken}
             onChange={e => { setGhToken(e.target.value); sessionStorage.setItem('gm-gh-token', e.target.value); }}
             onKeyDown={e => { if (e.key === 'Enter' && !reposLoading && !isAnalyzing) handleLoadRepos(); }}
@@ -575,68 +582,163 @@ export default function App() {
           {reposLoading ? 'Loading…' : 'Load Repos'}
         </button>
 
-        {/* Org Audit button — shows when repos are loaded */}
-        {repos.length > 0 && (
-          <button
-            className="btn btn-ghost"
-            onClick={() => setShowOrgAudit(true)}
-            title="Scan all loaded repos for CVEs"
-            disabled={isAnalyzing}
-          >
-            <Building2 size={13} />
-            Org Audit
-          </button>
-        )}
-
-        {/* Command palette button */}
-        <button className="btn-icon" title={`${mod}+K`} onClick={() => setShowPalette(true)}>
-          <Command size={14} />
-        </button>
-
         <span style={{ flex: 1 }} />
 
-        {/* Status */}
-        <span className={`cb-status ${statusClass}`}>{statusText}</span>
+        {/* Status badge */}
+        {(isAnalyzing || analyzed) && (
+          <span className={`cb-status ${statusClass}`}>{statusText}</span>
+        )}
 
         {/* Share */}
-        <button
-          className="btn-icon"
-          onClick={handleShare}
-          disabled={!analyzed}
-          title="Share analysis"
-        >
+        <button className="btn-icon" onClick={handleShare} disabled={!analyzed} title="Share analysis">
           {shareCopied ? <Check size={14} style={{ color: 'var(--success)' }} /> : <Share2 size={14} />}
         </button>
 
         {/* Export */}
-        <button
-          className="btn-icon"
-          onClick={handleExport}
-          disabled={!analyzed}
-          title="Export report"
-        >
+        <button className="btn-icon" onClick={handleExport} disabled={!analyzed} title="Export report">
           <Download size={14} />
         </button>
 
         {/* Theme switcher */}
         <ThemeSwitcher theme={theme} onChange={setTheme} />
-
-        {/* Wordmark */}
-        <span className="cb-wordmark">GitMind</span>
       </div>
 
-      {/* ── Body ─────────────────────────────────────────────────────────────── */}
-      <div className="body">
+      {/* ── Nav rail (col 1, row 2) ───────────────────────────────────────────── */}
+      <nav className="nav-rail" role="navigation" aria-label="Main navigation">
 
-        {/* Sidebar */}
+        {/* Repos drawer toggle */}
+        <button
+          className={`nav-item${drawerOpen ? ' active' : ''}`}
+          onClick={() => setDrawerOpen(o => !o)}
+          data-tip="Repositories"
+          aria-label="Repositories"
+        >
+          <FolderOpen size={18} strokeWidth={1.5} />
+        </button>
+
+        <div className="nav-divider" />
+
+        {/* Tab navigation */}
+        {tabs.map(({ key, Icon, label, count, alert }) => (
+          <button
+            key={key}
+            className={`nav-item${activeTab === key ? ' active' : ''}`}
+            onClick={() => setActiveTab(key)}
+            data-tip={label}
+            aria-label={label}
+            aria-current={activeTab === key ? 'page' : undefined}
+          >
+            <Icon size={18} strokeWidth={1.5} />
+            {count > 0 && (
+              <span className={`nav-badge${alert ? ' warn' : ' info'}`}>
+                {count > 99 ? '99+' : count}
+              </span>
+            )}
+          </button>
+        ))}
+
+        {/* Agent status dots during analysis */}
+        {(isAnalyzing || analyzed) && (
+          <div className="nav-agents" title="Agent pipeline">
+            {AGENT_KEYS.map(key => (
+              <div key={key} className={`nav-agent-dot ${agentStatus[key] || 'waiting'}`} />
+            ))}
+          </div>
+        )}
+
+        <div className="nav-spacer" />
+
+        {/* Bottom actions */}
+        {repos.length > 0 && (
+          <button className="nav-item" onClick={() => setShowOrgAudit(true)} data-tip="Org Audit" aria-label="Org Audit">
+            <Building2 size={18} strokeWidth={1.5} />
+          </button>
+        )}
+
+        <button className="nav-item" onClick={() => setShowPalette(true)} data-tip={`${mod}+K`} aria-label="Command palette">
+          <Command size={18} strokeWidth={1.5} />
+        </button>
+
+        <button className="nav-item" onClick={() => setShowKbHelp(true)} data-tip="Shortcuts" aria-label="Keyboard shortcuts">
+          <span style={{ fontSize: 14, fontWeight: 700, lineHeight: 1 }}>?</span>
+        </button>
+
+      </nav>
+
+      {/* ── Main content (col 2, row 2) ──────────────────────────────────────── */}
+      <div className="main">
+
+        {/* Error banners */}
+        {globalError && (
+          <div className="error-banner" role="alert">
+            <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+            <span style={{ flex: 1, whiteSpace: 'pre-wrap' }}>{globalError}</span>
+            <button className="btn-icon" onClick={() => setGlobalError(null)}><X size={12} /></button>
+          </div>
+        )}
+        {agentWarnings.map((w, i) => (
+          <div key={i} className="error-banner" role="status" style={{ borderColor: 'rgba(234,179,8,0.2)', background: 'rgba(234,179,8,0.06)', color: '#fcd34d' }}>
+            <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+            <span style={{ flex: 1 }}>{w}</span>
+            <button className="btn-icon" onClick={() => setAgentWarnings(p => p.filter((_, j) => j !== i))}><X size={12} /></button>
+          </div>
+        ))}
+
+        {/* Repo meta strip */}
+        {selectedRepo && analyzed && (
+          <div className="meta-strip">
+            <a href={selectedRepo.url} target="_blank" rel="noopener noreferrer">
+              {selectedRepo.full_name}
+            </a>
+            <span className="meta-sep">·</span>
+            {selectedRepo.language && (
+              <>
+                <span className="lang-dot" style={{ background: LANG_COLOR[selectedRepo.language] || '#64748b', width: 8, height: 8 }} />
+                {selectedRepo.language}
+                <span className="meta-sep">·</span>
+              </>
+            )}
+            {selectedRepo.stars > 0 && <><span>★ {selectedRepo.stars.toLocaleString()}</span><span className="meta-sep">·</span></>}
+            {selectedRepo.fork && <><span>fork</span><span className="meta-sep">·</span></>}
+            <span>Updated {new Date(selectedRepo.updated_at).toLocaleDateString()}</span>
+          </div>
+        )}
+
+        {/* Tab content — fills remaining space */}
+        <div className="tab-content" role="tabpanel">
+          {showOnboarding && !repos.length ? (
+            <Onboarding onLoad={handleLoadRepos} onAnalyzeUrl={handleSelectRepo} />
+          ) : (
+            <ErrorBoundary key={activeTab}>
+              {activeTab === 'summary'  && <SummaryTab  sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} findings={findings} apiDocs={apiDocs} elapsedSec={elapsedSec} isAnalyzing={isAnalyzing} health={health} />}
+              {activeTab === 'diagram'  && <DiagramTab  diagram={diagram}   isAnalyzing={isAnalyzing} analyzed={analyzed} theme={theme} />}
+              {activeTab === 'docs'     && <DocsTab     docs={apiDocs}      isAnalyzing={isAnalyzing} analyzed={analyzed} onPickFile={setFilePreview} />}
+              {activeTab === 'security' && <SecurityTab findings={findings} isAnalyzing={isAnalyzing} analyzed={analyzed} onCrisis={setCrisisFinding} onFix={handleFix} fixLoading={fixLoading} fixResult={fixResult} onPickFile={setFilePreview} sessionId={SESSION_ID} />}
+              {activeTab === 'cve'      && <CveTab      findings={cveFindings} isAnalyzing={isAnalyzing} analyzed={analyzed} />}
+              {activeTab === 'git'      && <GitAuditTab audit={gitAudit}      isAnalyzing={isAnalyzing} analyzed={analyzed} />}
+              {activeTab === 'pr'       && <PRReviewTab prAutoUrl={prAutoUrl} onAutoUrlUsed={clearPrAutoUrl} sessionId={SESSION_ID} analyzed={analyzed} />}
+              {activeTab === 'chat'     && <ChatTab     key={repoName} sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} />}
+            </ErrorBoundary>
+          )}
+        </div>
+      </div>
+
+      {/* ── Repo drawer (slide-out from nav rail) ────────────────────────────── */}
+      <div className={`repo-drawer${drawerOpen ? ' open' : ''}`} aria-hidden={!drawerOpen}>
+        <div className="drawer-close">
+          <span className="drawer-close-title">Repositories</span>
+          <button className="btn-icon" onClick={() => setDrawerOpen(false)} title="Close" aria-label="Close repositories">
+            <X size={14} />
+          </button>
+        </div>
         <Sidebar
           repos={repos}
-          onSelect={handleSelectRepo}
+          onSelect={url => { handleSelectRepo(url); setDrawerOpen(false); }}
           selectedUrl={selectedRepoUrl}
           loading={reposLoading}
           error={reposError}
           history={repoHistory}
-          onHistorySelect={url => { setSelectedRepoUrl(url); handleAnalyze(url); }}
+          onHistorySelect={url => { setSelectedRepoUrl(url); handleAnalyze(url); setDrawerOpen(false); }}
           agentStatus={agentStatus}
           isAnalyzing={isAnalyzing}
           analyzed={analyzed}
@@ -646,157 +748,12 @@ export default function App() {
           currentUser={githubUser || loadedUsers[0] || ''}
           loadedUsers={loadedUsers}
         />
-
-        {/* Main panel */}
-        <div className="main">
-
-          {/* Tab rail */}
-          <div className="tab-rail" role="tablist">
-            {tabs.map(({ key, Icon, label, count, alert }) => (
-              <button
-                key={key}
-                className={`tab${activeTab === key ? ' active' : ''}`}
-                role="tab"
-                aria-selected={activeTab === key}
-                onClick={() => setActiveTab(key)}
-              >
-                <Icon size={13} strokeWidth={1.5} />
-                {label}
-                {count > 0 && (
-                  <span className={`tab-badge${alert ? ' danger' : ''}`}>{count}</span>
-                )}
-              </button>
-            ))}
-            <div className="tab-rail-right">
-              <button className="btn-icon" onClick={handleShare} disabled={!analyzed} title="Share">
-                {shareCopied ? <Check size={13} style={{ color: 'var(--success)' }} /> : <Share2 size={13} />}
-              </button>
-              <button className="btn-icon" onClick={handleExport} disabled={!analyzed} title="Export">
-                <Download size={13} />
-              </button>
-            </div>
-          </div>
-
-          {/* Error banners */}
-          {globalError && (
-            <div className="error-banner" role="alert">
-              <AlertTriangle size={14} style={{ flexShrink: 0 }} />
-              <span style={{ flex: 1, whiteSpace: 'pre-wrap' }}>{globalError}</span>
-              <button className="btn-icon" onClick={() => setGlobalError(null)}><X size={12} /></button>
-            </div>
-          )}
-          {agentWarnings.map((w, i) => (
-            <div key={i} className="error-banner" role="status" style={{ borderColor: 'rgba(234,179,8,0.2)', background: 'rgba(234,179,8,0.06)', color: '#fcd34d' }}>
-              <AlertTriangle size={14} style={{ flexShrink: 0 }} />
-              <span style={{ flex: 1 }}>{w}</span>
-              <button className="btn-icon" onClick={() => setAgentWarnings(p => p.filter((_, j) => j !== i))}><X size={12} /></button>
-            </div>
-          ))}
-
-          {/* Repo meta strip */}
-          {selectedRepo && analyzed && (
-            <div className="meta-strip">
-              <a href={selectedRepo.url} target="_blank" rel="noopener noreferrer">
-                {selectedRepo.full_name}
-              </a>
-              <span className="meta-sep">·</span>
-              {selectedRepo.language && (
-                <>
-                  <span className="lang-dot" style={{ background: LANG_COLOR[selectedRepo.language] || '#64748b', width: 8, height: 8 }} />
-                  {selectedRepo.language}
-                  <span className="meta-sep">·</span>
-                </>
-              )}
-              {selectedRepo.stars > 0 && <><span>★ {selectedRepo.stars.toLocaleString()}</span><span className="meta-sep">·</span></>}
-              {selectedRepo.fork && <><span>fork</span><span className="meta-sep">·</span></>}
-              <span>Updated {new Date(selectedRepo.updated_at).toLocaleDateString()}</span>
-            </div>
-          )}
-
-          {/* Tab content */}
-          <div className="tab-content" role="tabpanel">
-            {showOnboarding && !repos.length ? (
-              <Onboarding onLoad={handleLoadRepos} onAnalyzeUrl={handleSelectRepo} />
-            ) : (
-              <ErrorBoundary key={activeTab}>
-                {activeTab === 'summary'  && <SummaryTab  sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} findings={findings} apiDocs={apiDocs} elapsedSec={elapsedSec} isAnalyzing={isAnalyzing} health={health} />}
-                {activeTab === 'diagram'  && <DiagramTab  diagram={diagram}   isAnalyzing={isAnalyzing} analyzed={analyzed} theme={theme} />}
-                {activeTab === 'docs'     && <DocsTab     docs={apiDocs}      isAnalyzing={isAnalyzing} analyzed={analyzed} onPickFile={setFilePreview} />}
-                {activeTab === 'security' && <SecurityTab findings={findings} isAnalyzing={isAnalyzing} analyzed={analyzed} onCrisis={setCrisisFinding} onFix={handleFix} fixLoading={fixLoading} fixResult={fixResult} onPickFile={setFilePreview} sessionId={SESSION_ID} />}
-                {activeTab === 'cve'      && <CveTab      findings={cveFindings} isAnalyzing={isAnalyzing} analyzed={analyzed} />}
-                {activeTab === 'git'      && <GitAuditTab audit={gitAudit}      isAnalyzing={isAnalyzing} analyzed={analyzed} />}
-                {activeTab === 'pr'       && <PRReviewTab prAutoUrl={prAutoUrl} onAutoUrlUsed={clearPrAutoUrl} sessionId={SESSION_ID} analyzed={analyzed} />}
-                {activeTab === 'chat'     && <ChatTab     key={repoName} sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} />}
-              </ErrorBoundary>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Status Bar ───────────────────────────────────────────────────────── */}
-      <div className="status-bar">
-        {selectedRepo && (
-          <>
-            <span className="status-item">
-              <GitBranch size={11} />
-              {selectedRepo.full_name}
-            </span>
-            <span className="status-sep">·</span>
-          </>
-        )}
-        {analyzed && (
-          <>
-            <span className="status-item green">
-              <Check size={11} />
-              {Object.values(agentStatus).filter(s => s === 'done').length}/7 agents
-            </span>
-            {hasCritical && (
-              <><span className="status-sep">·</span>
-              <span className="status-item danger">
-                <AlertTriangle size={11} />
-                {findings.filter(f => f.severity === 'critical').length} critical
-              </span></>
-            )}
-          </>
-        )}
-        {isAnalyzing && (
-          <span className="status-item warn">
-            <span className="spinner" style={{ width: 10, height: 10 }} />
-            Analyzing…
-          </span>
-        )}
-        <span className="status-spacer" />
-        <button
-          className="status-item button"
-          onClick={() => setShowPalette(true)}
-          title={`${mod}+K`}
-        >
-          <span className="status-kbd">
-            <span className="k">{mod}</span>
-            <span className="k">K</span>
-          </span>
-          palette
-        </button>
-        <span className="status-sep">·</span>
-        <button
-          className="status-item button"
-          onClick={() => setShowKbHelp(true)}
-          title="Keyboard shortcuts"
-        >
-          <span className="status-kbd"><span className="k">?</span></span>
-          shortcuts
-        </button>
       </div>
 
       {/* ── Overlays ──────────────────────────────────────────────────────────── */}
       {showOrgAudit && (
-        <OrgAuditModal
-          repos={repos}
-          token={ghToken || null}
-          onClose={() => setShowOrgAudit(false)}
-        />
+        <OrgAuditModal repos={repos} token={ghToken || null} onClose={() => setShowOrgAudit(false)} />
       )}
-
       {crisisFinding && (
         <CrisisChat finding={crisisFinding} sessionId={SESSION_ID} onClose={() => setCrisisFinding(null)} />
       )}
