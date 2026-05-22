@@ -82,6 +82,46 @@ def _parse_go_sum(content: str) -> list[dict]:
     return deps[:100]
 
 
+def _parse_go_mod(content: str) -> list[dict]:
+    """Parse go.mod — extract pinned require directives."""
+    deps, seen, in_require = [], set(), False
+    for line in content.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("require ("):
+            in_require = True
+            continue
+        if in_require and stripped == ")":
+            in_require = False
+            continue
+        target = stripped if in_require else (stripped[len("require "):] if stripped.startswith("require ") else "")
+        if not target:
+            continue
+        parts = target.split()
+        if len(parts) >= 2:
+            mod = parts[0]
+            ver = parts[1].lstrip("v")
+            if mod not in seen and re.match(r'^\d', ver):
+                seen.add(mod)
+                deps.append({"name": mod, "version": ver, "ecosystem": "Go"})
+    return deps[:100]
+
+
+def _parse_composer_lock(content: str) -> list[dict]:
+    """Parse composer.lock JSON — PHP packages."""
+    try:
+        data = json.loads(content)
+    except Exception:
+        return []
+    deps = []
+    for section in ("packages", "packages-dev"):
+        for pkg in data.get(section, []):
+            name = pkg.get("name", "")
+            ver  = re.sub(r'^v', '', pkg.get("version", ""))
+            if name and ver and re.match(r'^\d', ver):
+                deps.append({"name": name, "version": ver, "ecosystem": "Packagist"})
+    return deps[:100]
+
+
 def _parse_yarn_lock(content: str) -> list[dict]:
     """Parse yarn.lock — split into package blocks, extract name + version."""
     deps, seen = [], set()
@@ -177,6 +217,7 @@ def _collect_deps(file_contents: dict[str, str]) -> list[dict]:
         fp.split("/")[-1] in ("poetry.lock", "Pipfile.lock")
         for fp in file_contents
     )
+    has_go_sum = any(fp.split("/")[-1] == "go.sum" for fp in file_contents)
     deps = []
     for filepath, content in file_contents.items():
         fname = filepath.split("/")[-1]
@@ -198,8 +239,12 @@ def _collect_deps(file_contents: dict[str, str]) -> list[dict]:
             deps.extend(_parse_cargo_lock(content))
         elif fname == "go.sum":
             deps.extend(_parse_go_sum(content))
+        elif fname == "go.mod" and not has_go_sum:
+            deps.extend(_parse_go_mod(content))
         elif fname == "Gemfile.lock":
             deps.extend(_parse_gemfile_lock(content))
+        elif fname == "composer.lock":
+            deps.extend(_parse_composer_lock(content))
     # Deduplicate
     seen: set[tuple] = set()
     unique = []
@@ -208,7 +253,7 @@ def _collect_deps(file_contents: dict[str, str]) -> list[dict]:
         if key not in seen:
             seen.add(key)
             unique.append(d)
-    return unique[:80]
+    return unique[:100]
 
 
 # ── OSV.dev query ──────────────────────────────────────────────────────────────

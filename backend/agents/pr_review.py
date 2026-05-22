@@ -4,12 +4,13 @@ import re
 import httpx
 from langchain_groq import ChatGroq
 
-from llm_cache import invoke_with_retry
+from llm_cache import get_cached, set_cached, invoke_with_retry
 
 logger = logging.getLogger(__name__)
 
-_MODEL         = "llama-3.3-70b-versatile"
-_MAX_DIFF_CHARS = 14_000
+_MODEL           = "llama-3.3-70b-versatile"
+_MAX_DIFF_CHARS  = 14_000
+_CACHE_NAMESPACE = "llama-3.3-70b-versatile:pr_review"
 
 
 def _parse_pr_url(pr_url: str) -> tuple[str, str, str]:
@@ -54,6 +55,7 @@ def fetch_pr_data(pr_url: str, token: str | None = None) -> dict:
         "body":          (meta.get("body") or "")[:800],
         "author":        meta.get("user", {}).get("login", "unknown"),
         "base_branch":   meta.get("base", {}).get("ref", "main"),
+        "head_sha":      meta.get("head", {}).get("sha", ""),
         "changed_files": meta.get("changed_files", 0),
         "additions":     meta.get("additions", 0),
         "deletions":     meta.get("deletions", 0),
@@ -88,9 +90,16 @@ def run_pr_review(pr_url: str, token: str | None = None) -> dict:
         "Do not invent issues. Do not pad. Only flag things that matter."
     )
 
-    llm    = ChatGroq(model=_MODEL, temperature=0.1)
-    review = invoke_with_retry(llm, prompt).content.strip()
-    logger.info("PR review complete for %s/%s#%s", pr["owner"], pr["repo"], pr["pr_num"])
+    cache_key = f"{pr['owner']}/{pr['repo']}#{pr['pr_num']}:{pr.get('head_sha', '')}"
+    cached = get_cached(_CACHE_NAMESPACE, cache_key)
+    if cached:
+        logger.debug("PR review: cache hit for %s/%s#%s", pr["owner"], pr["repo"], pr["pr_num"])
+        review = cached
+    else:
+        llm    = ChatGroq(model=_MODEL, temperature=0.1)
+        review = invoke_with_retry(llm, prompt).content.strip()
+        set_cached(_CACHE_NAMESPACE, cache_key, review)
+        logger.info("PR review complete for %s/%s#%s", pr["owner"], pr["repo"], pr["pr_num"])
 
     return {
         "pr_url":        pr_url,

@@ -32,8 +32,15 @@ _SKIP_PATH_RE = re.compile(r'(?i)(test|spec|mock|fixture|example|sample|\.exampl
 # Bad commit message patterns (case-insensitive, full-string match)
 _BAD_MSG_RE = re.compile(
     r'^(?:fix|wip|temp|tmp|test|update|change|changes|commit|asdf+|aaa+|'
-    r'foo|bar|baz|xyz|lol|ok|done|initial|init|first commit|add files|'
-    r'minor change[s]?|misc|stuff|things|[.\-_!]+)$',
+    r'foo|bar|baz|xyz|lol|ok|done|initial|init|first commit|add files?|'
+    r'minor changes?|misc|stuff|things|[.\-_!]+|'
+    r'updating (?:stuff|things|files?|code)|'
+    r'some (?:changes?|fixes?|updates?)|'
+    r'various (?:changes?|fixes?|updates?)|'
+    r'small (?:changes?|fixes?|updates?)|'
+    r'more (?:changes?|fixes?|updates?)|'
+    r'cleanup|clean up|refactor|work in progress|in progress|progress|'
+    r'checkpoint|snapshot|backup|save|saving|saved)$',
     re.IGNORECASE,
 )
 
@@ -75,10 +82,10 @@ def _fetch_commits(owner: str, repo: str, token: str | None) -> list:
     if token:
         headers["Authorization"] = f"Bearer {token}"
     try:
-        with httpx.Client(timeout=15.0) as client:
+        with httpx.Client(timeout=20.0) as client:
             resp = client.get(
                 f"https://api.github.com/repos/{owner}/{repo}/commits",
-                params={"per_page": 50},
+                params={"per_page": 100},
                 headers=headers,
             )
             if resp.is_error:

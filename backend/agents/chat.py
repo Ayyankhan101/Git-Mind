@@ -16,7 +16,8 @@ Rules:
 - ALWAYS cite specific files: e.g. "In auth/middleware.py line 42..."
 - If the context contains the answer, be confident and precise
 - If it does not, say "I don't see that in the code I have access to" — never guess
-- Keep answers under 200 words
+- Be concise but complete — use as many words as the question requires, no more
+- Use markdown for code blocks and lists when it aids clarity
 - Write as if you built this system yourself
 
 Relevant code from the codebase:
@@ -33,7 +34,7 @@ def _build_messages(
     chat_history: list[dict],
     repo_name: str,
 ) -> list[dict]:
-    chunks = search_codebase(collection_name, question, n_results=5)
+    chunks = search_codebase(collection_name, question, n_results=8)
     context = (
         "\n\n".join(f"--- {c['filepath']} ---\n{c['content']}" for c in chunks)
         or "No relevant code found."

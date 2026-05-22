@@ -11,16 +11,18 @@ from llm_cache import get_cached, set_cached, invoke_with_retry
 logger = logging.getLogger(__name__)
 
 _MODEL         = "llama-3.3-70b-versatile"
-_TOKEN_BUDGET  = 12_000   # leaves headroom for system prompt + completion
-_MAX_TREE_LINES  = 150
-_MAX_KEY_FILES   = 8
-_MAX_SNIPPET_LEN = 800
+_TOKEN_BUDGET  = 24_000   # llama-3.3-70b supports 128K ctx — use more headroom
+_MAX_TREE_LINES  = 200
+_MAX_KEY_FILES   = 14
+_MAX_SNIPPET_LEN = 1_600
 
 _PRIORITY_KEYWORDS = [
     "main", "app", "index", "server",
     "routes", "router", "models", "config",
     "database", "db", "auth", "api",
-    "service", "controller",
+    "service", "controller", "handler",
+    "middleware", "schema", "store", "client",
+    "gateway", "proxy", "pipeline",
 ]
 
 _SYSTEM_PROMPT = """\

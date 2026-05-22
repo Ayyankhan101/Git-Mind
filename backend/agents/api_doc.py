@@ -8,31 +8,41 @@ from llm_cache import get_cached, set_cached, invoke_with_retry
 
 logger = logging.getLogger(__name__)
 
-_MODEL           = "llama-3.1-8b-instant"
-_MAX_FILES       = 5
-_MAX_FILE_CHARS  = 3_000
-_CACHE_NAMESPACE = "llama-3.1-8b-instant:json"
+_MODEL           = "llama-3.3-70b-versatile"
+_MAX_FILES       = 10
+_MAX_FILE_CHARS  = 6_000
+_CACHE_NAMESPACE = "llama-3.3-70b-versatile:api_doc:json"
 
-# Compiled once at module load — scanning 300 files per request benefits from this
+# Compiled once — covers FastAPI, Flask, Express, Django, Rails, Spring, NestJS, Gin, Echo
 _ROUTE_PATTERNS: list[re.Pattern] = [
     re.compile(p, re.IGNORECASE) for p in [
-        r'@app\.(get|post|put|delete|patch)\s*\(',       # FastAPI / Flask
+        r'@app\.(get|post|put|delete|patch)\s*\(',           # FastAPI / Flask
         r'@router\.(get|post|put|delete|patch)\s*\(',
-        r'router\.(get|post|put|delete)\s*\(',            # Express
-        r'app\.(get|post|put|delete)\s*\(',
-        r'@(Get|Post|Put|Delete|Patch)\s*\(',             # NestJS decorators
+        r'router\.(get|post|put|delete|patch)\s*\(',         # Express / Go routers
+        r'app\.(get|post|put|delete|patch)\s*\(',
+        r'@(Get|Post|Put|Delete|Patch|Options|Head)\s*\(',   # NestJS / Spring
+        r'@(RequestMapping|GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping)\s*\(',  # Spring
+        r'path\s*\(',                                        # Django urls.py
+        r'url\s*\(',                                         # Django legacy
+        r'resources?\s+:[a-z_]+',                            # Rails routes.rb
+        r'(get|post|put|delete|patch)\s+["\'][/:]',          # Sinatra / generic
+        r'r\.(GET|POST|PUT|DELETE|PATCH)\s*\(',              # Gin (Go)
+        r'e\.(GET|POST|PUT|DELETE|PATCH)\s*\(',              # Echo (Go)
+        r'mux\.(HandleFunc|Handle)\s*\(',                    # Go net/http mux
     ]
 ]
 
 _PROMPT = """\
-Extract every API endpoint from the code below.
+You are a senior API documentation engineer. Extract every HTTP API endpoint from the code below.
 Return a JSON object with a single key "endpoints" containing an array.
 Each item must have exactly these keys:
-  "method"      — HTTP verb in uppercase (GET, POST, PUT, DELETE, PATCH)
-  "route"       — the URL path string
-  "description" — one sentence explaining what this endpoint does
-  "parameters"  — comma-separated list of params, or "none"
+  "method"        — HTTP verb in uppercase (GET, POST, PUT, DELETE, PATCH)
+  "route"         — the URL path string (e.g. "/api/users/:id")
+  "description"   — one clear sentence explaining what this endpoint does and what it returns
+  "parameters"    — comma-separated list of path/query params with types, or "none"
+  "auth_required" — true if authentication/authorization is required, false otherwise, null if unclear
 
+Be precise: only include endpoints that are clearly defined in this file.
 If no endpoints are found, return {"endpoints": []}.
 Do NOT include any explanation outside the JSON object.\
 """
@@ -53,7 +63,7 @@ def run_api_doc_agent(file_contents: dict[str, str]) -> list[dict]:
         response_format={"type": "json_object"}
     )
 
-    results: list[dict]         = []
+    results: list[dict]          = []
     seen:    set[tuple[str, str]] = set()   # dedup on (METHOD, route)
 
     for fp, content in list(api_files.items())[:_MAX_FILES]:
@@ -78,5 +88,5 @@ def run_api_doc_agent(file_contents: dict[str, str]) -> list[dict]:
                 seen.add(key)
                 results.append(item)
 
-    logger.info("API doc agent: found %d unique endpoints", len(results))
+    logger.info("API doc agent: found %d unique endpoints across %d files", len(results), len(api_files))
     return results
