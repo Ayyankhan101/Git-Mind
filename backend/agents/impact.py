@@ -1,3 +1,17 @@
+import json
+import logging
+
+from langchain_groq import ChatGroq
+
+from llm_cache import get_cached, set_cached, invoke_with_retry
+
+logger = logging.getLogger(__name__)
+
+_MODEL           = "llama-3.3-70b-versatile"
+_CACHE_NAMESPACE = "llama-3.3-70b-versatile:merge_prediction"
+_MAX_DIFF_CHARS  = 10_000
+
+
 def compute_impact(base: dict, pr: dict) -> dict:
     """Diff two analysis snapshots. Returns delta metrics."""
 
@@ -45,3 +59,105 @@ def compute_impact(base: dict, pr: dict) -> dict:
         "findings_delta":  len(new_findings) - len(fixed_findings),
         "breakdown_delta": {k: pr_bd.get(k, 0) - base_bd.get(k, 0) for k in keys},
     }
+
+
+def run_merge_prediction(
+    diff: str,
+    delta: dict,
+    pr_meta: dict,
+) -> dict:
+    """
+    LLM-generated plain-English merge impact prediction.
+
+    pr_meta keys: title, owner, repo, pr_num, base_branch,
+                  additions, deletions, changed_files, diff_truncated
+    """
+    head_sha = pr_meta.get("head_sha", "")
+    cache_key = f"{pr_meta.get('owner')}/{pr_meta.get('repo')}#{pr_meta.get('pr_num')}:{head_sha}:predict"
+    cached = get_cached(_CACHE_NAMESPACE, cache_key)
+    if cached:
+        logger.debug("merge_prediction: cache hit %s", cache_key)
+        try:
+            return json.loads(cached)
+        except Exception:
+            pass
+
+    truncated_diff = diff[:_MAX_DIFF_CHARS]
+    diff_note = "⚠ Diff truncated to first 10 000 chars.\n" if len(diff) > _MAX_DIFF_CHARS else ""
+
+    new_f  = delta.get("new_findings", [])
+    fix_f  = delta.get("fixed_findings", [])
+    new_c  = delta.get("new_cves", [])
+    fix_c  = delta.get("fixed_cves", [])
+    h_delta = delta.get("health_delta", 0)
+
+    metrics_summary = (
+        f"Health score: {delta.get('base_score', '?')} ({delta.get('base_grade','?')}) "
+        f"→ {delta.get('pr_score', '?')} ({delta.get('pr_grade','?')})  "
+        f"[delta {h_delta:+d}]\n"
+        f"Security findings: +{len(new_f)} new, {len(fix_f)} fixed\n"
+        f"CVE vulnerabilities: +{len(new_c)} new, {len(fix_c)} resolved\n"
+        f"Score breakdown deltas: {delta.get('breakdown_delta', {})}\n"
+    )
+
+    prompt = f"""You are a senior tech lead evaluating whether to merge a pull request into {pr_meta.get('base_branch', 'main')}.
+
+PR: {pr_meta.get('owner')}/{pr_meta.get('repo')} #{pr_meta.get('pr_num')} — "{pr_meta.get('title', '')}"
+Stats: +{pr_meta.get('additions', 0)} / -{pr_meta.get('deletions', 0)} across {pr_meta.get('changed_files', 0)} file(s)
+{diff_note}
+=== COMPUTED METRICS ===
+{metrics_summary}
+=== DIFF ===
+{truncated_diff}
+
+Based on the diff and metrics above, produce a merge impact prediction as valid JSON (no markdown, no explanation outside the JSON):
+
+{{
+  "merge_risk": "<low|medium|high|critical>",
+  "recommendation": "<Safe to merge|Merge with caution|Block — requires changes>",
+  "one_liner": "<One sentence describing the net effect if this PR is merged>",
+  "affected_areas": ["<area1>", "<area2>"],
+  "breaking_changes": ["<change1>"],
+  "narrative": "<2-3 paragraph plain-English explanation of what happens to the software if this PR is approved and merged. Cover: what changes, what improves, what regresses, and any risks the team should know.>",
+  "confidence": "<high|medium|low>"
+}}
+
+Rules:
+- merge_risk reflects the COMBINED risk: code quality + security delta + breaking changes.
+- breaking_changes: only include ACTUAL breaking changes (renamed endpoints, removed exports, changed function signatures, DB migrations). Empty array if none.
+- affected_areas: max 5 short labels (e.g. "Auth", "API routes", "Database", "Frontend", "CI/CD").
+- narrative: plain English, no bullet points, no markdown inside the string. Be specific — reference actual file names or functions from the diff.
+- confidence: "low" if diff was truncated or PR is very large. "high" if full diff was available and analysis is clear.
+- Output ONLY the JSON object. No preamble."""
+
+    llm    = ChatGroq(model=_MODEL, temperature=0.15)
+    raw    = invoke_with_retry(llm, prompt).content.strip()
+
+    # Strip markdown code fences if model wrapped it
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+        raw = raw.strip()
+
+    try:
+        result = json.loads(raw)
+    except Exception:
+        # Graceful fallback — still useful partial data
+        logger.warning("merge_prediction: JSON parse failed, returning raw")
+        result = {
+            "merge_risk":      "medium",
+            "recommendation":  "Merge with caution",
+            "one_liner":       "Impact prediction available — see narrative below.",
+            "affected_areas":  [],
+            "breaking_changes": [],
+            "narrative":       raw,
+            "confidence":      "low",
+        }
+
+    set_cached(_CACHE_NAMESPACE, cache_key, json.dumps(result))
+    logger.info(
+        "merge_prediction done: risk=%s rec=%s",
+        result.get("merge_risk"), result.get("recommendation"),
+    )
+    return result

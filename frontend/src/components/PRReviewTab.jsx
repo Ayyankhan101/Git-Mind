@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GitPullRequest, ChevronDown, Check, AlertTriangle, MessageSquare, TrendingUp, TrendingDown, Minus, ShieldAlert, Package } from 'lucide-react';
+import { GitPullRequest, ChevronDown, Check, AlertTriangle, MessageSquare, TrendingUp, TrendingDown, Minus, ShieldAlert, Package, Zap, Shield, AlertCircle, GitMerge, XCircle } from 'lucide-react';
 import { reviewPR, prImpact } from '../api';
 
 const VERDICT_CLASS = {
@@ -65,13 +65,26 @@ function IssueRow({ issue }) {
   );
 }
 
+const RISK_META = {
+  low:      { color: 'var(--success)', bg: 'rgba(34,197,94,0.10)',  label: 'Low Risk' },
+  medium:   { color: 'var(--warning)', bg: 'rgba(234,179,8,0.10)',  label: 'Medium Risk' },
+  high:     { color: 'var(--danger)',  bg: 'rgba(239,68,68,0.10)',  label: 'High Risk' },
+  critical: { color: '#a21caf',        bg: 'rgba(162,28,175,0.10)', label: 'Critical' },
+};
+
+const REC_ICON = {
+  'Safe to merge':           <GitMerge size={13} strokeWidth={1.5} />,
+  'Merge with caution':      <AlertCircle size={13} strokeWidth={1.5} />,
+  'Block — requires changes': <XCircle size={13} strokeWidth={1.5} />,
+};
+
 function ImpactPanel({ impact, loading, error }) {
   if (loading) return (
     <div style={{ marginTop: 16 }}>
-      {[0,1,2].map(i => (
+      {[0,1,2,3].map(i => (
         <div key={i} className="sk-row"><div className="sk-row-line">
           <span className="sk" style={{ height: 14, width: 60 }} />
-          <span className="sk" style={{ height: 14, width: '50%' }} />
+          <span className="sk" style={{ height: 14, width: '60%' }} />
         </div></div>
       ))}
     </div>
@@ -83,90 +96,158 @@ function ImpactPanel({ impact, loading, error }) {
   );
   if (!impact) return null;
 
-  const delta = impact.health_delta ?? 0;
-  const DeltaIcon = delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : Minus;
+  const risk     = (impact.merge_risk || 'medium').toLowerCase();
+  const riskMeta = RISK_META[risk] || RISK_META.medium;
+  const delta    = impact.health_delta ?? 0;
+  const DeltaIcon  = delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : Minus;
   const deltaColor = delta > 0 ? 'var(--success)' : delta < 0 ? 'var(--danger)' : 'var(--text-3)';
+  const rec      = impact.recommendation || '';
 
   return (
-    <div style={{ marginTop: 20, padding: '16px 20px', background: 'var(--surface-2)', borderRadius: 10, border: '1px solid var(--border)' }}>
-      <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-        <TrendingUp size={11} strokeWidth={1.5} />
-        IMPACT PREVIEW · {impact.head_ref} ({impact.head_sha})
+    <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+      {/* ── Risk banner ───────────────────────────────────────────── */}
+      <div style={{ padding: '12px 16px', background: riskMeta.bg, border: `1px solid ${riskMeta.color}40`, borderRadius: 10, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em', color: riskMeta.color, padding: '2px 8px', background: `${riskMeta.color}20`, borderRadius: 4 }}>
+              {riskMeta.label.toUpperCase()}
+            </span>
+            {impact.confidence && (
+              <span style={{ fontSize: 10, color: 'var(--text-3)' }}>
+                confidence: {impact.confidence}
+              </span>
+            )}
+          </div>
+          {impact.one_liner && (
+            <div style={{ fontSize: 13, color: 'var(--text-1)', lineHeight: 1.5, marginTop: 2 }}>
+              {impact.one_liner}
+            </div>
+          )}
+        </div>
+        {rec && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: riskMeta.color, whiteSpace: 'nowrap', padding: '4px 10px', border: `1px solid ${riskMeta.color}40`, borderRadius: 6, flexShrink: 0 }}>
+            {REC_ICON[rec] || <Zap size={13} strokeWidth={1.5} />}
+            {rec}
+          </div>
+        )}
       </div>
 
-      {/* Warn if base health is missing (old session analyzed before health scoring) */}
-      {impact.base_grade === '?' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--warning)', padding: '6px 10px', background: 'rgba(234,179,8,0.08)', borderRadius: 6, marginBottom: 10 }}>
-          <AlertTriangle size={11} strokeWidth={1.5} />
-          Base session has no health score — re-analyze the repo to get an accurate delta
+      {/* ── Affected areas + breaking changes ─────────────────────── */}
+      {(impact.affected_areas?.length > 0 || impact.breaking_changes?.length > 0) && (
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {impact.affected_areas?.length > 0 && (
+            <div style={{ flex: 1, minWidth: 160 }}>
+              <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 6, letterSpacing: '.06em' }}>AFFECTED AREAS</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {impact.affected_areas.map(a => (
+                  <span key={a} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-2)' }}>{a}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {impact.breaking_changes?.length > 0 && (
+            <div style={{ flex: 1, minWidth: 160 }}>
+              <div style={{ fontSize: 10, color: 'var(--danger)', marginBottom: 6, letterSpacing: '.06em' }}>BREAKING CHANGES</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {impact.breaking_changes.map((c, i) => (
+                  <div key={i} style={{ fontSize: 11, display: 'flex', alignItems: 'flex-start', gap: 6, color: 'var(--text-1)' }}>
+                    <XCircle size={11} strokeWidth={1.5} style={{ color: 'var(--danger)', flexShrink: 0, marginTop: 2 }} />
+                    {c}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Health score delta */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 120, padding: '10px 14px', background: 'var(--surface)', borderRadius: 8, border: '1px solid var(--border)' }}>
-          <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 4 }}>BASE SCORE</div>
-          <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{impact.base_score}<span style={{ fontSize: 13, color: 'var(--text-3)' }}> ({impact.base_grade})</span></div>
-        </div>
-        <div style={{ flex: 1, minWidth: 120, padding: '10px 14px', background: 'var(--surface)', borderRadius: 8, border: '1px solid var(--border)' }}>
-          <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 4 }}>PR SCORE</div>
-          <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{impact.pr_score}<span style={{ fontSize: 13, color: 'var(--text-3)' }}> ({impact.pr_grade})</span></div>
-        </div>
-        <div style={{ flex: 1, minWidth: 120, padding: '10px 14px', background: 'var(--surface)', borderRadius: 8, border: `1px solid ${deltaColor}40` }}>
-          <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 4 }}>DELTA</div>
-          <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', color: deltaColor, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <DeltaIcon size={18} strokeWidth={2} />
-            {delta > 0 ? `+${delta}` : delta}
+      {/* ── Narrative ─────────────────────────────────────────────── */}
+      {impact.narrative && (
+        <div style={{ padding: '12px 16px', background: 'var(--surface-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
+          <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 8, letterSpacing: '.06em', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <Zap size={10} strokeWidth={1.5} /> MERGE IMPACT ANALYSIS
           </div>
-        </div>
-      </div>
-
-      {/* Findings delta */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
-        {impact.new_findings?.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--danger)', padding: '6px 10px', background: 'rgba(239,68,68,0.08)', borderRadius: 6 }}>
-            <ShieldAlert size={11} strokeWidth={1.5} />
-            +{impact.new_findings.length} new finding{impact.new_findings.length !== 1 ? 's' : ''}
-          </div>
-        )}
-        {impact.fixed_findings?.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--success)', padding: '6px 10px', background: 'rgba(34,197,94,0.08)', borderRadius: 6 }}>
-            <Check size={11} strokeWidth={2} />
-            {impact.fixed_findings.length} finding{impact.fixed_findings.length !== 1 ? 's' : ''} fixed
-          </div>
-        )}
-        {impact.new_cves?.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--warning)', padding: '6px 10px', background: 'rgba(234,179,8,0.08)', borderRadius: 6 }}>
-            <Package size={11} strokeWidth={1.5} />
-            +{impact.new_cves.length} new CVE{impact.new_cves.length !== 1 ? 's' : ''}
-          </div>
-        )}
-        {impact.fixed_cves?.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--success)', padding: '6px 10px', background: 'rgba(34,197,94,0.08)', borderRadius: 6 }}>
-            <Check size={11} strokeWidth={2} />
-            {impact.fixed_cves.length} CVE{impact.fixed_cves.length !== 1 ? 's' : ''} resolved
-          </div>
-        )}
-        {!impact.new_findings?.length && !impact.fixed_findings?.length && !impact.new_cves?.length && !impact.fixed_cves?.length && (
-          <div style={{ fontSize: 12, color: 'var(--text-3)', padding: '6px 10px' }}>No security changes detected in this PR</div>
-        )}
-      </div>
-
-      {/* Per-dimension breakdown */}
-      {impact.breakdown_delta && Object.values(impact.breakdown_delta).some(v => v !== 0) && (
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-          <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 8 }}>SCORE BREAKDOWN</div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {Object.entries(impact.breakdown_delta).map(([k, v]) => (
-              v !== 0 && (
-                <div key={k} style={{ fontSize: 11, padding: '4px 8px', borderRadius: 4, background: v > 0 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: v > 0 ? 'var(--success)' : 'var(--danger)' }}>
-                  {k.replace(/_/g, ' ')}: {v > 0 ? `+${v}` : v}
-                </div>
-              )
-            ))}
+          <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.75, whiteSpace: 'pre-line' }}>
+            {impact.narrative}
           </div>
         </div>
       )}
+
+      {/* ── Numeric delta cards ────────────────────────────────────── */}
+      <div style={{ padding: '14px 16px', background: 'var(--surface-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
+        <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 10, letterSpacing: '.06em' }}>
+          HEALTH DELTA · {impact.head_ref} ({impact.head_sha})
+        </div>
+
+        {impact.base_grade === '?' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--warning)', padding: '6px 10px', background: 'rgba(234,179,8,0.08)', borderRadius: 6, marginBottom: 10 }}>
+            <AlertTriangle size={11} strokeWidth={1.5} />
+            Base session has no health score — re-analyze the repo for an accurate delta
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 100, padding: '8px 12px', background: 'var(--surface)', borderRadius: 7, border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 3 }}>BASE</div>
+            <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{impact.base_score}<span style={{ fontSize: 12, color: 'var(--text-3)' }}> ({impact.base_grade})</span></div>
+          </div>
+          <div style={{ flex: 1, minWidth: 100, padding: '8px 12px', background: 'var(--surface)', borderRadius: 7, border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 3 }}>PR</div>
+            <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{impact.pr_score}<span style={{ fontSize: 12, color: 'var(--text-3)' }}> ({impact.pr_grade})</span></div>
+          </div>
+          <div style={{ flex: 1, minWidth: 100, padding: '8px 12px', background: 'var(--surface)', borderRadius: 7, border: `1px solid ${deltaColor}40` }}>
+            <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 3 }}>DELTA</div>
+            <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)', color: deltaColor, display: 'flex', alignItems: 'center', gap: 5 }}>
+              <DeltaIcon size={16} strokeWidth={2} />
+              {delta > 0 ? `+${delta}` : delta}
+            </div>
+          </div>
+        </div>
+
+        {/* Findings / CVE chips */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {impact.new_findings?.length > 0 && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--danger)', padding: '4px 9px', background: 'rgba(239,68,68,0.08)', borderRadius: 5 }}>
+              <ShieldAlert size={10} strokeWidth={1.5} />+{impact.new_findings.length} finding{impact.new_findings.length !== 1 ? 's' : ''}
+            </span>
+          )}
+          {impact.fixed_findings?.length > 0 && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--success)', padding: '4px 9px', background: 'rgba(34,197,94,0.08)', borderRadius: 5 }}>
+              <Check size={10} strokeWidth={2} />{impact.fixed_findings.length} fixed
+            </span>
+          )}
+          {impact.new_cves?.length > 0 && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--warning)', padding: '4px 9px', background: 'rgba(234,179,8,0.08)', borderRadius: 5 }}>
+              <Package size={10} strokeWidth={1.5} />+{impact.new_cves.length} CVE{impact.new_cves.length !== 1 ? 's' : ''}
+            </span>
+          )}
+          {impact.fixed_cves?.length > 0 && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--success)', padding: '4px 9px', background: 'rgba(34,197,94,0.08)', borderRadius: 5 }}>
+              <Check size={10} strokeWidth={2} />{impact.fixed_cves.length} CVE{impact.fixed_cves.length !== 1 ? 's' : ''} resolved
+            </span>
+          )}
+          {!impact.new_findings?.length && !impact.fixed_findings?.length && !impact.new_cves?.length && !impact.fixed_cves?.length && (
+            <span style={{ fontSize: 11, color: 'var(--text-3)', padding: '4px 9px' }}>No security changes detected</span>
+          )}
+        </div>
+
+        {/* Per-dimension breakdown */}
+        {impact.breakdown_delta && Object.values(impact.breakdown_delta).some(v => v !== 0) && (
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 10 }}>
+            <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 7, letterSpacing: '.06em' }}>SCORE BREAKDOWN</div>
+            <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+              {Object.entries(impact.breakdown_delta).map(([k, v]) => (
+                v !== 0 && (
+                  <span key={k} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: v > 0 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: v > 0 ? 'var(--success)' : 'var(--danger)' }}>
+                    {k.replace(/_/g, ' ')}: {v > 0 ? `+${v}` : v}
+                  </span>
+                )
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

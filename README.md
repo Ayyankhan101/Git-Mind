@@ -17,7 +17,7 @@ Multi-agent repo intelligence platform. Enter a GitHub username (and optionally 
 | **Git Audit** | Commit log analysis (100 commits): message quality, hardcoded secret detection, sensitive file tracker |
 | **Auto-fix patches** | Click "Generate Fix" on any finding → unified diff patch from LLM + RAG context |
 | **PR Review** | Paste any GitHub PR URL → structured review with file:line issues and verdict; results cached by PR head SHA |
-| **Predictive PR Impact** | After analyzing a repo, enter a PR URL → health score delta, new/fixed findings and CVEs vs base |
+| **Predictive PR Impact** | After analyzing a repo, enter a PR URL → LLM merge-risk prediction (low/medium/high/critical), plain-English narrative, affected areas, breaking changes, health score delta, new/fixed findings and CVEs vs base |
 | **Org-wide CVE Dashboard** | Scan all loaded repos for CVEs via GitHub API — cross-repo shared vulnerability detection |
 | **Incident Close Loop** | After Crisis Mode ends, generate a full incident report (timeline, impact, stakeholder statement, remediation checklist, lessons learned) |
 | **RAG chat** | Ask anything about the codebase; ChromaDB (8 context chunks) + streaming SSE responses |
@@ -146,7 +146,7 @@ IM-Hackathon/
 │       ├── cve_scanner.py   ← OSV.dev CVE lookup (PyPI/npm/Cargo/Go/Ruby/PHP)
 │       ├── git_audit.py     ← Commit log analysis (100 commits) + secret/sensitive-file detection
 │       ├── health.py        ← Health score computation (A–F grade)
-│       ├── impact.py        ← compute_impact() — diffs two analysis snapshots
+│       ├── impact.py        ← compute_impact() — diffs two analysis snapshots; run_merge_prediction() — LLM risk narrative
 │       ├── pr_review.py     ← GitHub PR diff + LLM review (cached by head SHA)
 │       ├── rag_setup.py     ← ChromaDB ingestion
 │       ├── chat.py          ← RAG query (8 chunks) + SSE streaming
@@ -217,7 +217,7 @@ All 7 post-scanner nodes run in parallel. Each is fully error-isolated — a fai
 | `/chat/stream` | POST | SSE streaming chat — yields `data: {"token": "..."}` |
 | `/summary` | POST | `{session_id}` → executive summary |
 | `/pr-review` | POST | `{pr_url, token?}` → structured LLM code review |
-| `/pr-impact` | POST | `{pr_url, session_id, token?}` → health delta vs base session |
+| `/pr-impact` | POST | `{pr_url, session_id, token?}` → merge risk prediction + health delta vs base session |
 | `/org-audit` | POST | `{repos: [urls], token?}` → per-repo CVEs + shared vulnerabilities |
 | `/incident-report` | POST | `{session_id, finding, crisis_messages, outcome}` → 6-section report |
 | `/fix` | POST | `{session_id, finding}` → unified diff patch |

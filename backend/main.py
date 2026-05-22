@@ -1077,7 +1077,7 @@ async def pr_impact_endpoint(req: PRImpactRequest):
     from agents.security import run_security_agent
     from agents.cve_scanner import run_cve_scanner
     from agents.health import compute_health
-    from agents.impact import compute_impact
+    from agents.impact import compute_impact, run_merge_prediction
 
     m = _PR_URL_RE.match(req.pr_url.strip())
     if not m:
@@ -1114,15 +1114,31 @@ async def pr_impact_endpoint(req: PRImpactRequest):
     if pr_resp.is_error:
         return {"error": f"GitHub API error {pr_resp.status_code}"}
 
-    pr_data   = pr_resp.json()
-    head_ref  = pr_data.get("head", {}).get("ref")
-    head_sha  = pr_data.get("head", {}).get("sha", "")[:8]
-    pr_title  = pr_data.get("title", "")
-    additions = pr_data.get("additions", 0)
-    deletions = pr_data.get("deletions", 0)
+    pr_data      = pr_resp.json()
+    head_ref     = pr_data.get("head", {}).get("ref")
+    head_sha     = pr_data.get("head", {}).get("sha", "")
+    head_sha_short = head_sha[:8]
+    pr_title     = pr_data.get("title", "")
+    additions    = pr_data.get("additions", 0)
+    deletions    = pr_data.get("deletions", 0)
+    changed_files = pr_data.get("changed_files", 0)
+    base_branch  = pr_data.get("base", {}).get("ref", "main")
 
     if not head_ref:
         return {"error": "Could not determine PR head branch from GitHub API"}
+
+    # Fetch unified diff (separate request with diff media type)
+    pr_diff = ""
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            diff_resp = await client.get(
+                f"https://api.github.com/repos/{owner}/{repo_name}/pulls/{pr_num}",
+                headers={**gh_headers, "Accept": "application/vnd.github.v3.diff"},
+            )
+        if not diff_resp.is_error:
+            pr_diff = diff_resp.text
+    except Exception:
+        pass  # diff is best-effort; prediction still runs with empty diff
 
     local_path = None
     try:
@@ -1150,17 +1166,35 @@ async def pr_impact_endpoint(req: PRImpactRequest):
         }
 
         delta = compute_impact(base_snapshot, pr_snapshot)
+
+        pr_meta = {
+            "title":         pr_title,
+            "owner":         owner,
+            "repo":          repo_name,
+            "pr_num":        pr_num,
+            "head_sha":      head_sha,
+            "base_branch":   base_branch,
+            "additions":     additions,
+            "deletions":     deletions,
+            "changed_files": changed_files,
+            "diff_truncated": len(pr_diff) > 10_000,
+        }
+        prediction = await asyncio.to_thread(run_merge_prediction, pr_diff, delta, pr_meta)
+
         logger.info(
-            "PR impact computed: session=%s pr=%s delta=%+d",
+            "PR impact computed: session=%s pr=%s delta=%+d risk=%s",
             req.session_id, req.pr_url, delta["health_delta"],
+            prediction.get("merge_risk", "?"),
         )
         return {
             **delta,
-            "pr_title":  pr_title,
-            "head_ref":  head_ref,
-            "head_sha":  head_sha,
-            "additions": additions,
-            "deletions": deletions,
+            **prediction,
+            "pr_title":      pr_title,
+            "head_ref":      head_ref,
+            "head_sha":      head_sha_short,
+            "additions":     additions,
+            "deletions":     deletions,
+            "changed_files": changed_files,
         }
     except Exception as exc:
         logger.error("PR impact failed: %s", exc)
