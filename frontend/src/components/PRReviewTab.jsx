@@ -1,6 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { GitPullRequest, ChevronDown, Check, AlertTriangle, MessageSquare, TrendingUp, TrendingDown, Minus, ShieldAlert, Package, Zap, Shield, AlertCircle, GitMerge, XCircle } from 'lucide-react';
-import { reviewPR, prImpact } from '../api';
+import React, { useState, useEffect, useCallback } from 'react';
+import { GitPullRequest, ChevronDown, Check, AlertTriangle, MessageSquare, TrendingUp, TrendingDown, Minus, ShieldAlert, Package, Zap, AlertCircle, GitMerge, XCircle, GitBranch } from 'lucide-react';
+import { reviewPR, prImpact, fetchOpenPRs } from '../api';
+
+function relativeTime(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 2) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
 
 const VERDICT_CLASS = {
   'APPROVE':          'approve',
@@ -252,50 +262,69 @@ function ImpactPanel({ impact, loading, error }) {
   );
 }
 
-export default function PRReviewTab({ prAutoUrl, onAutoUrlUsed, sessionId, analyzed }) {
-  const [prUrl,       setPrUrl]       = useState('');
-  const [token,       setToken]       = useState(() => sessionStorage.getItem('gm-gh-token') || '');
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [loading,     setLoading]     = useState(false);
-  const [error,       setError]       = useState(null);
-  const [result,      setResult]      = useState(null);
-  const [impact,      setImpact]      = useState(null);
+export default function PRReviewTab({ prAutoUrl, onAutoUrlUsed, sessionId, analyzed, repoUrl }) {
+  const [prUrl,         setPrUrl]         = useState('');
+  const [token,         setToken]         = useState(() => sessionStorage.getItem('gm-gh-token') || '');
+  const [showAdvanced,  setShowAdvanced]  = useState(false);
+  const [loading,       setLoading]       = useState(false);
+  const [error,         setError]         = useState(null);
+  const [result,        setResult]        = useState(null);
+  const [impact,        setImpact]        = useState(null);
   const [impactLoading, setImpactLoading] = useState(false);
   const [impactError,   setImpactError]   = useState(null);
+  const [openPRs,       setOpenPRs]       = useState([]);
+  const [prsLoading,    setPrsLoading]    = useState(false);
 
-  // Auto-fill + trigger review when a PR URL is pasted anywhere
+  // Fetch open PRs whenever the repo changes and has been analyzed
+  useEffect(() => {
+    if (!repoUrl) return;
+    const m = repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
+    if (!m) return;
+    const owner = m[1];
+    const repo  = m[2].replace(/\.git$/, '');
+    setOpenPRs([]);
+    setPrsLoading(true);
+    fetchOpenPRs(owner, repo, token || null)
+      .then(data => setOpenPRs(data.prs || []))
+      .catch(() => setOpenPRs([]))
+      .finally(() => setPrsLoading(false));
+  }, [repoUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fire review + impact in parallel for a given PR URL
+  const runAnalysis = useCallback((url) => {
+    setPrUrl(url);
+    setError(null);
+    setResult(null);
+    setImpact(null);
+    setImpactError(null);
+
+    setLoading(true);
+    reviewPR(url, token || undefined)
+      .then(data => setResult(data))
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+
+    if (analyzed && sessionId) {
+      setImpactLoading(true);
+      prImpact(url, sessionId, token || null)
+        .then(data => setImpact(data))
+        .catch(err => setImpactError(err.message))
+        .finally(() => setImpactLoading(false));
+    }
+  }, [token, analyzed, sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-fill + trigger review when a PR URL is pasted anywhere in the app
   useEffect(() => {
     if (!prAutoUrl) return;
-    setPrUrl(prAutoUrl);
     onAutoUrlUsed?.();
-    const t = setTimeout(() => {
-      setError(null);
-      setLoading(true);
-      setResult(null);
-      reviewPR(prAutoUrl, token || undefined)
-        .then(data => setResult(data))
-        .catch(err => setError(err.message))
-        .finally(() => setLoading(false));
-    }, 120);
+    const t = setTimeout(() => runAnalysis(prAutoUrl), 120);
     return () => clearTimeout(t);
   }, [prAutoUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleReview = async () => {
     const url = prUrl.trim();
     if (!url) { setError('Enter a GitHub PR URL.'); return; }
-    setError(null);
-    setLoading(true);
-    setResult(null);
-    setImpact(null);
-    setImpactError(null);
-    try {
-      const data = await reviewPR(url, token || undefined);
-      setResult(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    runAnalysis(url);
   };
 
   const handleImpact = async () => {
@@ -331,7 +360,78 @@ export default function PRReviewTab({ prAutoUrl, onAutoUrlUsed, sessionId, analy
         </div>
       </div>
 
-      {/* Input */}
+      {/* Open PR picker — shown when repo is loaded */}
+      {(prsLoading || openPRs.length > 0) && (
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '.05em' }}>
+            <GitPullRequest size={11} strokeWidth={1.5} />
+            OPEN PULL REQUESTS {!prsLoading && `(${openPRs.length})`}
+          </div>
+          {prsLoading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {[0, 1].map(i => (
+                <div key={i} className="sk-row" style={{ borderRadius: 8, padding: '10px 14px', margin: 0 }}>
+                  <div className="sk-row-line">
+                    <span className="sk" style={{ height: 12, width: 34 }} />
+                    <span className="sk" style={{ height: 12, width: '55%' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {openPRs.map(pr => {
+                const active = prUrl === pr.url;
+                return (
+                  <button
+                    key={pr.number}
+                    onClick={() => runAnalysis(pr.url)}
+                    disabled={loading || impactLoading}
+                    style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 10, width: '100%',
+                      padding: '10px 14px', borderRadius: 8, textAlign: 'left', cursor: 'pointer',
+                      background: active ? 'var(--primary)10' : 'var(--surface-2)',
+                      border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
+                      transition: 'border-color .15s, background .15s',
+                    }}
+                  >
+                    {/* PR number */}
+                    <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: active ? 'var(--primary)' : 'var(--text-3)', flexShrink: 0, paddingTop: 1 }}>
+                      #{pr.number}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {/* Title */}
+                      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>
+                        {pr.draft && <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 3, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-3)', marginRight: 6 }}>DRAFT</span>}
+                        {pr.title}
+                      </div>
+                      {/* Meta row */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                          <GitBranch size={10} strokeWidth={1.5} />{pr.head_ref} → {pr.base_ref}
+                        </span>
+                        <span style={{ fontSize: 11, color: 'var(--text-3)' }}>@{pr.user}</span>
+                        <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{relativeTime(pr.updated_at)}</span>
+                        {pr.labels?.map(l => (
+                          <span key={l} style={{ fontSize: 10, padding: '1px 6px', borderRadius: 3, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-3)' }}>{l}</span>
+                        ))}
+                      </div>
+                    </div>
+                    {active && (loading || impactLoading) && (
+                      <span className="spinner" style={{ flexShrink: 0 }} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Manual input — always available as fallback */}
+      <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 6, letterSpacing: '.05em' }}>
+        {openPRs.length > 0 ? 'OR ENTER A PR URL MANUALLY' : 'PULL REQUEST URL'}
+      </div>
       <div className="pr-input">
         <input
           className="pr-url"

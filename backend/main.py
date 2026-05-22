@@ -1071,6 +1071,41 @@ _PR_URL_RE = re.compile(
     r'^https://github\.com/([A-Za-z0-9_.\-]+)/([A-Za-z0-9_.\-]+)/pull/(\d+)/?$'
 )
 
+
+@app.get("/pr-list/{owner}/{repo}")
+async def list_open_prs(owner: str, repo: str, request: Request):
+    token = request.headers.get("X-GH-Token") or os.getenv("GITHUB_TOKEN")
+    gh_headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}
+    if token:
+        gh_headers["Authorization"] = f"Bearer {token}"
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                f"https://api.github.com/repos/{owner}/{repo}/pulls",
+                params={"state": "open", "per_page": 20, "sort": "updated"},
+                headers=gh_headers,
+            )
+        if resp.is_error:
+            return {"prs": []}
+        prs = [
+            {
+                "number":     pr["number"],
+                "title":      pr["title"],
+                "url":        pr["html_url"],
+                "user":       pr["user"]["login"],
+                "updated_at": pr["updated_at"],
+                "labels":     [l["name"] for l in pr.get("labels", [])],
+                "draft":      pr.get("draft", False),
+                "base_ref":   pr["base"]["ref"],
+                "head_ref":   pr["head"]["ref"],
+            }
+            for pr in resp.json()
+        ]
+        return {"prs": prs}
+    except Exception:
+        return {"prs": []}
+
+
 @app.post("/pr-impact")
 async def pr_impact_endpoint(req: PRImpactRequest):
     from agents.scanner import clone_and_scan, _GITHUB_URL_RE

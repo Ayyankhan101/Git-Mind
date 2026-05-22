@@ -82,6 +82,16 @@ export function prImpact(prUrl, sessionId, token = null) {
   );
 }
 
+export function fetchOpenPRs(owner, repo, token = null) {
+  const headers = {};
+  if (token) headers['X-GH-Token'] = token;
+  return _apiFetch(
+    `${BASE}/pr-list/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`,
+    { headers },
+    15_000,
+  );
+}
+
 export function orgAudit(repos, token = null) {
   return _post(
     `${BASE}/org-audit`,

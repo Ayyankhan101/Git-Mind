@@ -716,7 +716,7 @@ export default function App() {
               {activeTab === 'security' && <SecurityTab findings={findings} isAnalyzing={isAnalyzing} analyzed={analyzed} onCrisis={setCrisisFinding} onFix={handleFix} fixLoading={fixLoading} fixResult={fixResult} onPickFile={setFilePreview} sessionId={SESSION_ID} />}
               {activeTab === 'cve'      && <CveTab      findings={cveFindings} isAnalyzing={isAnalyzing} analyzed={analyzed} />}
               {activeTab === 'git'      && <GitAuditTab audit={gitAudit}      isAnalyzing={isAnalyzing} analyzed={analyzed} />}
-              {activeTab === 'pr'       && <PRReviewTab prAutoUrl={prAutoUrl} onAutoUrlUsed={clearPrAutoUrl} sessionId={SESSION_ID} analyzed={analyzed} />}
+              {activeTab === 'pr'       && <PRReviewTab prAutoUrl={prAutoUrl} onAutoUrlUsed={clearPrAutoUrl} sessionId={SESSION_ID} analyzed={analyzed} repoUrl={selectedRepoUrl} />}
               {activeTab === 'chat'     && <ChatTab     key={repoName} sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} />}
             </ErrorBoundary>
           )}
