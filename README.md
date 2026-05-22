@@ -2,7 +2,7 @@
 
 Multi-agent repo intelligence platform. Enter a GitHub username (and optionally a PAT for private repos), pick a repo → 7 agents run in parallel → architecture diagram, API docs, security audit, CVE scan, git commit audit, RAG chat, shareable report. Optional Crisis Mode role-plays a security incident with CEO / Legal / Engineering / Reporter agents.
 
-**Stack:** FastAPI · LangGraph · Groq (llama-3.3-70b-versatile) · ChromaDB · React · Mermaid · semgrep · OSV.dev
+**Stack:** FastAPI · LangGraph · Groq (llama-3.3-70b-versatile) · ChromaDB · React · Mermaid · semgrep · OSV.dev · diskcache
 
 ---
 
@@ -10,17 +10,17 @@ Multi-agent repo intelligence platform. Enter a GitHub username (and optionally 
 
 | Feature | Description |
 |---|---|
-| **Architecture diagram** | Mermaid graph of component relationships; pan/zoom/fullscreen with keyboard shortcuts |
-| **API doc agent** | Extracts every HTTP endpoint with method, route, and description |
-| **Security auditor** | semgrep SAST scan; findings ranked Critical → Low with exploit scenarios |
-| **CVE scanner** | Checks dependency lockfiles against [OSV.dev](https://osv.dev) — supports PyPI, npm, Cargo, Go, Ruby |
-| **Git Audit** | Commit log analysis: message quality, hardcoded secret detection, sensitive file tracker |
+| **Architecture diagram** | Mermaid graph of component relationships using 24K-token context window; pan/zoom/fullscreen with keyboard shortcuts |
+| **API doc agent** | Extracts every HTTP endpoint (method, route, description, parameters, auth_required) across FastAPI, Flask, Express, Django, Rails, Spring, NestJS, Gin, Echo, and more |
+| **Security auditor** | semgrep SAST scan triaged by llama-3.3-70b; findings include exploit scenario, **remediation step**, and **CWE identifier**; ranked Critical → Low |
+| **CVE scanner** | Checks dependency lockfiles against [OSV.dev](https://osv.dev) — supports PyPI, npm (package-lock/yarn/pnpm), Cargo, Go (go.sum + go.mod), Ruby, and **PHP (composer.lock)** |
+| **Git Audit** | Commit log analysis (100 commits): message quality, hardcoded secret detection, sensitive file tracker |
 | **Auto-fix patches** | Click "Generate Fix" on any finding → unified diff patch from LLM + RAG context |
-| **PR Review** | Paste any GitHub PR URL → structured review with file:line issues and verdict |
+| **PR Review** | Paste any GitHub PR URL → structured review with file:line issues and verdict; results cached by PR head SHA |
 | **Predictive PR Impact** | After analyzing a repo, enter a PR URL → health score delta, new/fixed findings and CVEs vs base |
 | **Org-wide CVE Dashboard** | Scan all loaded repos for CVEs via GitHub API — cross-repo shared vulnerability detection |
 | **Incident Close Loop** | After Crisis Mode ends, generate a full incident report (timeline, impact, stakeholder statement, remediation checklist, lessons learned) |
-| **RAG chat** | Ask anything about the codebase; ChromaDB + streaming SSE responses |
+| **RAG chat** | Ask anything about the codebase; ChromaDB (8 context chunks) + streaming SSE responses |
 | **Crisis Mode** | Escalation simulation: CEO / Legal / Engineering debate a live incident; reporter publishes if team is too slow |
 | **Shareable links** | Analysis snapshots saved server-side; share via `?share=SESSION_ID` URL |
 | **Export report** | Download full analysis as Markdown |
@@ -140,16 +140,16 @@ IM-Hackathon/
 │   ├── .env.example
 │   └── agents/
 │       ├── scanner.py       ← Git clone + file indexing (branch param for PR head)
-│       ├── architecture.py  ← Mermaid diagram generation
-│       ├── api_doc.py       ← Endpoint extraction
-│       ├── security.py      ← semgrep SAST + LLM triage
-│       ├── cve_scanner.py   ← OSV.dev dependency CVE lookup
-│       ├── git_audit.py     ← Commit log analysis + secret/sensitive-file detection
+│       ├── architecture.py  ← Mermaid diagram (70b, 24K token budget, 14 key files)
+│       ├── api_doc.py       ← Endpoint extraction (70b, 10 files, 13 framework patterns)
+│       ├── security.py      ← semgrep SAST + LLM triage (70b) → exploit + remediation + CWE
+│       ├── cve_scanner.py   ← OSV.dev CVE lookup (PyPI/npm/Cargo/Go/Ruby/PHP)
+│       ├── git_audit.py     ← Commit log analysis (100 commits) + secret/sensitive-file detection
 │       ├── health.py        ← Health score computation (A–F grade)
 │       ├── impact.py        ← compute_impact() — diffs two analysis snapshots
-│       ├── pr_review.py     ← GitHub PR diff + LLM review
+│       ├── pr_review.py     ← GitHub PR diff + LLM review (cached by head SHA)
 │       ├── rag_setup.py     ← ChromaDB ingestion
-│       ├── chat.py          ← RAG query + SSE streaming
+│       ├── chat.py          ← RAG query (8 chunks) + SSE streaming
 │       ├── blame.py         ← Git blame enrichment
 │       └── crisis/
 │           ├── _base.py
