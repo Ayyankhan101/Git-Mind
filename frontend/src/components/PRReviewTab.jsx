@@ -88,7 +88,7 @@ function ImpactPanel({ impact, loading, error }) {
   const deltaColor = delta > 0 ? 'var(--success)' : delta < 0 ? 'var(--danger)' : 'var(--text-3)';
 
   return (
-    <div style={{ marginTop: 20, padding: '16px 20px', background: 'var(--surface-1)', borderRadius: 10, border: '1px solid var(--border)' }}>
+    <div style={{ marginTop: 20, padding: '16px 20px', background: 'var(--surface-2)', borderRadius: 10, border: '1px solid var(--border)' }}>
       <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
         <TrendingUp size={11} strokeWidth={1.5} />
         IMPACT PREVIEW · {impact.head_ref} ({impact.head_sha})
@@ -104,15 +104,15 @@ function ImpactPanel({ impact, loading, error }) {
 
       {/* Health score delta */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 120, padding: '10px 14px', background: 'var(--surface-0)', borderRadius: 8, border: '1px solid var(--border)' }}>
+        <div style={{ flex: 1, minWidth: 120, padding: '10px 14px', background: 'var(--surface)', borderRadius: 8, border: '1px solid var(--border)' }}>
           <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 4 }}>BASE SCORE</div>
           <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{impact.base_score}<span style={{ fontSize: 13, color: 'var(--text-3)' }}> ({impact.base_grade})</span></div>
         </div>
-        <div style={{ flex: 1, minWidth: 120, padding: '10px 14px', background: 'var(--surface-0)', borderRadius: 8, border: '1px solid var(--border)' }}>
+        <div style={{ flex: 1, minWidth: 120, padding: '10px 14px', background: 'var(--surface)', borderRadius: 8, border: '1px solid var(--border)' }}>
           <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 4 }}>PR SCORE</div>
           <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{impact.pr_score}<span style={{ fontSize: 13, color: 'var(--text-3)' }}> ({impact.pr_grade})</span></div>
         </div>
-        <div style={{ flex: 1, minWidth: 120, padding: '10px 14px', background: 'var(--surface-0)', borderRadius: 8, border: `1px solid ${deltaColor}40` }}>
+        <div style={{ flex: 1, minWidth: 120, padding: '10px 14px', background: 'var(--surface)', borderRadius: 8, border: `1px solid ${deltaColor}40` }}>
           <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 4 }}>DELTA</div>
           <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', color: deltaColor, display: 'flex', alignItems: 'center', gap: 6 }}>
             <DeltaIcon size={18} strokeWidth={2} />

@@ -32,7 +32,7 @@ function RepoRow({ repo }) {
         )}
       </div>
       {open && repo.cve_findings?.map((pkg, i) => (
-        <div key={i} style={{ padding: '6px 20px 6px 32px', background: 'var(--surface-1)' }}>
+        <div key={i} style={{ padding: '6px 20px 6px 32px', background: 'var(--surface-2)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
             <Package size={11} strokeWidth={1.5} style={{ color: 'var(--text-3)' }} />
             <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-2)' }}>{pkg.package} v{pkg.version}</span>
@@ -131,7 +131,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                   { label: 'Clean',        value: stats.repos_clean,  color: stats.repos_clean  ? 'var(--success)' : undefined },
                   { label: 'Shared CVEs',  value: stats.shared_count, color: stats.shared_count ? 'var(--warning)' : undefined },
                 ].map(({ label, value, color }) => (
-                  <div key={label} style={{ padding: '8px 14px', background: 'var(--surface-1)', borderRadius: 8, border: '1px solid var(--border)', minWidth: 80, textAlign: 'center' }}>
+                  <div key={label} style={{ padding: '8px 14px', background: 'var(--surface-2)', borderRadius: 8, border: '1px solid var(--border)', minWidth: 80, textAlign: 'center' }}>
                     <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)', color: color || 'var(--text-1)' }}>{value ?? 0}</div>
                     <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>{label}</div>
                   </div>

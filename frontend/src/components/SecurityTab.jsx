@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert, Wrench, ExternalLink } from 'lucide-react';
 
 const SEV_ORDER = ['critical', 'high', 'medium', 'low'];
 
@@ -86,9 +86,29 @@ function FindingRow({ finding, onCrisis, onFix, fixLoading, fixResult, onPickFil
               <div className="scenario">{finding.exploit_story}</div>
             </div>
           )}
+          {finding.remediation && (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: 10, padding: '8px 12px', background: 'rgba(34,197,94,0.06)', borderRadius: 6, border: '1px solid rgba(34,197,94,0.18)' }}>
+              <Wrench size={13} strokeWidth={1.5} style={{ color: 'var(--success)', flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', color: 'var(--success)', marginBottom: 2 }}>REMEDIATION</div>
+                <div style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55 }}>{finding.remediation}</div>
+              </div>
+            </div>
+          )}
           <div className="refs">
             {filePath && <span>FILE <code>{filePath}{fileLine ? `:${fileLine}` : ''}</code></span>}
             {finding.id && <span>RULE <code>{finding.id || finding.rule}</code></span>}
+            {finding.cwe && (
+              <a
+                href={`https://cwe.mitre.org/data/definitions/${finding.cwe.replace('CWE-', '')}.html`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--info)', fontSize: 11, textDecoration: 'none' }}
+              >
+                <ExternalLink size={10} strokeWidth={1.5} />
+                {finding.cwe}
+              </a>
+            )}
           </div>
           {finding.blame && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--text-3)', marginTop: 6, flexWrap: 'wrap' }}>

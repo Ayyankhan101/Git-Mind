@@ -78,8 +78,39 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
     <div className="chat-wrap">
       <div className="chat-messages">
         {messages.length === 0 && (
-          <div style={{ color: 'var(--text-3)', fontSize: 14, textAlign: 'center', paddingTop: 40 }}>
-            Ask anything about <strong style={{ color: 'var(--text-2)' }}>{repoName}</strong>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 40, gap: 20 }}>
+            <div style={{ color: 'var(--text-3)', fontSize: 14, textAlign: 'center' }}>
+              Ask anything about <strong style={{ color: 'var(--text-2)' }}>{repoName}</strong>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', maxWidth: 480 }}>
+              {[
+                'What does this codebase do?',
+                'How is authentication handled?',
+                'What are the main API endpoints?',
+                'Where is the database layer?',
+                'How is error handling done?',
+                'What are the key dependencies?',
+              ].map(q => (
+                <button
+                  key={q}
+                  onClick={() => { setInput(q); textareaRef.current?.focus(); }}
+                  style={{
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    padding: '6px 12px',
+                    fontSize: 12,
+                    color: 'var(--text-2)',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.15s, color 0.15s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--text-1)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-2)'; }}
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
           </div>
         )}
         {messages.map((msg, i) => <Message key={i} msg={msg} />)}

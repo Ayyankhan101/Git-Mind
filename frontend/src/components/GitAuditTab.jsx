@@ -9,7 +9,7 @@ const QUALITY_META = {
 
 function StatPill({ label, value, color }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 18px', background: 'var(--surface-1)', borderRadius: 8, border: '1px solid var(--border)', minWidth: 80 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 18px', background: 'var(--surface-2)', borderRadius: 8, border: '1px solid var(--border)', minWidth: 80 }}>
       <span style={{ fontSize: 22, fontWeight: 700, color: color || 'var(--text-1)', fontFamily: 'var(--font-mono)' }}>{value}</span>
       <span style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{label}</span>
     </div>

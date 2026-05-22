@@ -150,7 +150,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
 
           {/* Incident report */}
           {report && (
-            <div style={{ marginTop: 12, padding: '14px', background: 'var(--surface-1)', borderRadius: 8, border: '1px solid var(--border)' }}>
+            <div style={{ marginTop: 12, padding: '14px', background: 'var(--surface-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
               <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <FileText size={11} strokeWidth={1.5} />
                 INCIDENT REPORT

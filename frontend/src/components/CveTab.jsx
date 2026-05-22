@@ -28,17 +28,17 @@ function PkgRow({ pkg }) {
         <div className="row-expand">
           {pkg.vulns?.map((v, i) => (
             <div key={i} style={{ borderBottom: i < pkg.vulns.length - 1 ? '1px solid var(--border)' : 'none', paddingBottom: i < pkg.vulns.length - 1 ? 14 : 0, marginBottom: i < pkg.vulns.length - 1 ? 14 : 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
                 <span className="label">{v.id}</span>
-                {v.fixed_in && (
-                  <span style={{ fontSize: 12, color: 'var(--success)', fontFamily: 'var(--font-mono)' }}>
-                    → {v.fixed_in}
-                  </span>
-                )}
                 {v.url && (
                   <a href={v.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-3)', display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11 }}>
                     <ExternalLink size={11} strokeWidth={1.5} /> OSV
                   </a>
+                )}
+                {v.fixed_in && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: 'var(--success)', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 4, padding: '1px 7px', fontFamily: 'var(--font-mono)' }}>
+                    Fix → {v.fixed_in}
+                  </span>
                 )}
               </div>
               {v.summary && <div className="scenario" style={{ fontStyle: 'normal' }}>{v.summary}</div>}
