@@ -6,6 +6,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends git ca-certific
 WORKDIR /app
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Pre-download ChromaDB ONNX embedding model so it is baked into the image
+# and never needs to download at runtime (avoids timeout on first analysis).
+RUN python3 -c "\
+import urllib.request, tarfile, pathlib; \
+URL='https://chroma-onnx-models.s3.amazonaws.com/all-MiniLM-L6-v2/onnx.tar.gz'; \
+DEST=pathlib.Path('/root/.cache/chroma/onnx_models/all-MiniLM-L6-v2'); \
+DEST.mkdir(parents=True, exist_ok=True); \
+arc=DEST/'onnx.tar.gz'; \
+urllib.request.urlretrieve(URL, arc); \
+tf=tarfile.open(arc); tf.extractall(DEST); tf.close(); \
+arc.unlink(); \
+print('ChromaDB ONNX model cached.') \
+"
+
 COPY backend/ .
 
 # ============================================
