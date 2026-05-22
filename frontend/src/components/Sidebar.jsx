@@ -170,7 +170,7 @@ export default function Sidebar({
               className="sb-section-header"
               onClick={() => setShowSavedViews(o => !o)}
             >
-              <span className="t-label" style={{ fontSize: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className="t-label" style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Bookmark size={11} strokeWidth={1.5} />
                 SAVED VIEWS
               </span>
@@ -201,7 +201,7 @@ export default function Sidebar({
         {history.length > 0 && (
           <div className={`sb-section${historySectionOpen ? '' : ' collapsed'}`}>
             <div className="sb-section-header" onClick={() => setHistorySectionOpen(o => !o)}>
-              <span className="t-label" style={{ fontSize: 10 }}>RECENT</span>
+              <span className="t-label" style={{ fontSize: 11 }}>RECENT</span>
               <ChevronDown size={12} strokeWidth={1.5} className="chevron" />
             </div>
             <div className="sb-section-body">
@@ -231,7 +231,7 @@ export default function Sidebar({
         {(loading || repos.length > 0) && (
           <div className={`sb-section${repoSectionOpen ? '' : ' collapsed'}`}>
             <div className="sb-section-header" onClick={() => setRepoSectionOpen(o => !o)}>
-              <span className="t-label" style={{ fontSize: 10 }}>
+              <span className="t-label" style={{ fontSize: 11 }}>
                 REPOSITORIES{repos.length ? ` · ${filtered.length}${filtered.length !== repos.length ? `/${repos.length}` : ''}` : ''}
               </span>
               <ChevronDown size={12} strokeWidth={1.5} className="chevron" />
@@ -276,7 +276,7 @@ export default function Sidebar({
                 />
               ))}
               {!loading && repos.length > 0 && filtered.length === 0 && (
-                <div style={{ padding: '16px 14px', fontSize: 12, color: 'var(--text-3)' }}>
+                <div style={{ padding: '16px 14px', fontSize: 13, color: 'var(--text-3)' }}>
                   No repos match "{filter}"
                 </div>
               )}
@@ -317,7 +317,7 @@ function RepoHoverPreview({ repo, anchorRect }) {
       <div className="name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         {repo.private && <Lock size={11} strokeWidth={1.5} style={{ color: 'var(--text-3)' }} />}
         {repo.full_name || repo.name}
-        {repo.private && <span style={{ fontSize: 10, color: 'var(--text-3)', background: 'var(--surface-2)', padding: '1px 5px', borderRadius: 4 }}>private</span>}
+        {repo.private && <span style={{ fontSize: 11, color: 'var(--text-3)', background: 'var(--surface-2)', padding: '1px 5px', borderRadius: 4 }}>private</span>}
       </div>
       {repo.description && <div className="desc">{repo.description}</div>}
       <div className="row-stats">

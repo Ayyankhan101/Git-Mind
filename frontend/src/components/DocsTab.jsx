@@ -5,12 +5,12 @@ const METHODS = ['ALL', 'GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
 
 function AuthBadge({ authRequired }) {
   if (authRequired === true) return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', color: 'var(--warning)', background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.2)', borderRadius: 4, padding: '1px 5px', flexShrink: 0 }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: 'var(--warning)', background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.2)', borderRadius: 4, padding: '1px 5px', flexShrink: 0 }}>
       <Lock size={9} strokeWidth={2} /> AUTH
     </span>
   );
   if (authRequired === false) return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', color: 'var(--text-3)', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 5px', flexShrink: 0 }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: 'var(--text-3)', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 5px', flexShrink: 0 }}>
       <LockOpen size={9} strokeWidth={2} /> PUBLIC
     </span>
   );

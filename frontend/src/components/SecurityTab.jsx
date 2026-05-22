@@ -90,7 +90,7 @@ function FindingRow({ finding, onCrisis, onFix, fixLoading, fixResult, onPickFil
             <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: 10, padding: '8px 12px', background: 'rgba(34,197,94,0.06)', borderRadius: 6, border: '1px solid rgba(34,197,94,0.18)' }}>
               <Wrench size={13} strokeWidth={1.5} style={{ color: 'var(--success)', flexShrink: 0, marginTop: 2 }} />
               <div>
-                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', color: 'var(--success)', marginBottom: 2 }}>REMEDIATION</div>
+                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', color: 'var(--success)', marginBottom: 2 }}>REMEDIATION</div>
                 <div style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.55 }}>{finding.remediation}</div>
               </div>
             </div>

@@ -39,7 +39,7 @@ export default function HealthCard({ health }) {
           <span style={{ fontSize: 28, fontWeight: 700, color: gradeColor, lineHeight: 1 }}>
             {health.grade}
           </span>
-          <span style={{ fontSize: 10, color: 'var(--text-3)', letterSpacing: '0.1em' }}>
+          <span style={{ fontSize: 11, color: 'var(--text-3)', letterSpacing: '0.1em' }}>
             {health.score}/100
           </span>
         </div>

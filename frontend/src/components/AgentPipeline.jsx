@@ -38,7 +38,7 @@ export default function AgentPipeline({ status, isAnalyzing, analyzed, elapsedSe
   return (
     <div className={`pipeline${mini ? ' mini' : ''}`}>
       <div className="pipeline-header">
-        <span className="t-label" style={{ fontSize: 10 }}>
+        <span className="t-label" style={{ fontSize: 11 }}>
           AGENTS · {doneCount}/7
         </span>
         {allDone && (

@@ -167,7 +167,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
                   {reportCopied ? 'Copied' : 'Copy'}
                 </button>
               </div>
-              <pre style={{ fontSize: 11, color: 'var(--text-2)', whiteSpace: 'pre-wrap', fontFamily: 'var(--font-mono)', lineHeight: 1.6, margin: 0 }}>
+              <pre style={{ fontSize: 12, color: 'var(--text-2)', whiteSpace: 'pre-wrap', fontFamily: 'var(--font-mono)', lineHeight: 1.6, margin: 0 }}>
                 {report}
               </pre>
             </div>

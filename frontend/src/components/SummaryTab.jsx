@@ -162,7 +162,7 @@ export default function SummaryTab({ sessionId, enabled, repoName, findings, api
                 <div className="chart-title">FINDINGS BY SEVERITY</div>
                 <div className="chart-value">{findings.length}</div>
                 <div className="chart-trend" style={{ color: 'var(--text-3)', gap: 4 }}>
-                  <span style={{ fontSize: 10 }}>LOW → CRITICAL</span>
+                  <span style={{ fontSize: 11 }}>LOW → CRITICAL</span>
                   {[nCritical && 'critical', nHigh && 'high', nMedium && 'medium', nLow && 'low'].filter(Boolean).join(', ') || 'none'}
                 </div>
               </div>

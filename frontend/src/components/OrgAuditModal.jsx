@@ -28,7 +28,7 @@ function RepoRow({ repo }) {
           <span style={{ fontSize: 11, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>{count} CVE{count !== 1 ? 's' : ''}</span>
         )}
         {repo.dep_files_found?.length > 0 && (
-          <span style={{ fontSize: 10, color: 'var(--text-3)' }}>{repo.dep_files_found.join(', ')}</span>
+          <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{repo.dep_files_found.join(', ')}</span>
         )}
       </div>
       {open && repo.cve_findings?.map((pkg, i) => (
@@ -36,7 +36,7 @@ function RepoRow({ repo }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
             <Package size={11} strokeWidth={1.5} style={{ color: 'var(--text-3)' }} />
             <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-2)' }}>{pkg.package} v{pkg.version}</span>
-            <span style={{ fontSize: 10, color: 'var(--text-3)' }}>{pkg.ecosystem}</span>
+            <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{pkg.ecosystem}</span>
           </div>
           {pkg.vulns?.map((v, j) => (
             <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-3)', marginLeft: 18, marginBottom: 2 }}>
@@ -133,7 +133,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                 ].map(({ label, value, color }) => (
                   <div key={label} style={{ padding: '8px 14px', background: 'var(--surface-2)', borderRadius: 8, border: '1px solid var(--border)', minWidth: 80, textAlign: 'center' }}>
                     <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)', color: color || 'var(--text-1)' }}>{value ?? 0}</div>
-                    <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>{label}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{label}</div>
                   </div>
                 ))}
               </div>

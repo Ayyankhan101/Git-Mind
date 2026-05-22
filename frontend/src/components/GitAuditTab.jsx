@@ -33,7 +33,7 @@ function CommitRow({ commit }) {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>
           <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{commit.author}</span>
-          <span style={{ fontSize: 10, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 3 }}>
+          <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 3 }}>
             <Clock size={9} strokeWidth={1.5} /> {date}
           </span>
         </div>

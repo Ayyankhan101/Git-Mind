@@ -124,7 +124,7 @@ function ImpactPanel({ impact, loading, error }) {
               {riskMeta.label.toUpperCase()}
             </span>
             {impact.confidence && (
-              <span style={{ fontSize: 10, color: 'var(--text-3)' }}>
+              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
                 confidence: {impact.confidence}
               </span>
             )}
@@ -148,7 +148,7 @@ function ImpactPanel({ impact, loading, error }) {
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           {impact.affected_areas?.length > 0 && (
             <div style={{ flex: 1, minWidth: 160 }}>
-              <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 6, letterSpacing: '.06em' }}>AFFECTED AREAS</div>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 6, letterSpacing: '.06em' }}>AFFECTED AREAS</div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {impact.affected_areas.map(a => (
                   <span key={a} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-2)' }}>{a}</span>
@@ -158,7 +158,7 @@ function ImpactPanel({ impact, loading, error }) {
           )}
           {impact.breaking_changes?.length > 0 && (
             <div style={{ flex: 1, minWidth: 160 }}>
-              <div style={{ fontSize: 10, color: 'var(--danger)', marginBottom: 6, letterSpacing: '.06em' }}>BREAKING CHANGES</div>
+              <div style={{ fontSize: 11, color: 'var(--danger)', marginBottom: 6, letterSpacing: '.06em' }}>BREAKING CHANGES</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {impact.breaking_changes.map((c, i) => (
                   <div key={i} style={{ fontSize: 11, display: 'flex', alignItems: 'flex-start', gap: 6, color: 'var(--text-1)' }}>
@@ -175,10 +175,10 @@ function ImpactPanel({ impact, loading, error }) {
       {/* ── Narrative ─────────────────────────────────────────────── */}
       {impact.narrative && (
         <div style={{ padding: '12px 16px', background: 'var(--surface-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
-          <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 8, letterSpacing: '.06em', display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 8, letterSpacing: '.06em', display: 'flex', alignItems: 'center', gap: 5 }}>
             <Zap size={10} strokeWidth={1.5} /> MERGE IMPACT ANALYSIS
           </div>
-          <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.75, whiteSpace: 'pre-line' }}>
+          <div style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.75, whiteSpace: 'pre-line' }}>
             {impact.narrative}
           </div>
         </div>
@@ -186,7 +186,7 @@ function ImpactPanel({ impact, loading, error }) {
 
       {/* ── Numeric delta cards ────────────────────────────────────── */}
       <div style={{ padding: '14px 16px', background: 'var(--surface-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
-        <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 10, letterSpacing: '.06em' }}>
+        <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 10, letterSpacing: '.06em' }}>
           HEALTH DELTA · {impact.head_ref} ({impact.head_sha})
         </div>
 
@@ -199,15 +199,15 @@ function ImpactPanel({ impact, loading, error }) {
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 100, padding: '8px 12px', background: 'var(--surface)', borderRadius: 7, border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 3 }}>BASE</div>
+            <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 3 }}>BASE</div>
             <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{impact.base_score}<span style={{ fontSize: 12, color: 'var(--text-3)' }}> ({impact.base_grade})</span></div>
           </div>
           <div style={{ flex: 1, minWidth: 100, padding: '8px 12px', background: 'var(--surface)', borderRadius: 7, border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 3 }}>PR</div>
+            <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 3 }}>PR</div>
             <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{impact.pr_score}<span style={{ fontSize: 12, color: 'var(--text-3)' }}> ({impact.pr_grade})</span></div>
           </div>
           <div style={{ flex: 1, minWidth: 100, padding: '8px 12px', background: 'var(--surface)', borderRadius: 7, border: `1px solid ${deltaColor}40` }}>
-            <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 3 }}>DELTA</div>
+            <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 3 }}>DELTA</div>
             <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-mono)', color: deltaColor, display: 'flex', alignItems: 'center', gap: 5 }}>
               <DeltaIcon size={16} strokeWidth={2} />
               {delta > 0 ? `+${delta}` : delta}
@@ -245,7 +245,7 @@ function ImpactPanel({ impact, loading, error }) {
         {/* Per-dimension breakdown */}
         {impact.breakdown_delta && Object.values(impact.breakdown_delta).some(v => v !== 0) && (
           <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 10 }}>
-            <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 7, letterSpacing: '.06em' }}>SCORE BREAKDOWN</div>
+            <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 7, letterSpacing: '.06em' }}>SCORE BREAKDOWN</div>
             <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
               {Object.entries(impact.breakdown_delta).map(([k, v]) => (
                 v !== 0 && (
@@ -402,7 +402,7 @@ export default function PRReviewTab({ prAutoUrl, onAutoUrlUsed, sessionId, analy
                     <div style={{ flex: 1, minWidth: 0 }}>
                       {/* Title */}
                       <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>
-                        {pr.draft && <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 3, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-3)', marginRight: 6 }}>DRAFT</span>}
+                        {pr.draft && <span style={{ fontSize: 11, padding: '1px 5px', borderRadius: 3, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-3)', marginRight: 6 }}>DRAFT</span>}
                         {pr.title}
                       </div>
                       {/* Meta row */}
@@ -413,7 +413,7 @@ export default function PRReviewTab({ prAutoUrl, onAutoUrlUsed, sessionId, analy
                         <span style={{ fontSize: 11, color: 'var(--text-3)' }}>@{pr.user}</span>
                         <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{relativeTime(pr.updated_at)}</span>
                         {pr.labels?.map(l => (
-                          <span key={l} style={{ fontSize: 10, padding: '1px 6px', borderRadius: 3, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-3)' }}>{l}</span>
+                          <span key={l} style={{ fontSize: 11, padding: '1px 6px', borderRadius: 3, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-3)' }}>{l}</span>
                         ))}
                       </div>
                     </div>
