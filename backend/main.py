@@ -1022,13 +1022,21 @@ async def list_repos(username: str, request: Request):
         url    = f"https://api.github.com/users/{username}/repos"
         params = {"per_page": 100, "sort": "pushed"}
 
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(url, params=params, headers=gh_headers)
-    except httpx.TimeoutException:
-        return {"error": "GitHub API timed out"}
-    except httpx.RequestError as exc:
-        return {"error": f"GitHub API unreachable: {exc}"}
+    _gh_timeout = httpx.Timeout(connect=8.0, read=20.0, write=5.0, pool=5.0)
+    resp = None
+    last_exc = None
+    for attempt in range(2):
+        try:
+            async with httpx.AsyncClient(timeout=_gh_timeout) as client:
+                resp = await client.get(url, params=params, headers=gh_headers)
+            break
+        except httpx.TimeoutException as exc:
+            last_exc = exc
+            await asyncio.sleep(0.5 * (attempt + 1))
+        except httpx.RequestError as exc:
+            return {"error": f"GitHub API unreachable: {exc}"}
+    if resp is None:
+        return {"error": "GitHub API timed out — try again in a moment"}
 
     if resp.status_code == 401:
         return {"error": "GitHub token is invalid or expired"}

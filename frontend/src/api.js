@@ -50,8 +50,8 @@ export async function fetchRepos(username, token = null) {
   if (token) headers['X-GH-Token'] = token;
   const data = await _apiFetch(
     `${BASE}/repos/${encodeURIComponent(username)}`,
-    { headers, timeoutError: 'GitHub API request timed out.' },
-    15_000,
+    { headers, timeoutError: 'GitHub API request timed out — check your connection and try again.' },
+    45_000,
   );
   return data.repos;
 }
