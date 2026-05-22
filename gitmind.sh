@@ -80,7 +80,7 @@ _free_ports() {
 
 _wait_healthy() {
   local url="http://localhost:8002/health"
-  local max=30 i=0
+  local max=60 i=0
   printf "  Waiting for backend"
   while (( i < max )); do
     if curl -sf "$url" &>/dev/null; then
