@@ -165,7 +165,7 @@ def _put_session(session_id: str, data: dict) -> None:
 
 
 # ── Simple rate limiter ────────────────────────────────────────────────────────
-# Sliding-window per (endpoint, session_id). No external deps.
+# Sliding-window per (endpoint, client_ip). No external deps.
 
 _rate_data: dict[str, list[float]] = defaultdict(list)
 _rate_lock = threading.Lock()

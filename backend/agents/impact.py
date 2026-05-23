@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 _MODEL           = "llama-3.3-70b-versatile"
 _CACHE_NAMESPACE = "llama-3.3-70b-versatile:merge_prediction"
 _MAX_DIFF_CHARS  = 10_000
+_LLM             = ChatGroq(model=_MODEL, temperature=0.15)
 
 
 def compute_impact(base: dict, pr: dict) -> dict:
@@ -130,8 +131,7 @@ Rules:
 - confidence: "low" if diff was truncated or PR is very large. "high" if full diff was available and analysis is clear.
 - Output ONLY the JSON object. No preamble."""
 
-    llm    = ChatGroq(model=_MODEL, temperature=0.15)
-    raw    = invoke_with_retry(llm, prompt).content.strip()
+    raw    = invoke_with_retry(_LLM, prompt).content.strip()
 
     # Strip markdown code fences if model wrapped it
     if raw.startswith("```"):

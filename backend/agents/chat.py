@@ -8,6 +8,7 @@ from llm_cache import invoke_with_retry
 logger = logging.getLogger(__name__)
 
 _MODEL = "llama-3.3-70b-versatile"
+_LLM   = ChatGroq(model=_MODEL, temperature=0.2)
 
 _SYSTEM_TEMPLATE = """\
 You are a senior software engineer who has read every file in the '{repo_name}' codebase.
@@ -54,8 +55,7 @@ def run_chat_agent(
     repo_name: str,
 ) -> str:
     messages = _build_messages(question, collection_name, chat_history, repo_name)
-    llm      = ChatGroq(model=_MODEL, temperature=0.2)
-    answer   = invoke_with_retry(llm, messages).content
+    answer   = invoke_with_retry(_LLM, messages).content
     logger.debug("Chat agent answered question of length %d", len(question))
     return answer
 
@@ -68,10 +68,9 @@ async def run_chat_agent_stream(
 ):
     """Async generator yielding text tokens for streaming chat responses."""
     messages = _build_messages(question, collection_name, chat_history, repo_name)
-    llm      = ChatGroq(model=_MODEL, temperature=0.2)
     try:
-        async for chunk in llm.astream(messages):
+        async for chunk in _LLM.astream(messages):
             yield chunk.content
     except Exception as exc:
         logger.warning("astream failed (%s), falling back to invoke_with_retry", exc)
-        yield invoke_with_retry(llm, messages).content
+        yield invoke_with_retry(_LLM, messages).content

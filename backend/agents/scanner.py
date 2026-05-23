@@ -51,7 +51,11 @@ def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None =
     else:
         clone_kwargs["no_single_branch"] = True
     try:
-        repo = git.Repo.clone_from(clone_url, dest, **clone_kwargs)
+        repo = git.Repo.clone_from(
+            clone_url, dest,
+            env={"GIT_TERMINAL_PROMPT": "0"},  # never hang waiting for credentials
+            **clone_kwargs,
+        )
         head_sha = repo.head.commit.hexsha
         repo.close()   # prevents resource leak on Windows
     except git.exc.GitCommandError as exc:

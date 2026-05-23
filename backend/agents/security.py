@@ -14,6 +14,9 @@ from llm_cache import get_cached, set_cached, invoke_with_retry
 logger = logging.getLogger(__name__)
 
 _MODEL           = "llama-3.3-70b-versatile"
+_LLM             = ChatGroq(model=_MODEL, temperature=0.1).bind(
+    response_format={"type": "json_object"}
+)
 _CACHE_NAMESPACE = "llama-3.3-70b-versatile:security:json"
 _MAX_FINDINGS    = 40
 _MAX_MSG_CHARS   = 300
@@ -116,11 +119,8 @@ def _triage_with_llm(raw_results: list[dict]) -> list[dict]:
         logger.debug("Security agent: cache hit")
         findings = json.loads(cached).get("findings", [])
     else:
-        llm = ChatGroq(model=_MODEL, temperature=0.1).bind(
-            response_format={"type": "json_object"}
-        )
         try:
-            raw      = invoke_with_retry(llm, prompt).content
+            raw      = invoke_with_retry(_LLM, prompt).content
             findings = json.loads(raw).get("findings", [])
             set_cached(_CACHE_NAMESPACE, prompt, raw)
         except (json.JSONDecodeError, Exception) as exc:

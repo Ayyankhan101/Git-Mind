@@ -77,8 +77,7 @@ def run_architecture_agent(file_tree: list[str], file_contents: dict[str, str]) 
         logger.debug("Architecture agent: cache hit")
         return cached
 
-    llm    = ChatGroq(model=_MODEL, temperature=0)
-    result = invoke_with_retry(llm, prompt).content.strip()
+    result = invoke_with_retry(_LLM, prompt).content.strip()
     result = _strip_fences(result)
     result = _sanitize_mermaid(result)
 
@@ -93,6 +92,7 @@ def run_architecture_agent(file_tree: list[str], file_contents: dict[str, str]) 
 # ── Private helpers ────────────────────────────────────────────────────────────
 
 _ENC = tiktoken.get_encoding("cl100k_base")  # load once at import time
+_LLM = ChatGroq(model=_MODEL, temperature=0)
 
 
 def _build_prompt(file_tree: list[str], file_contents: dict[str, str], primary_lang: str = "Unknown") -> str:

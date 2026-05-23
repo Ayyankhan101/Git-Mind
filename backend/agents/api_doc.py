@@ -12,6 +12,9 @@ _MODEL           = "llama-3.3-70b-versatile"
 _MAX_FILES       = 10
 _MAX_FILE_CHARS  = 6_000
 _CACHE_NAMESPACE = "llama-3.3-70b-versatile:api_doc:json"
+_LLM             = ChatGroq(model=_MODEL, temperature=0).bind(
+    response_format={"type": "json_object"}
+)
 
 # Compiled once — covers FastAPI, Flask, Express, Django, Rails, Spring, NestJS, Gin, Echo
 _ROUTE_PATTERNS: list[re.Pattern] = [
@@ -59,10 +62,6 @@ def run_api_doc_agent(file_contents: dict[str, str]) -> list[dict]:
         logger.info("API doc agent: no route patterns detected")
         return []
 
-    llm = ChatGroq(model=_MODEL, temperature=0).bind(
-        response_format={"type": "json_object"}
-    )
-
     results: list[dict]          = []
     seen:    set[tuple[str, str]] = set()   # dedup on (METHOD, route)
 
@@ -75,7 +74,7 @@ def run_api_doc_agent(file_contents: dict[str, str]) -> list[dict]:
             logger.debug("API doc agent: cache hit for %s", fp)
         else:
             try:
-                raw       = invoke_with_retry(llm, prompt).content
+                raw       = invoke_with_retry(_LLM, prompt).content
                 endpoints = json.loads(raw).get("endpoints", [])
                 set_cached(_CACHE_NAMESPACE, prompt, raw)
             except (json.JSONDecodeError, Exception) as exc:

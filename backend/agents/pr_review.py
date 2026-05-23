@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 _MODEL           = "llama-3.3-70b-versatile"
 _MAX_DIFF_CHARS  = 14_000
 _CACHE_NAMESPACE = "llama-3.3-70b-versatile:pr_review"
+_LLM             = ChatGroq(model=_MODEL, temperature=0.1)
 
 
 def _parse_pr_url(pr_url: str) -> tuple[str, str, str]:
@@ -96,8 +97,7 @@ def run_pr_review(pr_url: str, token: str | None = None) -> dict:
         logger.debug("PR review: cache hit for %s/%s#%s", pr["owner"], pr["repo"], pr["pr_num"])
         review = cached
     else:
-        llm    = ChatGroq(model=_MODEL, temperature=0.1)
-        review = invoke_with_retry(llm, prompt).content.strip()
+        review = invoke_with_retry(_LLM, prompt).content.strip()
         set_cached(_CACHE_NAMESPACE, cache_key, review)
         logger.info("PR review complete for %s/%s#%s", pr["owner"], pr["repo"], pr["pr_num"])
 
