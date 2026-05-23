@@ -35,6 +35,14 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# ── Runtime / generated ───────────────────────────────────────────────────────
+*.log
+backend/analyses/
+backend/.chroma/
+backend/.chroma_registry.json
+docs/
+.claude/
+
 # ── Misc ──────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
@@ -42,3 +50,4 @@ Thumbs.db
 .env.development.local
 .env.test.local
 .env.production.local
+*.pdf

@@ -1,6 +1,6 @@
 # GitMind
 
-Multi-agent repo intelligence platform. Enter a GitHub username (and optionally a PAT for private repos), pick a repo → 7 agents run in parallel → architecture diagram, API docs, security audit, CVE scan, git commit audit, RAG chat, shareable report. Optional Crisis Mode role-plays a security incident with CEO / Legal / Engineering / Reporter agents.
+Multi-agent repository intelligence platform. Enter a GitHub username (and optionally a PAT for private repos), pick a repo — 7 agents run in parallel and produce an architecture diagram, API docs, security audit, CVE scan, git commit audit, RAG chat, and a shareable report. An optional Crisis Mode role-plays a security incident with CEO / Legal / Engineering / Reporter agents.
 
 **Stack:** FastAPI · LangGraph · Groq (llama-3.3-70b-versatile) · ChromaDB · React · Mermaid · semgrep · OSV.dev · diskcache
 
@@ -12,16 +12,16 @@ Multi-agent repo intelligence platform. Enter a GitHub username (and optionally 
 |---|---|
 | **Architecture diagram** | Mermaid graph of component relationships using 24K-token context window; pan/zoom/fullscreen with keyboard shortcuts |
 | **API doc agent** | Extracts every HTTP endpoint (method, route, description, parameters, auth_required) across FastAPI, Flask, Express, Django, Rails, Spring, NestJS, Gin, Echo, and more |
-| **Security auditor** | semgrep SAST scan triaged by llama-3.3-70b; findings include exploit scenario, **remediation step**, and **CWE identifier**; ranked Critical → Low |
-| **CVE scanner** | Checks dependency lockfiles against [OSV.dev](https://osv.dev) — supports PyPI, npm (package-lock/yarn/pnpm), Cargo, Go (go.sum + go.mod), Ruby, and **PHP (composer.lock)** |
-| **Git Audit** | Commit log analysis (100 commits): message quality, hardcoded secret detection, sensitive file tracker |
+| **Security auditor** | semgrep SAST scan triaged by llama-3.3-70b; findings include exploit scenario, remediation step, and CWE identifier; ranked Critical → Low |
+| **CVE scanner** | Checks dependency lockfiles against [OSV.dev](https://osv.dev) — supports PyPI, npm (package-lock/yarn/pnpm), Cargo, Go (go.sum + go.mod), Ruby, and PHP (composer.lock) |
+| **Git audit** | Commit log analysis (100 commits): message quality, hardcoded secret detection, sensitive file tracker |
 | **Auto-fix patches** | Click "Generate Fix" on any finding → unified diff patch from LLM + RAG context |
-| **PR Review** | Paste any GitHub PR URL → structured review with file:line issues and verdict; results cached by PR head SHA |
-| **Predictive PR Impact** | After analyzing a repo, enter a PR URL → LLM merge-risk prediction (low/medium/high/critical), plain-English narrative, affected areas, breaking changes, health score delta, new/fixed findings and CVEs vs base |
-| **Org-wide CVE Dashboard** | Scan all loaded repos for CVEs via GitHub API — cross-repo shared vulnerability detection |
-| **Incident Close Loop** | After Crisis Mode ends, generate a full incident report (timeline, impact, stakeholder statement, remediation checklist, lessons learned) |
+| **PR review** | Paste any GitHub PR URL → structured review with file:line issues and verdict; results cached by PR head SHA |
+| **Predictive PR impact** | After analyzing a repo, enter a PR URL → LLM merge-risk prediction (low/medium/high/critical), plain-English narrative, affected areas, breaking changes, health score delta, new/fixed findings and CVEs vs base |
+| **Org-wide CVE dashboard** | Scan all loaded repos for CVEs via GitHub API — cross-repo shared vulnerability detection |
+| **Incident close loop** | After Crisis Mode ends, generate a full incident report (timeline, impact, stakeholder statement, remediation checklist, lessons learned) |
 | **RAG chat** | Ask anything about the codebase; ChromaDB (8 context chunks) + streaming SSE responses |
-| **Crisis Mode** | Escalation simulation: CEO / Legal / Engineering debate a live incident; reporter publishes if team is too slow |
+| **Crisis Mode** | Escalation simulation: CEO / Legal / Engineering debate a live incident; reporter publishes if the team is too slow |
 | **Shareable links** | Analysis snapshots saved server-side; share via `?share=SESSION_ID` URL |
 | **Export report** | Download full analysis as Markdown |
 | **Private repo access** | Enter a GitHub PAT in the command bar to load and analyze private repositories |
@@ -120,11 +120,11 @@ make smoke        # run pre-demo smoke test
 ## Project layout
 
 ```
-IM-Hackathon/
-├── gitmind.sh           ← Docker launcher (start/stop/restart/status/logs/build/clean)
-├── start.sh             ← Bare-metal start (writes PIDs to .pids)
-├── stop.sh              ← Bare-metal stop/restart
-├── Makefile             ← Shortcuts for both modes
+Git-Mind/
+├── gitmind.sh               ← Docker launcher (start/stop/restart/status/logs/build/clean)
+├── start.sh                 ← Bare-metal start (writes PIDs to .pids)
+├── stop.sh                  ← Bare-metal stop/restart
+├── Makefile                 ← Shortcuts for both modes
 ├── docker-compose.yml       ← Production compose
 ├── docker-compose.dev.yml   ← Dev compose (hot-reload)
 ├── Dockerfile
@@ -146,7 +146,7 @@ IM-Hackathon/
 │       ├── cve_scanner.py   ← OSV.dev CVE lookup (PyPI/npm/Cargo/Go/Ruby/PHP)
 │       ├── git_audit.py     ← Commit log analysis (100 commits) + secret/sensitive-file detection
 │       ├── health.py        ← Health score computation (A–F grade)
-│       ├── impact.py        ← compute_impact() — diffs two analysis snapshots; run_merge_prediction() — LLM risk narrative
+│       ├── impact.py        ← compute_impact() — diffs two snapshots; run_merge_prediction() — LLM risk narrative
 │       ├── pr_review.py     ← GitHub PR diff + LLM review (cached by head SHA)
 │       ├── rag_setup.py     ← ChromaDB ingestion
 │       ├── chat.py          ← RAG query (8 chunks) + SSE streaming
@@ -204,7 +204,7 @@ START
         └─► END
 ```
 
-All 7 post-scanner nodes run in parallel. Each is fully error-isolated — a failure returns safe defaults; the rest of the pipeline continues.
+All 7 post-scanner nodes run in parallel. Each is fully error-isolated — a failure returns safe defaults and the rest of the pipeline continues.
 
 ---
 
@@ -216,12 +216,12 @@ All 7 post-scanner nodes run in parallel. Each is fully error-isolated — a fai
 | `/chat` | POST | `{session_id, question}` → `{answer}` |
 | `/chat/stream` | POST | SSE streaming chat — yields `data: {"token": "..."}` |
 | `/summary` | POST | `{session_id}` → executive summary |
-| `/pr-review` | POST | `{pr_url, token?}` → structured LLM code review |
-| `/pr-impact` | POST | `{pr_url, session_id, token?}` → merge risk prediction + health delta vs base session |
-| `/org-audit` | POST | `{repos: [urls], token?}` → per-repo CVEs + shared vulnerabilities |
+| `/pr-review` | POST | `{pr_url}` — pass `X-GH-Token` header for private repos |
+| `/pr-impact` | POST | `{pr_url, session_id}` — pass `X-GH-Token` header for private repos |
+| `/org-audit` | POST | `{repos: [urls]}` — pass `X-GH-Token` header for private repos |
 | `/incident-report` | POST | `{session_id, finding, crisis_messages, outcome}` → 6-section report |
 | `/fix` | POST | `{session_id, finding}` → unified diff patch |
-| `/fix/pr` | POST | `{session_id, finding, token}` → auto-creates GitHub PR with fix |
+| `/fix/pr` | POST | `{session_id, finding}` — requires `X-GH-Token` header; auto-creates GitHub PR with fix |
 | `/analysis/{session_id}` | GET | Load a saved analysis snapshot (share links) |
 | `/repos/{username}` | GET | List repos — pass `X-GH-Token` header for private repos |
 | `/ws/crisis` | WS | Crisis Mode — streams CEO/Legal/Engineering role-play |
@@ -239,7 +239,7 @@ make smoke
 cd backend && venv/bin/python3 smoke_test.py
 ```
 
-All 10 checks must pass. Fix any failure before going on stage.
+All 10 checks must pass.
 
 ---
 
@@ -247,14 +247,14 @@ All 10 checks must pass. Fix any failure before going on stage.
 
 **In-UI token (per user, recommended)**
 
-Enter a Personal Access Token in the token field (lock icon in the command bar). Stored in `sessionStorage` — clears on browser close.
+Enter a Personal Access Token in the token field (lock icon in the command bar). Stored in `sessionStorage` — clears on browser close. Sent to the backend as the `X-GH-Token` request header — never stored in cookies or request bodies.
 
 - Create at: `github.com/settings/tokens/new` → select **`repo`** scope
-- Enables: loading private repos, analyzing private repos, PR review of private repos
+- Enables: loading private repos, analyzing private repos, PR review of private repos, auto-fix PRs
 
 **Server-side `GITHUB_TOKEN` env var**
 
-Set in `backend/.env`. Applies to all users — useful for raising the public API rate limit (60 → 5 000 req/hr). Does **not** grant access to individual users' private repos.
+Set in `backend/.env`. Applies to all users — useful for raising the public API rate limit (60 → 5 000 req/hr). Does not grant access to individual users' private repos.
 
 ---
 
