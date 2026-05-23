@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import mermaid from 'mermaid';
 import { GitBranch, ZoomOut, ZoomIn, Maximize2, AlertTriangle, Scan, Copy, Expand, Check } from 'lucide-react';
+import NodePanel from './NodePanel';
 
 const LIGHT_THEMES = new Set(['daylight', 'mist']);
 
@@ -29,11 +30,12 @@ function getMermaidConfig(theme) {
 
 let seq = 0;
 
-export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme }) {
+export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme, sessionId, enabled, repoName }) {
   const ref = useRef(null);
-  const [hasError, setHasError] = useState(false);
-  const [ready, setReady]     = useState(false);
-  const [copied, setCopied]   = useState(false);
+  const [hasError,      setHasError]      = useState(false);
+  const [ready,         setReady]         = useState(false);
+  const [copied,        setCopied]        = useState(false);
+  const [selectedNode,  setSelectedNode]  = useState(null);
   const transformRef = useRef({ x: 0, y: 0, scale: 1 });
   const [displayScale, setDisplayScale] = useState(1);
   const dragRef      = useRef(null);
@@ -126,6 +128,7 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme }) {
     if (!ref.current) return;
     setHasError(false);
     setReady(false);
+    setSelectedNode(null);
     try {
       const id = `gm-d-${++seq}`;
       const { svg } = await mermaid.render(id, src);
@@ -139,6 +142,29 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme }) {
       if (svgEl) { svgEl.style.maxWidth = 'none'; svgEl.style.height = 'auto'; }
       fitToScreen();
       setReady(true);
+      // Attach interactive click handlers to every Mermaid node
+      ref.current.querySelectorAll('g.node').forEach(nodeEl => {
+        const fo = nodeEl.querySelector('foreignObject');
+        const label = (
+          fo?.textContent ||
+          nodeEl.querySelector('.label text')?.textContent ||
+          nodeEl.querySelector('text')?.textContent ||
+          ''
+        ).trim().replace(/\s+/g, ' ');
+        if (!label) return;
+        nodeEl.style.cursor = 'pointer';
+        const shapes = nodeEl.querySelectorAll('rect, circle, polygon, ellipse, path');
+        nodeEl.addEventListener('mouseenter', () =>
+          shapes.forEach(s => { s.style.filter = 'brightness(1.25) drop-shadow(0 0 6px var(--primary))'; })
+        );
+        nodeEl.addEventListener('mouseleave', () =>
+          shapes.forEach(s => { s.style.filter = ''; })
+        );
+        nodeEl.addEventListener('click', (e) => {
+          e.stopPropagation();
+          setSelectedNode(label);
+        });
+      });
     } catch (err) {
       console.error('[DiagramTab] Mermaid parse error:', err);
       setHasError(true);
@@ -167,6 +193,7 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme }) {
   useEffect(() => {
     const onKey = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'Escape') { setSelectedNode(null); return; }
       if (e.key === '+' || e.key === '=') {
         const { x, y, scale } = transformRef.current;
         applyTransform(x, y, Math.min(scale + 0.2, 4));
@@ -228,9 +255,19 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme }) {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerLeave={onPointerUp}
+        onClick={() => setSelectedNode(null)}
       >
         <div ref={ref} style={{ display: 'inline-block', transformOrigin: '0 0', willChange: 'transform' }} />
       </div>
+
+      {selectedNode && (
+        <NodePanel
+          node={selectedNode}
+          sessionId={sessionId}
+          enabled={enabled}
+          onClose={() => setSelectedNode(null)}
+        />
+      )}
 
       {/* Bottom toolbar */}
       <div className="arch-legend-row">

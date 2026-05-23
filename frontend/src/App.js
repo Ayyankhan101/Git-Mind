@@ -715,7 +715,7 @@ export default function App() {
           ) : (
             <ErrorBoundary key={activeTab}>
               {activeTab === 'summary'  && <SummaryTab  sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} findings={findings} apiDocs={apiDocs} elapsedSec={elapsedSec} isAnalyzing={isAnalyzing} health={health} />}
-              {activeTab === 'diagram'  && <DiagramTab  diagram={diagram}   isAnalyzing={isAnalyzing} analyzed={analyzed} theme={theme} />}
+              {activeTab === 'diagram'  && <DiagramTab  diagram={diagram}   isAnalyzing={isAnalyzing} analyzed={analyzed} theme={theme} sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} />}
               {activeTab === 'docs'     && <DocsTab     docs={apiDocs}      isAnalyzing={isAnalyzing} analyzed={analyzed} onPickFile={setFilePreview} />}
               {activeTab === 'security' && <SecurityTab findings={findings} isAnalyzing={isAnalyzing} analyzed={analyzed} onCrisis={setCrisisFinding} onFix={handleFix} fixLoading={fixLoading} fixResult={fixResult} onPickFile={setFilePreview} sessionId={SESSION_ID} />}
               {activeTab === 'cve'      && <CveTab      findings={cveFindings} isAnalyzing={isAnalyzing} analyzed={analyzed} />}
