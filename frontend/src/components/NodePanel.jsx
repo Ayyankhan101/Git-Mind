@@ -34,12 +34,15 @@ function ChatMessage({ msg }) {
   );
 }
 
+const RAG_ERR = 'Knowledge base not ready';
+
 export default function NodePanel({ node, sessionId, enabled, onClose }) {
-  const [desc,     setDesc]     = useState('');
-  const [descDone, setDescDone] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const [input,    setInput]    = useState('');
-  const [busy,     setBusy]     = useState(false);
+  const [desc,         setDesc]         = useState('');
+  const [descDone,     setDescDone]     = useState(false);
+  const [ragUnavail,   setRagUnavail]   = useState(false);
+  const [messages,     setMessages]     = useState([]);
+  const [input,        setInput]        = useState('');
+  const [busy,         setBusy]         = useState(false);
   const abortRef    = useRef(null);
   const msgEndRef   = useRef(null);
   const inputRef    = useRef(null);
@@ -52,6 +55,7 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
   useEffect(() => {
     setDesc('');
     setDescDone(false);
+    setRagUnavail(false);
     setMessages([]);
     abortRef.current?.abort();
 
@@ -68,7 +72,11 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
       setDesc(full);
     }, controller.signal)
       .then(() => setDescDone(true))
-      .catch((err) => { if (err.name !== 'AbortError') setDescDone(true); });
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
+        if (err.message?.includes(RAG_ERR)) setRagUnavail(true);
+        setDescDone(true);
+      });
 
     return () => controller.abort();
   }, [node, sessionId, enabled]);
@@ -77,7 +85,7 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
 
   const send = useCallback(async (overrideText) => {
     const text = (overrideText || input).trim();
-    if (!text || busy || !enabled) return;
+    if (!text || busy || !enabled || ragUnavail) return;
     setInput('');
     if (inputRef.current) inputRef.current.style.height = 'auto';
 
@@ -104,15 +112,21 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
       ));
     } catch (err) {
       if (err.name === 'AbortError') return;
-      setMessages(prev => prev.map((m, i) =>
-        i === prev.length - 1 ? { role: 'error', content: `Error: ${err.message}` } : m
-      ));
+      if (err.message?.includes(RAG_ERR)) {
+        setRagUnavail(true);
+        setMessages(prev => prev.filter((_, i) => i < prev.length - 1));
+      } else {
+        setMessages(prev => prev.map((m, i) =>
+          i === prev.length - 1 ? { role: 'error', content: `Error: ${err.message}` } : m
+        ));
+      }
     } finally {
       setBusy(false);
     }
-  }, [input, busy, enabled, sessionId, node]);
+  }, [input, busy, enabled, ragUnavail, sessionId, node]);
 
-  const showSuggestions = descDone && messages.length === 0 && enabled;
+  const chatEnabled     = enabled && !ragUnavail;
+  const showSuggestions = descDone && messages.length === 0 && chatEnabled;
 
   return (
     <div className="node-panel" onClick={e => e.stopPropagation()}>
@@ -128,22 +142,24 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
 
       {/* ── Auto description ────────────────────────────────────── */}
       <div className="node-panel-desc">
-        {!desc && !descDone && (
+        {ragUnavail ? (
+          <span style={{ color: 'var(--warning, #f59e0b)', fontSize: 12, lineHeight: 1.55 }}>
+            Knowledge base unavailable for this session. Re-analyze the repository to enable chat.
+          </span>
+        ) : !desc && !descDone ? (
           <span style={{ color: 'var(--text-3)', fontStyle: 'italic', fontSize: 13 }}>
             Analyzing component<span className="chat-cursor" />
           </span>
-        )}
-        {desc && (
+        ) : desc ? (
           <span style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--text-2)' }}>
             {desc}
             {!descDone && <span className="chat-cursor" />}
           </span>
-        )}
-        {!enabled && !desc && (
+        ) : !enabled ? (
           <span style={{ color: 'var(--text-3)', fontSize: 13, fontStyle: 'italic' }}>
             Analyze a repository to enable node insights.
           </span>
-        )}
+        ) : null}
       </div>
 
       {/* ── Suggested questions ─────────────────────────────────── */}
@@ -189,14 +205,14 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
               if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
               if (e.key === 'Escape') onClose();
             }}
-            disabled={busy || !enabled}
-            placeholder={enabled ? `Ask about ${node}…` : 'Analyze a repo first'}
+            disabled={busy || !chatEnabled}
+            placeholder={ragUnavail ? 'Knowledge base unavailable' : chatEnabled ? `Ask about ${node}…` : 'Analyze a repo first'}
             rows={1}
           />
           <button
             className="node-send-btn"
             onClick={() => send()}
-            disabled={!input.trim() || busy || !enabled}
+            disabled={!input.trim() || busy || !chatEnabled}
           >
             <Send size={13} />
           </button>
