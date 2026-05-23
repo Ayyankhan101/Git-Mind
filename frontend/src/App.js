@@ -26,6 +26,8 @@ import ToastSystem     from './components/ToastSystem';
 import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix } from './api';
 import { LANG_COLOR } from './constants';
 
+const IS_MAC = /Mac/i.test(navigator.userAgentData?.platform ?? navigator.platform);
+
 const SESSION_ID  = sessionStorage.getItem('gm-session-id') || (() => {
   const id = crypto.randomUUID();
   sessionStorage.setItem('gm-session-id', id);
@@ -369,9 +371,8 @@ export default function App() {
 
   // ── Global keyboard shortcuts ─────────────────────────────────────────────────
   useEffect(() => {
-    const isMac = /Mac/i.test(navigator.userAgentData?.platform ?? navigator.platform);
     const onKey = (e) => {
-      const mod = isMac ? e.metaKey : e.ctrlKey;
+      const mod = IS_MAC ? e.metaKey : e.ctrlKey;
       if (showPalette) return; // palette handles its own keys
 
       if (e.key === '?' && !e.ctrlKey && !e.metaKey && !['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) {
@@ -537,8 +538,7 @@ export default function App() {
     ? `Analyzing · ${elapsedSec}s`
     : 'Ready';
 
-  const isMac = /Mac/i.test(navigator.userAgentData?.platform ?? navigator.platform);
-  const mod = isMac ? '⌘' : 'Ctrl';
+  const mod = IS_MAC ? '⌘' : 'Ctrl';
 
   return (
     <div className="app">

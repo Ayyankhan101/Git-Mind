@@ -5,7 +5,7 @@ import subprocess
 import uuid
 from pathlib import Path
 
-_SEMGREP = shutil.which("semgrep") or "semgrep"
+_SEMGREP = shutil.which("semgrep")  # None if not installed
 
 from langchain_groq import ChatGroq
 
@@ -42,7 +42,7 @@ Do NOT include any explanation outside the JSON object.\
 
 
 def run_security_agent(local_path: str) -> list[dict]:
-    if not shutil.which("semgrep"):
+    if not _SEMGREP:
         logger.warning("semgrep not found in PATH — returning synthetic finding")
         return _synthetic_finding()
 

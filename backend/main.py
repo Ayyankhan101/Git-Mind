@@ -436,7 +436,7 @@ async def ws_analyze(ws: WebSocket):
         return
     except Exception as exc:
         logger.error("Analysis pipeline error  session=%s: %s", session_id, exc)
-        await ws.send_json({"error": str(exc)})
+        await ws.send_json({"error": "Analysis failed — check server logs for details."})
         await ws.close()
         return
     else:

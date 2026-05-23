@@ -96,11 +96,9 @@ _ENC = tiktoken.get_encoding("cl100k_base")  # load once at import time
 
 
 def _build_prompt(file_tree: list[str], file_contents: dict[str, str], primary_lang: str = "Unknown") -> str:
-    enc    = _ENC
-    budget = _TOKEN_BUDGET
-
+    budget   = _TOKEN_BUDGET
     tree_str = "\n".join(file_tree[:_MAX_TREE_LINES])
-    budget  -= len(enc.encode(tree_str))
+    budget  -= len(_ENC.encode(tree_str))
 
     # Priority files: those whose path contains domain keywords
     priority = [
@@ -114,7 +112,7 @@ def _build_prompt(file_tree: list[str], file_contents: dict[str, str], primary_l
             continue
         snippet = file_contents[fp][:_MAX_SNIPPET_LEN]
         block   = f"\n\n=== {fp} ===\n{snippet}"
-        cost    = len(enc.encode(block))
+        cost    = len(_ENC.encode(block))
         if budget - cost < 500:   # reserve 500 tokens for system prompt + output
             break
         key_content += block

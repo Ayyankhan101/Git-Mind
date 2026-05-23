@@ -1285,11 +1285,6 @@ input, textarea, select { font-family: inherit; color: inherit; }
   0%, 100% { opacity: 0.4; }
   50%      { opacity: 0.7; }
 }
-.skeleton {
-  background: var(--surface-2);
-  border-radius: 3px;
-  animation: gm-pulse 1.5s ease-in-out infinite;
-}
 
 /* ── Crisis Room ──────────────────────────────────────────── */
 .crisis-backdrop {
@@ -1975,10 +1970,7 @@ input, textarea, select { font-family: inherit; color: inherit; }
   --bloom-1:     rgba(99, 102, 241, 0.28);   /* indigo bloom, top-left */
   --bloom-2:     rgba(56, 189, 248, 0.25);   /* sky bloom, bottom-right */
   --bloom-3:     rgba(217, 70, 239, 0.15);   /* fuchsia hint, center */
-}
-
-[data-theme="mist"] {
-  background: linear-gradient(180deg, #e9edf8 0%, #f3f0fa 100%);
+  background:    linear-gradient(180deg, #e9edf8 0%, #f3f0fa 100%);
 }
 [data-theme="mist"] .meta-strip,
 [data-theme="mist"] .row-expand {
