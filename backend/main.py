@@ -146,8 +146,8 @@ _CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS",
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_CORS_ORIGINS,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["Content-Type", "X-GH-Token"],
 )
 
 # Session store — keyed by session_id UUID, capped at 50 entries (LRU eviction)
@@ -203,7 +203,6 @@ class SummaryRequest(BaseModel):
 
 class PRReviewRequest(BaseModel):
     pr_url: str
-    token:  str | None = None
 
 class FixRequest(BaseModel):
     session_id: str
@@ -212,16 +211,13 @@ class FixRequest(BaseModel):
 class AutoPRRequest(BaseModel):
     session_id: str
     finding:    dict
-    token:      str
 
 class PRImpactRequest(BaseModel):
     pr_url:     str
     session_id: str
-    token:      str | None = None
 
 class OrgAuditRequest(BaseModel):
     repos: list[str]
-    token: str | None = None
 
 class IncidentReportRequest(BaseModel):
     session_id:      str
@@ -523,10 +519,11 @@ async def ws_analyze(ws: WebSocket):
 # ── Chat endpoint ──────────────────────────────────────────────────────────────
 
 @app.post("/chat")
-async def chat_endpoint(req: ChatRequest):
+async def chat_endpoint(req: ChatRequest, request: Request):
     if not _UUID_RE.match(req.session_id):
         return {"error": "Invalid session ID"}
-    if not _rate_ok("chat", req.session_id):
+    client_ip = request.client.host if request.client else "unknown"
+    if not _rate_ok("chat", client_ip):
         return {"error": "Rate limit exceeded — slow down"}
 
     session = _get_session(req.session_id)
@@ -555,7 +552,7 @@ async def chat_endpoint(req: ChatRequest):
 # ── Streaming chat ─────────────────────────────────────────────────────────────
 
 @app.post("/chat/stream")
-async def chat_stream_endpoint(req: ChatRequest):
+async def chat_stream_endpoint(req: ChatRequest, request: Request):
     from agents.chat import run_chat_agent_stream
 
     if not _UUID_RE.match(req.session_id):
@@ -563,7 +560,8 @@ async def chat_stream_endpoint(req: ChatRequest):
             yield f"data: {json.dumps({'error': 'Invalid session ID'})}\n\n"
         return StreamingResponse(_bad(), media_type="text/event-stream")
 
-    if not _rate_ok("chat", req.session_id):
+    client_ip = request.client.host if request.client else "unknown"
+    if not _rate_ok("chat", client_ip):
         async def _limited():
             yield f"data: {json.dumps({'error': 'Rate limit exceeded — slow down'})}\n\n"
         return StreamingResponse(_limited(), media_type="text/event-stream")
@@ -605,13 +603,14 @@ async def chat_stream_endpoint(req: ChatRequest):
 # ── Executive summary ──────────────────────────────────────────────────────────
 
 @app.post("/summary")
-async def summary_endpoint(req: SummaryRequest):
+async def summary_endpoint(req: SummaryRequest, request: Request):
     from chroma_utils import search_codebase
     from langchain_groq import ChatGroq
 
     if not _UUID_RE.match(req.session_id):
         return {"error": "Invalid session ID"}
-    if not _rate_ok("summary", req.session_id):
+    client_ip = request.client.host if request.client else "unknown"
+    if not _rate_ok("summary", client_ip):
         return {"error": "Rate limit exceeded — slow down"}
 
     session = _get_session(req.session_id)
@@ -678,31 +677,32 @@ async def get_analysis(session_id: str):
 # ── PR Review ──────────────────────────────────────────────────────────────────
 
 @app.post("/pr-review")
-async def pr_review_endpoint(req: PRReviewRequest):
+async def pr_review_endpoint(req: PRReviewRequest, request: Request):
     from agents.pr_review import run_pr_review
     if not _rate_ok("pr", req.pr_url):
         return {"error": "Rate limit exceeded — slow down"}
-    token = req.token or os.getenv("GITHUB_TOKEN")
+    token = request.headers.get("X-GH-Token", "").strip() or os.getenv("GITHUB_TOKEN")
     try:
         result = await asyncio.to_thread(run_pr_review, req.pr_url, token)
         return result
-    except ValueError as exc:
-        return {"error": str(exc)}
+    except ValueError:
+        return {"error": "Invalid PR URL or insufficient GitHub permissions"}
     except Exception as exc:
         logger.error("PR review failed: %s", exc)
-        return {"error": f"Review failed — {exc}"}
+        return {"error": "PR review failed — check the URL and try again"}
 
 
 # ── Auto-fix generation ─────────────────────────────────────────────────────────
 
 @app.post("/fix")
-async def fix_endpoint(req: FixRequest):
+async def fix_endpoint(req: FixRequest, request: Request):
     from chroma_utils import search_codebase
     from langchain_groq import ChatGroq
 
     if not _UUID_RE.match(req.session_id):
         return {"error": "Invalid session ID"}
-    if not _rate_ok("fix", req.session_id):
+    client_ip = request.client.host if request.client else "unknown"
+    if not _rate_ok("fix", client_ip):
         return {"error": "Rate limit exceeded — slow down"}
 
     session = _get_session(req.session_id)
@@ -778,13 +778,15 @@ def _apply_and_push_pr(
         subprocess.run(["git", "config", "user.name",  "GitMind Bot"],         cwd=dest, check=True, capture_output=True)
         subprocess.run(["git", "checkout", "-b", branch], cwd=dest, check=True, capture_output=True)
 
+        if ".." in patch:
+            raise ValueError("Patch content references parent directory — rejected")
         proc = subprocess.run(
-            ["patch", "-p1", "--forward"],
+            ["patch", "-p1", "--forward", f"--directory={dest}"],
             input=patch, text=True, cwd=dest,
             capture_output=True, timeout=15,
         )
         if proc.returncode not in (0, 1):
-            raise RuntimeError(f"patch failed: {proc.stderr[:300]}")
+            raise RuntimeError("patch command failed")
 
         subprocess.run(["git", "add", "-A"],                            cwd=dest, check=True, capture_output=True)
         msg = f"fix: {finding.get('title', 'security fix')} [{finding.get('rule','gitmind')}]"
@@ -838,17 +840,19 @@ def _apply_and_push_pr(
 # ── Auto-PR endpoint ──────────────────────────────────────────────────────────
 
 @app.post("/fix/pr")
-async def auto_pr_endpoint(req: AutoPRRequest):
+async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
     from chroma_utils import search_codebase
     from langchain_groq import ChatGroq
 
     if not _UUID_RE.match(req.session_id):
         return {"error": "Invalid session ID"}
-    if not _rate_ok("fix", req.session_id):
+    client_ip = request.client.host if request.client else "unknown"
+    if not _rate_ok("fix", client_ip):
         return {"error": "Rate limit exceeded"}
 
-    if not req.token or not req.token.strip():
-        return {"error": "GitHub token is required"}
+    token = request.headers.get("X-GH-Token", "").strip() or None
+    if not token:
+        return {"error": "GitHub token required — send X-GH-Token header"}
 
     session = _get_session(req.session_id)
     if not session:
@@ -886,13 +890,13 @@ async def auto_pr_endpoint(req: AutoPRRequest):
 
     try:
         result = await asyncio.to_thread(
-            _apply_and_push_pr, repo_url, raw_patch, finding, req.token, session["repo_name"]
+            _apply_and_push_pr, repo_url, raw_patch, finding, token, session["repo_name"]
         )
         logger.info("Auto-PR created: %s", result.get("pr_url"))
         return result
     except Exception as exc:
         logger.error("Auto-PR failed: %s", exc)
-        return {"error": str(exc)}
+        return {"error": "Auto-PR failed — check token permissions and repo access"}
 
 
 # ── Crisis WebSocket (Section 9 stretch) ──────────────────────────────────────
@@ -1107,7 +1111,7 @@ async def list_open_prs(owner: str, repo: str, request: Request):
 
 
 @app.post("/pr-impact")
-async def pr_impact_endpoint(req: PRImpactRequest):
+async def pr_impact_endpoint(req: PRImpactRequest, request: Request):
     from agents.scanner import clone_and_scan, _GITHUB_URL_RE
     from agents.security import run_security_agent
     from agents.cve_scanner import run_cve_scanner
@@ -1130,7 +1134,7 @@ async def pr_impact_endpoint(req: PRImpactRequest):
     if not base_session:
         return {"error": "Session not found — analyze the base repo first"}
 
-    token = req.token or os.getenv("GITHUB_TOKEN")
+    token = request.headers.get("X-GH-Token", "").strip() or os.getenv("GITHUB_TOKEN")
     gh_headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}
     if token:
         gh_headers["Authorization"] = f"Bearer {token}"
@@ -1233,7 +1237,7 @@ async def pr_impact_endpoint(req: PRImpactRequest):
         }
     except Exception as exc:
         logger.error("PR impact failed: %s", exc)
-        return {"error": str(exc)}
+        return {"error": "PR impact analysis failed — check the PR URL and permissions"}
     finally:
         if local_path:
             shutil.rmtree(local_path, ignore_errors=True)
@@ -1262,7 +1266,7 @@ async def org_audit_endpoint(req: OrgAuditRequest, request: Request):
     if not _rate_ok("org_audit", client_ip):
         return {"error": "Rate limit exceeded — max 3 org audits per minute"}
 
-    token = req.token or os.getenv("GITHUB_TOKEN")
+    token = request.headers.get("X-GH-Token", "").strip() or os.getenv("GITHUB_TOKEN")
     gh_headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}
     if token:
         gh_headers["Authorization"] = f"Bearer {token}"
@@ -1301,7 +1305,8 @@ async def org_audit_endpoint(req: OrgAuditRequest, request: Request):
                 "error":        None,
             }
         except Exception as exc:
-            return {"repo_url": repo_url, "repo_name": repo_url.split("/")[-1], "error": str(exc), "cve_findings": [], "cve_count": 0}
+            logger.error("CVE scan failed for %s: %s", repo_url, exc)
+            return {"repo_url": repo_url, "repo_name": repo_url.split("/")[-1], "error": "Scan failed", "cve_findings": [], "cve_count": 0}
 
     results = await asyncio.gather(*[_scan_repo(url) for url in req.repos])
 
@@ -1339,12 +1344,13 @@ async def org_audit_endpoint(req: OrgAuditRequest, request: Request):
 # ── Incident Close Loop ────────────────────────────────────────────────────────
 
 @app.post("/incident-report")
-async def incident_report_endpoint(req: IncidentReportRequest):
+async def incident_report_endpoint(req: IncidentReportRequest, request: Request):
     from langchain_groq import ChatGroq
 
     if not _UUID_RE.match(req.session_id):
         return {"error": "Invalid session ID"}
-    if not _rate_ok("summary", req.session_id):
+    client_ip = request.client.host if request.client else "unknown"
+    if not _rate_ok("summary", client_ip):
         return {"error": "Rate limit exceeded — slow down"}
 
     session = _get_session(req.session_id)
@@ -1421,7 +1427,7 @@ Be specific and professional. Use the actual vulnerability details."""
         }
     except Exception as exc:
         logger.error("Incident report failed: %s", exc)
-        return {"error": str(exc)}
+        return {"error": "Incident report generation failed"}
 
 
 # ── Health check ───────────────────────────────────────────────────────────────

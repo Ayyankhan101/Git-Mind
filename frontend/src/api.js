@@ -36,10 +36,10 @@ async function _apiFetch(url, options = {}, timeoutMs = 30_000) {
   return data;
 }
 
-function _post(url, body, timeoutMs, timeoutError) {
+function _post(url, body, timeoutMs, timeoutError, extraHeaders = {}) {
   return _apiFetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...extraHeaders },
     body: JSON.stringify(body),
     timeoutError,
   }, timeoutMs);
@@ -63,22 +63,30 @@ export function fetchSummary(sessionId) {
 export function reviewPR(prUrl, token = null) {
   return _post(
     `${BASE}/pr-review`,
-    { pr_url: prUrl, ...(token ? { token } : {}) },
+    { pr_url: prUrl },
     90_000,
     'PR review timed out — large diffs may take longer.',
+    token ? { 'X-GH-Token': token } : {},
   );
 }
 
 export function createFixPR(sessionId, finding, token) {
-  return _post(`${BASE}/fix/pr`, { session_id: sessionId, finding, token }, 120_000, 'Auto-PR timed out.');
+  return _post(
+    `${BASE}/fix/pr`,
+    { session_id: sessionId, finding },
+    120_000,
+    'Auto-PR timed out.',
+    token ? { 'X-GH-Token': token } : {},
+  );
 }
 
 export function prImpact(prUrl, sessionId, token = null) {
   return _post(
     `${BASE}/pr-impact`,
-    { pr_url: prUrl, session_id: sessionId, ...(token ? { token } : {}) },
+    { pr_url: prUrl, session_id: sessionId },
     120_000,
     'Impact analysis timed out — large repos may take longer.',
+    token ? { 'X-GH-Token': token } : {},
   );
 }
 
@@ -95,9 +103,10 @@ export function fetchOpenPRs(owner, repo, token = null) {
 export function orgAudit(repos, token = null) {
   return _post(
     `${BASE}/org-audit`,
-    { repos, ...(token ? { token } : {}) },
+    { repos },
     90_000,
     'Org audit timed out.',
+    token ? { 'X-GH-Token': token } : {},
   );
 }
 

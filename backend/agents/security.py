@@ -5,6 +5,8 @@ import subprocess
 import uuid
 from pathlib import Path
 
+_SEMGREP = shutil.which("semgrep") or "semgrep"
+
 from langchain_groq import ChatGroq
 
 from llm_cache import get_cached, set_cached, invoke_with_retry
@@ -63,7 +65,7 @@ def _run_semgrep(local_path: str) -> list[dict]:
     try:
         proc = subprocess.run(
             [
-                "semgrep", "--config=auto", "--json", "--quiet",
+                _SEMGREP, "--config=auto", "--json", "--quiet",
                 "--timeout", "30",          # per-rule timeout (seconds)
                 "--timeout-threshold", "3", # skip a rule after 3 file timeouts
                 "--max-target-bytes", "524288",  # skip files > 512 KB

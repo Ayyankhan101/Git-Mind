@@ -79,8 +79,8 @@ def run_merge_prediction(
         logger.debug("merge_prediction: cache hit %s", cache_key)
         try:
             return json.loads(cached)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("merge_prediction: cache decode failed: %s", exc)
 
     truncated_diff = diff[:_MAX_DIFF_CHARS]
     diff_note = "⚠ Diff truncated to first 10 000 chars.\n" if len(diff) > _MAX_DIFF_CHARS else ""

@@ -55,8 +55,8 @@ def _load_registry() -> dict[str, float]:
 def _save_registry(reg: dict[str, float]) -> None:
     try:
         _REGISTRY_PATH.write_text(json.dumps(reg))
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("registry write failed: %s", exc)
 
 
 def _register_collection(name: str) -> None:
@@ -192,8 +192,8 @@ def delete_collection(name: str) -> None:
     try:
         _client.delete_collection(name)
         logger.info("Deleted collection '%s'", name)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("delete_collection failed for '%s': %s", name, exc)
 
 
 def prune_old_collections(max_age_seconds: int = _COLLECTION_TTL) -> int:

@@ -1,7 +1,10 @@
 import logging
+import shutil
 import subprocess
 from datetime import datetime
 from pathlib import Path
+
+_GIT = shutil.which("git") or "git"
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +30,7 @@ def _blame_line(local_path: str, rel_file: str, line: int | None) -> dict | None
         return None
     try:
         result = subprocess.run(
-            ["git", "blame", "-L", f"{line},{line}", "--porcelain", rel_file],
+            [_GIT, "blame", "-L", f"{line},{line}", "--porcelain", rel_file],
             capture_output=True, text=True, timeout=8, cwd=local_path, shell=False,
         )
         if result.returncode != 0 or not result.stdout:
