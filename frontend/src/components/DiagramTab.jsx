@@ -39,6 +39,7 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme, sess
   const transformRef = useRef({ x: 0, y: 0, scale: 1 });
   const [displayScale, setDisplayScale] = useState(1);
   const dragRef      = useRef(null);
+  const movedRef     = useRef(false);   // true when pointer moved > 4px — distinguishes drag from click
   const canvasRef    = useRef(null);
   const rafRef       = useRef(null);
   const mountedRef   = useRef(false);
@@ -61,13 +62,15 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme, sess
     if (e.button !== 0) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     const { x, y } = transformRef.current;
-    dragRef.current = { startX: e.clientX, startY: e.clientY, originX: x, originY: y };
+    dragRef.current  = { startX: e.clientX, startY: e.clientY, originX: x, originY: y };
+    movedRef.current = false;
   }, []);
 
   const onPointerMove = useCallback((e) => {
     if (!dragRef.current) return;
     const dx = e.clientX - dragRef.current.startX;
     const dy = e.clientY - dragRef.current.startY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) movedRef.current = true;
     const { scale } = transformRef.current;
     applyTransform(dragRef.current.originX + dx, dragRef.current.originY + dy, scale);
   }, [applyTransform]);
@@ -142,16 +145,8 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme, sess
       if (svgEl) { svgEl.style.maxWidth = 'none'; svgEl.style.height = 'auto'; }
       fitToScreen();
       setReady(true);
-      // Attach interactive click handlers to every Mermaid node
+      // Hover highlight on every Mermaid node (click handled at canvas level)
       ref.current.querySelectorAll('g.node').forEach(nodeEl => {
-        const fo = nodeEl.querySelector('foreignObject');
-        const label = (
-          fo?.textContent ||
-          nodeEl.querySelector('.label text')?.textContent ||
-          nodeEl.querySelector('text')?.textContent ||
-          ''
-        ).trim().replace(/\s+/g, ' ');
-        if (!label) return;
         nodeEl.style.cursor = 'pointer';
         const shapes = nodeEl.querySelectorAll('rect, circle, polygon, ellipse, path');
         nodeEl.addEventListener('mouseenter', () =>
@@ -160,10 +155,6 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme, sess
         nodeEl.addEventListener('mouseleave', () =>
           shapes.forEach(s => { s.style.filter = ''; })
         );
-        nodeEl.addEventListener('click', (e) => {
-          e.stopPropagation();
-          setSelectedNode(label);
-        });
       });
     } catch (err) {
       console.error('[DiagramTab] Mermaid parse error:', err);
@@ -255,7 +246,25 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme, sess
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerLeave={onPointerUp}
-        onClick={() => setSelectedNode(null)}
+        onClick={(e) => {
+          // Pointer capture redirects pointerup to the canvas, so clicks on child SVG
+          // nodes fire on the canvas too. Use elementFromPoint (visual hit-test) to
+          // find the actual node under the cursor, skipping drag gestures.
+          if (movedRef.current) { movedRef.current = false; return; }
+          const hit     = document.elementFromPoint(e.clientX, e.clientY);
+          const nodeEl  = hit?.closest?.('g.node');
+          if (nodeEl) {
+            const fo    = nodeEl.querySelector('foreignObject');
+            const label = (
+              fo?.textContent ||
+              nodeEl.querySelector('.label text')?.textContent ||
+              nodeEl.querySelector('text')?.textContent ||
+              ''
+            ).trim().replace(/\s+/g, ' ');
+            if (label) { setSelectedNode(label); return; }
+          }
+          setSelectedNode(null);
+        }}
       >
         <div ref={ref} style={{ display: 'inline-block', transformOrigin: '0 0', willChange: 'transform' }} />
       </div>
