@@ -50,4 +50,6 @@ COPY --from=frontend-builder /app/build /var/www/html
 COPY nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 8001 80
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD curl -sf http://localhost:8001/health | python3 -c "import sys,json; d=json.load(sys.stdin); sys.exit(0 if d.get('status')=='ok' else 1)"
 CMD sh -c "nginx && uvicorn main:app --host 0.0.0.0 --port 8001"
