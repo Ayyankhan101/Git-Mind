@@ -5,6 +5,7 @@ from operator import add
 class RepoState(TypedDict):
     # ── Input ─────────────────────────────────────────────────────────────────
     repo_url: str
+    gh_token: str | None
 
     # ── Scanner output ────────────────────────────────────────────────────────
     local_path:    str | None

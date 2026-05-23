@@ -189,6 +189,12 @@ def _rate_ok(endpoint: str, key: str) -> bool:
             return False
         hits.append(now)
         _rate_data[bucket] = hits
+        # Sweep stale buckets every ~200 calls to prevent unbounded growth
+        if len(_rate_data) > 500:
+            cutoff = now - 300  # 5-minute max window
+            stale = [k for k, v in _rate_data.items() if not any(t > cutoff for t in v)]
+            for k in stale:
+                del _rate_data[k]
         return True
 
 
@@ -1434,4 +1440,19 @@ Be specific and professional. Use the actual vulnerability details."""
 
 @app.get("/health")
 def health():
-    return {"status": "running", "sessions_active": len(sessions)}
+    checks: dict[str, bool] = {}
+    checks["groq_key"] = bool(os.getenv("GROQ_API_KEY"))
+    try:
+        import chromadb as _cdb
+        _cdb.Client().list_collections()
+        checks["chromadb"] = True
+    except Exception:
+        checks["chromadb"] = False
+    checks["semgrep"] = bool(__import__("shutil").which("semgrep"))
+    checks["git"] = bool(__import__("shutil").which("git"))
+    all_ok = all(checks.values())
+    return {
+        "status":          "ok" if all_ok else "degraded",
+        "sessions_active": len(sessions),
+        "checks":          checks,
+    }

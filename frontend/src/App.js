@@ -26,7 +26,11 @@ import ToastSystem     from './components/ToastSystem';
 import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix } from './api';
 import { LANG_COLOR } from './constants';
 
-const SESSION_ID  = crypto.randomUUID();
+const SESSION_ID  = sessionStorage.getItem('gm-session-id') || (() => {
+  const id = crypto.randomUUID();
+  sessionStorage.setItem('gm-session-id', id);
+  return id;
+})();
 const WS_URL      = `${WS_BASE}/ws/analyze`;
 const TIMEOUT_MS  = 180_000;
 const AGENT_KEYS  = ['scanner','architecture','api_docs','security','cve_scanner','chat','git_audit'];
