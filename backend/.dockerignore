@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+.chroma/
+.chroma_registry.json
+.llm_cache/
+analyses/*.json
+analyses/_sha_index.json
+.env
+*.log
+.git/
