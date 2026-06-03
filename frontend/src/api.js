@@ -16,6 +16,24 @@ function deriveHttpBase() {
 export const BASE    = deriveHttpBase();
 export const WS_BASE = BASE.replace(/^http/, 'ws');
 
+// Coerce any backend error shape into a readable string. FastAPI validation
+// errors arrive as `detail: [{ msg, loc, ... }]`; some endpoints return a plain
+// `error` string or an object. Never let an object stringify to "[object Object]".
+function _extractError(payload, fallback) {
+  if (payload == null) return fallback;
+  if (typeof payload === 'string') return payload;
+  if (Array.isArray(payload)) {
+    const parts = payload.map(p => _extractError(p, '')).filter(Boolean);
+    return parts.length ? parts.join('; ') : fallback;
+  }
+  if (typeof payload === 'object') {
+    return payload.error || payload.detail || payload.msg || payload.message
+      ? _extractError(payload.error ?? payload.detail ?? payload.msg ?? payload.message, fallback)
+      : fallback;
+  }
+  return String(payload);
+}
+
 async function _apiFetch(url, options = {}, timeoutMs = 30_000) {
   const { timeoutError, ...fetchOpts } = options;
   fetchOpts.signal = AbortSignal.timeout(timeoutMs);
@@ -28,11 +46,11 @@ async function _apiFetch(url, options = {}, timeoutMs = 30_000) {
   }
   if (!res.ok) {
     let msg = `Server error ${res.status}`;
-    try { const j = await res.json(); msg = j.error || j.detail || msg; } catch {}
+    try { const j = await res.json(); msg = _extractError(j, msg); } catch {}
     throw new Error(msg);
   }
   const data = await res.json();
-  if (data.error) throw new Error(data.error);
+  if (data.error) throw new Error(_extractError(data.error, 'Request failed'));
   return data;
 }
 

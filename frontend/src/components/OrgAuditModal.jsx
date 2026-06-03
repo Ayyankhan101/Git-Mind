@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { X, Package, AlertTriangle, CheckCircle, Building2, ShieldAlert } from 'lucide-react';
 import { orgAudit } from '../api';
 
+// Backend caps each org audit at 20 repos (fans out N× GitHub API calls).
+const MAX_ORG_REPOS = 20;
+
 function SeverityDot({ sev }) {
   const c = sev === 'critical' ? 'var(--danger)' : sev === 'high' ? '#f97316' : sev === 'medium' ? 'var(--warning)' : 'var(--text-3)';
   return <span style={{ width: 7, height: 7, borderRadius: '50%', background: c, display: 'inline-block', flexShrink: 0 }} />;
@@ -57,12 +60,15 @@ export default function OrgAuditModal({ repos, token, onClose }) {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState(null);
 
+  const scanList = repos.slice(0, MAX_ORG_REPOS);
+  const truncated = repos.length > MAX_ORG_REPOS;
+
   const run = async () => {
     setLoading(true);
     setError(null);
     setResult(null);
     try {
-      const data = await orgAudit(repos.map(r => r.url || r), token);
+      const data = await orgAudit(scanList.map(r => r.url || r), token);
       setResult(data);
     } catch (err) {
       setError(err.message);
@@ -97,9 +103,10 @@ export default function OrgAuditModal({ repos, token, onClose }) {
           {!result && !loading && !error && (
             <div style={{ padding: '32px 24px', textAlign: 'center' }}>
               <Package size={28} strokeWidth={1} style={{ color: 'var(--text-3)', marginBottom: 12 }} />
-              <div style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 6 }}>Scan {repos.length} repos for CVEs</div>
+              <div style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 6 }}>Scan {scanList.length} repos for CVEs</div>
               <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 20 }}>
                 Fetches dependency files via GitHub API (no clone). Identifies vulnerabilities shared across repos.
+                {truncated && ` Limited to the first ${MAX_ORG_REPOS} of ${repos.length} repos.`}
               </div>
               <button className="btn btn-primary" onClick={run}>Run Org Audit</button>
             </div>
@@ -108,7 +115,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
           {loading && (
             <div style={{ padding: '40px 24px', textAlign: 'center' }}>
               <span className="spinner" style={{ width: 20, height: 20, marginBottom: 12 }} />
-              <div style={{ fontSize: 13, color: 'var(--text-3)' }}>Scanning {repos.length} repositories…</div>
+              <div style={{ fontSize: 13, color: 'var(--text-3)' }}>Scanning {scanList.length} repositories…</div>
             </div>
           )}
 
