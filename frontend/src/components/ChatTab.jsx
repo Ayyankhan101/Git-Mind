@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageSquare } from 'lucide-react';
 import { postChatStream } from '../api';
 
 function Message({ msg }) {

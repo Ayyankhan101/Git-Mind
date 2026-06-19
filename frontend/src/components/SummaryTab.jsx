@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, FileCode2, ShieldAlert, Zap, TrendingUp } from 'lucide-react';
+import { BarChart3, FileCode2, ShieldAlert, Zap } from 'lucide-react';
 import { fetchSummary } from '../api';
 import HealthCard from './HealthCard';
 

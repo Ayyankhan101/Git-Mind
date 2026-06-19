@@ -2,7 +2,7 @@
 
 Multi-agent repository intelligence platform. Enter a GitHub username (and optionally a PAT for private repos), pick a repo — 7 agents run in parallel and produce an architecture diagram, API docs, security audit, CVE scan, git commit audit, RAG chat, and a shareable report. An optional Crisis Mode role-plays a security incident with CEO / Legal / Engineering / Reporter agents.
 
-**Stack:** FastAPI · LangGraph · Groq (llama-3.3-70b-versatile) · ChromaDB · React · Mermaid · semgrep · OSV.dev · diskcache
+**Stack:** FastAPI · LangGraph · Groq (llama-3.3-70b-versatile) · ChromaDB · PostgreSQL / SQLAlchemy · React · Mermaid · semgrep · OSV.dev · diskcache
 
 ---
 
@@ -34,15 +34,18 @@ Multi-agent repository intelligence platform. Enter a GitHub username (and optio
 cp backend/.env.example backend/.env
 # Edit backend/.env — add GROQ_API_KEY=gsk_...
 
-./gitmind.sh start          # dev mode:  frontend :3002, backend :8002
-./gitmind.sh start prod     # prod mode: frontend :80,   backend :8002
+docker compose up -d --build        # PostgreSQL + app + nginx
+# Frontend: http://localhost:80
+# Backend:  http://localhost:8002/health
 ```
 
-| URL | Service |
-|---|---|
-| http://localhost:3002 | Frontend (dev) |
-| http://localhost:80 | Frontend (prod) |
-| http://localhost:8002 | Backend API |
+### Dev mode (hot-reload)
+
+```bash
+docker compose -f docker-compose.dev.yml up -d --build
+# Frontend: http://localhost:3002
+# Backend:  http://localhost:8002/health
+```
 
 ---
 
@@ -51,69 +54,33 @@ cp backend/.env.example backend/.env
 ```bash
 cp backend/.env.example backend/.env
 # Edit backend/.env — add GROQ_API_KEY=gsk_...
+# Set DATABASE_URL=sqlite+aiosqlite:///./gitmind.db  (default)
 
 ./start.sh          # starts backend (:8002) + frontend (:3000)
 ./stop.sh           # stops both
 ./stop.sh restart   # restart both
 ```
 
-Logs are written to `logs/backend.log` and `logs/frontend.log`.
-
----
-
-## Script reference
-
-### `gitmind.sh` — Docker launcher
-
-```
-./gitmind.sh <command> [dev|prod]
-```
-
-| Command | Description |
-|---|---|
-| `start [dev\|prod]` | Build images and start containers (detached). Default: `dev` |
-| `stop [dev\|prod]` | Gracefully stop containers (`--timeout 10`) |
-| `restart [dev\|prod]` | Restart running containers |
-| `status [dev\|prod]` | Show container and port status |
-| `logs [dev\|prod]` | Tail live container logs (Ctrl+C to exit) |
-| `build [dev\|prod]` | Rebuild Docker images without starting |
-| `clean [dev\|prod]` | Stop containers and delete volumes (ChromaDB data lost) |
-
-### `start.sh` / `stop.sh` — Bare-metal launcher
-
-| Command | Description |
-|---|---|
-| `./start.sh` | Start backend + frontend, write PIDs to `.pids` |
-| `./stop.sh` | Graceful stop (SIGTERM → SIGKILL after 5 s) |
-| `./stop.sh restart` | Stop then start |
-
-### `Makefile` shortcuts
-
+For PostgreSQL locally:
 ```bash
-make dev          # docker dev start
-make prod         # docker prod start
-make stop         # docker dev stop
-make restart      # docker dev restart
-make logs         # docker dev logs
-make status       # container + port status
-make build        # rebuild dev images
-make clean        # remove dev containers + volumes
-make start        # bare-metal start
-make bare-stop    # bare-metal stop
-make bare-restart # bare-metal restart
-make smoke        # run pre-demo smoke test
+# Start a local PG and set:
+DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/gitmind
 ```
+
+Logs are written to `logs/backend.log` and `logs/frontend.log`.
 
 ---
 
 ## Environment variables
 
-| Variable | Required | Description |
-|---|---|---|
-| `GROQ_API_KEY` | Yes | Groq API key — free at [console.groq.com](https://console.groq.com) |
-| `GITHUB_TOKEN` | No | Server-side GitHub PAT — raises rate limit to 5 000 req/hr for all users |
-| `CORS_ORIGINS` | No | Comma-separated allowed origins (default: `http://localhost:3000,…`) |
-| `REACT_APP_API_BASE` | No | Backend base URL (default: auto-derived from `window.location`) |
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `GROQ_API_KEY` | Yes | — | Groq API key — free at [console.groq.com](https://console.groq.com) |
+| `DATABASE_URL` | No | `sqlite+aiosqlite:///./gitmind.db` | SQLite for local dev; PostgreSQL+asyncpg for production |
+| `GITHUB_TOKEN` | No | — | Server-side GitHub PAT — raises rate limit to 5 000 req/hr for all users |
+| `WS_AUTH_SECRET` | No | — | If set, WebSocket clients must send a matching `ws_auth_secret` in their initial payload |
+| `CORS_ORIGINS` | No | `http://localhost:3000,…` | Comma-separated allowed origins |
+| `REACT_APP_API_BASE` | No | auto-derived | Backend base URL for the frontend |
 
 ---
 
@@ -121,72 +88,76 @@ make smoke        # run pre-demo smoke test
 
 ```
 Git-Mind/
-├── gitmind.sh               ← Docker launcher (start/stop/restart/status/logs/build/clean)
-├── start.sh                 ← Bare-metal start (writes PIDs to .pids)
-├── stop.sh                  ← Bare-metal stop/restart
-├── Makefile                 ← Shortcuts for both modes
-├── docker-compose.yml       ← Production compose
-├── docker-compose.dev.yml   ← Dev compose (hot-reload)
-├── Dockerfile
+├── docker-compose.yml          ← Production compose (PostgreSQL + app + nginx)
+├── docker-compose.dev.yml      ← Dev compose (hot-reload + PostgreSQL)
+├── Dockerfile                  ← Multi-stage: backend-builder → frontend-builder → production runner
 ├── nginx.conf
+├── start.sh                    ← Bare-metal launcher
+├── stop.sh                     ← Bare-metal stop/restart
 ├── backend/
-│   ├── main.py              ← All HTTP + WebSocket endpoints
-│   ├── orchestrator.py      ← LangGraph analysis + crisis graphs
-│   ├── state.py             ← RepoState TypedDict (Annotated reducers)
-│   ├── chroma_utils.py      ← ChromaDB helpers (writable-dir fallback)
-│   ├── llm_cache.py         ← diskcache wrapper with retry
-│   ├── smoke_test.py        ← Pre-demo health check (10 checks)
+│   ├── main.py                 ← FastAPI app (lifespan, CORS, telemetry, routers, /health, /task/{id})
+│   ├── orchestrator.py         ← LangGraph analysis + crisis graphs
+│   ├── state.py                ← RepoState TypedDict (Annotated reducers)
+│   ├── chroma_utils.py         ← ChromaDB helpers (writable-dir fallback)
+│   ├── llm_cache.py            ← diskcache wrapper with retry
+│   ├── models/
+│   │   ├── requests.py         ← Pydantic request models (8 types)
+│   │   └── db.py               ← SQLAlchemy ORM models (Analysis, ShaIndex)
+│   ├── services/
+│   │   ├── database.py         ← Async engine, session factory, CRUD helpers for Analysis + ShaIndex
+│   │   ├── session.py          ← In-memory LRU session cache + DB persist/restore
+│   │   ├── sha_cache.py        ← SHA-based snapshot dedup (DB-backed)
+│   │   ├── rate_limiter.py     ← 6-endpoint sliding-window rate limiter
+│   │   ├── telemetry.py        ← structlog, custom Prometheus middleware, OTel tracing
+│   │   ├── task_queue.py       ← asyncio.Queue background worker with UUID task registry
+│   │   └── auth.py             ← get_gh_token() / require_gh_token() centralization
+│   ├── routes/
+│   │   ├── chat.py             ← POST /chat, /chat/stream
+│   │   ├── analysis.py         ← GET /analysis/{id}
+│   │   ├── fix.py              ← POST /fix, /fix/pr
+│   │   ├── pr.py               ← POST /pr-review, /pr-impact, GET /pr-list/{owner}/{repo}
+│   │   ├── repos.py            ← GET /repos/{username}
+│   │   ├── org.py              ← POST /org-audit
+│   │   └── incident.py         ← POST /incident-report
+│   ├── ws/
+│   │   ├── analyze.py          ← /ws/analyze — streams agent events (optionally auth via WS_AUTH_SECRET)
+│   │   └── crisis.py           ← /ws/crisis — Crisis Mode role-play (optionally auth)
+│   ├── agents/                 ← 7 LangGraph agent nodes + crisis sub-agents
+│   ├── tests/                  ← pytest suite (54 tests, async)
 │   ├── requirements.txt
-│   ├── .env.example
-│   └── agents/
-│       ├── scanner.py       ← Git clone + file indexing (branch param for PR head)
-│       ├── architecture.py  ← Mermaid diagram (70b, 24K token budget, 14 key files)
-│       ├── api_doc.py       ← Endpoint extraction (70b, 10 files, 13 framework patterns)
-│       ├── security.py      ← semgrep SAST + LLM triage (70b) → exploit + remediation + CWE
-│       ├── cve_scanner.py   ← OSV.dev CVE lookup (PyPI/npm/Cargo/Go/Ruby/PHP)
-│       ├── git_audit.py     ← Commit log analysis (100 commits) + secret/sensitive-file detection
-│       ├── health.py        ← Health score computation (A–F grade)
-│       ├── impact.py        ← compute_impact() — diffs two snapshots; run_merge_prediction() — LLM risk narrative
-│       ├── pr_review.py     ← GitHub PR diff + LLM review (cached by head SHA)
-│       ├── rag_setup.py     ← ChromaDB ingestion
-│       ├── chat.py          ← RAG query (8 chunks) + SSE streaming
-│       ├── blame.py         ← Git blame enrichment
-│       └── crisis/
-│           ├── _base.py
-│           ├── router.py
-│           ├── ceo.py
-│           ├── legal.py
-│           ├── engineer.py
-│           └── reporter.py
+│   └── .env.example
 └── frontend/
     ├── package.json
-    ├── public/
-    │   └── _redirects       ← Cloudflare Pages SPA fallback
     └── src/
-        ├── App.js
-        ├── api.js           ← Shared fetch helper + all API calls
-        ├── constants.js
-        └── components/
-            ├── AgentPipeline.jsx     ← Live agent progress (7 agents)
-            ├── DiagramTab.jsx        ← Mermaid pan/zoom diagram
-            ├── DocsTab.jsx           ← API endpoint browser
-            ├── SecurityTab.jsx       ← SAST findings + Generate Fix
-            ├── CveTab.jsx            ← OSV.dev CVE results
-            ├── GitAuditTab.jsx       ← Commit log, secret detection, sensitive files
-            ├── PRReviewTab.jsx       ← PR review + Predict Impact panel
-            ├── OrgAuditModal.jsx     ← Cross-repo CVE dashboard
-            ├── SummaryTab.jsx        ← Health score + executive summary
-            ├── ChatTab.jsx           ← SSE streaming RAG chat
-            ├── CrisisChat.jsx        ← Crisis role-play + incident report generator
-            ├── Sidebar.jsx           ← Repo list, saved views
-            ├── HealthCard.jsx        ← Score card component
-            ├── CommandPalette.jsx    ← Cmd+K command palette
-            ├── ErrorBoundary.jsx     ← Per-tab crash isolation
-            ├── KeyboardHelp.jsx      ← Keyboard shortcut modal
-            ├── Onboarding.jsx        ← First-run guide
-            ├── ToastSystem.jsx       ← Toast notifications
-            └── FilePreviewDrawer.jsx ← Source file viewer
+        ├── App.js              ← Root component: WS analysis, keyboard shortcuts, theme, state
+        ├── api.js              ← Shared fetch helper + all API calls
+        ├── constants.js        ← LANG_COLOR map
+        ├── setupTests.js       ← Jest polyfills (crypto, sessionStorage, AbortSignal.timeout)
+        └── components/         ← 15 tab/page components + utility components
 ```
+
+---
+
+## API endpoints
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/ws/analyze` | WS | Streams agent events → diagram, api_docs, findings, CVEs, git_audit |
+| `/chat` | POST | `{session_id, question}` → `{answer}` |
+| `/chat/stream` | POST | SSE streaming chat — yields `data: {"token": "..."}` |
+| `/summary` | POST | `{session_id}` → executive summary |
+| `/pr-review` | POST | `{pr_url}` — pass `X-GH-Token` header for private repos |
+| `/pr-impact` | POST | `{pr_url, session_id}` — returns `{"task_id": "..."}`; poll `GET /task/{task_id}` for result |
+| `/task/{task_id}` | GET | Poll background task status: `{id, status, result?, error?}` |
+| `/org-audit` | POST | `{repos: [urls]}` — pass `X-GH-Token` header for private repos |
+| `/incident-report` | POST | `{session_id, finding, crisis_messages, outcome}` → 6-section report |
+| `/fix` | POST | `{session_id, finding}` → unified diff patch |
+| `/fix/pr` | POST | `{session_id, finding}` — requires `X-GH-Token` header; auto-creates GitHub PR with fix |
+| `/analysis/{session_id}` | GET | Load a saved analysis snapshot (share links) |
+| `/repos/{username}` | GET | List repos — pass `X-GH-Token` header for private repos |
+| `/ws/crisis` | WS | Crisis Mode — streams CEO/Legal/Engineering role-play |
+| `/health` | GET | `{status, sessions_active, checks}` |
+| `/metrics` | GET | Prometheus metrics (`text/plain` — `prometheus_client` format) |
 
 ---
 
@@ -208,38 +179,97 @@ All 7 post-scanner nodes run in parallel. Each is fully error-isolated — a fai
 
 ---
 
-## API endpoints
+## Persistence
 
-| Endpoint | Method | Description |
+| Layer | Technology | Purpose |
 |---|---|---|
-| `/ws/analyze` | WS | Streams agent events → diagram, api_docs, findings, CVEs, git_audit |
-| `/chat` | POST | `{session_id, question}` → `{answer}` |
-| `/chat/stream` | POST | SSE streaming chat — yields `data: {"token": "..."}` |
-| `/summary` | POST | `{session_id}` → executive summary |
-| `/pr-review` | POST | `{pr_url}` — pass `X-GH-Token` header for private repos |
-| `/pr-impact` | POST | `{pr_url, session_id}` — pass `X-GH-Token` header for private repos |
-| `/org-audit` | POST | `{repos: [urls]}` — pass `X-GH-Token` header for private repos |
-| `/incident-report` | POST | `{session_id, finding, crisis_messages, outcome}` → 6-section report |
-| `/fix` | POST | `{session_id, finding}` → unified diff patch |
-| `/fix/pr` | POST | `{session_id, finding}` — requires `X-GH-Token` header; auto-creates GitHub PR with fix |
-| `/analysis/{session_id}` | GET | Load a saved analysis snapshot (share links) |
-| `/repos/{username}` | GET | List repos — pass `X-GH-Token` header for private repos |
-| `/ws/crisis` | WS | Crisis Mode — streams CEO/Legal/Engineering role-play |
-| `/health` | GET | `{status, sessions_active}` |
+| Analysis snapshots | SQLAlchemy + async | Session state, SHA cache, analysis results |
+| SQLite (default) | `aiosqlite` | Zero-config local dev — no DB server needed |
+| PostgreSQL (prod) | `asyncpg` | Production — one `DATABASE_URL` env var selects backend |
+| ChromaDB | embedded | Vector store for RAG chat (8 context chunks) |
+| LLM cache | `diskcache` | Caches Groq API responses keyed by prompt hash |
+
+Database schema is auto-created via SQLAlchemy `create_all()` on startup (`models/db.py`). No manual migrations needed for the current schema.
 
 ---
 
-## Smoke test
+## Background task queue
 
-Run before every demo:
+Heavy operations (PR impact prediction) run in a background `asyncio.Task` consuming an `asyncio.Queue`:
+
+1. **Submit** → `POST /pr-impact` returns `{"task_id": "..."}` immediately after validation
+2. **Poll** → `GET /task/{task_id}` returns `{id, status, result?, error?}`
+   - Status: `submitted` → `running` → `completed` / `failed`
+3. **TTL** → Completed tasks expire after 10 minutes
+
+Tracked via Prometheus counters: `tasks_submitted_total`, `tasks_completed_total`.
+
+---
+
+## Telemetry
+
+| Tool | Purpose |
+|---|---|
+| `structlog` | Structured JSON logging across all modules |
+| `prometheus_client` | `/metrics` — custom `BaseHTTPMiddleware` tracks request count, latency, in-flight, and task counters |
+| OpenTelemetry SDK | Manual setup (avoids chromadb version conflicts with `FastAPIInstrumentor`) — traces to configured OTLP endpoint |
+
+Why custom Prometheus middleware instead of `prometheus-fastapi-instrumentator`? That library crashes on `_IncludedRouter` objects from `app.include_router()`. The custom middleware is simpler and more reliable.
+
+---
+
+## Authentication
+
+### REST API — `X-GH-Token` header
+- Centralized via `services/auth.py` — `get_gh_token(request)` reads the header with `GITHUB_TOKEN` env fallback
+- Every route uses the helper instead of inline header parsing
+- Token is never stored in cookies or request bodies
+
+### WebSocket — `WS_AUTH_SECRET`
+- Optional env var (disabled by default)
+- When set, WS clients must send `ws_auth_secret` in their initial JSON payload
+- Missing/mismatched secret → close frame code 1008 (policy violation)
+
+### User-level PAT (frontend)
+- Enter in the token field (lock icon in command bar)
+- Stored in `sessionStorage` — clears on browser close
+- Passed as `X-GH-Token` in every API call
+- Scopes: `repo` for private repo access and auto-fix PRs
+
+---
+
+## Testing
+
+### Backend (pytest — 54 tests)
 
 ```bash
-make smoke
-# or
-cd backend && venv/bin/python3 smoke_test.py
+cd backend
+python -m pytest tests/ -v
 ```
 
-All 10 checks must pass.
+Uses `pytest-asyncio` with `asyncio_mode = auto`. Tests create an isolated temp SQLite database. Patches target `services.database.*` for DB operations.
+
+| Test file | Coverage |
+|---|---|
+| `tests/test_models.py` | Pydantic request model validation |
+| `tests/test_rate_limiter.py` | Sliding-window rate limiter |
+| `tests/test_session.py` | LRU cache + DB persist/restore |
+| `tests/test_sha_cache.py` | SHA-index dedup |
+| `tests/test_routes.py` | REST endpoint integration (mock DB) |
+
+### Frontend (Jest — 8 tests)
+
+```bash
+cd frontend
+npx react-scripts test --watchAll=false
+```
+
+| Test file | Coverage |
+|---|---|
+| `src/constants.test.js` | LANG_COLOR hex values |
+| `src/api.test.js` | Error shape parsing |
+| `src/components/ErrorBoundary.test.jsx` | Crash isolation |
+| `src/App.test.js` | Root component rendering |
 
 ---
 
@@ -264,6 +294,7 @@ Set in `backend/.env`. Applies to all users — useful for raising the public AP
 |---|---|
 | `⌘/Ctrl + K` | Open command palette |
 | `⌘/Ctrl + R` | Re-analyze current repo |
+| `⌘/Ctrl + 1-7` | Switch tabs |
 | `?` | Toggle keyboard shortcut help |
 | `+` / `-` | Zoom in / out (Architecture tab) |
 | `0` | Reset zoom (Architecture tab) |
@@ -273,6 +304,14 @@ Set in `backend/.env`. Applies to all users — useful for raising the public AP
 
 ## Deployment
 
+### Docker Compose (recommended)
+
+```bash
+docker compose up -d --build
+```
+
+Includes PostgreSQL + automated health checks. Frontend served via nginx on port 80.
+
 ### Backend — any Python host (Render, Fly.io, EC2)
 
 ```bash
@@ -280,7 +319,7 @@ pip install -r requirements.txt
 uvicorn main:app --host 0.0.0.0 --port $PORT
 ```
 
-Set `GROQ_API_KEY` and optionally `GITHUB_TOKEN` as env vars.
+Set `GROQ_API_KEY` and optionally `GITHUB_TOKEN`, `WS_AUTH_SECRET`, `DATABASE_URL` as env vars.
 
 ### Frontend — Cloudflare Pages (or any static host)
 

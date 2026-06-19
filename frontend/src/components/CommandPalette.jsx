@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Search, BarChart3, GitBranch, FileCode2, ShieldAlert,
   Lock, GitPullRequest, MessageSquare, Share2, Download,
-  Keyboard, Sun, AlignJustify, ZoomOut, ZoomIn, FolderOpen,
+  Keyboard, AlignJustify, ZoomOut, ZoomIn, FolderOpen,
   Clock, ChevronRight,
 } from 'lucide-react';
 

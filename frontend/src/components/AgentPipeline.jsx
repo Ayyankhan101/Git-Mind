@@ -61,7 +61,6 @@ export default function AgentPipeline({ status, isAnalyzing, analyzed, elapsedSe
         const rowStatus = getRowStatus(agent.key);
         const isFirst = i === 0;
         const isLast  = i === AGENTS.length - 1;
-        const prevDone = i > 0 && status?.[AGENTS[i - 1].key] === 'done';
         return (
           <div
             key={agent.key}

@@ -108,19 +108,18 @@ function SkeletonRows() {
 export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
   const [section, setSection] = useState('commits');
 
-  const stats   = audit?.stats   || {};
-  const commits = audit?.commits || [];
-  const secrets = audit?.secret_findings  || [];
-  const senFiles = audit?.sensitive_files || [];
-
+  const stats     = audit?.stats   || {};
+  const secrets   = audit?.secret_findings  || [];
+  const senFiles  = audit?.sensitive_files || [];
   const totalIssues = (stats.secrets_found || 0) + (stats.sensitive_files || 0);
   const hasIssues   = totalIssues > 0;
 
   const filteredCommits = useMemo(() => {
-    if (section === 'bad')  return commits.filter(c => c.msg_quality === 'bad');
-    if (section === 'warn') return commits.filter(c => c.msg_quality === 'warn' || c.msg_quality === 'bad');
-    return commits;
-  }, [commits, section]);
+    const c = audit?.commits || [];
+    if (section === 'bad')  return c.filter(x => x.msg_quality === 'bad');
+    if (section === 'warn') return c.filter(x => x.msg_quality === 'warn' || x.msg_quality === 'bad');
+    return c;
+  }, [audit?.commits, section]);
 
   if (!analyzed && !isAnalyzing) {
     return (

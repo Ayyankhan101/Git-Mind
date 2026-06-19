@@ -43,6 +43,12 @@ backend/.chroma_registry.json
 docs/
 .claude/
 
+# ── Analysis / generated ──────────────────────────────────────
+graphify-out/
+
+# ── HF Spaces deploy repo (separate git root) ────────────────
+gitmind-backend-space/
+
 # ── Misc ──────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db

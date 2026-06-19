@@ -125,6 +125,7 @@ export default function App() {
   const [isAnalyzing,   setIsAnalyzing]   = useState(false);
   const [analyzed,      setAnalyzed]      = useState(false);
   const [globalError,   setGlobalError]   = useState(null);
+  const [retryUrl,      setRetryUrl]      = useState(null);
   const [agentWarnings, setAgentWarnings] = useState([]);
   const [elapsedSec,    setElapsedSec]    = useState(0);
   const [repoName,      setRepoName]      = useState('');
@@ -277,6 +278,7 @@ export default function App() {
     if (!url) return;
     cleanup();
     setGlobalError(null);
+    setRetryUrl(null);
     setAgentWarnings([]);
     setDiagram(null);
     setApiDocs([]);
@@ -304,6 +306,7 @@ export default function App() {
     try { ws = new WebSocket(WS_URL); }
     catch {
       setGlobalError('WebSocket is not supported or the backend URL is misconfigured.');
+      setRetryUrl(url);
       setIsAnalyzing(false); cleanup(); return;
     }
     wsRef.current = ws;
@@ -312,6 +315,7 @@ export default function App() {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => {
         setGlobalError('Analysis timed out — no response from backend for 3 minutes. Large repos may take longer; try again.');
+        setRetryUrl(url);
         setIsAnalyzing(false); analyzingRef.current = false;
         clearInterval(timerRef.current); ws.close();
       }, TIMEOUT_MS);
@@ -350,6 +354,7 @@ export default function App() {
       }
       if (data.error) {
         setGlobalError(`Backend error: ${data.error}`);
+        setRetryUrl(url);
         clearInterval(timerRef.current); setIsAnalyzing(false);
         analyzingRef.current = false; ws.close();
       }
@@ -359,12 +364,14 @@ export default function App() {
       if (!analyzingRef.current) return;
       clearInterval(timerRef.current); setIsAnalyzing(false); analyzingRef.current = false;
       setGlobalError('Cannot reach the backend on port 8002. Start it with:\n  cd backend && uvicorn main:app --port 8002 --reload');
+      setRetryUrl(url);
     };
 
     ws.onclose = (evt) => {
       if (!evt.wasClean && analyzingRef.current) {
         clearInterval(timerRef.current); setIsAnalyzing(false); analyzingRef.current = false;
         setGlobalError('Connection dropped unexpectedly. Check the backend terminal for errors.');
+        setRetryUrl(url);
       }
     };
   }, [cleanup, addToast, ghToken]);
@@ -677,7 +684,13 @@ export default function App() {
           <div className="error-banner" role="alert">
             <AlertTriangle size={14} style={{ flexShrink: 0 }} />
             <span style={{ flex: 1, whiteSpace: 'pre-wrap' }}>{globalError}</span>
-            <button className="btn-icon" onClick={() => setGlobalError(null)}><X size={12} /></button>
+            {retryUrl && (
+              <button className="btn-text" style={{ color: 'var(--primary)', flexShrink: 0, fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}
+                onClick={() => { setGlobalError(null); setRetryUrl(null); handleAnalyze(retryUrl); }}>
+                Retry
+              </button>
+            )}
+            <button className="btn-icon" onClick={() => { setGlobalError(null); setRetryUrl(null); }}><X size={12} /></button>
           </div>
         )}
         {agentWarnings.map((w, i) => (
