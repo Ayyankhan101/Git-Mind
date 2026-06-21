@@ -30,6 +30,10 @@ def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
+def get_service_key(request) -> str | None:
+    return (request.headers.get("X-Service-Key") or "").strip() or os.getenv("GITMIND_SERVICE_KEY")
+
+
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path

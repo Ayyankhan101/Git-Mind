@@ -103,6 +103,29 @@ async def get_sha_index_entry(sha: str) -> str | None:
         return row.session_id
 
 
+async def get_previous_analysis_db(repo_url: str, exclude_session: str | None = None) -> dict | None:
+    from models.db import Analysis
+    from sqlalchemy import desc
+    async with async_session_factory() as session:
+        query = select(Analysis).where(Analysis.repo_url == repo_url)
+        if exclude_session:
+            query = query.where(Analysis.id != exclude_session)
+        query = query.order_by(desc(Analysis.saved_at)).limit(1)
+        result = await session.execute(query)
+        row = result.scalar_one_or_none()
+        if row is None:
+            return None
+        return {
+            "session_id": row.id,
+            "health": row.health,
+            "security_findings": row.security_findings or [],
+            "cve_findings": row.cve_findings or [],
+            "saved_at": row.saved_at,
+            "head_sha": row.head_sha,
+            "repo_name": row.repo_name,
+        }
+
+
 async def upsert_sha_index(sha: str, session_id: str) -> None:
     from models.db import ShaIndex
     async with async_session_factory() as session:

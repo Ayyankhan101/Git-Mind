@@ -31,3 +31,20 @@ class ShaIndex(Base):
 
     sha: Mapped[str] = mapped_column(String(64), primary_key=True)
     session_id: Mapped[str] = mapped_column(String(36), index=True)
+
+
+class MonitoredRepo(Base):
+    __tablename__ = "monitored_repos"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    repo_url: Mapped[str] = mapped_column(String(1024))
+    repo_name: Mapped[str] = mapped_column(String(255))
+    owner_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    slack_webhook_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    schedule_cron: Mapped[str] = mapped_column(String(100), default="0 8 * * 1")
+    score_delta_threshold: Mapped[int] = mapped_column(default=-5)
+    alert_on_new_findings: Mapped[bool] = mapped_column(default=True)
+    last_sha: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    last_session_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    last_check_at: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[float] = mapped_column(Float, default=0.0)

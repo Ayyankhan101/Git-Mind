@@ -1,4 +1,5 @@
 import asyncio
+import os
 import time
 from collections import defaultdict
 
@@ -13,11 +14,14 @@ _RATE_WINDOWS: dict[str, tuple[int, int]] = {
     "pr_impact": (60, 3),
     "org_audit": (60, 3),
     "analyze": (60, 3),
+    "analyze_rest": (60, 30),
 }
 
 
-def rate_ok(endpoint: str, key: str) -> bool:
+def rate_ok(endpoint: str, key: str, service_key: str | None = None) -> bool:
     """Sync rate check for use in sync route handlers."""
+    if service_key and service_key == os.getenv("GITMIND_SERVICE_KEY"):
+        return True
     window, limit = _RATE_WINDOWS.get(endpoint, (60, 20))
     now = time.time()
     bucket = f"{endpoint}:{key}"

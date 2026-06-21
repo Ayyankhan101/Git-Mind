@@ -80,3 +80,12 @@ async def get_analysis(session_id: str):
         return snap
     except Exception:
         return {"error": "Analysis file corrupted"}
+
+
+@router.get("/analysis/previous")
+async def get_previous_analysis(repo_url: str, exclude_session: str | None = None):
+    from services.database import get_previous_analysis_db
+    snap = await get_previous_analysis_db(repo_url, exclude_session)
+    if snap is None:
+        return {"error": "No previous analysis found"}
+    return snap
