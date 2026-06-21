@@ -7,23 +7,59 @@ const LIGHT_THEMES = new Set(['daylight', 'mist']);
 
 function getMermaidConfig(theme) {
   const isLight = LIGHT_THEMES.has(theme);
+  const isAurora = theme === 'aurora';
   return {
     startOnLoad: false,
     theme: isLight ? 'default' : 'dark',
     themeVariables: isLight
       ? {
-          primaryColor: '#e0e7ff', primaryTextColor: '#1e1b4b',
-          primaryBorderColor: '#6366f1', lineColor: '#94a3b8',
-          secondaryColor: '#f1f5f9', tertiaryColor: '#e2e8f0',
-          edgeLabelBackground: '#f8fafc', titleColor: '#6366f1',
+          primaryColor: '#eef2ff',
+          primaryTextColor: '#1e1b4b',
+          primaryBorderColor: '#6366f1',
+          lineColor: '#c7d2fe',
+          secondaryColor: '#f1f5f9',
+          tertiaryColor: '#e2e8f0',
+          edgeLabelBackground: '#ffffff',
+          titleColor: '#4f46e5',
+          fontFamily: "'DM Sans', system-ui, sans-serif",
+          fontSize: '13px',
+          noteBkgColor: '#f1f5f9',
+          noteTextColor: '#334155',
+          noteBorderColor: '#c7d2fe',
+          actorBkg: '#eef2ff',
+          actorTextColor: '#1e1b4b',
+          actorBorder: '#6366f1',
+          signalColor: '#4f46e5',
+          signalTextColor: '#1e1b4b',
         }
       : {
-          primaryColor: '#1e2d4a', primaryTextColor: '#f1f5f9',
-          primaryBorderColor: '#7c6fe0', lineColor: '#3f3f52',
-          secondaryColor: '#161f38', tertiaryColor: '#0f1629',
-          edgeLabelBackground: '#0f1629', titleColor: '#a78bfa',
+          primaryColor: isAurora ? '#2d2252' : '#1a1a2e',
+          primaryTextColor: '#f1f5f9',
+          primaryBorderColor: isAurora ? '#a78bfa' : '#7c6fe0',
+          lineColor: isAurora ? '#4a3d7a' : '#3f3f52',
+          secondaryColor: isAurora ? '#1f1840' : '#12121c',
+          tertiaryColor: isAurora ? '#161030' : '#0d0d14',
+          edgeLabelBackground: isAurora ? '#1a1435' : '#0f0f17',
+          titleColor: isAurora ? '#c4b5fd' : '#a78bfa',
+          fontFamily: "'DM Sans', system-ui, sans-serif",
+          fontSize: '13px',
+          noteBkgColor: isAurora ? '#1f1840' : '#12121c',
+          noteTextColor: '#e2e8f0',
+          noteBorderColor: isAurora ? '#4a3d7a' : '#3f3f52',
+          actorBkg: isAurora ? '#2d2252' : '#1a1a2e',
+          actorTextColor: '#f1f5f9',
+          actorBorder: isAurora ? '#a78bfa' : '#7c6fe0',
+          signalColor: isAurora ? '#a78bfa' : '#7c6fe0',
+          signalTextColor: '#f1f5f9',
         },
-    flowchart: { curve: 'basis', padding: 20 },
+    flowchart: {
+      curve: 'basis',
+      padding: 24,
+      nodeSpacing: 50,
+      rankSpacing: 60,
+      useMaxWidth: false,
+      htmlLabels: true,
+    },
     securityLevel: 'loose',
   };
 }
@@ -145,16 +181,36 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme, sess
       if (svgEl) { svgEl.style.maxWidth = 'none'; svgEl.style.height = 'auto'; }
       fitToScreen();
       setReady(true);
-      // Hover highlight on every Mermaid node (click handled at canvas level)
+      // Professional node styling + hover glow
       ref.current.querySelectorAll('g.node').forEach(nodeEl => {
         nodeEl.style.cursor = 'pointer';
         const shapes = nodeEl.querySelectorAll('rect, circle, polygon, ellipse, path');
-        nodeEl.addEventListener('mouseenter', () =>
-          shapes.forEach(s => { s.style.filter = 'brightness(1.25) drop-shadow(0 0 6px var(--primary))'; })
-        );
-        nodeEl.addEventListener('mouseleave', () =>
-          shapes.forEach(s => { s.style.filter = ''; })
-        );
+        nodeEl.addEventListener('mouseenter', () => {
+          shapes.forEach(s => {
+            s.style.filter = 'brightness(1.25) drop-shadow(0 0 14px var(--primary-glow))';
+            s.style.strokeWidth = '2';
+          });
+        });
+        nodeEl.addEventListener('mouseleave', () => {
+          shapes.forEach(s => {
+            s.style.filter = '';
+            s.style.strokeWidth = '';
+          });
+        });
+      });
+      // Edge hover highlight
+      ref.current.querySelectorAll('.edgePath').forEach(edgeEl => {
+        const path = edgeEl.querySelector('.path');
+        if (!path) return;
+        edgeEl.style.cursor = 'pointer';
+        edgeEl.addEventListener('mouseenter', () => {
+          path.style.stroke = 'var(--primary)';
+          path.style.strokeWidth = '2.5';
+        });
+        edgeEl.addEventListener('mouseleave', () => {
+          path.style.stroke = '';
+          path.style.strokeWidth = '';
+        });
       });
     } catch (err) {
       console.error('[DiagramTab] Mermaid parse error:', err);
@@ -216,10 +272,18 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme, sess
 
   if (!diagram && !isAnalyzing) {
     return (
-      <div className="empty">
-        <GitBranch size={20} className="empty-icon" strokeWidth={1.5} />
+      <div className="empty" style={{ gap: 16 }}>
+        <div style={{
+          width: 56, height: 56, borderRadius: 16,
+          background: 'var(--primary-dim)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 0 32px var(--primary-glow), 0 0 64px var(--primary-dim)',
+          animation: 'emptyPulse 3s ease-in-out infinite',
+        }}>
+          <GitBranch size={24} style={{ color: 'var(--primary)' }} strokeWidth={1.5} />
+        </div>
         <div className="empty-title">Architecture not available</div>
-        <div className="empty-sub">Analyze a repository to get started</div>
+        <div className="empty-sub">Analyze a repository to generate the system diagram</div>
       </div>
     );
   }
@@ -227,10 +291,30 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme, sess
   if (isAnalyzing && !diagram) {
     return (
       <div className="diagram-wrap">
-        <div className="diagram-canvas" style={{ flexDirection: 'column', gap: 24 }}>
-          {[0, 1, 2].map(i => (
-            <span key={i} className="sk" style={{ height: 110, width: '92%', maxWidth: 1020, display: 'block' }} />
-          ))}
+        <div className="diagram-canvas" style={{ flexDirection: 'column', gap: 20, alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, width: '100%', maxWidth: 640 }}>
+            {/* Fake node boxes */}
+            <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
+              {[0, 1, 2].map(i => (
+                <span key={i} className="sk" style={{ height: 72, width: 160, borderRadius: 10, display: 'block', animationDelay: `${i * 0.15}s` }} />
+              ))}
+            </div>
+            {/* Fake edges */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 40 }}>
+              {[0, 1].map(i => (
+                <span key={i} className="sk" style={{ height: 3, width: 80, borderRadius: 2, display: 'block', animationDelay: `${0.5 + i * 0.12}s` }} />
+              ))}
+            </div>
+            {/* Fake sub-nodes */}
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              {[0, 1, 2, 3].map(i => (
+                <span key={i} className="sk" style={{ height: 52, width: 120, borderRadius: 8, display: 'block', animationDelay: `${0.7 + i * 0.1}s` }} />
+              ))}
+            </div>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginTop: 8 }}>
+            Generating architecture diagram…
+          </div>
         </div>
       </div>
     );

@@ -883,8 +883,12 @@ input, textarea, select { font-family: inherit; color: inherit; }
   gap: 4px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 3px;
+  transition: background 0.2s, border-color 0.2s;
+}
+.diagram-controls:hover {
+  border-color: var(--border-2);
 }
 .diagram-canvas {
   flex: 1;
@@ -895,12 +899,17 @@ input, textarea, select { font-family: inherit; color: inherit; }
   justify-content: center;
   padding: 32px 48px 32px;
   overflow: auto;
-  background-image:
-    radial-gradient(circle at 1px 1px, var(--border) 0.5px, transparent 0);
-  background-size: 22px 22px;
-  background-position: -1px -1px;
+  /* Layered background: depth gradient + dot grid + center glow */
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 45%, var(--primary-dim) 0%, transparent 70%),
+    radial-gradient(circle at 1px 1px, var(--border) 0.5px, transparent 0),
+    radial-gradient(ellipse 120% 100% at 50% 50%, var(--surface-2) 0%, var(--bg) 100%);
+  background-size: 100% 100%, 22px 22px, 100% 100%;
+  background-position: 0 0, -1px -1px, 0 0;
   cursor: grab;
   user-select: none;
+  /* Vignette overlay */
+  box-shadow: inset 0 0 120px 40px var(--bg);
 }
 .diagram-canvas:active { cursor: grabbing; }
 .arch-legend-row {
@@ -929,6 +938,52 @@ input, textarea, select { font-family: inherit; color: inherit; }
   margin-right: 7px;
   border-radius: 1px;
   vertical-align: 3px;
+}
+/* ── Mermaid SVG — professional polish ──────────────────── */
+.diagram-canvas svg {
+  filter: drop-shadow(0 0 1px rgba(124, 111, 224, 0.06));
+}
+.diagram-canvas svg .node rect,
+.diagram-canvas svg .node polygon,
+.diagram-canvas svg .node circle {
+  transition: filter 0.22s ease, stroke-width 0.22s ease;
+  stroke-width: 1.5;
+}
+.diagram-canvas svg .node:hover rect,
+.diagram-canvas svg .node:hover polygon,
+.diagram-canvas svg .node:hover circle {
+  filter: brightness(1.2) drop-shadow(0 0 12px var(--primary-glow));
+  stroke-width: 2;
+}
+.diagram-canvas svg .edgePath .path {
+  stroke-width: 1.8;
+  transition: stroke 0.2s;
+}
+.diagram-canvas svg .edgePath:hover .path {
+  stroke: var(--primary) !important;
+  stroke-width: 2.2;
+}
+.diagram-canvas svg .edgeLabel {
+  font-family: var(--font-sans) !important;
+  font-size: 12px !important;
+}
+.diagram-canvas svg .node .label {
+  font-family: var(--font-sans) !important;
+}
+.diagram-canvas svg .node .label tspan {
+  font-family: var(--font-sans) !important;
+}
+/* Edge flow animation */
+@keyframes edgeFlow {
+  to { stroke-dashoffset: -20; }
+}
+.diagram-canvas svg .edgePath .path[marker-end] {
+  stroke-dasharray: 8 4;
+  animation: edgeFlow 1.8s linear infinite;
+}
+@keyframes emptyPulse {
+  0%, 100% { box-shadow: 0 0 24px var(--primary-dim), 0 0 48px transparent; }
+  50%      { box-shadow: 0 0 32px var(--primary-glow), 0 0 64px var(--primary-dim); }
 }
 /* Themed SVG nodes use CSS classes so they re-color with the theme */
 .arch-lane-bg {
@@ -1922,6 +1977,12 @@ input, textarea, select { font-family: inherit; color: inherit; }
 [data-theme="aurora"] .diagram-controls {
   background: rgba(15, 13, 32, 0.7);
   backdrop-filter: blur(12px);
+  border-color: rgba(167, 139, 250, 0.18);
+}
+[data-theme="aurora"] .arch-legend-row {
+  background: rgba(10, 10, 24, 0.45);
+  backdrop-filter: blur(20px) saturate(160%);
+  border-top-color: rgba(167, 139, 250, 0.12);
 }
 [data-theme="aurora"] .row:hover,
 [data-theme="aurora"] .endpoint:hover,
@@ -1981,6 +2042,12 @@ input, textarea, select { font-family: inherit; color: inherit; }
 [data-theme="mist"] .diagram-controls {
   background: rgba(255, 255, 255, 0.78);
   backdrop-filter: blur(12px);
+  border-color: rgba(99, 102, 241, 0.15);
+}
+[data-theme="mist"] .arch-legend-row {
+  background: rgba(255, 255, 255, 0.48);
+  backdrop-filter: blur(20px) saturate(160%);
+  border-top-color: rgba(99, 102, 241, 0.12);
 }
 [data-theme="mist"] .row:hover,
 [data-theme="mist"] .endpoint:hover,
@@ -2003,10 +2070,22 @@ input, textarea, select { font-family: inherit; color: inherit; }
 [data-theme="mist"] .toast { box-shadow: 0 18px 40px rgba(30, 27, 75, 0.18); }
 [data-theme="mist"] .palette { box-shadow: 0 24px 50px rgba(30, 27, 75, 0.22), 0 0 0 1px rgba(99,102,241,0.10); }
 
-/* Make diagram diagram-wrap NOT be solid surface in glass themes */
-[data-theme="aurora"] .diagram-canvas,
-[data-theme="mist"]   .diagram-canvas {
-  background: transparent;
+/* Make diagram canvas layered in glass themes (keep depth, lose opaque bg) */
+[data-theme="aurora"] .diagram-canvas {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 45%, rgba(167, 139, 250, 0.08) 0%, transparent 70%),
+    radial-gradient(circle at 1px 1px, rgba(167, 139, 250, 0.12) 0.5px, transparent 0),
+    transparent;
+  background-size: 100% 100%, 22px 22px, 100% 100%;
+  background-position: 0 0, -1px -1px, 0 0;
+}
+[data-theme="mist"] .diagram-canvas {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 45%, rgba(99, 102, 241, 0.06) 0%, transparent 70%),
+    radial-gradient(circle at 1px 1px, rgba(99, 102, 241, 0.10) 0.5px, transparent 0),
+    rgba(238, 241, 248, 0.4);
+  background-size: 100% 100%, 22px 22px, 100% 100%;
+  background-position: 0 0, -1px -1px, 0 0;
 }
 
 /* ────────────────────────────────────────────────────────────
