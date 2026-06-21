@@ -16,6 +16,13 @@ function deriveHttpBase() {
 export const BASE    = deriveHttpBase();
 export const WS_BASE = BASE.replace(/^http/, 'ws');
 
+const GH_TOKEN_RE = /^gh[pousr]_[A-Za-z0-9]{36,}$/;
+
+export function isValidGhToken(token) {
+  if (!token) return true; // empty is valid (optional)
+  return GH_TOKEN_RE.test(token);
+}
+
 // Coerce any backend error shape into a readable string. FastAPI validation
 // errors arrive as `detail: [{ msg, loc, ... }]`; some endpoints return a plain
 // `error` string or an object. Never let an object stringify to "[object Object]".

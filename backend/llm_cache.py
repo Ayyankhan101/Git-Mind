@@ -20,7 +20,7 @@ except OSError:
     _CACHE_DIR.mkdir(exist_ok=True)
     logger.warning("LLM cache falling back to %s (preferred dir not writable)", _CACHE_DIR)
 
-_cache = diskcache.Cache(str(_CACHE_DIR))   # diskcache.Cache is thread-safe
+_cache = diskcache.Cache(str(_CACHE_DIR), size_limit=2_000_000_000)  # 2 GB max
 
 
 def get_cached(model: str, prompt: str) -> str | None:

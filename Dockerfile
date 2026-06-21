@@ -39,6 +39,10 @@ RUN npm run build
 FROM python:3.11-slim-bookworm
 RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates nginx curl && rm -rf /var/lib/apt/lists/*
 
+# Non-root user
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app /var/www/html /etc/nginx
+USER appuser
+
 # Backend
 WORKDIR /app
 COPY --from=backend-builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages

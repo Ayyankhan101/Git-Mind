@@ -7,6 +7,7 @@ jest.mock('./api', () => ({
   generateFix: jest.fn(),
   WS_BASE: 'ws://localhost:8002',
   BASE: 'http://localhost:8002',
+  isValidGhToken: jest.fn().mockReturnValue(true),
 }));
 
 // mermaid is ESM-only and breaks Jest; mock it before the import chain pulls it in

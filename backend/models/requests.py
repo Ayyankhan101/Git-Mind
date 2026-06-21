@@ -1,6 +1,19 @@
 from pydantic import BaseModel, Field
 
 
+class Finding(BaseModel):
+    id: str | None = None
+    rule: str | None = None
+    file: str | None = None
+    title: str | None = None
+    description: str | None = None
+    severity: str | None = None
+    line_start: int | None = None
+    line_end: int | None = None
+    exploit_story: str | None = None
+    check: str | None = None
+
+
 class ChatRequest(BaseModel):
     session_id: str = Field(..., max_length=36)
     question: str = Field(..., max_length=2000)
@@ -16,12 +29,12 @@ class PRReviewRequest(BaseModel):
 
 class FixRequest(BaseModel):
     session_id: str = Field(..., max_length=36)
-    finding: dict = Field(..., max_length=50)
+    finding: Finding
 
 
 class AutoPRRequest(BaseModel):
     session_id: str = Field(..., max_length=36)
-    finding: dict = Field(..., max_length=50)
+    finding: Finding
 
 
 class PRImpactRequest(BaseModel):
@@ -35,6 +48,6 @@ class OrgAuditRequest(BaseModel):
 
 class IncidentReportRequest(BaseModel):
     session_id: str = Field(..., max_length=36)
-    finding: dict = Field(..., max_length=50)
+    finding: Finding
     crisis_messages: list[dict] = Field(default=[], max_length=100)
     outcome: str = Field(default="unknown", max_length=50)

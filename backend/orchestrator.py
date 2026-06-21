@@ -14,6 +14,32 @@ from state import RepoState
 
 logger = logging.getLogger(__name__)
 
+# Circuit breaker state
+_circuit_open_until = 0.0
+_CIRCUIT_BREAKER_THRESHOLD = 3
+_CIRCUIT_BREAKER_COOLDOWN = 60.0
+_circuit_failures = 0
+
+
+def _is_circuit_open() -> bool:
+    global _circuit_open_until
+    import time
+    return time.time() < _circuit_open_until
+
+
+def _record_circuit_failure():
+    global _circuit_failures, _circuit_open_until
+    _circuit_failures += 1
+    if _circuit_failures >= _CIRCUIT_BREAKER_THRESHOLD:
+        import time
+        _circuit_open_until = time.time() + _CIRCUIT_BREAKER_COOLDOWN
+        logger.warning("Circuit breaker opened", cooldown=_CIRCUIT_BREAKER_COOLDOWN)
+
+
+def _record_circuit_success():
+    global _circuit_failures
+    _circuit_failures = 0
+
 
 # ── Event factory ──────────────────────────────────────────────────────────────
 
@@ -36,65 +62,100 @@ def scanner_node(state: RepoState) -> dict:
             "file_tree":     [],
             "file_contents": {},
             "repo_name":     "unknown",
-            "events":        [_event("scanner", "error")],
+            "_scanner_failed": True,
+            "events":        [_event("scanner", "error", str(exc)[:200])],
         }
 
 
 def architecture_node(state: RepoState) -> dict:
+    if state.get("_scanner_failed"):
+        return {"architecture_diagram": None, "events": [_event("architecture", "skipped", "scanner failed")]}
+    if _is_circuit_open():
+        return {"architecture_diagram": None, "events": [_event("architecture", "skipped", "circuit breaker open")]}
     try:
         diagram = run_architecture_agent(state["file_tree"], state["file_contents"])
+        _record_circuit_success()
         return {"architecture_diagram": diagram, "events": [_event("architecture", "done")]}
     except Exception as exc:
+        _record_circuit_failure()
         logger.error("architecture_node failed: %s", exc)
         return {
             "architecture_diagram": "graph TD\n    A[Architecture Analysis Failed]",
-            "events": [_event("architecture", "error")],
+            "events": [_event("architecture", "error", str(exc)[:200])],
         }
 
 
 def api_doc_node(state: RepoState) -> dict:
+    if state.get("_scanner_failed"):
+        return {"api_docs": [], "events": [_event("api_docs", "skipped", "scanner failed")]}
+    if _is_circuit_open():
+        return {"api_docs": [], "events": [_event("api_docs", "skipped", "circuit breaker open")]}
     try:
         docs = run_api_doc_agent(state["file_contents"])
+        _record_circuit_success()
         return {"api_docs": docs, "events": [_event("api_docs", "done")]}
     except Exception as exc:
+        _record_circuit_failure()
         logger.error("api_doc_node failed: %s", exc)
-        return {"api_docs": [], "events": [_event("api_docs", "error")]}
+        return {"api_docs": [], "events": [_event("api_docs", "error", str(exc)[:200])]}
 
 
 def security_node(state: RepoState) -> dict:
+    if state.get("_scanner_failed"):
+        return {"security_findings": [], "events": [_event("security", "skipped", "scanner failed")]}
+    if _is_circuit_open():
+        return {"security_findings": [], "events": [_event("security", "skipped", "circuit breaker open")]}
     try:
         findings = run_security_agent(state["local_path"] or "")
+        _record_circuit_success()
         return {"security_findings": findings, "events": [_event("security", "done")]}
     except Exception as exc:
+        _record_circuit_failure()
         logger.error("security_node failed: %s", exc)
         return {
             "security_findings": _synthetic_finding(),
-            "events": [_event("security", "error")],
+            "events": [_event("security", "error", str(exc)[:200])],
         }
 
 
 def rag_setup_node(state: RepoState) -> dict:
+    if state.get("_scanner_failed"):
+        return {"chroma_collection_name": None, "events": [_event("chat", "skipped", "scanner failed")]}
+    if _is_circuit_open():
+        return {"chroma_collection_name": None, "events": [_event("chat", "skipped", "circuit breaker open")]}
     try:
         name = run_rag_setup(state["file_contents"], state["repo_name"], state["repo_url"])
+        _record_circuit_success()
         return {"chroma_collection_name": name, "events": [_event("chat", "done")]}
     except Exception as exc:
+        _record_circuit_failure()
         logger.error("rag_setup_node failed: %s", exc)
         return {
             "chroma_collection_name": None,
-            "events": [_event("chat", "error")],
+            "events": [_event("chat", "error", str(exc)[:200])],
         }
 
 
 def cve_node(state: RepoState) -> dict:
+    if state.get("_scanner_failed"):
+        return {"cve_findings": [], "events": [_event("cve_scanner", "skipped", "scanner failed")]}
+    if _is_circuit_open():
+        return {"cve_findings": [], "events": [_event("cve_scanner", "skipped", "circuit breaker open")]}
     try:
         findings = run_cve_scanner(state["file_contents"])
+        _record_circuit_success()
         return {"cve_findings": findings, "events": [_event("cve_scanner", "done")]}
     except Exception as exc:
+        _record_circuit_failure()
         logger.error("cve_node failed: %s", exc)
-        return {"cve_findings": [], "events": [_event("cve_scanner", "error")]}
+        return {"cve_findings": [], "events": [_event("cve_scanner", "error", str(exc)[:200])]}
 
 
 def git_audit_node(state: RepoState) -> dict:
+    if state.get("_scanner_failed"):
+        return {"git_audit": None, "events": [_event("git_audit", "skipped", "scanner failed")]}
+    if _is_circuit_open():
+        return {"git_audit": None, "events": [_event("git_audit", "skipped", "circuit breaker open")]}
     try:
         result = run_git_audit(
             state["repo_url"],
@@ -102,10 +163,12 @@ def git_audit_node(state: RepoState) -> dict:
             state["file_contents"],
             state.get("gh_token"),
         )
+        _record_circuit_success()
         return {"git_audit": result, "events": [_event("git_audit", "done")]}
     except Exception as exc:
+        _record_circuit_failure()
         logger.error("git_audit_node failed: %s", exc)
-        return {"git_audit": None, "events": [_event("git_audit", "error")]}
+        return {"git_audit": None, "events": [_event("git_audit", "error", str(exc)[:200])]}
 
 
 # ── Graph definition ───────────────────────────────────────────────────────────

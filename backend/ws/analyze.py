@@ -9,6 +9,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 from agents.blame import enrich_findings_with_blame
 from agents.health import compute_health
 from orchestrator import graph
+from services.auth import hash_token
 from services.sha_cache import get_remote_sha, find_cached_snapshot
 from services.session import initial_state, put_session, persist_analysis
 from services.rate_limiter import rate_ok
@@ -39,15 +40,23 @@ async def handle_analyze(ws: WebSocket) -> None:
         await ws.close(code=1003)
         return
 
-    _ws_auth_secret = os.environ.get("WS_AUTH_SECRET")
-    if _ws_auth_secret and payload.get("ws_auth_secret") != _ws_auth_secret:
-        await ws.send_json({"error": "WebSocket auth secret mismatch"})
-        await ws.close(code=1008)
+    if len(str(payload)) > 1_000_000:
+        await ws.send_json({"error": "Payload too large"})
+        await ws.close(code=1009)
         return
+
+    _ws_auth_secret = os.environ.get("WS_AUTH_SECRET")
+    if _ws_auth_secret:
+        import hmac
+        if not hmac.compare_digest(payload.get("ws_auth_secret", ""), _ws_auth_secret):
+            await ws.send_json({"error": "WebSocket auth secret mismatch"})
+            await ws.close(code=1008)
+            return
 
     repo_url = (payload.get("repo_url") or "").strip()
     session_id = payload.get("session_id") or str(uuid.uuid4())
     gh_token = (payload.get("gh_token") or "").strip() or None
+    owner_hash = hash_token(gh_token) if gh_token else None
 
     if not repo_url:
         await ws.send_json({"error": "repo_url is required"})
@@ -101,6 +110,7 @@ async def handle_analyze(ws: WebSocket) -> None:
                 "git_audit": cached.get("git_audit"),
                 "repo_url": repo_url,
                 "chat_history": [],
+                "owner_hash": owner_hash,
             })
             await ws.send_json({"done": True, "session_id": session_id, "cached": True})
             return
@@ -184,7 +194,7 @@ async def handle_analyze(ws: WebSocket) -> None:
             pass
         local_path = final_state.get("local_path")
         if local_path:
-            shutil.rmtree(local_path, ignore_errors=True)
+            await asyncio.to_thread(shutil.rmtree, local_path, True)
             logger.info("Cleaned up temp dir", session=session_id, path=local_path)
 
     put_session(session_id, {
@@ -198,8 +208,9 @@ async def handle_analyze(ws: WebSocket) -> None:
         "repo_url": repo_url,
         "chat_history": [],
         "health": final_state.get("health"),
+        "owner_hash": owner_hash,
     })
 
-    await persist_analysis(session_id, final_state, repo_url, sha)
+    await persist_analysis(session_id, final_state, repo_url, sha, owner_hash)
     await ws.send_json({"done": True, "session_id": session_id})
     logger.info("Analysis complete", session=session_id, repo=final_state["repo_name"])

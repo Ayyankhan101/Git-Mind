@@ -2,13 +2,13 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: gitmind
-      POSTGRES_PASSWORD: gitmind
-      POSTGRES_DB: gitmind
+      POSTGRES_USER: ${POSTGRES_USER:-gitmind}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gitmind}
+      POSTGRES_DB: ${POSTGRES_DB:-gitmind}
     volumes:
       - gitmind_db:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U gitmind"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gitmind}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -24,7 +24,7 @@ services:
     env_file:
       - backend/.env
     environment:
-      DATABASE_URL: postgresql+asyncpg://gitmind:gitmind@db:5432/gitmind
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-gitmind}:${POSTGRES_PASSWORD:-gitmind}@db:5432/${POSTGRES_DB:-gitmind}
     volumes:
       - gitmind_chroma:/app/.chroma
     depends_on:

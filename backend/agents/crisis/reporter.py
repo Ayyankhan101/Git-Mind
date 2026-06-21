@@ -4,6 +4,7 @@ import os
 import time
 
 from langchain_groq import ChatGroq
+from llm_cache import invoke_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ async def reporter_loop(state_ref: dict, ws_send) -> None:
         )
 
         try:
-            story = _llm.invoke(prompt).content
+            story = invoke_with_retry(_llm, prompt).content
         except Exception as exc:
             logger.error("reporter LLM failed: %s", exc)
             return

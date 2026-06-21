@@ -41,10 +41,10 @@ async def incident_report_endpoint(req: IncidentReportRequest, request: Request)
     prompt = f"""You are a security incident response manager. Generate a complete incident report.
 
 Repository: {session.get('repo_name', 'Unknown')}
-Incident: {finding.get('title', 'Security Vulnerability')}
-Severity: {finding.get('severity', 'unknown').upper()}
-File: {finding.get('file', 'unknown')}  Line: {finding.get('line_start', '?')}
-Description: {finding.get('description') or finding.get('exploit_story', '')[:300]}
+Incident: {finding.title or 'Security Vulnerability'}
+Severity: {finding.severity or 'unknown'}
+File: {finding.file or 'unknown'}  Line: {finding.line_start or '?'}
+Description: {finding.description or finding.exploit_story or ''}
 Crisis Outcome: {outcome_str}
 
 Crisis Timeline:
@@ -90,7 +90,7 @@ Be specific and professional. Use the actual vulnerability details."""
         return {
             "report": report,
             "outcome": outcome,
-            "finding": finding.get("title", ""),
+            "finding": finding.title or "",
             "repo": session.get("repo_name", ""),
         }
     except Exception as exc:

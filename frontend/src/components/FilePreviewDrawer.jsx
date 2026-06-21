@@ -3,7 +3,7 @@ import { FileText, ExternalLink, Copy, X } from 'lucide-react';
 
 const LANG_EXT = { py: 'Python', js: 'JavaScript', ts: 'TypeScript', tsx: 'TypeScript', jsx: 'JavaScript', go: 'Go', rb: 'Ruby', rs: 'Rust', java: 'Java', cs: 'C#', cpp: 'C++', c: 'C' };
 
-export default function FilePreviewDrawer({ path, line, repoUrl, onClose }) {
+export default function FilePreviewDrawer({ path, line, repoUrl, ghToken, onClose }) {
   const [codeLines, setCodeLines] = useState(null);
   const [fetchLoading, setFetchLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
@@ -33,8 +33,10 @@ export default function FilePreviewDrawer({ path, line, repoUrl, onClose }) {
     setLang(LANG_EXT[ext] || ext.toUpperCase());
 
     const controller = new AbortController();
+    const headers = { Accept: 'application/vnd.github.v3+json' };
+    if (ghToken) headers['Authorization'] = `Bearer ${ghToken}`;
     fetch(`https://api.github.com/repos/${ownerRepo}/contents/${path}`, {
-      headers: { Accept: 'application/vnd.github.v3+json' },
+      headers,
       signal: controller.signal,
     })
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
@@ -57,7 +59,7 @@ export default function FilePreviewDrawer({ path, line, repoUrl, onClose }) {
       })
       .finally(() => setFetchLoading(false));
     return () => controller.abort();
-  }, [path, repoUrl, line]);
+  }, [path, repoUrl, line, ghToken]);
 
   const ghUrl = useMemo(() => {
     if (!repoUrl || !path) return null;

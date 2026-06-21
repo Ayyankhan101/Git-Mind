@@ -23,7 +23,7 @@ import GitAuditTab      from './components/GitAuditTab';
 import OrgAuditModal   from './components/OrgAuditModal';
 import CommandPalette  from './components/CommandPalette';
 import ToastSystem     from './components/ToastSystem';
-import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix } from './api';
+import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix, isValidGhToken } from './api';
 import { LANG_COLOR } from './constants';
 
 const IS_MAC = /Mac/i.test(navigator.userAgentData?.platform ?? navigator.platform);
@@ -571,10 +571,10 @@ export default function App() {
 
         {/* PAT input */}
         <div className="cb-input" style={{ width: 190 }}>
-          <Lock size={14} style={{ color: ghToken ? 'var(--primary)' : 'var(--text-3)', flexShrink: 0 }} />
+          <Lock size={14} style={{ color: ghToken ? (isValidGhToken(ghToken) ? 'var(--primary)' : 'var(--danger)') : 'var(--text-3)', flexShrink: 0 }} />
           <input
             type="password"
-            placeholder="token (optional)"
+            placeholder={isValidGhToken(ghToken) ? "token (optional)" : "invalid format"}
             value={ghToken}
             onChange={e => { setGhToken(e.target.value); sessionStorage.setItem('gm-gh-token', e.target.value); }}
             onKeyDown={e => { if (e.key === 'Enter' && !reposLoading && !isAnalyzing) handleLoadRepos(); }}
@@ -775,7 +775,7 @@ export default function App() {
         <CrisisChat finding={crisisFinding} sessionId={SESSION_ID} onClose={() => setCrisisFinding(null)} />
       )}
       <KeyboardHelp open={showKbHelp} onClose={() => setShowKbHelp(false)} />
-      <FilePreviewDrawer path={filePreview?.path} line={filePreview?.line} repoUrl={selectedRepoUrl} onClose={() => setFilePreview(null)} />
+      <FilePreviewDrawer path={filePreview?.path} line={filePreview?.line} repoUrl={selectedRepoUrl} ghToken={ghToken} onClose={() => setFilePreview(null)} />
       <CommandPalette
         open={showPalette}
         onClose={() => setShowPalette(false)}

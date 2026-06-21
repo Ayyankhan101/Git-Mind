@@ -1,7 +1,14 @@
+import hashlib
+import hmac
 import os
 import re
 
+from fastapi import Request, Response
+from starlette.middleware.base import BaseHTTPMiddleware
+
 _GH_TOKEN_RE = re.compile(r'^gh[pousr]_[A-Za-z0-9]{36,}$')
+
+_PUBLIC_PATHS = frozenset({"/health", "/metrics", "/docs", "/openapi.json"})
 
 
 def get_gh_token(request) -> str | None:
@@ -17,3 +24,22 @@ def require_gh_token(request) -> str:
         from fastapi import HTTPException
         raise HTTPException(status_code=401, detail="GitHub token required — send X-GH-Token header or set GITHUB_TOKEN")
     return token
+
+
+def hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+class AuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        path = request.url.path
+        if path in _PUBLIC_PATHS or path.startswith("/ws/"):
+            return await call_next(request)
+        token = request.headers.get("X-GH-Token", "").strip() or os.getenv("GITHUB_TOKEN", "")
+        if not token:
+            return Response(
+                content='{"error":"GitHub token required — send X-GH-Token header or set GITHUB_TOKEN"}',
+                status_code=401,
+                media_type="application/json",
+            )
+        return await call_next(request)

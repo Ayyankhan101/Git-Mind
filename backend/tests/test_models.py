@@ -27,13 +27,13 @@ class TestPRReviewRequest:
 class TestFixRequest:
     def test_valid(self):
         r = FixRequest(session_id="00000000-0000-0000-0000-000000000001", finding={"rule": "test"})
-        assert r.finding["rule"] == "test"
+        assert r.finding.rule == "test"
 
 
 class TestAutoPRRequest:
     def test_valid(self):
         r = AutoPRRequest(session_id="00000000-0000-0000-0000-000000000001", finding={"id": "f1"})
-        assert r.finding["id"] == "f1"
+        assert r.finding.id == "f1"
 
 
 class TestPRImpactRequest:
@@ -54,6 +54,6 @@ class TestIncidentReportRequest:
             session_id="00000000-0000-0000-0000-000000000001",
             finding={"title": "XSS"},
         )
-        assert r.finding["title"] == "XSS"
+        assert r.finding.title == "XSS"
         assert r.crisis_messages == []
         assert r.outcome == "unknown"

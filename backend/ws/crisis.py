@@ -7,6 +7,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 
 from agents.crisis.reporter import reporter_loop
 from orchestrator import crisis_graph
+from services.rate_limiter import rate_ok
 from services.session import get_session, initial_state
 
 logger = structlog.get_logger(__name__)
@@ -22,13 +23,22 @@ async def handle_crisis(ws: WebSocket) -> None:
         return
 
     _ws_auth_secret = os.environ.get("WS_AUTH_SECRET")
-    if _ws_auth_secret and payload.get("ws_auth_secret") != _ws_auth_secret:
-        await ws.send_json({"error": "WebSocket auth secret mismatch"})
-        await ws.close(code=1008)
-        return
+    if _ws_auth_secret:
+        import hmac
+        if not hmac.compare_digest(payload.get("ws_auth_secret", ""), _ws_auth_secret):
+            await ws.send_json({"error": "WebSocket auth secret mismatch"})
+            await ws.close(code=1008)
+            return
 
     session_id = payload.get("session_id")
     finding_id = payload.get("finding_id")
+
+    client_ip = getattr(ws.client, "host", "unknown")
+    if not rate_ok("analyze", client_ip):
+        await ws.send_json({"error": "Rate limit exceeded — max 3 analyses per minute. Please wait."})
+        await ws.close()
+        return
+
     session = await get_session(session_id)
 
     if not session:

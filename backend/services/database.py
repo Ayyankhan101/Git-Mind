@@ -1,18 +1,42 @@
+import logging
 import os
+import sys
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from models.db import Base
 
+logger = logging.getLogger(__name__)
+
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:////tmp/gitmind.db")
 
-engine = create_async_engine(DATABASE_URL, echo=False)
+# Pool config for PostgreSQL production
+_pool_kwargs: dict = {}
+if DATABASE_URL.startswith("postgresql"):
+    _pool_kwargs = {
+        "pool_size": 5,
+        "max_overflow": 10,
+        "pool_recycle": 300,
+        "pool_pre_ping": True,
+    }
+
+engine = create_async_engine(DATABASE_URL, echo=False, **_pool_kwargs)
 async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
 
 async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    import subprocess
+    proc = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        capture_output=True, text=True, timeout=30,
+    )
+    if proc.returncode != 0:
+        logger.warning("Alembic failed (rc=%d), falling back to create_all: %s", proc.returncode, proc.stderr[:300])
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    if proc.stderr:
+        logger.warning("Alembic stderr: %s", proc.stderr[:500])
 
 
 async def get_db() -> AsyncSession:
@@ -35,7 +59,8 @@ async def get_analysis_db(session_id: str) -> dict | None:
             "architecture_diagram": row.architecture_diagram,
             "git_audit": row.git_audit,
             "repo_url": row.repo_url,
-            "chat_history": [],
+            "chat_history": row.chat_history or [],
+            "owner_hash": row.owner_hash,
         }
 
 
@@ -60,12 +85,10 @@ async def delete_expired_analyses(cutoff: float) -> int:
         )
         removed = result.rowcount
         if removed:
+            remaining = await session.execute(select(Analysis.id))
+            remaining_ids = {row[0] for row in remaining.fetchall()}
             await session.execute(
-                delete(ShaIndex).where(
-                    ShaIndex.session_id.notin_(
-                        session.query(Analysis.id)
-                    )
-                )
+                delete(ShaIndex).where(ShaIndex.session_id.notin_(remaining_ids))
             )
         await session.commit()
         return removed or 0

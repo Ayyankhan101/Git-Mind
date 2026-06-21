@@ -37,6 +37,9 @@ async def pr_review_endpoint(req: PRReviewRequest, request: Request):
 
 @router.get("/pr-list/{owner}/{repo}")
 async def list_open_prs(owner: str, repo: str, request: Request):
+    client_ip = request.client.host if request.client else "unknown"
+    if not rate_ok("pr", f"{owner}/{repo}:{client_ip}"):
+        return {"error": "Rate limit exceeded", "prs": []}
     token = get_gh_token(request)
     gh_headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}
     if token:
@@ -98,8 +101,8 @@ async def pr_impact_endpoint(req: PRImpactRequest, request: Request):
                 f"https://api.github.com/repos/{owner}/{repo_name}/pulls/{pr_num}",
                 headers=gh_headers,
             )
-    except Exception as exc:
-        return {"error": f"GitHub API error: {exc}"}
+    except Exception:
+        return {"error": "GitHub API error — check PR URL and try again"}
 
     if pr_resp.status_code == 404:
         return {"error": f"PR #{pr_num} not found — may be private or closed"}

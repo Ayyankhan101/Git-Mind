@@ -25,6 +25,7 @@ MSG="${1:-sync: deploy refactored backend}"
 echo "==> Syncing backend/ -> gitmind-backend-space/"
 
 rsync -av --delete \
+  --exclude='.git/' \
   --exclude='__pycache__/' \
   --exclude='*.pyc' \
   --exclude='.chroma/' \

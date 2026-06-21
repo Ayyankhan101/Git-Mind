@@ -2,6 +2,7 @@ import time
 import logging
 
 from langchain_groq import ChatGroq
+from llm_cache import invoke_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ def make_crisis_agent(name: str, system_prompt: str, leaks: bool = True):
         )
 
         try:
-            text = _llm.invoke(prompt).content
+            text = invoke_with_retry(_llm, prompt).content
         except Exception as exc:
             logger.error("crisis agent %s failed: %s", name, exc)
             text = f"[{name} unavailable — investigating]"

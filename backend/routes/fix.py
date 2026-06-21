@@ -37,8 +37,8 @@ async def fix_endpoint(req: FixRequest, request: Request):
     finding = req.finding
     collection = session.get("chroma_collection_name")
     query = " ".join(filter(None, [
-        finding.get("rule"), finding.get("file"),
-        finding.get("title"), finding.get("description", "")[:100],
+        finding.rule, finding.file,
+        finding.title, (finding.description or "")[:100],
     ]))
 
     chunks = await asyncio.to_thread(search_codebase, collection, query, 4) if collection else []
@@ -47,11 +47,11 @@ async def fix_endpoint(req: FixRequest, request: Request):
     prompt = (
         f"Repo: {session['repo_name']}\n\n"
         f"Security finding:\n"
-        f"  Rule: {finding.get('rule', 'unknown')}\n"
-        f"  Severity: {finding.get('severity', 'unknown')}\n"
-        f"  Title: {finding.get('title', '')}\n"
-        f"  Description: {finding.get('description') or finding.get('exploit_story', '')}\n"
-        f"  File: {finding.get('file', 'unknown')}  Line: {finding.get('line_start', '?')}\n\n"
+        f"  Rule: {finding.rule or 'unknown'}\n"
+        f"  Severity: {finding.severity or 'unknown'}\n"
+        f"  Title: {finding.title or ''}\n"
+        f"  Description: {finding.description or finding.exploit_story or ''}\n"
+        f"  File: {finding.file or 'unknown'}  Line: {finding.line_start or '?'}\n\n"
         f"Relevant code:\n{context}\n\n"
         "Generate a fix for this vulnerability.\n"
         "Format your response as:\n\n"
@@ -73,8 +73,8 @@ async def fix_endpoint(req: FixRequest, request: Request):
         return invoke_with_retry(llm, prompt).content.strip()
 
     fix = await asyncio.to_thread(_generate)
-    logger.info("Fix generated", session=req.session_id, rule=finding.get("rule"))
-    return {"fix": fix, "finding_rule": finding.get("rule", "unknown")}
+    logger.info("Fix generated", session=req.session_id, rule=finding.rule)
+    return {"fix": fix, "finding_rule": finding.rule or "unknown"}
 
 
 def _apply_and_push_pr(
@@ -178,17 +178,17 @@ async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
     finding = req.finding
     collection = session.get("chroma_collection_name")
     query = " ".join(filter(None, [
-        finding.get("rule"), finding.get("file"),
-        finding.get("title"), finding.get("description", "")[:100],
+        finding.rule, finding.file,
+        finding.title, (finding.description or "")[:100],
     ]))
     chunks = await asyncio.to_thread(search_codebase, collection, query, 4) if collection else []
     context = "\n\n".join(f"--- {c['filepath']} ---\n{c['content']}" for c in chunks) or "No context."
 
     prompt = (
         f"Security finding in {session['repo_name']}:\n"
-        f"  Rule: {finding.get('rule', 'unknown')}  Severity: {finding.get('severity', 'unknown')}\n"
-        f"  File: {finding.get('file', '?')}  Line: {finding.get('line_start', '?')}\n"
-        f"  Issue: {finding.get('description') or finding.get('exploit_story', '')}\n\n"
+        f"  Rule: {finding.rule or 'unknown'}  Severity: {finding.severity or 'unknown'}\n"
+        f"  File: {finding.file or '?'}  Line: {finding.line_start or '?'}\n"
+        f"  Issue: {finding.description or finding.exploit_story or ''}\n\n"
         f"Relevant code:\n{context}\n\n"
         "Output ONLY a unified diff in this exact format — no explanation, no markdown fences:\n"
         "--- a/path/to/file\n+++ b/path/to/file\n@@ ... @@\n context\n-removed\n+added\n"
@@ -202,7 +202,7 @@ async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
 
     try:
         result = await asyncio.to_thread(
-            _apply_and_push_pr, repo_url, raw_patch, finding, token, session["repo_name"]
+            _apply_and_push_pr, repo_url, raw_patch, finding.model_dump(), token, session["repo_name"]
         )
         logger.info("Auto-PR created", pr_url=result.get("pr_url"))
         return result

@@ -55,7 +55,7 @@ async def get_session(session_id: str) -> dict | None:
     return restored
 
 
-def _session_to_snapshot(session_id: str, final_state: dict, repo_url: str, sha: str | None) -> dict:
+def _session_to_snapshot(session_id: str, final_state: dict, repo_url: str, sha: str | None, owner_hash: str | None = None) -> dict:
     import time
     return {
         "repo_name": final_state["repo_name"],
@@ -68,11 +68,13 @@ def _session_to_snapshot(session_id: str, final_state: dict, repo_url: str, sha:
         "git_audit": final_state.get("git_audit"),
         "health": final_state.get("health"),
         "head_sha": sha,
+        "chat_history": final_state.get("chat_history", []),
+        "owner_hash": owner_hash,
         "saved_at": time.time(),
     }
 
 
-async def persist_analysis(session_id: str, final_state: dict, repo_url: str, sha: str | None) -> None:
+async def persist_analysis(session_id: str, final_state: dict, repo_url: str, sha: str | None, owner_hash: str | None = None) -> None:
     from services.database import persist_analysis_db
     from services.sha_cache import update_sha_index
 
@@ -81,7 +83,7 @@ async def persist_analysis(session_id: str, final_state: dict, repo_url: str, sh
         return
 
     try:
-        snapshot = _session_to_snapshot(session_id, final_state, repo_url, sha)
+        snapshot = _session_to_snapshot(session_id, final_state, repo_url, sha, owner_hash)
         await persist_analysis_db(session_id, snapshot)
         if sha:
             await update_sha_index(sha, session_id)

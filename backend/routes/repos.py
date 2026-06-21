@@ -6,6 +6,7 @@ import structlog
 from fastapi import APIRouter, Request
 
 from services.auth import get_gh_token
+from services.rate_limiter import rate_ok
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -19,6 +20,9 @@ async def list_repos(username: str, request: Request):
         return {"error": "Invalid GitHub username"}
 
     token = get_gh_token(request)
+    client_ip = request.client.host if request.client else "unknown"
+    if not rate_ok("repos", client_ip):
+        return {"error": "Rate limit exceeded"}
     gh_headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}
     if token:
         gh_headers["Authorization"] = f"Bearer {token}"
@@ -41,8 +45,8 @@ async def list_repos(username: str, request: Request):
         except httpx.TimeoutException as exc:
             last_exc = exc
             await asyncio.sleep(0.5 * (attempt + 1))
-        except httpx.RequestError as exc:
-            return {"error": f"GitHub API unreachable: {exc}"}
+        except httpx.RequestError:
+            return {"error": "GitHub API unreachable — try again later"}
     if resp is None:
         return {"error": "GitHub API timed out — try again in a moment"}
 
