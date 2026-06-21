@@ -574,7 +574,7 @@ export default function App() {
           <Lock size={14} style={{ color: ghToken ? (isValidGhToken(ghToken) ? 'var(--primary)' : 'var(--danger)') : 'var(--text-3)', flexShrink: 0 }} />
           <input
             type="password"
-            placeholder={isValidGhToken(ghToken) ? "token (optional)" : "invalid format"}
+            placeholder={ghToken && !isValidGhToken(ghToken) ? "invalid format" : "token (optional)"}
             value={ghToken}
             onChange={e => { setGhToken(e.target.value); sessionStorage.setItem('gm-gh-token', e.target.value); }}
             onKeyDown={e => { if (e.key === 'Enter' && !reposLoading && !isAnalyzing) handleLoadRepos(); }}

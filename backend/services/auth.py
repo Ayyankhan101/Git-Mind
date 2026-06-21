@@ -36,10 +36,5 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if path in _PUBLIC_PATHS or path.startswith("/ws/"):
             return await call_next(request)
         token = request.headers.get("X-GH-Token", "").strip() or os.getenv("GITHUB_TOKEN", "")
-        if not token:
-            return Response(
-                content='{"error":"GitHub token required — send X-GH-Token header or set GITHUB_TOKEN"}',
-                status_code=401,
-                media_type="application/json",
-            )
+        request.state.gh_token = token or None
         return await call_next(request)
