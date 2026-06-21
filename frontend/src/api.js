@@ -16,7 +16,7 @@ function deriveHttpBase() {
 export const BASE    = deriveHttpBase();
 export const WS_BASE = BASE.replace(/^http/, 'ws');
 
-const GH_TOKEN_RE = /^gh[pousr]_[A-Za-z0-9]{36,}$/;
+const GH_TOKEN_RE = /^(gh[pousr]_|github_pat_)[A-Za-z0-9_]+$/;
 
 export function isValidGhToken(token) {
   if (!token) return true; // empty is valid (optional)

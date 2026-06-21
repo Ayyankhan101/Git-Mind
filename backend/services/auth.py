@@ -6,7 +6,7 @@ import re
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-_GH_TOKEN_RE = re.compile(r'^gh[pousr]_[A-Za-z0-9]{36,}$')
+_GH_TOKEN_RE = re.compile(r'^(gh[pousr]_|github_pat_)[A-Za-z0-9_]+$')
 
 _PUBLIC_PATHS = frozenset({"/health", "/metrics", "/docs", "/openapi.json"})
 
