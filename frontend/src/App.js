@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 
 import Sidebar         from './components/Sidebar';
-const DiagramTab      = lazy(() => import('./components/DiagramTab'));
 import DocsTab         from './components/DocsTab';
 import SecurityTab     from './components/SecurityTab';
 import ChatTab         from './components/ChatTab';
@@ -25,6 +24,8 @@ import CommandPalette  from './components/CommandPalette';
 import ToastSystem     from './components/ToastSystem';
 import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix, isValidGhToken } from './api';
 import { LANG_COLOR } from './constants';
+
+const DiagramTab = lazy(() => import('./components/DiagramTab'));
 
 const IS_MAC = /Mac/i.test(navigator.userAgentData?.platform ?? navigator.platform);
 
