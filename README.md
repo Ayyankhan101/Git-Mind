@@ -257,7 +257,7 @@ Uses `pytest-asyncio` with `asyncio_mode = auto`. Tests create an isolated temp 
 | `tests/test_sha_cache.py` | SHA-index dedup |
 | `tests/test_routes.py` | REST endpoint integration (mock DB) |
 
-### Frontend (Jest — 8 tests)
+### Frontend (Jest — 49 tests)
 
 ```bash
 cd frontend

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, Suspense, lazy } from 'react';
 import {
   Search, FolderOpen, Share2, Download, Command,
   Check, X, AlertTriangle, ChevronDown,
@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 
 import Sidebar         from './components/Sidebar';
-import DiagramTab      from './components/DiagramTab';
+const DiagramTab      = lazy(() => import('./components/DiagramTab'));
 import DocsTab         from './components/DocsTab';
 import SecurityTab     from './components/SecurityTab';
 import ChatTab         from './components/ChatTab';
@@ -728,7 +728,7 @@ export default function App() {
           ) : (
             <ErrorBoundary key={activeTab}>
               {activeTab === 'summary'  && <SummaryTab  sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} findings={findings} apiDocs={apiDocs} elapsedSec={elapsedSec} isAnalyzing={isAnalyzing} health={health} />}
-              {activeTab === 'diagram'  && <DiagramTab  diagram={diagram}   isAnalyzing={isAnalyzing} analyzed={analyzed} theme={theme} sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} />}
+              {activeTab === 'diagram'  && <Suspense fallback={<div className="tab-loading">Loading diagram…</div>}><DiagramTab  diagram={diagram}   isAnalyzing={isAnalyzing} analyzed={analyzed} theme={theme} sessionId={SESSION_ID} enabled={analyzed} repoName={repoName} /></Suspense>}
               {activeTab === 'docs'     && <DocsTab     docs={apiDocs}      isAnalyzing={isAnalyzing} analyzed={analyzed} onPickFile={setFilePreview} />}
               {activeTab === 'security' && <SecurityTab findings={findings} isAnalyzing={isAnalyzing} analyzed={analyzed} onCrisis={setCrisisFinding} onFix={handleFix} fixLoading={fixLoading} fixResult={fixResult} onPickFile={setFilePreview} sessionId={SESSION_ID} />}
               {activeTab === 'cve'      && <CveTab      findings={cveFindings} isAnalyzing={isAnalyzing} analyzed={analyzed} />}

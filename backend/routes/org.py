@@ -9,7 +9,7 @@ from fastapi import APIRouter, Request
 from agents.cve_scanner import run_cve_scanner
 from models.requests import OrgAuditRequest
 from services.auth import get_gh_token
-from services.rate_limiter import rate_ok
+from services.rate_limiter import check_rate_limit
 from services.rate_limit_response import rate_limit_response
 
 logger = structlog.get_logger(__name__)
@@ -31,7 +31,7 @@ async def org_audit_endpoint(req: OrgAuditRequest, request: Request):
         return {"error": "Maximum 20 repos per org audit"}
 
     client_ip = request.client.host if request.client else "unknown"
-    if not rate_ok("org_audit", client_ip):
+    if not (await check_rate_limit("org_audit", client_ip))[0]:
         return await rate_limit_response("org_audit", client_ip)
 
     token = get_gh_token(request)

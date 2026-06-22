@@ -15,7 +15,7 @@ from chroma_utils import search_codebase
 from llm_cache import invoke_with_retry
 from models.requests import FixRequest, AutoPRRequest
 from services.auth import get_gh_token
-from services.rate_limiter import rate_ok
+from services.rate_limiter import check_rate_limit
 from services.rate_limit_response import rate_limit_response
 from services.session import _UUID_RE, get_session
 
@@ -28,7 +28,7 @@ async def fix_endpoint(req: FixRequest, request: Request):
     if not _UUID_RE.match(req.session_id):
         return {"error": "Invalid session ID"}
     client_ip = request.client.host if request.client else "unknown"
-    if not rate_ok("fix", client_ip):
+    if not (await check_rate_limit("fix", client_ip))[0]:
         return await rate_limit_response("fix", client_ip)
 
     session = await get_session(req.session_id)
@@ -162,7 +162,7 @@ async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
     if not _UUID_RE.match(req.session_id):
         return {"error": "Invalid session ID"}
     client_ip = request.client.host if request.client else "unknown"
-    if not rate_ok("fix", client_ip):
+    if not (await check_rate_limit("fix", client_ip))[0]:
         return await rate_limit_response("fix", client_ip)
 
     from services.auth import require_gh_token

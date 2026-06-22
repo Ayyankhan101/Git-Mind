@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse
 
 from agents.chat import run_chat_agent
 from models.requests import ChatRequest
-from services.rate_limiter import rate_ok
+from services.rate_limiter import check_rate_limit
 from services.rate_limit_response import rate_limit_response
 from services.session import get_session, _UUID_RE
 
@@ -20,7 +20,7 @@ async def chat_endpoint(req: ChatRequest, request: Request):
     if not _UUID_RE.match(req.session_id):
         return {"error": "Invalid session ID"}
     client_ip = request.client.host if request.client else "unknown"
-    if not rate_ok("chat", client_ip):
+    if not (await check_rate_limit("chat", client_ip))[0]:
         return await rate_limit_response("chat", client_ip)
 
     session = await get_session(req.session_id)
@@ -56,7 +56,7 @@ async def chat_stream_endpoint(req: ChatRequest, request: Request):
         return StreamingResponse(_bad(), media_type="text/event-stream")
 
     client_ip = request.client.host if request.client else "unknown"
-    if not rate_ok("chat", client_ip):
+    if not (await check_rate_limit("chat", client_ip))[0]:
         return await rate_limit_response("chat", client_ip)
 
     session = await get_session(req.session_id)

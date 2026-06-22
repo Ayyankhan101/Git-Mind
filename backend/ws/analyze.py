@@ -12,9 +12,12 @@ from orchestrator import graph
 from services.auth import hash_token
 from services.sha_cache import get_remote_sha, find_cached_snapshot
 from services.session import initial_state, put_session, persist_analysis
-from services.rate_limiter import rate_ok
+from services.rate_limiter import check_rate_limit
 
 logger = structlog.get_logger(__name__)
+
+HEARTBEAT_INTERVAL = 30  # seconds
+HEARTBEAT_TIMEOUT = 10   # seconds to wait for pong
 
 _STATUS_MAP: dict[str, dict[str, str]] = {
     "scanner": {
@@ -33,6 +36,23 @@ _STATUS_MAP: dict[str, dict[str, str]] = {
 
 async def handle_analyze(ws: WebSocket) -> None:
     await ws.accept()
+
+    # ── Heartbeat task ────────────────────────────────────────────────────────
+    _heartbeat_task: asyncio.Task | None = None
+    _dead = asyncio.Event()
+
+    async def _heartbeat():
+        """Send periodic pings; close on timeout."""
+        try:
+            while True:
+                await asyncio.sleep(HEARTBEAT_INTERVAL)
+                try:
+                    await asyncio.wait_for(ws.send_text(""), timeout=HEARTBEAT_TIMEOUT)
+                except Exception:
+                    _dead.set()
+                    return
+        except asyncio.CancelledError:
+            return
 
     try:
         payload = await ws.receive_json()
@@ -64,7 +84,7 @@ async def handle_analyze(ws: WebSocket) -> None:
         return
 
     client_ip = getattr(ws.client, "host", "unknown")
-    if not rate_ok("analyze", client_ip):
+    if not (await check_rate_limit("analyze", client_ip))[0]:
         await ws.send_json({"error": "Rate limit exceeded", "retry_after": 60})
         await ws.close()
         return
@@ -72,6 +92,9 @@ async def handle_analyze(ws: WebSocket) -> None:
     logger.info("Analysis started", session=session_id, repo=repo_url, auth=bool(gh_token))
     init = initial_state(repo_url, gh_token)
     final_state = dict(init)
+
+    # Start heartbeat
+    _heartbeat_task = asyncio.create_task(_heartbeat())
 
     sha = await asyncio.to_thread(get_remote_sha, repo_url)
     if sha:
@@ -120,6 +143,9 @@ async def handle_analyze(ws: WebSocket) -> None:
     astream = graph.astream(init, stream_mode="updates")
     try:
         async for chunk in astream:
+            if _dead.is_set():
+                logger.info("Heartbeat failed, closing connection", session=session_id)
+                break
             for node, update in chunk.items():
                 has_error = any(
                     ev.get("status") == "error" for ev in update.get("events", [])
@@ -188,6 +214,12 @@ async def handle_analyze(ws: WebSocket) -> None:
         await ws.send_json({"health": health_score})
         logger.info("Health score", session=session_id, grade=health_score["grade"], score=health_score["score"])
     finally:
+        if _heartbeat_task and not _heartbeat_task.done():
+            _heartbeat_task.cancel()
+            try:
+                await _heartbeat_task
+            except asyncio.CancelledError:
+                pass
         try:
             await astream.aclose()
         except Exception:

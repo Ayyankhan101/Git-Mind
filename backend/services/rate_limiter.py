@@ -136,8 +136,11 @@ def rate_ok(endpoint: str, key: str, service_key: str | None = None) -> bool:
     return _mem_rate_check(endpoint, key)[0]
 
 
-async def check_rate_limit(endpoint: str, key: str) -> tuple[bool, int, int]:
+async def check_rate_limit(endpoint: str, key: str, service_key: str | None = None) -> tuple[bool, int, int]:
     """Async rate check. Returns (allowed, remaining, retry_after)."""
+    if _is_service_key(service_key):
+        window, limit = _RATE_WINDOWS.get(endpoint, (60, 20))
+        return True, limit, 0
     r = get_redis()
     if r:
         return await _redis_rate_check(endpoint, key)

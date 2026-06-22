@@ -6,7 +6,7 @@ import structlog
 from fastapi import APIRouter, Request
 
 from services.auth import get_gh_token
-from services.rate_limiter import rate_ok
+from services.rate_limiter import check_rate_limit
 from services.rate_limit_response import rate_limit_response
 
 logger = structlog.get_logger(__name__)
@@ -22,7 +22,7 @@ async def list_repos(username: str, request: Request):
 
     token = get_gh_token(request)
     client_ip = request.client.host if request.client else "unknown"
-    if not rate_ok("repos", client_ip):
+    if not (await check_rate_limit("repos", client_ip))[0]:
         return await rate_limit_response("repos", client_ip)
     gh_headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}
     if token:

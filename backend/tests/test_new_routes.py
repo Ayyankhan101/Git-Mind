@@ -8,7 +8,7 @@ client = TestClient(app)
 
 
 class TestAnalyzeEndpoint:
-    @patch("routes.analyze.rate_ok", return_value=True)
+    @patch("routes.analyze.check_rate_limit", return_value=(True, 30, 0))
     def test_analyze_invalid_url(self, mock_rate):
         response = client.post("/analyze", json={"repo_url": "not-a-url"})
         assert response.status_code == 200
@@ -18,7 +18,7 @@ class TestAnalyzeEndpoint:
         response = client.post("/analyze", json={})
         assert response.status_code == 422
 
-    @patch("routes.analyze.rate_ok", return_value=False)
+    @patch("routes.analyze.check_rate_limit", return_value=(False, 0, 60))
     def test_analyze_rate_limited(self, mock_rate):
         response = client.post("/analyze", json={
             "repo_url": "https://github.com/vercel/next.js",
@@ -27,7 +27,7 @@ class TestAnalyzeEndpoint:
         assert "Rate limit" in response.json().get("error", "")
         assert "Retry-After" in response.headers
 
-    @patch("routes.analyze.rate_ok", return_value=True)
+    @patch("routes.analyze.check_rate_limit", return_value=(True, 30, 0))
     def test_analyze_github_only(self, mock_rate):
         response = client.post("/analyze", json={"repo_url": "https://gitlab.com/user/repo"})
         assert response.status_code == 200

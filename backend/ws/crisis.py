@@ -7,7 +7,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 
 from agents.crisis.reporter import reporter_loop
 from orchestrator import crisis_graph
-from services.rate_limiter import rate_ok
+from services.rate_limiter import check_rate_limit
 from services.session import get_session, initial_state
 
 logger = structlog.get_logger(__name__)
@@ -34,7 +34,7 @@ async def handle_crisis(ws: WebSocket) -> None:
     finding_id = payload.get("finding_id")
 
     client_ip = getattr(ws.client, "host", "unknown")
-    if not rate_ok("analyze", client_ip):
+    if not (await check_rate_limit("analyze", client_ip))[0]:
         await ws.send_json({"error": "Rate limit exceeded — max 3 analyses per minute. Please wait."})
         await ws.close()
         return

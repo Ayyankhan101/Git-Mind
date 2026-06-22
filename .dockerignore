@@ -1,10 +1,12 @@
 backend/venv
+backend/.venv
 backend/.chroma
 backend/llm_cache
 backend/__pycache__
 backend/**/__pycache__
 backend/*.pyc
 backend/.env
+backend/tests
 frontend/node_modules
 frontend/build
 .git
