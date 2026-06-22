@@ -1,6 +1,8 @@
 import asyncio
+import os
 import re
 import shutil
+import stat
 import subprocess
 import tempfile
 import uuid
@@ -87,11 +89,20 @@ def _apply_and_push_pr(
 ) -> dict:
     branch = f"gitmind/fix-{finding.get('id', uuid.uuid4().hex[:6])}"
     dest = tempfile.mkdtemp(prefix="gitmind_pr_")
+    _askpass_script = None
 
     try:
-        auth_url = repo_url.replace("https://", f"https://x-access-token:{token}@")
+        # Use GIT_ASKPASS to avoid token in URLs/logs
+        _env = {}
+        if token:
+            _askpass_script = tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False)
+            _askpass_script.write(f'#!/bin/sh\necho "{token}"\n')
+            _askpass_script.close()
+            os.chmod(_askpass_script.name, stat.S_IRUSR | stat.S_IXUSR)
+            _env["GIT_ASKPASS"] = _askpass_script.name
         subprocess.run(
-            ["git", "clone", "--depth=1", auth_url, dest],
+            ["git", "clone", "--depth=1", repo_url, dest],
+            env={**os.environ, **_env},
             check=True, capture_output=True, timeout=60,
         )
         subprocess.run(["git", "config", "user.email", "gitmind@example.com"], cwd=dest, check=True, capture_output=True)
@@ -101,7 +112,7 @@ def _apply_and_push_pr(
         if ".." in patch:
             raise ValueError("Patch content references parent directory — rejected")
         proc = subprocess.run(
-            ["patch", "-p1", "--forward", f"--directory={dest}"],
+            ["patch", "-p1", "--forward", "--reject", f"--directory={dest}"],
             input=patch, text=True, cwd=dest,
             capture_output=True, timeout=15,
         )
@@ -109,11 +120,19 @@ def _apply_and_push_pr(
             raise RuntimeError("patch command failed")
 
         subprocess.run(["git", "add", "-A"], cwd=dest, check=True, capture_output=True)
-        msg = f"fix: {finding.get('title', 'security fix')} [{finding.get('rule', 'gitmind')}]"
+        # Sanitize commit message: strip control chars and newlines
+        safe_title = re.sub(r'[\x00-\x1f\x7f]', '', finding.get('title', 'security fix'))[:72]
+        safe_rule = re.sub(r'[\x00-\x1f\x7f]', '', finding.get('rule', 'gitmind'))[:40]
+        msg = f"fix: {safe_title} [{safe_rule}]"
         subprocess.run(["git", "commit", "-m", msg], cwd=dest, check=True, capture_output=True)
         subprocess.run(["git", "push", "origin", branch], cwd=dest, check=True, capture_output=True, timeout=30)
     finally:
         shutil.rmtree(dest, ignore_errors=True)
+        if _askpass_script:
+            try:
+                os.unlink(_askpass_script.name)
+            except OSError:
+                pass
 
     m = re.match(r'https://github\.com/([^/]+)/([^/]+?)(?:\.git)?$', repo_url)
     if not m:

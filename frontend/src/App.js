@@ -24,6 +24,7 @@ import CommandPalette  from './components/CommandPalette';
 import ToastSystem     from './components/ToastSystem';
 import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix, isValidGhToken } from './api';
 import { LANG_COLOR } from './constants';
+import * as tokenManager from './tokenManager';
 
 const DiagramTab = lazy(() => import('./components/DiagramTab'));
 
@@ -113,7 +114,7 @@ export default function App() {
 
   // ── Core state ───────────────────────────────────────────────────────────────
   const [githubUser,    setGithubUser]    = useState('');
-  const [ghToken,       setGhToken]       = useState(() => sessionStorage.getItem('gm-gh-token') || '');
+  const [ghToken,       setGhToken]       = useState(() => tokenManager.get() || '');
   const [repos,         setRepos]         = useState([]);
   const [reposLoading,  setReposLoading]  = useState(false);
   const [reposError,    setReposError]    = useState(null);
@@ -200,6 +201,11 @@ export default function App() {
       try { localStorage.setItem('gm-recents', JSON.stringify(next)); } catch {}
       return next;
     });
+  }, []);
+
+  // ── Restore persisted token ─────────────────────────────────────────────────
+  useEffect(() => {
+    tokenManager.restore().then(t => { if (t) setGhToken(t); });
   }, []);
 
   // ── Cleanup ───────────────────────────────────────────────────────────────────
@@ -577,7 +583,7 @@ export default function App() {
             type="password"
             placeholder={ghToken && !isValidGhToken(ghToken) ? "unrecognized format" : "token (optional)"}
             value={ghToken}
-            onChange={e => { setGhToken(e.target.value); sessionStorage.setItem('gm-gh-token', e.target.value); }}
+            onChange={e => { setGhToken(e.target.value); tokenManager.set(e.target.value); }}
             onKeyDown={e => { if (e.key === 'Enter' && !reposLoading && !isAnalyzing) handleLoadRepos(); }}
             disabled={isAnalyzing}
             style={{ minWidth: 0 }}

@@ -40,9 +40,51 @@ def _persist_task(task: dict) -> None:
 
 async def _worker():
     while True:
-        task_id, coro = await _queue.get()
+        task_id, coro_factory = await _queue.get()
         task = _tasks.get(task_id)
         if task is None:
+            _queue.task_done()
+            continue
+        task["status"] = "running"
+        _persist_task(task)
+        try:
+            coro = coro_factory()
+            result = await asyncio.wait_for(coro, timeout=_TASK_TIMEOUT)
+            task["result"] = result
+            task["status"] = "completed"
+            tasks_completed.labels(status="completed").inc()
+        except asyncio.CancelledError:
+            task["status"] = "cancelled"
+            raise
+        except asyncio.TimeoutError:
+            retries = task.get("retries", _MAX_RETRIES)
+            if retries > 0:
+                task["retries"] = retries - 1
+                task["status"] = "pending"
+                delay = 2 ** (_MAX_RETRIES - retries)
+                asyncio.get_running_loop().call_later(delay, lambda: _queue.put_nowait((task_id, coro_factory)))
+                logger.warning("Task timed out, retrying", task_id=task_id, retries_left=retries - 1)
+            else:
+                task["error"] = "Task timed out after retries"
+                task["status"] = "failed"
+                tasks_completed.labels(status="failed").inc()
+                logger.error("Task permanently failed (timeout)", task_id=task_id)
+        except Exception as exc:
+            retries = task.get("retries", _MAX_RETRIES)
+            if retries > 0:
+                task["retries"] = retries - 1
+                task["status"] = "pending"
+                delay = 2 ** (_MAX_RETRIES - retries)
+                asyncio.get_running_loop().call_later(delay, lambda: _queue.put_nowait((task_id, coro_factory)))
+                logger.warning("Task failed, retrying", task_id=task_id, retries_left=retries - 1)
+            else:
+                task["error"] = str(exc)[:500]
+                task["status"] = "failed"
+                tasks_completed.labels(status="failed").inc()
+                logger.error("Task permanently failed", task_id=task_id, error=str(exc)[:200])
+        finally:
+            task["completed_at"] = time.time()
+            _persist_task(task)
             _queue.task_done()
             continue
         task["status"] = "running"
@@ -61,7 +103,9 @@ async def _worker():
                 task["retries"] = retries - 1
                 task["status"] = "pending"
                 delay = 2 ** (_MAX_RETRIES - retries)
-                asyncio.get_event_loop().call_later(delay, lambda: _queue.put_nowait((task_id, coro)))
+                # M3 fix: re-create the coroutine instead of re-using the same one
+                new_coro = coro_factory()
+                asyncio.get_running_loop().call_later(delay, lambda: _queue.put_nowait((task_id, new_coro)))
                 logger.warning("Task timed out, retrying", task_id=task_id, retries_left=retries - 1)
             else:
                 task["error"] = "Task timed out after retries"
@@ -74,7 +118,8 @@ async def _worker():
                 task["retries"] = retries - 1
                 task["status"] = "pending"
                 delay = 2 ** (_MAX_RETRIES - retries)
-                asyncio.get_event_loop().call_later(delay, lambda: _queue.put_nowait((task_id, coro)))
+                new_coro = coro_factory()
+                asyncio.get_running_loop().call_later(delay, lambda: _queue.put_nowait((task_id, new_coro)))
                 logger.warning("Task failed, retrying", task_id=task_id, retries_left=retries - 1)
             else:
                 task["error"] = str(exc)[:500]
@@ -87,7 +132,13 @@ async def _worker():
             _queue.task_done()
 
 
-def submit(coro) -> str:
+def submit(coro_factory) -> str:
+    """Submit a background task.
+
+    ``coro_factory`` must be a **callable** that returns a fresh coroutine
+    each time it is called (e.g. ``lambda: do_work(...)``).  The worker
+    invokes it once per attempt so retries always start with a new coroutine.
+    """
     task_id = str(uuid.uuid4())
     task = {
         "id": task_id,
@@ -100,7 +151,7 @@ def submit(coro) -> str:
     }
     _tasks[task_id] = task
     _persist_task(task)
-    _queue.put_nowait((task_id, coro))
+    _queue.put_nowait((task_id, coro_factory))
     tasks_submitted.inc()
     return task_id
 

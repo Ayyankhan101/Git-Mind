@@ -145,7 +145,7 @@ async def pr_impact_endpoint(req: PRImpactRequest, request: Request):
         "diff_truncated": len(pr_diff) > 10_000,
     }
     task_id = submit(
-        _compute_pr_impact(
+        lambda: _compute_pr_impact(
             repo_url=repo_url, token=token, head_ref=head_ref,
             base_session=base_session, pr_meta=pr_meta, pr_diff=pr_diff,
         )

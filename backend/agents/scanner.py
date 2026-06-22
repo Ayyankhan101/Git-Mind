@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import stat
 import tempfile
 from pathlib import Path
 
@@ -37,9 +38,17 @@ def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None =
     _validate_url(repo_url)
 
     # Build authenticated clone URL for private repos
+    # Use GIT_ASKPASS to avoid token appearing in URLs, process listings, or logs
     clone_url = repo_url
+    _askpass_script = None
+    _env = {"GIT_TERMINAL_PROMPT": "0"}
     if token:
-        clone_url = repo_url.replace("https://", f"https://x-access-token:{token}@")
+        _askpass_script = tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False)
+        _askpass_script.write(f'#!/bin/sh\necho "{token}"\n')
+        _askpass_script.close()
+        os.chmod(_askpass_script.name, stat.S_IRUSR | stat.S_IXUSR)
+        _env["GIT_ASKPASS"] = _askpass_script.name
+        _env["GIT_TERMINAL_PROMPT"] = "0"
 
     dest = tempfile.mkdtemp(prefix="gitmind_")
     logger.info("Cloning %s → %s (auth=%s, branch=%s)", repo_url, dest, bool(token), branch or "default")
@@ -53,13 +62,19 @@ def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None =
     try:
         repo = git.Repo.clone_from(
             clone_url, dest,
-            env={"GIT_TERMINAL_PROMPT": "0"},  # never hang waiting for credentials
+            env=_env,
             **clone_kwargs,
         )
         head_sha = repo.head.commit.hexsha
         repo.close()   # prevents resource leak on Windows
     except git.exc.GitCommandError as exc:
         raise RuntimeError(f"Git clone failed: {exc}") from exc
+    finally:
+        if _askpass_script:
+            try:
+                os.unlink(_askpass_script.name)
+            except OSError:
+                pass
 
     file_tree:     list[str]       = []
     file_contents: dict[str, str]  = {}

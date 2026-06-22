@@ -259,9 +259,16 @@ app.include_router(monitor_router)
 
 @app.get("/task/{task_id}")
 async def get_task_status(task_id: str, request: Request):
-    from services.auth import require_gh_token_or_service_key
+    from services.auth import require_gh_token_or_service_key, get_gh_token, get_service_key
     from services.task_queue import get_task
+    from services.rate_limiter import check_rate_limit
+    from services.rate_limit_response import rate_limit_response
     require_gh_token_or_service_key(request)
+    gh_token = get_gh_token(request)
+    svc_key = get_service_key(request)
+    allowed, remaining, retry_after = await check_rate_limit("/task/:id", gh_token or svc_key, service_key=svc_key)
+    if not allowed:
+        return rate_limit_response(retry_after, remaining)
     task = get_task(task_id)
     if task is None:
         return {"error": "Task not found"}

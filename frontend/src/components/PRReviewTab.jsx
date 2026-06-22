@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { GitPullRequest, ChevronDown, Check, AlertTriangle, MessageSquare, TrendingUp, TrendingDown, Minus, ShieldAlert, Package, Zap, AlertCircle, GitMerge, XCircle, GitBranch } from 'lucide-react';
 import { reviewPR, prImpact, fetchOpenPRs } from '../api';
+import * as tokenManager from '../tokenManager';
 
 function relativeTime(iso) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -264,7 +265,7 @@ function ImpactPanel({ impact, loading, error }) {
 
 export default function PRReviewTab({ prAutoUrl, onAutoUrlUsed, sessionId, analyzed, repoUrl }) {
   const [prUrl,         setPrUrl]         = useState('');
-  const [token,         setToken]         = useState(() => sessionStorage.getItem('gm-gh-token') || '');
+  const [token,         setToken]         = useState(() => tokenManager.get() || '');
   const [showAdvanced,  setShowAdvanced]  = useState(false);
   const [loading,       setLoading]       = useState(false);
   const [error,         setError]         = useState(null);
@@ -462,7 +463,7 @@ export default function PRReviewTab({ prAutoUrl, onAutoUrlUsed, sessionId, analy
           type="password"
           placeholder="GitHub personal access token (optional)"
           value={token}
-          onChange={e => { setToken(e.target.value); sessionStorage.setItem('gm-gh-token', e.target.value); }}
+          onChange={e => { setToken(e.target.value); tokenManager.set(e.target.value); }}
         />
       )}
 

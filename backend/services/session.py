@@ -17,7 +17,7 @@ logger = structlog.get_logger(__name__)
 
 _UUID_RE = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.IGNORECASE)
 
-_MAX_SESSIONS = 50
+_MAX_SESSIONS = 500
 _SESSION_TTL = 3600  # 1 hour
 _sessions: OrderedDict[str, dict] = OrderedDict()
 

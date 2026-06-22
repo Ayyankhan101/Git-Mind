@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 import shutil
 import uuid
@@ -60,7 +61,7 @@ async def handle_analyze(ws: WebSocket) -> None:
         await ws.close(code=1003)
         return
 
-    if len(str(payload)) > 1_000_000:
+    if len(json.dumps(payload)) > 1_000_000:
         await ws.send_json({"error": "Payload too large"})
         await ws.close(code=1009)
         return
@@ -70,6 +71,14 @@ async def handle_analyze(ws: WebSocket) -> None:
         import hmac
         if not hmac.compare_digest(payload.get("ws_auth_secret", ""), _ws_auth_secret):
             await ws.send_json({"error": "WebSocket auth secret mismatch"})
+            await ws.close(code=1008)
+            return
+
+    # Opt-in WS auth: when REQUIRE_WS_AUTH=true, require gh_token in payload
+    if os.environ.get("REQUIRE_WS_AUTH", "").lower() in ("true", "1", "yes"):
+        gh_token = (payload.get("gh_token") or "").strip()
+        if not gh_token:
+            await ws.send_json({"error": "GitHub token required — set REQUIRE_WS_AUTH=false or provide gh_token"})
             await ws.close(code=1008)
             return
 
