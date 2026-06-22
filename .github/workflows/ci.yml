@@ -48,11 +48,26 @@ jobs:
       - name: Build
         run: CI=true NODE_OPTIONS="--openssl-legacy-provider --max-old-space-size=4096" npm run build
 
-  docker-build:
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [backend-tests, frontend-tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build backend image
-        run: docker build -t gitmind-backend -f backend/Dockerfile backend/
-      - name: Build production image
-        run: docker build -t gitmind .
+      - name: Deploy to HF Spaces
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          pip install huggingface_hub --break-system-packages
+          python3 -c "
+          from huggingface_hub import HfApi
+          api = HfApi()
+          api.upload_folder(
+              folder_path='backend',
+              repo_id='Ak001z/gitmind-backend',
+              repo_type='space',
+              path_in_repo='.',
+              commit_message='auto-deploy from CI (${GITHUB_SHA::7})',
+          )
+          print('Deployed to HF Spaces')
+          "
