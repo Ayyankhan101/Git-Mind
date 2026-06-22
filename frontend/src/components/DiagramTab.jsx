@@ -60,11 +60,20 @@ function getMermaidConfig(theme) {
       useMaxWidth: false,
       htmlLabels: true,
     },
-    securityLevel: 'loose',
+    securityLevel: 'strict',
   };
 }
 
 let seq = 0;
+
+function sanitizeSvg(svg) {
+  return svg
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/on\w+="[^"]*"/gi, '')
+    .replace(/on\w+='[^']*'/gi, '')
+    .replace(/javascript:/gi, '');
+}
 
 export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme, sessionId, enabled, repoName }) {
   const ref = useRef(null);
@@ -176,7 +185,7 @@ export default function DiagramTab({ diagram, isAnalyzing, analyzed, theme, sess
         throw new Error('Mermaid syntax error in generated diagram');
       }
       if (!ref.current) return;
-      ref.current.innerHTML = svg;
+      ref.current.innerHTML = sanitizeSvg(svg);
       const svgEl = ref.current.querySelector('svg');
       if (svgEl) { svgEl.style.maxWidth = 'none'; svgEl.style.height = 'auto'; }
       fitToScreen();

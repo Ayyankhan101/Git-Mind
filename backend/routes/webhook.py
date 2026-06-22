@@ -1,15 +1,18 @@
 import structlog
 import httpx
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 from models.requests import WebhookNotifyRequest
+from services.auth import require_gh_token_or_service_key
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
 
 
 @router.post("/webhook/notify")
-async def notify_webhook(req: WebhookNotifyRequest):
+async def notify_webhook(req: WebhookNotifyRequest, request: Request):
+    require_gh_token_or_service_key(request)
+
     if not req.slack_webhook_url.startswith("https://hooks.slack.com/"):
         return {"error": "Invalid Slack webhook URL — must start with https://hooks.slack.com/"}
 

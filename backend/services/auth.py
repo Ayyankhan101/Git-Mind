@@ -26,6 +26,18 @@ def require_gh_token(request) -> str:
     return token
 
 
+def require_gh_token_or_service_key(request) -> str | None:
+    """Require a valid GitHub PAT or service key. Returns token or raises 401."""
+    from fastapi import HTTPException
+    token = (request.headers.get("X-GH-Token") or "").strip() or os.getenv("GITHUB_TOKEN")
+    service_key = (request.headers.get("X-Service-Key") or "").strip() or os.getenv("GITMIND_SERVICE_KEY")
+    if token:
+        return token
+    if service_key:
+        return None  # service key accepted, no token needed
+    raise HTTPException(status_code=401, detail="Authentication required — send X-GH-Token header or X-Service-Key")
+
+
 def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 

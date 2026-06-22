@@ -3,10 +3,10 @@ import time
 import uuid
 
 import structlog
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 from models.requests import MonitorSubscribeRequest
-from services.auth import hash_token
+from services.auth import hash_token, require_gh_token
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -15,7 +15,8 @@ _GH_URL_RE = re.compile(r'^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+
 
 
 @router.post("/monitor/subscribe")
-async def subscribe_repo(req: MonitorSubscribeRequest):
+async def subscribe_repo(req: MonitorSubscribeRequest, request: Request):
+    token = require_gh_token(request)
     repo_url = req.repo_url.strip()
     if not _GH_URL_RE.match(repo_url):
         return {"error": "Invalid GitHub URL — must be https://github.com/{owner}/{repo}"}
@@ -32,7 +33,7 @@ async def subscribe_repo(req: MonitorSubscribeRequest):
             return {"error": "Repo already monitored — unsubscribe first"}
 
         monitor_id = str(uuid.uuid4())
-        owner_hash = hash_token(req.gh_token) if req.gh_token else None
+        owner_hash = hash_token(token)
         repo_name = repo_url.rstrip("/").split("/")[-1]
 
         session.add(MonitoredRepo(
@@ -53,13 +54,17 @@ async def subscribe_repo(req: MonitorSubscribeRequest):
 
 
 @router.get("/monitor/status")
-async def monitor_status():
+async def monitor_status(request: Request):
+    token = require_gh_token(request)
     from models.db import MonitoredRepo
     from services.database import async_session_factory
     from sqlalchemy import select
 
+    owner_hash = hash_token(token)
     async with async_session_factory() as session:
-        result = await session.execute(select(MonitoredRepo))
+        result = await session.execute(
+            select(MonitoredRepo).where(MonitoredRepo.owner_hash == owner_hash)
+        )
         repos = result.scalars().all()
 
     return {
@@ -83,19 +88,24 @@ async def monitor_status():
 
 
 @router.delete("/monitor/{monitor_id}")
-async def unsubscribe_repo(monitor_id: str):
+async def unsubscribe_repo(monitor_id: str, request: Request):
+    token = require_gh_token(request)
     from models.db import MonitoredRepo
     from services.database import async_session_factory
     from sqlalchemy import delete
 
+    owner_hash = hash_token(token)
     async with async_session_factory() as session:
         result = await session.execute(
-            delete(MonitoredRepo).where(MonitoredRepo.id == monitor_id)
+            delete(MonitoredRepo).where(
+                MonitoredRepo.id == monitor_id,
+                MonitoredRepo.owner_hash == owner_hash,
+            )
         )
         await session.commit()
 
     if result.rowcount == 0:
-        return {"error": "Monitor not found"}
+        return {"error": "Monitor not found or not owned by you"}
 
     logger.info("Repo unsubscribed from monitoring", monitor_id=monitor_id)
     return {"ok": True}

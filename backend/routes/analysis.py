@@ -84,8 +84,11 @@ async def get_analysis(session_id: str):
 
 
 @router.get("/analysis/previous")
-async def get_previous_analysis(repo_url: str, exclude_session: str | None = None):
+async def get_previous_analysis(repo_url: str, exclude_session: str | None = None, request: Request = None):
+    from services.auth import require_gh_token_or_service_key
     from services.database import get_previous_analysis_db
+    if request:
+        require_gh_token_or_service_key(request)
     snap = await get_previous_analysis_db(repo_url, exclude_session)
     if snap is None:
         return {"error": "No previous analysis found"}

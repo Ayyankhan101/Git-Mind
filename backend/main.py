@@ -5,7 +5,7 @@ import structlog
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 # load_dotenv MUST run before any LangChain / OpenAI import
@@ -258,8 +258,10 @@ app.include_router(monitor_router)
 # ── Task polling ────────────────────────────────────────────────────────────
 
 @app.get("/task/{task_id}")
-async def get_task_status(task_id: str):
+async def get_task_status(task_id: str, request: Request):
+    from services.auth import require_gh_token_or_service_key
     from services.task_queue import get_task
+    require_gh_token_or_service_key(request)
     task = get_task(task_id)
     if task is None:
         return {"error": "Task not found"}
