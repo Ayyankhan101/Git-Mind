@@ -21,7 +21,7 @@ jobs:
         id: analyze
         env:
           GITMIND_API_URL: ${{ secrets.GITMIND_API_URL }}
-          GITMIND_TOKEN: ${{ secrets.GITMIND_TOKEN }}
+          GITMIND_TOKEN: ${{ secrets.GITMIND_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           REPO_URL="${{ github.server_url }}/${{ github.repository }}"
           source ./scripts/ci-analyze.sh "$REPO_URL" "$GITMIND_TOKEN" "$GITMIND_API_URL"
