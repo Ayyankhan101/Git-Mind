@@ -20,9 +20,12 @@ class TestAnalyzeEndpoint:
 
     @patch("routes.analyze.rate_ok", return_value=False)
     def test_analyze_rate_limited(self, mock_rate):
-        response = client.post("/analyze", json={"repo_url": "https://github.com/vercel/next.js"})
-        assert response.status_code == 200
+        response = client.post("/analyze", json={
+            "repo_url": "https://github.com/vercel/next.js",
+        })
+        assert response.status_code == 429
         assert "Rate limit" in response.json().get("error", "")
+        assert "Retry-After" in response.headers
 
     @patch("routes.analyze.rate_ok", return_value=True)
     def test_analyze_github_only(self, mock_rate):

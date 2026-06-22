@@ -10,6 +10,7 @@ from agents.pr_review import run_pr_review
 from models.requests import PRReviewRequest, PRImpactRequest
 from services.auth import get_gh_token
 from services.rate_limiter import rate_ok
+from services.rate_limit_response import rate_limit_response
 from services.session import _UUID_RE, get_session
 
 logger = structlog.get_logger(__name__)
@@ -23,7 +24,7 @@ _PR_URL_RE = re.compile(
 @router.post("/pr-review")
 async def pr_review_endpoint(req: PRReviewRequest, request: Request):
     if not rate_ok("pr", req.pr_url):
-        return {"error": "Rate limit exceeded — slow down"}
+        return await rate_limit_response("pr", req.pr_url)
     token = get_gh_token(request)
     try:
         result = await asyncio.to_thread(run_pr_review, req.pr_url, token)
@@ -39,7 +40,7 @@ async def pr_review_endpoint(req: PRReviewRequest, request: Request):
 async def list_open_prs(owner: str, repo: str, request: Request):
     client_ip = request.client.host if request.client else "unknown"
     if not rate_ok("pr", f"{owner}/{repo}:{client_ip}"):
-        return {"error": "Rate limit exceeded", "prs": []}
+        return await rate_limit_response("pr", f"{owner}/{repo}:{client_ip}")
     token = get_gh_token(request)
     gh_headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}
     if token:
@@ -84,7 +85,7 @@ async def pr_impact_endpoint(req: PRImpactRequest, request: Request):
     if not _UUID_RE.match(req.session_id):
         return {"error": "Invalid session ID"}
     if not rate_ok("pr_impact", req.pr_url):
-        return {"error": "Rate limit exceeded — max 3 impact analyses per minute"}
+        return await rate_limit_response("pr_impact", req.pr_url)
 
     base_session = await get_session(req.session_id)
     if not base_session:

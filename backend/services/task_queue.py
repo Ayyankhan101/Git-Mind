@@ -1,10 +1,13 @@
 import asyncio
+import json
 import os
 import time
 import uuid
 
 import structlog
 from prometheus_client import Counter
+
+from services.cache import get_redis
 
 logger = structlog.get_logger(__name__)
 
@@ -21,6 +24,20 @@ tasks_submitted = Counter("tasks_submitted_total", "Background tasks submitted")
 tasks_completed = Counter("tasks_completed_total", "Background tasks completed", ["status"])
 
 
+def _persist_task(task: dict) -> None:
+    """Persist task state to Redis if available."""
+    r = get_redis()
+    if r:
+        try:
+            r.set(
+                f"task:{task['id']}",
+                json.dumps(task, default=str),
+                ex=_TASK_TTL,
+            )
+        except Exception:
+            pass
+
+
 async def _worker():
     while True:
         task_id, coro = await _queue.get()
@@ -29,6 +46,7 @@ async def _worker():
             _queue.task_done()
             continue
         task["status"] = "running"
+        _persist_task(task)
         try:
             result = await asyncio.wait_for(coro, timeout=_TASK_TIMEOUT)
             task["result"] = result
@@ -65,12 +83,13 @@ async def _worker():
                 logger.error("Task permanently failed", task_id=task_id, error=str(exc)[:200])
         finally:
             task["completed_at"] = time.time()
+            _persist_task(task)
             _queue.task_done()
 
 
 def submit(coro) -> str:
     task_id = str(uuid.uuid4())
-    _tasks[task_id] = {
+    task = {
         "id": task_id,
         "status": "pending",
         "created_at": time.time(),
@@ -79,13 +98,28 @@ def submit(coro) -> str:
         "error": None,
         "retries": _MAX_RETRIES,
     }
+    _tasks[task_id] = task
+    _persist_task(task)
     _queue.put_nowait((task_id, coro))
     tasks_submitted.inc()
     return task_id
 
 
 def get_task(task_id: str) -> dict | None:
-    return _tasks.get(task_id)
+    # Check memory first
+    task = _tasks.get(task_id)
+    if task:
+        return task
+    # Fallback to Redis
+    r = get_redis()
+    if r:
+        try:
+            raw = r.get(f"task:{task_id}")
+            if raw:
+                return json.loads(raw)
+        except Exception:
+            pass
+    return None
 
 
 async def _periodic_prune():

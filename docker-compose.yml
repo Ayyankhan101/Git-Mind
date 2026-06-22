@@ -1,4 +1,15 @@
 services:
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - gitmind_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
   db:
     image: postgres:16-alpine
     environment:
@@ -25,10 +36,13 @@ services:
       - backend/.env
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-gitmind}:${POSTGRES_PASSWORD:-gitmind}@db:5432/${POSTGRES_DB:-gitmind}
+      REDIS_URL: redis://redis:6379/0
     volumes:
       - gitmind_chroma:/app/.chroma
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
@@ -41,3 +55,4 @@ services:
 volumes:
   gitmind_chroma:
   gitmind_db:
+  gitmind_redis:

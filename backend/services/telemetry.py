@@ -75,15 +75,30 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         if path in ("/metrics", "/health"):
             return await call_next(request)
 
+        # Normalize path labels to prevent cardinality explosion
+        normalized = _normalize_path(path)
+
         method = request.method
         start = time.time()
         response = await call_next(request)
         duration = time.time() - start
         status = str(response.status_code)
 
-        http_requests_total.labels(method=method, path=path, status=status).inc()
-        http_request_duration_seconds.labels(method=method, path=path).observe(duration)
+        http_requests_total.labels(method=method, path=normalized, status=status).inc()
+        http_request_duration_seconds.labels(method=method, path=normalized).observe(duration)
         return response
+
+
+import re as _re
+_UUID_RE = _re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', _re.IGNORECASE)
+_NUM_RE = _re.compile(r'\d{4,}')
+
+
+def _normalize_path(path: str) -> str:
+    """Replace UUIDs and long numeric IDs with :id for metric labels."""
+    path = _UUID_RE.sub(':id', path)
+    path = _NUM_RE.sub(':id', path)
+    return path
 
 
 def setup_metrics(app: FastAPI) -> None:

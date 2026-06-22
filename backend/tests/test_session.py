@@ -5,13 +5,13 @@ import pytest
 import services.session as session_mod
 from services.session import (
     get_session, put_session, initial_state,
-    persist_analysis, sessions,
+    persist_analysis, _sessions,
 )
 
 
 @pytest.fixture(autouse=True)
 def clear_sessions():
-    sessions.clear()
+    _sessions.clear()
 
 
 VALID_UUID = "00000000-0000-0000-0000-000000000001"
@@ -34,13 +34,13 @@ class TestInitialState:
 class TestPutSession:
     def test_stores_and_retrieves(self):
         put_session(VALID_UUID, {"key": "value"})
-        session = sessions.get(VALID_UUID)
+        session = _sessions.get(VALID_UUID)
         assert session == {"key": "value"}
 
     def test_moves_to_end_on_access(self):
         put_session("session_a", {"a": 1})
         put_session("session_b", {"b": 2})
-        session = sessions.get("session_a")
+        session = _sessions.get("session_a")
         assert session == {"a": 1}
 
 

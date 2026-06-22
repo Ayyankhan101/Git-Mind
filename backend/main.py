@@ -11,9 +11,22 @@ from fastapi.middleware.cors import CORSMiddleware
 # load_dotenv MUST run before any LangChain / OpenAI import
 load_dotenv()
 
-from services.session import sessions
+# Sentry init — only if DSN is set
+_sentry_dsn = os.getenv("SENTRY_DSN")
+if _sentry_dsn:
+    import sentry_sdk
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        traces_sample_rate=0.1,
+        environment=os.getenv("ENVIRONMENT", "production"),
+        attach_stacktrace=True,
+        send_default_pii=False,
+    )
+
+from services.session import _sessions as sessions
 from services.telemetry import setup_logging, setup_metrics, setup_tracing
 from services.auth import AuthMiddleware
+from services.correlation import CorrelationMiddleware
 from ws.analyze import handle_analyze
 from ws.crisis import handle_crisis
 from routes.chat import router as chat_router
@@ -155,6 +168,8 @@ async def lifespan(app: FastAPI):
             "GROQ_API_KEY is not set.\n"
             "Create backend/.env with:  GROQ_API_KEY=gsk_..."
         )
+    from services.cache import init_redis, close_redis
+    await init_redis()
     from services.database import init_db
     await init_db()
     logger.info("Database initialized")
@@ -188,10 +203,12 @@ async def lifespan(app: FastAPI):
             pass
     from services.task_queue import stop as stop_task_queue
     await stop_task_queue()
+    await close_redis()
     logger.info("GitMind backend shutting down")
 
 
-app = FastAPI(title="GitMind API", lifespan=lifespan)
+app = FastAPI(title="GitMind API", version="1.0.0", lifespan=lifespan)
+app.add_middleware(CorrelationMiddleware)
 app.add_middleware(AuthMiddleware)
 
 
@@ -211,7 +228,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_CORS_ORIGINS,
     allow_methods=["GET", "POST", "DELETE"],
-    allow_headers=["Content-Type", "X-GH-Token"],
+    allow_headers=["Content-Type", "X-GH-Token", "X-Request-ID", "Authorization"],
 )
 
 # ── Telemetry ───────────────────────────────────────────────────────────────
@@ -268,6 +285,16 @@ async def health():
     except Exception:
         checks["database"] = False
     checks["git"] = bool(__import__("shutil").which("git"))
+    from services.cache import get_redis
+    r = get_redis()
+    if r:
+        try:
+            await r.ping()
+            checks["redis"] = True
+        except Exception:
+            checks["redis"] = False
+    else:
+        checks["redis"] = False
     all_ok = all(checks.values())
     result = {"status": "ok" if all_ok else "degraded"}
     if os.getenv("DEBUG"):

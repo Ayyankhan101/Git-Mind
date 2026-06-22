@@ -8,6 +8,7 @@ from chroma_utils import search_codebase
 from llm_cache import invoke_with_retry
 from models.requests import SummaryRequest
 from services.rate_limiter import rate_ok
+from services.rate_limit_response import rate_limit_response
 from services.session import get_session, _UUID_RE
 
 logger = structlog.get_logger(__name__)
@@ -20,7 +21,7 @@ async def summary_endpoint(req: SummaryRequest, request: Request):
         return {"error": "Invalid session ID"}
     client_ip = request.client.host if request.client else "unknown"
     if not rate_ok("summary", client_ip):
-        return {"error": "Rate limit exceeded — slow down"}
+        return await rate_limit_response("summary", client_ip)
 
     session = await get_session(req.session_id)
     if not session:

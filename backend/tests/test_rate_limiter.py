@@ -1,8 +1,8 @@
-from services.rate_limiter import rate_ok, _rate_data, _rate_lock
+from services.rate_limiter import rate_ok, _mem_data
 
 
 def setup_method():
-    _rate_data.clear()
+    _mem_data.clear()
 
 
 def test_allows_within_limit():

@@ -10,6 +10,7 @@ from agents.cve_scanner import run_cve_scanner
 from models.requests import OrgAuditRequest
 from services.auth import get_gh_token
 from services.rate_limiter import rate_ok
+from services.rate_limit_response import rate_limit_response
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -31,7 +32,7 @@ async def org_audit_endpoint(req: OrgAuditRequest, request: Request):
 
     client_ip = request.client.host if request.client else "unknown"
     if not rate_ok("org_audit", client_ip):
-        return {"error": "Rate limit exceeded — max 3 org audits per minute"}
+        return await rate_limit_response("org_audit", client_ip)
 
     token = get_gh_token(request)
     gh_headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}

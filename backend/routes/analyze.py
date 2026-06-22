@@ -12,6 +12,7 @@ from models.requests import AnalyzeRequest
 from orchestrator import graph
 from services.auth import get_gh_token, get_service_key, hash_token
 from services.rate_limiter import rate_ok
+from services.rate_limit_response import rate_limit_response
 from services.session import initial_state, put_session, persist_analysis
 from services.sha_cache import get_remote_sha, find_cached_snapshot
 
@@ -136,7 +137,7 @@ async def analyze_endpoint(req: AnalyzeRequest, request: Request):
     client_ip = request.client.host if request.client else "unknown"
     service_key = get_service_key(request)
     if not rate_ok("analyze_rest", client_ip, service_key=service_key):
-        return {"error": "Rate limit exceeded — max 30 analyses per minute for service accounts"}
+        return await rate_limit_response("analyze_rest", client_ip)
 
     session_id = str(uuid.uuid4())
 

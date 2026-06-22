@@ -16,6 +16,7 @@ from llm_cache import invoke_with_retry
 from models.requests import FixRequest, AutoPRRequest
 from services.auth import get_gh_token
 from services.rate_limiter import rate_ok
+from services.rate_limit_response import rate_limit_response
 from services.session import _UUID_RE, get_session
 
 logger = structlog.get_logger(__name__)
@@ -28,7 +29,7 @@ async def fix_endpoint(req: FixRequest, request: Request):
         return {"error": "Invalid session ID"}
     client_ip = request.client.host if request.client else "unknown"
     if not rate_ok("fix", client_ip):
-        return {"error": "Rate limit exceeded — slow down"}
+        return await rate_limit_response("fix", client_ip)
 
     session = await get_session(req.session_id)
     if not session:
@@ -162,7 +163,7 @@ async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
         return {"error": "Invalid session ID"}
     client_ip = request.client.host if request.client else "unknown"
     if not rate_ok("fix", client_ip):
-        return {"error": "Rate limit exceeded"}
+        return await rate_limit_response("fix", client_ip)
 
     from services.auth import require_gh_token
     token = require_gh_token(request)

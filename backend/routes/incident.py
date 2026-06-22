@@ -7,6 +7,7 @@ from langchain_groq import ChatGroq
 from llm_cache import invoke_with_retry
 from models.requests import IncidentReportRequest
 from services.rate_limiter import rate_ok
+from services.rate_limit_response import rate_limit_response
 from services.session import get_session, _UUID_RE
 
 logger = structlog.get_logger(__name__)
@@ -19,7 +20,7 @@ async def incident_report_endpoint(req: IncidentReportRequest, request: Request)
         return {"error": "Invalid session ID"}
     client_ip = request.client.host if request.client else "unknown"
     if not rate_ok("summary", client_ip):
-        return {"error": "Rate limit exceeded — slow down"}
+        return await rate_limit_response("summary", client_ip)
 
     session = await get_session(req.session_id)
     if not session:

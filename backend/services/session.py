@@ -1,21 +1,40 @@
+"""Session store.
+
+Redis mode: hashes with TTL.
+Memory mode: OrderedDict (fallback).
+DB fallback: SQLAlchemy persist/load for analysis snapshots.
+"""
+import json
 import re
+import time
 from collections import OrderedDict
 
 import structlog
+
+from services.cache import get_redis
 
 logger = structlog.get_logger(__name__)
 
 _UUID_RE = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.IGNORECASE)
 
 _MAX_SESSIONS = 50
-sessions: OrderedDict[str, dict] = OrderedDict()
+_SESSION_TTL = 3600  # 1 hour
+_sessions: OrderedDict[str, dict] = OrderedDict()
 
 
 def put_session(session_id: str, data: dict) -> None:
-    sessions[session_id] = data
-    sessions.move_to_end(session_id)
-    while len(sessions) > _MAX_SESSIONS:
-        evicted = sessions.popitem(last=False)
+    """Store session data (Redis or memory)."""
+    r = get_redis()
+    if r:
+        try:
+            r.set(f"session:{session_id}", json.dumps(data, default=str), ex=_SESSION_TTL)
+            return
+        except Exception as exc:
+            logger.warning("Redis session set failed, using memory", error=str(exc)[:80])
+    _sessions[session_id] = data
+    _sessions.move_to_end(session_id)
+    while len(_sessions) > _MAX_SESSIONS:
+        evicted = _sessions.popitem(last=False)
         logger.debug("Session evicted (LRU cap)", session_id=evicted[0])
 
 
@@ -44,9 +63,20 @@ def initial_state(repo_url: str, gh_token: str | None = None) -> dict:
 
 
 async def get_session(session_id: str) -> dict | None:
-    session = sessions.get(session_id)
+    """Load session from Redis, then memory, then DB."""
+    r = get_redis()
+    if r:
+        try:
+            raw = await r.get(f"session:{session_id}")
+            if raw:
+                return json.loads(raw)
+        except Exception as exc:
+            logger.warning("Redis session get failed", error=str(exc)[:80])
+
+    session = _sessions.get(session_id)
     if session:
         return session
+
     from services.database import get_analysis_db
     restored = await get_analysis_db(session_id)
     if restored:
@@ -56,7 +86,7 @@ async def get_session(session_id: str) -> dict | None:
 
 
 def _session_to_snapshot(session_id: str, final_state: dict, repo_url: str, sha: str | None, owner_hash: str | None = None) -> dict:
-    import time
+    import time as _time
     return {
         "repo_name": final_state["repo_name"],
         "repo_url": repo_url,
@@ -70,7 +100,7 @@ def _session_to_snapshot(session_id: str, final_state: dict, repo_url: str, sha:
         "head_sha": sha,
         "chat_history": final_state.get("chat_history", []),
         "owner_hash": owner_hash,
-        "saved_at": time.time(),
+        "saved_at": _time.time(),
     }
 
 

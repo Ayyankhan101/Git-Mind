@@ -65,7 +65,7 @@ async def handle_analyze(ws: WebSocket) -> None:
 
     client_ip = getattr(ws.client, "host", "unknown")
     if not rate_ok("analyze", client_ip):
-        await ws.send_json({"error": "Rate limit exceeded — max 3 analyses per minute. Please wait."})
+        await ws.send_json({"error": "Rate limit exceeded", "retry_after": 60})
         await ws.close()
         return
 
