@@ -312,12 +312,12 @@ async def health():
     result["checks"] = checks
     result["sessions_active"] = len(sessions)
     if os.getenv("DEBUG"):
-        result["groq_key"] = bool(os.getenv("GROQ_API_KEY"))
-        result["semgrep"] = bool(__import__("shutil").which("semgrep"))
+        checks["groq_key"] = bool(os.getenv("GROQ_API_KEY"))
+        checks["semgrep"] = bool(__import__("shutil").which("semgrep"))
         try:
             from chroma_utils import _client
             _client.list_collections()
-            result["chromadb"] = True
+            checks["chromadb"] = True
         except Exception:
-            result["chromadb"] = False
+            checks["chromadb"] = False
     return result
