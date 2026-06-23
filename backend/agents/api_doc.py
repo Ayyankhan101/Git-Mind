@@ -1,8 +1,8 @@
 import json
 import logging
-import re
 
 from langchain_groq import ChatGroq
+from gitmind_core import scan_route_files
 
 from llm_cache import get_cached, set_cached, invoke_with_retry
 
@@ -15,25 +15,6 @@ _CACHE_NAMESPACE = "llama-3.3-70b-versatile:api_doc:json"
 _LLM             = ChatGroq(model=_MODEL, temperature=0).bind(
     response_format={"type": "json_object"}
 )
-
-# Compiled once — covers FastAPI, Flask, Express, Django, Rails, Spring, NestJS, Gin, Echo
-_ROUTE_PATTERNS: list[re.Pattern] = [
-    re.compile(p, re.IGNORECASE) for p in [
-        r'@app\.(get|post|put|delete|patch)\s*\(',           # FastAPI / Flask
-        r'@router\.(get|post|put|delete|patch)\s*\(',
-        r'router\.(get|post|put|delete|patch)\s*\(',         # Express / Go routers
-        r'app\.(get|post|put|delete|patch)\s*\(',
-        r'@(Get|Post|Put|Delete|Patch|Options|Head)\s*\(',   # NestJS / Spring
-        r'@(RequestMapping|GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping)\s*\(',  # Spring
-        r'path\s*\(',                                        # Django urls.py
-        r'url\s*\(',                                         # Django legacy
-        r'resources?\s+:[a-z_]+',                            # Rails routes.rb
-        r'(get|post|put|delete|patch)\s+["\'][/:]',          # Sinatra / generic
-        r'r\.(GET|POST|PUT|DELETE|PATCH)\s*\(',              # Gin (Go)
-        r'e\.(GET|POST|PUT|DELETE|PATCH)\s*\(',              # Echo (Go)
-        r'mux\.(HandleFunc|Handle)\s*\(',                    # Go net/http mux
-    ]
-]
 
 _PROMPT = """\
 You are a senior API documentation engineer. Extract every HTTP API endpoint from the code below.
@@ -55,7 +36,7 @@ def run_api_doc_agent(file_contents: dict[str, str]) -> list[dict]:
     api_files = {
         fp: content
         for fp, content in file_contents.items()
-        if any(p.search(content) for p in _ROUTE_PATTERNS)
+        if fp in scan_route_files(file_contents)
     }
 
     if not api_files:

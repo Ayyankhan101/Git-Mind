@@ -1,7 +1,4 @@
-import re
-from pathlib import Path
-
-_COMMENT_RE = re.compile(r'^\s*(#|//|/\*|\*|""")', re.MULTILINE)
+from gitmind_core import compute_docs_score
 
 
 def compute_health(
@@ -36,23 +33,8 @@ def _security_score(findings: list) -> float:
     return max(0.0, 100.0 - total_penalty)
 
 
-_CODE_EXTS = frozenset({".py", ".js", ".ts", ".jsx", ".tsx", ".java", ".go", ".rb", ".php"})
-
-
 def _docs_score(file_contents: dict) -> float:
-    if not file_contents:
-        return 50.0
-    total_lines = comment_lines = 0
-    for path, content in file_contents.items():
-        if Path(path).suffix.lower() not in _CODE_EXTS:
-            continue
-        lines = content.splitlines()
-        total_lines += len(lines)
-        comment_lines += sum(1 for ln in lines if _COMMENT_RE.match(ln))
-    if total_lines == 0:
-        return 50.0
-    ratio = comment_lines / total_lines
-    return min(100.0, ratio * 1000)
+    return compute_docs_score(file_contents)
 
 
 def _api_score(api_docs: list) -> float:

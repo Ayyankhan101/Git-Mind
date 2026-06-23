@@ -1,0 +1,1 @@
+/home/ayyan/project/Git-Mind/rust-gitmind/target/release/libgitmind_core.so: /home/ayyan/project/Git-Mind/rust-gitmind/src/dep_parsers.rs /home/ayyan/project/Git-Mind/rust-gitmind/src/file_scanner.rs /home/ayyan/project/Git-Mind/rust-gitmind/src/lib.rs
