@@ -1,9 +1,8 @@
-import os
-
 import asyncio
-import structlog
+import os
 from contextlib import asynccontextmanager
 
+import structlog
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,22 +22,22 @@ if _sentry_dsn:
         send_default_pii=False,
     )
 
-from services.session import _sessions as sessions
-from services.telemetry import setup_logging, setup_metrics, setup_tracing
-from services.auth import AuthMiddleware
-from services.correlation import CorrelationMiddleware
-from ws.analyze import handle_analyze
-from ws.crisis import handle_crisis
-from routes.chat import router as chat_router
 from routes.analysis import router as analysis_router
+from routes.analyze import router as analyze_router
+from routes.chat import router as chat_router
+from routes.fix import router as fix_router
+from routes.incident import router as incident_router
+from routes.monitor import router as monitor_router
+from routes.org import router as org_router
 from routes.pr import router as pr_router
 from routes.repos import router as repos_router
-from routes.org import router as org_router
-from routes.incident import router as incident_router
-from routes.fix import router as fix_router
-from routes.analyze import router as analyze_router
 from routes.webhook import router as webhook_router
-from routes.monitor import router as monitor_router
+from services.auth import AuthMiddleware
+from services.correlation import CorrelationMiddleware
+from services.session import _sessions as sessions
+from services.telemetry import setup_logging, setup_metrics, setup_tracing
+from ws.analyze import handle_analyze
+from ws.crisis import handle_crisis
 
 setup_logging()
 logger = structlog.get_logger(__name__)
@@ -63,6 +62,7 @@ async def _periodic_prune_loop():
 
 async def _prune_old_analyses() -> None:
     import time
+
     from services.database import delete_expired_analyses
     cutoff = time.time() - _ANALYSIS_TTL_SECONDS
     try:
@@ -83,10 +83,12 @@ async def _monitoring_loop():
 
 async def _run_monitoring_checks():
     import time
+
+    from sqlalchemy import select
+
     from models.db import MonitoredRepo
     from services.database import async_session_factory, get_previous_analysis_db
     from services.sha_cache import get_remote_sha
-    from sqlalchemy import select
 
     try:
         async with async_session_factory() as session:
@@ -168,7 +170,7 @@ async def lifespan(app: FastAPI):
             "GROQ_API_KEY is not set.\n"
             "Create backend/.env with:  GROQ_API_KEY=gsk_..."
         )
-    from services.cache import init_redis, close_redis
+    from services.cache import close_redis, init_redis
     await init_redis()
     from services.database import init_db
     await init_db()
@@ -259,10 +261,10 @@ app.include_router(monitor_router)
 
 @app.get("/task/{task_id}")
 async def get_task_status(task_id: str, request: Request):
-    from services.auth import require_gh_token_or_service_key, get_gh_token, get_service_key
-    from services.task_queue import get_task
-    from services.rate_limiter import check_rate_limit
+    from services.auth import get_gh_token, get_service_key, require_gh_token_or_service_key
     from services.rate_limit_response import rate_limit_response
+    from services.rate_limiter import check_rate_limit
+    from services.task_queue import get_task
     require_gh_token_or_service_key(request)
     gh_token = get_gh_token(request)
     svc_key = get_service_key(request)
@@ -304,17 +306,18 @@ async def health():
             checks["redis"] = False
     else:
         checks["redis"] = False
-    all_ok = all(checks.values())
+    mandatory = {k: v for k, v in checks.items() if k != "redis"}
+    all_ok = all(mandatory.values())
     result = {"status": "ok" if all_ok else "degraded"}
+    result["checks"] = checks
+    result["sessions_active"] = len(sessions)
     if os.getenv("DEBUG"):
-        checks["groq_key"] = bool(os.getenv("GROQ_API_KEY"))
-        checks["semgrep"] = bool(__import__("shutil").which("semgrep"))
+        result["groq_key"] = bool(os.getenv("GROQ_API_KEY"))
+        result["semgrep"] = bool(__import__("shutil").which("semgrep"))
         try:
             from chroma_utils import _client
             _client.list_collections()
-            checks["chromadb"] = True
+            result["chromadb"] = True
         except Exception:
-            checks["chromadb"] = False
-        result["checks"] = checks
-        result["sessions_active"] = len(sessions)
+            result["chromadb"] = False
     return result
