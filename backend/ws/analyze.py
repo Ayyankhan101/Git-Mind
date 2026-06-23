@@ -24,7 +24,7 @@ _STATUS_MAP: dict[str, dict[str, str]] = {
     "scanner": {
         "scanner": "done", "architecture": "running",
         "api_docs": "running", "security": "running", "chat": "running",
-        "cve_scanner": "running", "git_audit": "running",
+        "cve_scanner": "running", "git_audit": "running", "solidity": "running",
     },
     "architecture": {"architecture": "done"},
     "api_docs": {"api_docs": "done"},
@@ -32,6 +32,7 @@ _STATUS_MAP: dict[str, dict[str, str]] = {
     "rag_setup": {"chat": "done"},
     "cve_scanner": {"cve_scanner": "done"},
     "git_audit": {"git_audit": "done"},
+    "solidity": {"solidity": "done"},
 }
 
 
@@ -113,6 +114,7 @@ async def handle_analyze(ws: WebSocket) -> None:
             await ws.send_json({"agent_status": {
                 "scanner": "done", "architecture": "running", "api_docs": "running",
                 "security": "running", "chat": "running", "cve_scanner": "running",
+                "git_audit": "running", "solidity": "running",
             }})
             await asyncio.sleep(0.2)
             await ws.send_json({
@@ -128,9 +130,10 @@ async def handle_analyze(ws: WebSocket) -> None:
             })
             await asyncio.sleep(0.1)
             await ws.send_json({
-                "agent_status": {"chat": "done", "git_audit": "done"},
+                "agent_status": {"chat": "done", "git_audit": "done", "solidity": "done"},
                 "health": cached.get("health"),
                 "git_audit": cached.get("git_audit"),
+                "solidity_audit": cached.get("solidity_audit"),
             })
             put_session(session_id, {
                 "repo_name": cached.get("repo_name", ""),
@@ -140,6 +143,7 @@ async def handle_analyze(ws: WebSocket) -> None:
                 "api_docs": cached.get("api_docs", []),
                 "architecture_diagram": cached.get("architecture_diagram"),
                 "git_audit": cached.get("git_audit"),
+                "solidity_audit": cached.get("solidity_audit"),
                 "repo_url": repo_url,
                 "chat_history": [],
                 "owner_hash": owner_hash,
@@ -173,6 +177,7 @@ async def handle_analyze(ws: WebSocket) -> None:
                     "cve_findings",
                     "chroma_collection_name",
                     "git_audit",
+                    "solidity_audit",
                 ):
                     if key in update:
                         msg[key] = update[key]
@@ -246,6 +251,7 @@ async def handle_analyze(ws: WebSocket) -> None:
         "api_docs": final_state.get("api_docs", []),
         "architecture_diagram": final_state.get("architecture_diagram"),
         "git_audit": final_state.get("git_audit"),
+        "solidity_audit": final_state.get("solidity_audit"),
         "repo_url": repo_url,
         "chat_history": [],
         "health": final_state.get("health"),

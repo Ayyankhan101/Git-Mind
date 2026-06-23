@@ -10,6 +10,7 @@ from agents.git_audit import run_git_audit
 from agents.rag_setup import run_rag_setup
 from agents.scanner import clone_and_scan
 from agents.security import run_security_agent, _synthetic_finding
+from agents.solidity_agent import solidity_agent
 from state import RepoState
 
 logger = logging.getLogger(__name__)
@@ -151,6 +152,21 @@ def cve_node(state: RepoState) -> dict:
         return {"cve_findings": [], "events": [_event("cve_scanner", "error", str(exc)[:200])]}
 
 
+def sol_node(state: RepoState) -> dict:
+    if state.get("_scanner_failed"):
+        return {"solidity_audit": None, "events": [_event("solidity", "skipped", "scanner failed")]}
+    if _is_circuit_open():
+        return {"solidity_audit": None, "events": [_event("solidity", "skipped", "circuit breaker open")]}
+    try:
+        result = solidity_agent(dict(state))
+        _record_circuit_success()
+        return {"solidity_audit": result.get("solidity_audit"), "events": [_event("solidity", "done")]}
+    except Exception as exc:
+        _record_circuit_failure()
+        logger.error("sol_node failed: %s", exc)
+        return {"solidity_audit": None, "events": [_event("solidity", "error", str(exc)[:200])]}
+
+
 def git_audit_node(state: RepoState) -> dict:
     if state.get("_scanner_failed"):
         return {"git_audit": None, "events": [_event("git_audit", "skipped", "scanner failed")]}
@@ -183,11 +199,12 @@ def build_graph() -> StateGraph:
     g.add_node("rag_setup",    rag_setup_node)
     g.add_node("cve_scanner",  cve_node)
     g.add_node("git_audit",    git_audit_node)
+    g.add_node("solidity",     sol_node)
 
     g.add_edge(START, "scanner")
 
     # Parallel fan-out after scanner
-    for node in ("architecture", "api_docs", "security", "rag_setup", "cve_scanner", "git_audit"):
+    for node in ("architecture", "api_docs", "security", "rag_setup", "cve_scanner", "git_audit", "solidity"):
         g.add_edge("scanner", node)
         g.add_edge(node, END)
 

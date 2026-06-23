@@ -21,6 +21,7 @@ class RepoState(TypedDict):
     cve_findings:           list[dict]
     chroma_collection_name: str | None
     git_audit:              dict | None
+    solidity_audit:         dict | None
 
     # ── Chat (mutated per /chat HTTP request, not by the graph) ───────────────
     chat_history: list[dict]   # [{role: "user"|"assistant", content: str}]
