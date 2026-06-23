@@ -100,6 +100,7 @@ async def _run_analysis(repo_url: str, gh_token: str | None, session_id: str) ->
         security_findings=final_state.get("security_findings", []),
         cve_findings=final_state.get("cve_findings", []),
         api_docs=final_state.get("api_docs", []),
+        code_audit=final_state.get("code_audit"),
     )
     final_state["health"] = health_score
 
@@ -117,6 +118,8 @@ async def _run_analysis(repo_url: str, gh_token: str | None, session_id: str) ->
             "api_docs": final_state.get("api_docs", []),
             "architecture_diagram": final_state.get("architecture_diagram"),
             "git_audit": final_state.get("git_audit"),
+            "solidity_audit": final_state.get("solidity_audit"),
+            "code_audit": final_state.get("code_audit"),
             "repo_url": repo_url,
             "chat_history": [],
             "health": health_score,

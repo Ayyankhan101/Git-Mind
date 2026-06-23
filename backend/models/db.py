@@ -19,6 +19,8 @@ class Analysis(Base):
     cve_findings: Mapped[list | None] = mapped_column(JSON, nullable=True)
     chroma_collection_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     git_audit: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    solidity_audit: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    code_audit: Mapped[list | None] = mapped_column(JSON, nullable=True)
     health: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     head_sha: Mapped[str | None] = mapped_column(String(64), nullable=True)
     chat_history: Mapped[list | None] = mapped_column(JSON, nullable=True)

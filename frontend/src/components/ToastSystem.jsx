@@ -1,21 +1,23 @@
-import React from 'react';
-import { Check, AlertTriangle, X, Info } from 'lucide-react';
+import React from "react";
+import { Check, AlertTriangle, X, Info } from "lucide-react";
 
 const ICON = {
   success: Check,
-  danger:  AlertTriangle,
-  info:    Info,
+  danger: AlertTriangle,
+  info: Info,
 };
 
 export default function ToastSystem({ toasts, onDismiss }) {
   if (!toasts.length) return null;
   return (
     <div className="toasts">
-      {toasts.map(t => {
+      {toasts.map((t) => {
         const Icon = ICON[t.kind] || Info;
         return (
-          <div key={t.id} className={`toast${t.kind ? ` ${t.kind}` : ''}`}>
-            <span className="toast-icon"><Icon size={15} strokeWidth={1.5} /></span>
+          <div key={t.id} className={`toast${t.kind ? ` ${t.kind}` : ""}`}>
+            <span className="toast-icon">
+              <Icon size={15} strokeWidth={1.5} />
+            </span>
             <div className="toast-body">
               <div className="toast-title">
                 {t.title}

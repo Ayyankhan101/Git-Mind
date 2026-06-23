@@ -31,6 +31,7 @@ _STATUS_MAP: dict[str, dict[str, str]] = {
         "cve_scanner": "running",
         "git_audit": "running",
         "solidity": "running",
+        "code_audit": "running",
     },
     "architecture": {"architecture": "done"},
     "api_docs": {"api_docs": "done"},
@@ -39,6 +40,7 @@ _STATUS_MAP: dict[str, dict[str, str]] = {
     "cve_scanner": {"cve_scanner": "done"},
     "git_audit": {"git_audit": "done"},
     "solidity": {"solidity": "done"},
+    "code_audit": {"code_audit": "done"},
 }
 
 
@@ -129,6 +131,7 @@ async def handle_analyze(ws: WebSocket) -> None:
                         "cve_scanner": "running",
                         "git_audit": "running",
                         "solidity": "running",
+                        "code_audit": "running",
                     }
                 }
             )
@@ -151,10 +154,11 @@ async def handle_analyze(ws: WebSocket) -> None:
             await asyncio.sleep(0.1)
             await ws.send_json(
                 {
-                    "agent_status": {"chat": "done", "git_audit": "done", "solidity": "done"},
+                    "agent_status": {"chat": "done", "git_audit": "done", "solidity": "done", "code_audit": "done"},
                     "health": cached.get("health"),
                     "git_audit": cached.get("git_audit"),
                     "solidity_audit": cached.get("solidity_audit"),
+                    "code_audit": cached.get("code_audit"),
                 }
             )
             put_session(
@@ -168,6 +172,7 @@ async def handle_analyze(ws: WebSocket) -> None:
                     "architecture_diagram": cached.get("architecture_diagram"),
                     "git_audit": cached.get("git_audit"),
                     "solidity_audit": cached.get("solidity_audit"),
+                    "code_audit": cached.get("code_audit"),
                     "repo_url": repo_url,
                     "chat_history": [],
                     "owner_hash": owner_hash,
@@ -200,6 +205,7 @@ async def handle_analyze(ws: WebSocket) -> None:
                     "chroma_collection_name",
                     "git_audit",
                     "solidity_audit",
+                    "code_audit",
                 ):
                     if key in update:
                         msg[key] = update[key]
@@ -245,6 +251,7 @@ async def handle_analyze(ws: WebSocket) -> None:
             security_findings=final_state.get("security_findings", []),
             cve_findings=final_state.get("cve_findings", []),
             api_docs=final_state.get("api_docs", []),
+            code_audit=final_state.get("code_audit"),
         )
         final_state["health"] = health_score
         await ws.send_json({"health": health_score})
@@ -272,6 +279,7 @@ async def handle_analyze(ws: WebSocket) -> None:
             "architecture_diagram": final_state.get("architecture_diagram"),
             "git_audit": final_state.get("git_audit"),
             "solidity_audit": final_state.get("solidity_audit"),
+            "code_audit": final_state.get("code_audit"),
             "repo_url": repo_url,
             "chat_history": [],
             "health": final_state.get("health"),

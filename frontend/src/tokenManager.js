@@ -3,7 +3,7 @@
  * localStorage backup. Token clears after 1h or tab close.
  */
 
-const STORAGE_KEY = 'gm-gh-token-enc';
+const STORAGE_KEY = "gm-gh-token-enc";
 const TTL_MS = 60 * 60 * 1000; // 1 hour
 
 let _token = null;
@@ -13,27 +13,47 @@ let _expiry = 0;
 
 function _getKey() {
   // Per-session random key stored in sessionStorage (not the token itself)
-  const raw = sessionStorage.getItem('gm-enc-key');
-  if (raw) return Uint8Array.from(atob(raw), c => c.charCodeAt(0));
+  const raw = sessionStorage.getItem("gm-enc-key");
+  if (raw) return Uint8Array.from(atob(raw), (c) => c.charCodeAt(0));
   const key = crypto.getRandomValues(new Uint8Array(32));
-  sessionStorage.setItem('gm-enc-key', btoa(String.fromCharCode(...key)));
+  sessionStorage.setItem("gm-enc-key", btoa(String.fromCharCode(...key)));
   return key;
 }
 
 async function _encrypt(plaintext) {
-  const key = await crypto.subtle.importKey('raw', _getKey(), 'AES-GCM', false, ['encrypt']);
+  const key = await crypto.subtle.importKey(
+    "raw",
+    _getKey(),
+    "AES-GCM",
+    false,
+    ["encrypt"],
+  );
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const encoded = new TextEncoder().encode(plaintext);
-  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded);
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    encoded,
+  );
   return btoa(String.fromCharCode(...iv, ...new Uint8Array(ciphertext)));
 }
 
 async function _decrypt(blob) {
-  const raw = Uint8Array.from(atob(blob), c => c.charCodeAt(0));
+  const raw = Uint8Array.from(atob(blob), (c) => c.charCodeAt(0));
   const iv = raw.slice(0, 12);
   const ciphertext = raw.slice(12);
-  const key = await crypto.subtle.importKey('raw', _getKey(), 'AES-GCM', false, ['decrypt']);
-  const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+  const key = await crypto.subtle.importKey(
+    "raw",
+    _getKey(),
+    "AES-GCM",
+    false,
+    ["decrypt"],
+  );
+  const plain = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv },
+    key,
+    ciphertext,
+  );
   return new TextDecoder().decode(plain);
 }
 
@@ -76,5 +96,7 @@ export async function restore() {
 export function clear() {
   _token = null;
   _expiry = 0;
-  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {}
 }

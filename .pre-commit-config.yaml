@@ -21,4 +21,3 @@ repos:
     hooks:
       - id: prettier
         types_or: [javascript, jsx, ts, tsx, json, css, markdown, yaml]
-        args: [--check]

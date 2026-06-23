@@ -171,6 +171,7 @@ async def _compute_pr_impact(
     from agents.cve_scanner import run_cve_scanner
     from agents.health import compute_health
     from agents.impact import compute_impact, run_merge_prediction
+    from agents.language_audit import run_code_audit
     from agents.scanner import clone_and_scan
     from agents.security import run_security_agent
 
@@ -181,22 +182,30 @@ async def _compute_pr_impact(
 
         sec_findings = await asyncio.to_thread(run_security_agent, local_path)
         cve_findings = await asyncio.to_thread(run_cve_scanner, scan["file_contents"])
+        code_audit = await asyncio.to_thread(
+            run_code_audit,
+            scan["file_tree"],
+            scan["file_contents"],
+        )
         pr_health = compute_health(
             file_contents=scan["file_contents"],
             security_findings=sec_findings,
             cve_findings=cve_findings,
-            api_docs=[],
+            api_docs=base_session.get("api_docs", []),
+            code_audit=code_audit,
         )
 
         pr_snapshot = {
             "health": pr_health,
             "security_findings": sec_findings,
             "cve_findings": cve_findings,
+            "code_audit": code_audit,
         }
         base_snapshot = {
             "health": base_session.get("health"),
             "security_findings": base_session.get("security_findings", []),
             "cve_findings": base_session.get("cve_findings", []),
+            "code_audit": base_session.get("code_audit"),
         }
 
         delta = compute_impact(base_snapshot, pr_snapshot)

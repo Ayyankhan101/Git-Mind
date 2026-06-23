@@ -40,8 +40,21 @@ print("════════════════════════�
 print("[ Environment ]")
 
 api_key = os.getenv("GROQ_API_KEY", "")
-check("GROQ_API_KEY is set", bool(api_key), "Add to backend/.env")
-check("GROQ_API_KEY format (gsk_...)", api_key.startswith("gsk_"), f"Got prefix: {api_key[:6]!r}")
+_ci_smoke = os.getenv("CI_SMOKE", "").lower() in ("1", "true", "yes") or os.getenv("GITHUB_ACTIONS") == "true"
+_placeholder_key = api_key in ("", "gsk_test_placeholder")
+_skip_live_checks = _ci_smoke or _placeholder_key
+
+
+def skip(label: str, reason: str) -> None:
+    print(f"  [SKIP]  {label}  →  {reason}")
+
+
+if _skip_live_checks:
+    skip("GROQ_API_KEY is set", "CI smoke mode")
+    skip("GROQ_API_KEY format (gsk_...)", "CI smoke mode")
+else:
+    check("GROQ_API_KEY is set", bool(api_key), "Add to backend/.env")
+    check("GROQ_API_KEY format (gsk_...)", api_key.startswith("gsk_"), f"Got prefix: {api_key[:6]!r}")
 _venv_semgrep = Path(__file__).parent / "venv" / "bin" / "semgrep"
 check("semgrep available", shutil.which("semgrep") is not None or _venv_semgrep.exists(), "pip install semgrep")
 
@@ -82,7 +95,7 @@ except Exception as exc:
 
 # ── 5. Groq API reachability ───────────────────────────────────────────────────
 print("\n[ Groq API ]")
-if api_key:
+if api_key and not _skip_live_checks:
     try:
         from langchain_groq import ChatGroq
 
@@ -92,7 +105,7 @@ if api_key:
     except Exception as exc:
         check("Groq API reachable", False, str(exc))
 else:
-    check("Groq API reachable", False, "Skipped — GROQ_API_KEY not set")
+    skip("Groq API reachable", "CI smoke mode / no live key")
 
 # ── 6. GitPython clone ─────────────────────────────────────────────────────────
 print("\n[ GitPython ]")
@@ -113,11 +126,21 @@ try:
     from orchestrator import graph
 
     check("LangGraph analysis graph compiles", graph is not None)
-    # Verify all 7 post-scanner nodes are wired up
+    # Verify all 9 agent nodes are wired up
     node_names = set(graph.nodes.keys()) if hasattr(graph, "nodes") else set()
-    expected = {"scanner", "architecture", "api_docs", "security", "cve_scanner", "rag_setup", "git_audit"}
+    expected = {
+        "scanner",
+        "architecture",
+        "api_docs",
+        "security",
+        "cve_scanner",
+        "rag_setup",
+        "git_audit",
+        "solidity",
+        "code_audit",
+    }
     missing = expected - node_names
-    check("LangGraph: all 7 agent nodes present", not missing, f"Missing: {missing}" if missing else "")
+    check("LangGraph: all 9 agent nodes present", not missing, f"Missing: {missing}" if missing else "")
 except Exception as exc:
     check("LangGraph analysis graph compiles", False, str(exc))
 

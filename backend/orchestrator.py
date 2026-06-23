@@ -1,19 +1,20 @@
-import logging
 import time
 
+import structlog
 from langgraph.graph import END, START, StateGraph
 
 from agents.api_doc import run_api_doc_agent
 from agents.architecture import run_architecture_agent
 from agents.cve_scanner import run_cve_scanner
 from agents.git_audit import run_git_audit
+from agents.language_audit import run_code_audit
 from agents.rag_setup import run_rag_setup
 from agents.scanner import clone_and_scan
 from agents.security import _synthetic_finding, run_security_agent
 from agents.solidity_agent import solidity_agent
 from state import RepoState
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # Circuit breaker state
 _circuit_open_until = 0.0
@@ -171,6 +172,21 @@ def sol_node(state: RepoState) -> dict:
         return {"solidity_audit": None, "events": [_event("solidity", "error", str(exc)[:200])]}
 
 
+def code_audit_node(state: RepoState) -> dict:
+    if state.get("_scanner_failed"):
+        return {"code_audit": None, "events": [_event("code_audit", "skipped", "scanner failed")]}
+    if _is_circuit_open():
+        return {"code_audit": None, "events": [_event("code_audit", "skipped", "circuit breaker open")]}
+    try:
+        results = run_code_audit(state["file_tree"], state["file_contents"])
+        _record_circuit_success()
+        return {"code_audit": results, "events": [_event("code_audit", "done")]}
+    except Exception as exc:
+        _record_circuit_failure()
+        logger.error("code_audit_node failed: %s", exc)
+        return {"code_audit": None, "events": [_event("code_audit", "error", str(exc)[:200])]}
+
+
 def git_audit_node(state: RepoState) -> dict:
     if state.get("_scanner_failed"):
         return {"git_audit": None, "events": [_event("git_audit", "skipped", "scanner failed")]}
@@ -205,11 +221,21 @@ def build_graph() -> StateGraph:
     g.add_node("cve_scanner", cve_node)
     g.add_node("git_audit", git_audit_node)
     g.add_node("solidity", sol_node)
+    g.add_node("code_audit", code_audit_node)
 
     g.add_edge(START, "scanner")
 
     # Parallel fan-out after scanner
-    for node in ("architecture", "api_docs", "security", "rag_setup", "cve_scanner", "git_audit", "solidity"):
+    for node in (
+        "architecture",
+        "api_docs",
+        "security",
+        "rag_setup",
+        "cve_scanner",
+        "git_audit",
+        "solidity",
+        "code_audit",
+    ):
         g.add_edge("scanner", node)
         g.add_edge(node, END)
 

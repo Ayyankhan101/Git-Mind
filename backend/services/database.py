@@ -47,6 +47,25 @@ async def get_db() -> AsyncSession:
         yield session
 
 
+def _analysis_row_to_dict(row) -> dict:
+    return {
+        "repo_name": row.repo_name,
+        "chroma_collection_name": row.chroma_collection_name,
+        "security_findings": row.security_findings or [],
+        "cve_findings": row.cve_findings or [],
+        "api_docs": row.api_docs or [],
+        "architecture_diagram": row.architecture_diagram,
+        "git_audit": row.git_audit,
+        "solidity_audit": row.solidity_audit,
+        "code_audit": row.code_audit,
+        "health": row.health,
+        "head_sha": row.head_sha,
+        "repo_url": row.repo_url,
+        "chat_history": row.chat_history or [],
+        "owner_hash": row.owner_hash,
+    }
+
+
 async def get_analysis_db(session_id: str) -> dict | None:
     from models.db import Analysis
 
@@ -54,18 +73,7 @@ async def get_analysis_db(session_id: str) -> dict | None:
         row = await session.get(Analysis, session_id)
         if row is None:
             return None
-        return {
-            "repo_name": row.repo_name,
-            "chroma_collection_name": row.chroma_collection_name,
-            "security_findings": row.security_findings or [],
-            "cve_findings": row.cve_findings or [],
-            "api_docs": row.api_docs or [],
-            "architecture_diagram": row.architecture_diagram,
-            "git_audit": row.git_audit,
-            "repo_url": row.repo_url,
-            "chat_history": row.chat_history or [],
-            "owner_hash": row.owner_hash,
-        }
+        return _analysis_row_to_dict(row)
 
 
 async def persist_analysis_db(session_id: str, snapshot: dict) -> None:
