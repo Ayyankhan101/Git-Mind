@@ -24,7 +24,7 @@ jobs:
         with:
           workspaces: "rust-gitmind"
       - name: Install dependencies
-        run: pip install -r requirements.txt pytest --break-system-packages
+        run: pip install -r requirements.txt pytest pytest-asyncio --break-system-packages
       - name: Build and install gitmind_core
         run: |
           pip install maturin --break-system-packages
