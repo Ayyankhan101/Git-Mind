@@ -1,5 +1,14 @@
 # ============================================================
-# Backend-only image for Hugging Face Spaces (Docker SDK).
+# Stage 0: Rust native module builder
+# ============================================================
+FROM rust:1.81-slim-bookworm AS rust-builder
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY rust-gitmind/ .
+RUN pip install maturin --break-system-packages && maturin build --release
+
+# ============================================================
+# Stage 1: Backend-only image for Hugging Face Spaces (Docker SDK).
 # Build context = this backend/ directory (the Space repo root).
 # HF runs the container as a non-root user with UID 1000, so all
 # runtime-writable paths (.chroma/, .llm_cache/) must
@@ -24,6 +33,10 @@ WORKDIR /app
 # Install Python deps first for layer caching.
 COPY --chown=user requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Install the Rust native gitmind_core module.
+COPY --from=rust-builder /app/target/wheels/gitmind_core*.whl /tmp/
+RUN pip install --no-cache-dir /tmp/gitmind_core*.whl
 
 # Run everything below as the runtime user so the ONNX cache and the
 # app directory end up owned by UID 1000.
