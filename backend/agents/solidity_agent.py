@@ -6,16 +6,14 @@ import uuid
 import httpx
 from langchain_groq import ChatGroq
 
-from llm_cache import get_cached, set_cached, invoke_with_retry
+from llm_cache import get_cached, invoke_with_retry, set_cached
 
 logger = logging.getLogger(__name__)
 
 _SIDECAR_BASE = os.getenv("SIDECAR_URL", "http://127.0.0.1:8003")
-_MODEL        = "llama-3.3-70b-versatile"
-_LLM          = ChatGroq(model=_MODEL, temperature=0.1).bind(
-    response_format={"type": "json_object"}
-)
-_CACHE_NS     = "llama-3.3-70b-versatile:solidity:json"
+_MODEL = "llama-3.3-70b-versatile"
+_LLM = ChatGroq(model=_MODEL, temperature=0.1).bind(response_format={"type": "json_object"})
+_CACHE_NS = "llama-3.3-70b-versatile:solidity:json"
 _MAX_FINDINGS = 40
 
 _TRIAGE_PROMPT = """\
@@ -106,14 +104,16 @@ def _triage_with_llm(contracts: list) -> list:
 def _fallback_finding() -> dict:
     return {
         "contracts": [],
-        "findings": [{
-            "id": "sol-demo-01",
-            "contract": "unknown",
-            "function": "unknown",
-            "severity": "high",
-            "title": "Sidecar unavailable — manual review recommended",
-            "description": "Solidity parser sidecar did not respond. No automated AST analysis performed.",
-            "remediation": "Check rust-sidecar is running on port 8003 or review .sol files manually.",
-            "swc": None,
-        }],
+        "findings": [
+            {
+                "id": "sol-demo-01",
+                "contract": "unknown",
+                "function": "unknown",
+                "severity": "high",
+                "title": "Sidecar unavailable — manual review recommended",
+                "description": "Solidity parser sidecar did not respond. No automated AST analysis performed.",
+                "remediation": "Check rust-sidecar is running on port 8003 or review .sol files manually.",
+                "swc": None,
+            }
+        ],
     }

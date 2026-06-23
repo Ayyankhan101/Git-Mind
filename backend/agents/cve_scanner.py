@@ -1,4 +1,3 @@
-import json
 import logging
 
 import httpx
@@ -12,12 +11,16 @@ _SEV_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3}
 
 # ── OSV.dev query ──────────────────────────────────────────────────────────────
 
+
 def _cvss_to_severity(score_str: str) -> str:
     try:
         s = float(score_str)
-        if s >= 9.0: return "critical"
-        if s >= 7.0: return "high"
-        if s >= 4.0: return "medium"
+        if s >= 9.0:
+            return "critical"
+        if s >= 7.0:
+            return "high"
+        if s >= 4.0:
+            return "medium"
         return "low"
     except Exception:
         return "medium"
@@ -50,10 +53,7 @@ def run_cve_scanner(file_contents: dict[str, str]) -> list[dict]:
         logger.info("CVE scanner: no lockfiles found")
         return []
 
-    queries = [
-        {"version": d["version"], "package": {"name": d["name"], "ecosystem": d["ecosystem"]}}
-        for d in deps
-    ]
+    queries = [{"version": d["version"], "package": {"name": d["name"], "ecosystem": d["ecosystem"]}} for d in deps]
 
     try:
         resp = httpx.post(_OSV_BATCH_URL, json={"queries": queries}, timeout=20.0)
@@ -64,31 +64,33 @@ def run_cve_scanner(file_contents: dict[str, str]) -> list[dict]:
         return []
 
     results = []
-    for dep, result in zip(deps, batch):
+    for dep, result in zip(deps, batch, strict=False):
         vulns_raw = result.get("vulns", [])
         if not vulns_raw:
             continue
         vulns = sorted(
             [
                 {
-                    "id":       v.get("id", ""),
-                    "summary":  v.get("summary", ""),
+                    "id": v.get("id", ""),
+                    "summary": v.get("summary", ""),
                     "severity": _parse_severity(v),
                     "fixed_in": _get_fix_version(v),
-                    "url":      f"https://osv.dev/vulnerability/{v.get('id', '')}",
+                    "url": f"https://osv.dev/vulnerability/{v.get('id', '')}",
                 }
                 for v in vulns_raw
             ],
             key=lambda v: _SEV_ORDER.get(v["severity"], 4),
         )
-        results.append({
-            "package":        dep["name"],
-            "version":        dep["version"],
-            "ecosystem":      dep["ecosystem"],
-            "vulns":          vulns,
-            "worst_severity": vulns[0]["severity"],
-            "vuln_count":     len(vulns),
-        })
+        results.append(
+            {
+                "package": dep["name"],
+                "version": dep["version"],
+                "ecosystem": dep["ecosystem"],
+                "vulns": vulns,
+                "worst_severity": vulns[0]["severity"],
+                "vuln_count": len(vulns),
+            }
+        )
 
     results.sort(key=lambda r: _SEV_ORDER.get(r["worst_severity"], 4))
     logger.info("CVE scanner: %d vulnerable packages found (scanned %d)", len(results), len(deps))

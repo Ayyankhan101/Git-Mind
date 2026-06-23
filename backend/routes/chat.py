@@ -7,9 +7,9 @@ from fastapi.responses import StreamingResponse
 
 from agents.chat import run_chat_agent
 from models.requests import ChatRequest
-from services.rate_limiter import check_rate_limit
 from services.rate_limit_response import rate_limit_response
-from services.session import get_session, _UUID_RE
+from services.rate_limiter import check_rate_limit
+from services.session import _UUID_RE, get_session
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -37,10 +37,12 @@ async def chat_endpoint(req: ChatRequest, request: Request):
         repo_name=session["repo_name"],
     )
 
-    session["chat_history"].extend([
-        {"role": "user", "content": req.question},
-        {"role": "assistant", "content": answer},
-    ])
+    session["chat_history"].extend(
+        [
+            {"role": "user", "content": req.question},
+            {"role": "assistant", "content": answer},
+        ]
+    )
     session["chat_history"] = session["chat_history"][-50:]
 
     return {"answer": answer}
@@ -51,8 +53,10 @@ async def chat_stream_endpoint(req: ChatRequest, request: Request):
     from agents.chat import run_chat_agent_stream
 
     if not _UUID_RE.match(req.session_id):
+
         async def _bad():
             yield f"data: {json.dumps({'error': 'Invalid session ID'})}\n\n"
+
         return StreamingResponse(_bad(), media_type="text/event-stream")
 
     client_ip = request.client.host if request.client else "unknown"
@@ -79,10 +83,12 @@ async def chat_stream_endpoint(req: ChatRequest, request: Request):
             full_answer += token
             yield f"data: {json.dumps({'token': token})}\n\n"
 
-        session["chat_history"].extend([
-            {"role": "user", "content": req.question},
-            {"role": "assistant", "content": full_answer},
-        ])
+        session["chat_history"].extend(
+            [
+                {"role": "user", "content": req.question},
+                {"role": "assistant", "content": full_answer},
+            ]
+        )
         session["chat_history"] = session["chat_history"][-50:]
         yield f"data: {json.dumps({'done': True})}\n\n"
 

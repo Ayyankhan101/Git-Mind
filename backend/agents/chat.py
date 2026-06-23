@@ -8,7 +8,7 @@ from llm_cache import invoke_with_retry
 logger = logging.getLogger(__name__)
 
 _MODEL = "llama-3.3-70b-versatile"
-_LLM   = ChatGroq(model=_MODEL, temperature=0.2)
+_LLM = ChatGroq(model=_MODEL, temperature=0.2)
 
 _SYSTEM_TEMPLATE = """\
 You are a senior software engineer who has read every file in the '{repo_name}' codebase.
@@ -36,14 +36,8 @@ def _build_messages(
     repo_name: str,
 ) -> list[dict]:
     chunks = search_codebase(collection_name, question, n_results=8)
-    context = (
-        "\n\n".join(f"--- {c['filepath']} ---\n{c['content']}" for c in chunks)
-        or "No relevant code found."
-    )
-    history = (
-        "\n".join(f"{m['role'].upper()}: {m['content']}" for m in chat_history[-10:])
-        or "None."
-    )
+    context = "\n\n".join(f"--- {c['filepath']} ---\n{c['content']}" for c in chunks) or "No relevant code found."
+    history = "\n".join(f"{m['role'].upper()}: {m['content']}" for m in chat_history[-10:]) or "None."
     system = _SYSTEM_TEMPLATE.format(repo_name=repo_name, context=context, history=history)
     return [{"role": "system", "content": system}, {"role": "user", "content": question}]
 
@@ -55,7 +49,7 @@ def run_chat_agent(
     repo_name: str,
 ) -> str:
     messages = _build_messages(question, collection_name, chat_history, repo_name)
-    answer   = invoke_with_retry(_LLM, messages).content
+    answer = invoke_with_retry(_LLM, messages).content
     logger.debug("Chat agent answered question of length %d", len(question))
     return answer
 

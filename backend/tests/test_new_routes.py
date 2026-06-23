@@ -1,5 +1,5 @@
-import pytest
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
+
 from fastapi.testclient import TestClient
 
 from main import app
@@ -9,7 +9,7 @@ client = TestClient(app)
 
 class TestAnalyzeEndpoint:
     @patch("routes.analyze.check_rate_limit", return_value=(True, 30, 0))
-    def test_analyze_invalid_url(self, mock_rate):
+    def test_analyze_invalid_url(self, _mock_rate):
         response = client.post("/analyze", json={"repo_url": "not-a-url"})
         assert response.status_code == 200
         assert "error" in response.json()
@@ -19,16 +19,19 @@ class TestAnalyzeEndpoint:
         assert response.status_code == 422
 
     @patch("routes.analyze.check_rate_limit", return_value=(False, 0, 60))
-    def test_analyze_rate_limited(self, mock_rate):
-        response = client.post("/analyze", json={
-            "repo_url": "https://github.com/vercel/next.js",
-        })
+    def test_analyze_rate_limited(self, _mock_rate):
+        response = client.post(
+            "/analyze",
+            json={
+                "repo_url": "https://github.com/vercel/next.js",
+            },
+        )
         assert response.status_code == 429
         assert "Rate limit" in response.json().get("error", "")
         assert "Retry-After" in response.headers
 
     @patch("routes.analyze.check_rate_limit", return_value=(True, 30, 0))
-    def test_analyze_github_only(self, mock_rate):
+    def test_analyze_github_only(self, _mock_rate):
         response = client.post("/analyze", json={"repo_url": "https://gitlab.com/user/repo"})
         assert response.status_code == 200
         assert "error" in response.json()
@@ -36,9 +39,13 @@ class TestAnalyzeEndpoint:
 
 class TestWebhookEndpoint:
     def test_webhook_invalid_url(self):
-        response = client.post("/webhook/notify", json={
-            "slack_webhook_url": "https://evil.com/hook", "message": "test",
-        })
+        response = client.post(
+            "/webhook/notify",
+            json={
+                "slack_webhook_url": "https://evil.com/hook",
+                "message": "test",
+            },
+        )
         assert response.status_code == 200
         assert "error" in response.json()
 
@@ -47,9 +54,13 @@ class TestWebhookEndpoint:
         assert response.status_code == 422
 
     def test_webhook_rejects_non_slack(self):
-        response = client.post("/webhook/notify", json={
-            "slack_webhook_url": "https://not-slack.example.com/hook", "message": "hi",
-        })
+        response = client.post(
+            "/webhook/notify",
+            json={
+                "slack_webhook_url": "https://not-slack.example.com/hook",
+                "message": "hi",
+            },
+        )
         assert response.status_code == 200
         assert "error" in response.json()
 

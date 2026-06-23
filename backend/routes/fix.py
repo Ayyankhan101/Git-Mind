@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import os
 import re
 import shutil
@@ -15,10 +16,9 @@ from langchain_groq import ChatGroq
 from agents.scanner import _GITHUB_URL_RE
 from chroma_utils import search_codebase
 from llm_cache import invoke_with_retry
-from models.requests import FixRequest, AutoPRRequest
-from services.auth import get_gh_token
-from services.rate_limiter import check_rate_limit
+from models.requests import AutoPRRequest, FixRequest
 from services.rate_limit_response import rate_limit_response
+from services.rate_limiter import check_rate_limit
 from services.session import _UUID_RE, get_session
 
 logger = structlog.get_logger(__name__)
@@ -39,10 +39,17 @@ async def fix_endpoint(req: FixRequest, request: Request):
 
     finding = req.finding
     collection = session.get("chroma_collection_name")
-    query = " ".join(filter(None, [
-        finding.rule, finding.file,
-        finding.title, (finding.description or "")[:100],
-    ]))
+    query = " ".join(
+        filter(
+            None,
+            [
+                finding.rule,
+                finding.file,
+                finding.title,
+                (finding.description or "")[:100],
+            ],
+        )
+    )
 
     chunks = await asyncio.to_thread(search_codebase, collection, query, 4) if collection else []
     context = "\n\n".join(f"--- {c['filepath']} ---\n{c['content']}" for c in chunks) or "No code context available."
@@ -85,7 +92,6 @@ def _apply_and_push_pr(
     patch: str,
     finding: dict,
     token: str,
-    repo_name: str,
 ) -> dict:
     branch = f"gitmind/fix-{finding.get('id', uuid.uuid4().hex[:6])}"
     dest = tempfile.mkdtemp(prefix="gitmind_pr_")
@@ -95,46 +101,64 @@ def _apply_and_push_pr(
         # Use GIT_ASKPASS to avoid token in URLs/logs
         _env = {}
         if token:
-            _askpass_script = tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False)
-            _askpass_script.write(f'#!/bin/sh\necho "{token}"\n')
-            _askpass_script.close()
-            os.chmod(_askpass_script.name, stat.S_IRUSR | stat.S_IXUSR)
-            _env["GIT_ASKPASS"] = _askpass_script.name
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False) as _askpass_script:
+                _askpass_script.write(f'#!/bin/sh\necho "{token}"\n')
+                _askpass_name = _askpass_script.name
+            os.chmod(_askpass_name, stat.S_IRUSR | stat.S_IXUSR)
+            _env["GIT_ASKPASS"] = _askpass_name
         subprocess.run(
             ["git", "clone", "--depth=1", repo_url, dest],
             env={**os.environ, **_env},
-            check=True, capture_output=True, timeout=60,
+            check=True,
+            capture_output=True,
+            timeout=60,
         )
-        subprocess.run(["git", "config", "user.email", "gitmind@example.com"], cwd=dest, check=True, capture_output=True)
-        subprocess.run(["git", "config", "user.name", "GitMind Bot"], cwd=dest, check=True, capture_output=True)
-        subprocess.run(["git", "checkout", "-b", branch], cwd=dest, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "config", "user.email", "gitmind@example.com"],
+            cwd=dest,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "GitMind Bot"],
+            cwd=dest,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "checkout", "-b", branch],
+            cwd=dest,
+            check=True,
+            capture_output=True,
+        )
 
         if ".." in patch:
             raise ValueError("Patch content references parent directory — rejected")
         proc = subprocess.run(
             ["patch", "-p1", "--forward", "--reject", f"--directory={dest}"],
-            input=patch, text=True, cwd=dest,
-            capture_output=True, timeout=15,
+            input=patch,
+            text=True,
+            cwd=dest,
+            capture_output=True,
+            timeout=15,
         )
         if proc.returncode not in (0, 1):
             raise RuntimeError("patch command failed")
 
         subprocess.run(["git", "add", "-A"], cwd=dest, check=True, capture_output=True)
         # Sanitize commit message: strip control chars and newlines
-        safe_title = re.sub(r'[\x00-\x1f\x7f]', '', finding.get('title', 'security fix'))[:72]
-        safe_rule = re.sub(r'[\x00-\x1f\x7f]', '', finding.get('rule', 'gitmind'))[:40]
+        safe_title = re.sub(r"[\x00-\x1f\x7f]", "", finding.get("title", "security fix"))[:72]
+        safe_rule = re.sub(r"[\x00-\x1f\x7f]", "", finding.get("rule", "gitmind"))[:40]
         msg = f"fix: {safe_title} [{safe_rule}]"
         subprocess.run(["git", "commit", "-m", msg], cwd=dest, check=True, capture_output=True)
         subprocess.run(["git", "push", "origin", branch], cwd=dest, check=True, capture_output=True, timeout=30)
     finally:
         shutil.rmtree(dest, ignore_errors=True)
         if _askpass_script:
-            try:
-                os.unlink(_askpass_script.name)
-            except OSError:
-                pass
+            with contextlib.suppress(OSError):
+                os.unlink(_askpass_name)
 
-    m = re.match(r'https://github\.com/([^/]+)/([^/]+?)(?:\.git)?$', repo_url)
+    m = re.match(r"https://github\.com/([^/]+)/([^/]+?)(?:\.git)?$", repo_url)
     if not m:
         raise ValueError("Could not parse GitHub owner/repo from URL")
     owner, repo = m.group(1), m.group(2)
@@ -185,6 +209,7 @@ async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
         return await rate_limit_response("fix", client_ip)
 
     from services.auth import require_gh_token
+
     token = require_gh_token(request)
 
     session = await get_session(req.session_id)
@@ -197,10 +222,17 @@ async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
 
     finding = req.finding
     collection = session.get("chroma_collection_name")
-    query = " ".join(filter(None, [
-        finding.rule, finding.file,
-        finding.title, (finding.description or "")[:100],
-    ]))
+    query = " ".join(
+        filter(
+            None,
+            [
+                finding.rule,
+                finding.file,
+                finding.title,
+                (finding.description or "")[:100],
+            ],
+        )
+    )
     chunks = await asyncio.to_thread(search_codebase, collection, query, 4) if collection else []
     context = "\n\n".join(f"--- {c['filepath']} ---\n{c['content']}" for c in chunks) or "No context."
 
@@ -221,9 +253,7 @@ async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
     raw_patch = await asyncio.to_thread(_gen_patch)
 
     try:
-        result = await asyncio.to_thread(
-            _apply_and_push_pr, repo_url, raw_patch, finding.model_dump(), token, session["repo_name"]
-        )
+        result = await asyncio.to_thread(_apply_and_push_pr, repo_url, raw_patch, finding.model_dump(), token)
         logger.info("Auto-PR created", pr_url=result.get("pr_url"))
         return result
     except Exception as exc:

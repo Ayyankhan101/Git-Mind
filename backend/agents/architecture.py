@@ -6,23 +6,39 @@ from pathlib import Path
 import tiktoken
 from langchain_groq import ChatGroq
 
-from llm_cache import get_cached, set_cached, invoke_with_retry
+from llm_cache import get_cached, invoke_with_retry, set_cached
 
 logger = logging.getLogger(__name__)
 
-_MODEL         = "llama-3.3-70b-versatile"
-_TOKEN_BUDGET  = 24_000   # llama-3.3-70b supports 128K ctx — use more headroom
-_MAX_TREE_LINES  = 200
-_MAX_KEY_FILES   = 14
+_MODEL = "llama-3.3-70b-versatile"
+_TOKEN_BUDGET = 24_000  # llama-3.3-70b supports 128K ctx — use more headroom
+_MAX_TREE_LINES = 200
+_MAX_KEY_FILES = 14
 _MAX_SNIPPET_LEN = 1_600
 
 _PRIORITY_KEYWORDS = [
-    "main", "app", "index", "server",
-    "routes", "router", "models", "config",
-    "database", "db", "auth", "api",
-    "service", "controller", "handler",
-    "middleware", "schema", "store", "client",
-    "gateway", "proxy", "pipeline",
+    "main",
+    "app",
+    "index",
+    "server",
+    "routes",
+    "router",
+    "models",
+    "config",
+    "database",
+    "db",
+    "auth",
+    "api",
+    "service",
+    "controller",
+    "handler",
+    "middleware",
+    "schema",
+    "store",
+    "client",
+    "gateway",
+    "proxy",
+    "pipeline",
 ]
 
 _SYSTEM_PROMPT = """\
@@ -47,12 +63,23 @@ graph TD
 
 
 _EXT_TO_LANG = {
-    ".py": "Python", ".js": "JavaScript", ".ts": "TypeScript",
-    ".jsx": "JavaScript/React", ".tsx": "TypeScript/React",
-    ".java": "Java", ".go": "Go", ".rb": "Ruby", ".php": "PHP",
-    ".rs": "Rust", ".cs": "C#", ".cpp": "C++", ".c": "C",
-    ".swift": "Swift", ".kt": "Kotlin",
+    ".py": "Python",
+    ".js": "JavaScript",
+    ".ts": "TypeScript",
+    ".jsx": "JavaScript/React",
+    ".tsx": "TypeScript/React",
+    ".java": "Java",
+    ".go": "Go",
+    ".rb": "Ruby",
+    ".php": "PHP",
+    ".rs": "Rust",
+    ".cs": "C#",
+    ".cpp": "C++",
+    ".c": "C",
+    ".swift": "Swift",
+    ".kt": "Kotlin",
 }
+
 
 def _detect_primary_language(file_tree: list[str]) -> str:
     counts: Counter = Counter()
@@ -96,27 +123,24 @@ _LLM = ChatGroq(model=_MODEL, temperature=0)
 
 
 def _build_prompt(file_tree: list[str], file_contents: dict[str, str], primary_lang: str = "Unknown") -> str:
-    budget   = _TOKEN_BUDGET
+    budget = _TOKEN_BUDGET
     tree_str = "\n".join(file_tree[:_MAX_TREE_LINES])
-    budget  -= len(_ENC.encode(tree_str))
+    budget -= len(_ENC.encode(tree_str))
 
     # Priority files: those whose path contains domain keywords
-    priority = [
-        f for f in file_tree
-        if any(kw in f.lower() for kw in _PRIORITY_KEYWORDS)
-    ][:_MAX_KEY_FILES]
+    priority = [f for f in file_tree if any(kw in f.lower() for kw in _PRIORITY_KEYWORDS)][:_MAX_KEY_FILES]
 
     key_content = ""
     for fp in priority:
         if fp not in file_contents:
             continue
         snippet = file_contents[fp][:_MAX_SNIPPET_LEN]
-        block   = f"\n\n=== {fp} ===\n{snippet}"
-        cost    = len(_ENC.encode(block))
-        if budget - cost < 500:   # reserve 500 tokens for system prompt + output
+        block = f"\n\n=== {fp} ===\n{snippet}"
+        cost = len(_ENC.encode(block))
+        if budget - cost < 500:  # reserve 500 tokens for system prompt + output
             break
         key_content += block
-        budget      -= cost
+        budget -= cost
 
     return f"{_SYSTEM_PROMPT}\n\nPRIMARY LANGUAGE: {primary_lang}\n\nFILE TREE:\n{tree_str}\n\nKEY FILES:{key_content}"
 
@@ -128,7 +152,7 @@ def _strip_fences(text: str) -> str:
     for block in text.split("```"):
         block = block.strip()
         if block.startswith("mermaid"):
-            return block[len("mermaid"):].strip()
+            return block[len("mermaid") :].strip()
         if block.startswith("graph") or block.startswith("flowchart"):
             return block
     return text
@@ -142,16 +166,16 @@ def _sanitize_mermaid(diagram: str) -> str:
     diagram = re.sub(r"^flowchart\s+", "graph ", diagram, flags=re.MULTILINE)
 
     # Drop directives Mermaid v11 is strict about
-    diagram = re.sub(r"^\s*click\s+\S+.*$",    "", diagram, flags=re.MULTILINE)
-    diagram = re.sub(r"^\s*style\s+.*$",        "", diagram, flags=re.MULTILINE)
-    diagram = re.sub(r"^\s*classDef\s+.*$",     "", diagram, flags=re.MULTILINE)
-    diagram = re.sub(r"^\s*class\s+.*$",        "", diagram, flags=re.MULTILINE)
-    diagram = re.sub(r":::[\w-]+",              "", diagram)
+    diagram = re.sub(r"^\s*click\s+\S+.*$", "", diagram, flags=re.MULTILINE)
+    diagram = re.sub(r"^\s*style\s+.*$", "", diagram, flags=re.MULTILINE)
+    diagram = re.sub(r"^\s*classDef\s+.*$", "", diagram, flags=re.MULTILINE)
+    diagram = re.sub(r"^\s*class\s+.*$", "", diagram, flags=re.MULTILINE)
+    diagram = re.sub(r":::[\w-]+", "", diagram)
 
     def _clean_label(m: re.Match) -> str:
         content = m.group(1)
-        content = re.sub(r"\([^)]*\)", "", content)      # remove func-call parens
-        content = re.sub(r'[<>&"\'#%\\]', "", content)   # strip chars that break parser
+        content = re.sub(r"\([^)]*\)", "", content)  # remove func-call parens
+        content = re.sub(r'[<>&"\'#%\\]', "", content)  # strip chars that break parser
         content = content.replace("/", " ").replace("_", " ")
         content = re.sub(r"\s+", " ", content).strip()
         return f"[{content or 'Node'}]"
@@ -159,5 +183,5 @@ def _sanitize_mermaid(diagram: str) -> str:
     diagram = re.sub(r"\[([^\]\[]+)\]", _clean_label, diagram)
 
     # Drop now-blank lines, keep at most one blank between any two lines
-    lines = [l for l in diagram.splitlines() if l.strip()]
+    lines = [line for line in diagram.splitlines() if line.strip()]
     return "\n".join(lines)

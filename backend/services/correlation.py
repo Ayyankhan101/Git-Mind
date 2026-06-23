@@ -3,13 +3,12 @@
 Injects X-Request-ID into every request/response, binds to structlog context
 and OpenTelemetry span for distributed trace correlation.
 """
+
 import uuid
 
 import structlog
 from fastapi import Request
-from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.types import ASGIApp
 
 
 class CorrelationMiddleware(BaseHTTPMiddleware):
@@ -23,6 +22,7 @@ class CorrelationMiddleware(BaseHTTPMiddleware):
         # Add to OpenTelemetry span if available
         try:
             from opentelemetry import trace
+
             span = trace.get_current_span()
             if span.is_recording():
                 span.set_attribute("http.request_id", request_id)

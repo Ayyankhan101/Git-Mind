@@ -9,18 +9,25 @@ from fastapi import APIRouter, Request
 from agents.cve_scanner import run_cve_scanner
 from models.requests import OrgAuditRequest
 from services.auth import get_gh_token
-from services.rate_limiter import check_rate_limit
 from services.rate_limit_response import rate_limit_response
+from services.rate_limiter import check_rate_limit
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
 
 _DEP_FILES = [
-    "requirements.txt", "package-lock.json", "package.json",
-    "Cargo.lock", "go.sum", "yarn.lock", "pnpm-lock.yaml",
-    "Pipfile.lock", "poetry.lock", "Gemfile.lock",
+    "requirements.txt",
+    "package-lock.json",
+    "package.json",
+    "Cargo.lock",
+    "go.sum",
+    "yarn.lock",
+    "pnpm-lock.yaml",
+    "Pipfile.lock",
+    "poetry.lock",
+    "Gemfile.lock",
 ]
-_REPO_URL_RE = re.compile(r'^https://github\.com/([A-Za-z0-9_.\-]+)/([A-Za-z0-9_.\-]+?)(?:\.git)?/?$')
+_REPO_URL_RE = re.compile(r"^https://github\.com/([A-Za-z0-9_.\-]+)/([A-Za-z0-9_.\-]+?)(?:\.git)?/?$")
 
 
 @router.post("/org-audit")
@@ -74,7 +81,13 @@ async def org_audit_endpoint(req: OrgAuditRequest, request: Request):
             }
         except Exception as exc:
             logger.error("CVE scan failed", repo=repo_url, error=str(exc))
-            return {"repo_url": repo_url, "repo_name": repo_url.split("/")[-1], "error": "Scan failed", "cve_findings": [], "cve_count": 0}
+            return {
+                "repo_url": repo_url,
+                "repo_name": repo_url.split("/")[-1],
+                "error": "Scan failed",
+                "cve_findings": [],
+                "cve_count": 0,
+            }
 
     results = await asyncio.gather(*[_scan_repo(url) for url in req.repos])
 

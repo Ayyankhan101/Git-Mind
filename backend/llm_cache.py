@@ -12,10 +12,12 @@ _PREFERRED_DIR = Path(__file__).parent / ".llm_cache"
 try:
     _PREFERRED_DIR.mkdir(exist_ok=True)
     _test = _PREFERRED_DIR / ".write_test"
-    _test.touch(); _test.unlink()
+    _test.touch()
+    _test.unlink()
     _CACHE_DIR = _PREFERRED_DIR
 except OSError:
     import tempfile
+
     _CACHE_DIR = Path(tempfile.gettempdir()) / "gitmind_llm_cache"
     _CACHE_DIR.mkdir(exist_ok=True)
     logger.warning("LLM cache falling back to %s (preferred dir not writable)", _CACHE_DIR)
@@ -47,5 +49,5 @@ def invoke_with_retry(llm, prompt, max_retries: int = 2, base_delay: float = 2.0
         except Exception as exc:
             last_exc = exc
             if attempt < max_retries:
-                time.sleep(base_delay * (2 ** attempt))
+                time.sleep(base_delay * (2**attempt))
     raise last_exc  # type: ignore[misc]

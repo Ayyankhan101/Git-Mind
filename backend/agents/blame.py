@@ -23,7 +23,7 @@ def _blame_line(local_path: str, rel_file: str, line: int | None) -> dict | None
         return None
     # Reject absolute paths and directory traversal
     p = Path(rel_file)
-    if p.is_absolute() or '..' in p.parts:
+    if p.is_absolute() or ".." in p.parts:
         return None
     abs_path = Path(local_path) / rel_file
     if not abs_path.exists():
@@ -31,7 +31,11 @@ def _blame_line(local_path: str, rel_file: str, line: int | None) -> dict | None
     try:
         result = subprocess.run(
             [_GIT, "blame", "-L", f"{line},{line}", "--porcelain", rel_file],
-            capture_output=True, text=True, timeout=8, cwd=local_path, shell=False,
+            capture_output=True,
+            text=True,
+            timeout=8,
+            cwd=local_path,
+            shell=False,
         )
         if result.returncode != 0 or not result.stdout:
             return None

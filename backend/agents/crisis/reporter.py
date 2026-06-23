@@ -4,6 +4,7 @@ import os
 import time
 
 from langchain_groq import ChatGroq
+
 from llm_cache import invoke_with_retry
 
 logger = logging.getLogger(__name__)
@@ -39,18 +40,18 @@ async def reporter_loop(state_ref: dict, ws_send) -> None:
 
         signals = state_ref.get("public_signals", [])
         if not signals:
-            await ws_send({
-                "agent": "Reporter",
-                "kind": "tick",
-                "content": f"No new tips. Watching for {INTERVAL_SEC}s more.",
-                "ts": time.time(),
-            })
+            await ws_send(
+                {
+                    "agent": "Reporter",
+                    "kind": "tick",
+                    "content": f"No new tips. Watching for {INTERVAL_SEC}s more.",
+                    "ts": time.time(),
+                }
+            )
             continue
 
         signals_text = "\n".join(f"- {s}" for s in signals[-5:])
-        prompt = (
-            f"{REPORTER_PROMPT}\n\nSIGNALS:\n{signals_text}"
-        )
+        prompt = f"{REPORTER_PROMPT}\n\nSIGNALS:\n{signals_text}"
 
         try:
             story = invoke_with_retry(_llm, prompt).content
@@ -58,12 +59,14 @@ async def reporter_loop(state_ref: dict, ws_send) -> None:
             logger.error("reporter LLM failed: %s", exc)
             return
 
-        await ws_send({
-            "agent":     "Reporter",
-            "kind":      "leak",
-            "content":   story,
-            "timestamp": time.time(),
-        })
+        await ws_send(
+            {
+                "agent": "Reporter",
+                "kind": "leak",
+                "content": story,
+                "timestamp": time.time(),
+            }
+        )
         state_ref["reporter_published"] = True
         logger.info("reporter published — crisis lost")
         return

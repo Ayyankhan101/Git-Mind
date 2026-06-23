@@ -1,11 +1,13 @@
-from unittest.mock import patch, AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
-import services.session as session_mod
 from services.session import (
-    get_session, put_session, initial_state,
-    persist_analysis, _sessions,
+    _sessions,
+    get_session,
+    initial_state,
+    persist_analysis,
+    put_session,
 )
 
 
@@ -91,12 +93,14 @@ class TestPersistAnalysis:
             "git_audit": None,
             "health": None,
         }
-        with patch("services.database.upsert_sha_index", new_callable=AsyncMock) as mock_update:
-            with patch("services.database.persist_analysis_db", new_callable=AsyncMock) as mock_persist:
-                await persist_analysis(VALID_UUID, final, "url", "sha")
-                mock_persist.assert_awaited_once()
-                args = mock_persist.await_args[0]
-                assert args[0] == VALID_UUID
-                assert args[1]["repo_name"] == "repo"
-                assert args[1]["head_sha"] == "sha"
-                mock_update.assert_awaited_once_with("sha", VALID_UUID)
+        with (
+            patch("services.database.upsert_sha_index", new_callable=AsyncMock) as mock_update,
+            patch("services.database.persist_analysis_db", new_callable=AsyncMock) as mock_persist,
+        ):
+            await persist_analysis(VALID_UUID, final, "url", "sha")
+            mock_persist.assert_awaited_once()
+            args = mock_persist.await_args[0]
+            assert args[0] == VALID_UUID
+            assert args[1]["repo_name"] == "repo"
+            assert args[1]["head_sha"] == "sha"
+            mock_update.assert_awaited_once_with("sha", VALID_UUID)

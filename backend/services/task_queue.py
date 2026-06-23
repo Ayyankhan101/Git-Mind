@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import json
 import os
 import time
@@ -28,14 +29,12 @@ def _persist_task(task: dict) -> None:
     """Persist task state to Redis if available."""
     r = get_redis()
     if r:
-        try:
+        with contextlib.suppress(Exception):
             r.set(
                 f"task:{task['id']}",
                 json.dumps(task, default=str),
                 ex=_TASK_TTL,
             )
-        except Exception:
-            pass
 
 
 async def _worker():
@@ -56,13 +55,15 @@ async def _worker():
         except asyncio.CancelledError:
             task["status"] = "cancelled"
             raise
-        except asyncio.TimeoutError:
+        except TimeoutError:
             retries = task.get("retries", _MAX_RETRIES)
             if retries > 0:
                 task["retries"] = retries - 1
                 task["status"] = "pending"
                 delay = 2 ** (_MAX_RETRIES - retries)
-                asyncio.get_running_loop().call_later(delay, lambda: _queue.put_nowait((task_id, coro_factory)))
+                asyncio.get_running_loop().call_later(
+                    delay, lambda _tid=task_id, _cf=coro_factory: _queue.put_nowait((_tid, _cf))
+                )
                 logger.warning("Task timed out, retrying", task_id=task_id, retries_left=retries - 1)
             else:
                 task["error"] = "Task timed out after retries"
@@ -75,51 +76,9 @@ async def _worker():
                 task["retries"] = retries - 1
                 task["status"] = "pending"
                 delay = 2 ** (_MAX_RETRIES - retries)
-                asyncio.get_running_loop().call_later(delay, lambda: _queue.put_nowait((task_id, coro_factory)))
-                logger.warning("Task failed, retrying", task_id=task_id, retries_left=retries - 1)
-            else:
-                task["error"] = str(exc)[:500]
-                task["status"] = "failed"
-                tasks_completed.labels(status="failed").inc()
-                logger.error("Task permanently failed", task_id=task_id, error=str(exc)[:200])
-        finally:
-            task["completed_at"] = time.time()
-            _persist_task(task)
-            _queue.task_done()
-            continue
-        task["status"] = "running"
-        _persist_task(task)
-        try:
-            result = await asyncio.wait_for(coro, timeout=_TASK_TIMEOUT)
-            task["result"] = result
-            task["status"] = "completed"
-            tasks_completed.labels(status="completed").inc()
-        except asyncio.CancelledError:
-            task["status"] = "cancelled"
-            raise
-        except asyncio.TimeoutError:
-            retries = task.get("retries", _MAX_RETRIES)
-            if retries > 0:
-                task["retries"] = retries - 1
-                task["status"] = "pending"
-                delay = 2 ** (_MAX_RETRIES - retries)
-                # M3 fix: re-create the coroutine instead of re-using the same one
-                new_coro = coro_factory()
-                asyncio.get_running_loop().call_later(delay, lambda: _queue.put_nowait((task_id, new_coro)))
-                logger.warning("Task timed out, retrying", task_id=task_id, retries_left=retries - 1)
-            else:
-                task["error"] = "Task timed out after retries"
-                task["status"] = "failed"
-                tasks_completed.labels(status="failed").inc()
-                logger.error("Task permanently failed (timeout)", task_id=task_id)
-        except Exception as exc:
-            retries = task.get("retries", _MAX_RETRIES)
-            if retries > 0:
-                task["retries"] = retries - 1
-                task["status"] = "pending"
-                delay = 2 ** (_MAX_RETRIES - retries)
-                new_coro = coro_factory()
-                asyncio.get_running_loop().call_later(delay, lambda: _queue.put_nowait((task_id, new_coro)))
+                asyncio.get_running_loop().call_later(
+                    delay, lambda _tid=task_id, _cf=coro_factory: _queue.put_nowait((_tid, _cf))
+                )
                 logger.warning("Task failed, retrying", task_id=task_id, retries_left=retries - 1)
             else:
                 task["error"] = str(exc)[:500]
@@ -151,6 +110,7 @@ def submit(coro_factory) -> str:
     }
     _tasks[task_id] = task
     _persist_task(task)
+    assert _queue is not None
     _queue.put_nowait((task_id, coro_factory))
     tasks_submitted.inc()
     return task_id
@@ -194,18 +154,13 @@ async def stop():
         _prune_task.cancel()
     for t in _worker_tasks + [_prune_task]:
         if t:
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await t
-            except asyncio.CancelledError:
-                pass
 
 
 def _prune_old():
     cutoff = time.time() - _TASK_TTL
-    to_delete = [
-        tid for tid, t in _tasks.items()
-        if (t.get("completed_at") or t["created_at"]) < cutoff
-    ]
+    to_delete = [tid for tid, t in _tasks.items() if (t.get("completed_at") or t["created_at"]) < cutoff]
     for tid in to_delete:
         del _tasks[tid]
     if to_delete:

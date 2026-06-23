@@ -4,9 +4,9 @@ Redis mode: hashes with TTL.
 Memory mode: OrderedDict (fallback).
 DB fallback: SQLAlchemy persist/load for analysis snapshots.
 """
+
 import json
 import re
-import time
 from collections import OrderedDict
 
 import structlog
@@ -15,7 +15,7 @@ from services.cache import get_redis
 
 logger = structlog.get_logger(__name__)
 
-_UUID_RE = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.IGNORECASE)
+_UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.IGNORECASE)
 
 _MAX_SESSIONS = 500
 _SESSION_TTL = 3600  # 1 hour
@@ -78,6 +78,7 @@ async def get_session(session_id: str) -> dict | None:
         return session
 
     from services.database import get_analysis_db
+
     restored = await get_analysis_db(session_id)
     if restored:
         put_session(session_id, restored)
@@ -85,8 +86,15 @@ async def get_session(session_id: str) -> dict | None:
     return restored
 
 
-def _session_to_snapshot(session_id: str, final_state: dict, repo_url: str, sha: str | None, owner_hash: str | None = None) -> dict:
+def _session_to_snapshot(
+    _session_id: str,
+    final_state: dict,
+    repo_url: str,
+    sha: str | None,
+    owner_hash: str | None = None,
+) -> dict:
     import time as _time
+
     return {
         "repo_name": final_state["repo_name"],
         "repo_url": repo_url,
@@ -104,7 +112,13 @@ def _session_to_snapshot(session_id: str, final_state: dict, repo_url: str, sha:
     }
 
 
-async def persist_analysis(session_id: str, final_state: dict, repo_url: str, sha: str | None, owner_hash: str | None = None) -> None:
+async def persist_analysis(
+    session_id: str,
+    final_state: dict,
+    repo_url: str,
+    sha: str | None,
+    owner_hash: str | None = None,
+) -> None:
     from services.database import persist_analysis_db
     from services.sha_cache import update_sha_index
 

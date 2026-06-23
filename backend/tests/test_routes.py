@@ -1,6 +1,3 @@
-import pytest
-
-
 class TestHealthEndpoint:
     def test_returns_ok_structure(self, client):
         resp = client.get("/health")
@@ -33,26 +30,35 @@ class TestRoutesWithoutSession:
         assert resp.json().get("error") == "Session not found. Run /ws/analyze first."
 
     def test_chat_needs_session(self, client):
-        resp = client.post("/chat", json={
-            "session_id": "00000000-0000-0000-0000-000000000001",
-            "question": "Hello",
-        })
+        resp = client.post(
+            "/chat",
+            json={
+                "session_id": "00000000-0000-0000-0000-000000000001",
+                "question": "Hello",
+            },
+        )
         assert resp.status_code == 200
         assert resp.json().get("error") == "Session not found. Run /ws/analyze first."
 
     def test_fix_needs_session(self, client):
-        resp = client.post("/fix", json={
-            "session_id": "00000000-0000-0000-0000-000000000001",
-            "finding": {"rule": "test"},
-        })
+        resp = client.post(
+            "/fix",
+            json={
+                "session_id": "00000000-0000-0000-0000-000000000001",
+                "finding": {"rule": "test"},
+            },
+        )
         assert resp.status_code == 200
         assert resp.json().get("error") == "Session not found. Run /ws/analyze first."
 
     def test_incident_needs_session(self, client):
-        resp = client.post("/incident-report", json={
-            "session_id": "00000000-0000-0000-0000-000000000001",
-            "finding": {"title": "bug"},
-        })
+        resp = client.post(
+            "/incident-report",
+            json={
+                "session_id": "00000000-0000-0000-0000-000000000001",
+                "finding": {"title": "bug"},
+            },
+        )
         assert resp.status_code == 200
         assert resp.json().get("error") == "Session not found"
 

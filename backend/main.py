@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import os
 from contextlib import asynccontextmanager
 
@@ -14,6 +15,7 @@ load_dotenv()
 _sentry_dsn = os.getenv("SENTRY_DSN")
 if _sentry_dsn:
     import sentry_sdk
+
     sentry_sdk.init(
         dsn=_sentry_dsn,
         traces_sample_rate=0.1,
@@ -22,22 +24,22 @@ if _sentry_dsn:
         send_default_pii=False,
     )
 
-from routes.analysis import router as analysis_router
-from routes.analyze import router as analyze_router
-from routes.chat import router as chat_router
-from routes.fix import router as fix_router
-from routes.incident import router as incident_router
-from routes.monitor import router as monitor_router
-from routes.org import router as org_router
-from routes.pr import router as pr_router
-from routes.repos import router as repos_router
-from routes.webhook import router as webhook_router
-from services.auth import AuthMiddleware
-from services.correlation import CorrelationMiddleware
-from services.session import _sessions as sessions
-from services.telemetry import setup_logging, setup_metrics, setup_tracing
-from ws.analyze import handle_analyze
-from ws.crisis import handle_crisis
+from routes.analysis import router as analysis_router  # noqa: E402
+from routes.analyze import router as analyze_router  # noqa: E402
+from routes.chat import router as chat_router  # noqa: E402
+from routes.fix import router as fix_router  # noqa: E402
+from routes.incident import router as incident_router  # noqa: E402
+from routes.monitor import router as monitor_router  # noqa: E402
+from routes.org import router as org_router  # noqa: E402
+from routes.pr import router as pr_router  # noqa: E402
+from routes.repos import router as repos_router  # noqa: E402
+from routes.webhook import router as webhook_router  # noqa: E402
+from services.auth import AuthMiddleware  # noqa: E402
+from services.correlation import CorrelationMiddleware  # noqa: E402
+from services.session import _sessions as sessions  # noqa: E402
+from services.telemetry import setup_logging, setup_metrics, setup_tracing  # noqa: E402
+from ws.analyze import handle_analyze  # noqa: E402
+from ws.crisis import handle_crisis  # noqa: E402
 
 setup_logging()
 logger = structlog.get_logger(__name__)
@@ -53,6 +55,7 @@ async def _periodic_prune_loop():
         await _prune_old_analyses()
         try:
             from chroma_utils import prune_old_collections
+
             removed = await asyncio.to_thread(prune_old_collections)
             if removed:
                 logger.info("Periodic: pruned old ChromaDB collections", count=removed)
@@ -64,6 +67,7 @@ async def _prune_old_analyses() -> None:
     import time
 
     from services.database import delete_expired_analyses
+
     cutoff = time.time() - _ANALYSIS_TTL_SECONDS
     try:
         removed = await delete_expired_analyses(cutoff)
@@ -104,9 +108,15 @@ async def _run_monitoring_checks():
             if not current_sha or current_sha == repo.last_sha:
                 continue
 
-            logger.info("Monitor: SHA changed, triggering analysis", repo=repo.repo_url, old=(repo.last_sha or "")[:8], new=current_sha[:8])
+            logger.info(
+                "Monitor: SHA changed, triggering analysis",
+                repo=repo.repo_url,
+                old=(repo.last_sha or "")[:8],
+                new=current_sha[:8],
+            )
 
             from routes.analyze import _run_analysis
+
             session_id = str(__import__("uuid").uuid4())
             result = await _run_analysis(repo.repo_url, None, session_id)
 
@@ -124,9 +134,8 @@ async def _run_monitoring_checks():
                 prev_sec = len(prev.get("security_findings", [])) if prev else 0
                 new_findings = curr_sec - prev_sec
 
-                significant = (
-                    score_delta < repo.score_delta_threshold
-                    or (repo.alert_on_new_findings and new_findings > 0)
+                significant = score_delta < repo.score_delta_threshold or (
+                    repo.alert_on_new_findings and new_findings > 0
                 )
 
                 if significant:
@@ -146,11 +155,9 @@ async def _run_monitoring_checks():
 
 async def _send_monitor_alert(repo, score_delta, new_findings, curr_health, session_id):
     import httpx
+
     dashboard_url = f"https://gitmind-peach.vercel.app/?share={session_id}"
-    msg = (
-        f"⚠️ *GitMind Alert: {repo.repo_name}*\n"
-        f"Health score changed by {score_delta:+d} → now {curr_health}/100\n"
-    )
+    msg = f"⚠️ *GitMind Alert: {repo.repo_name}*\nHealth score changed by {score_delta:+d} → now {curr_health}/100\n"
     if new_findings > 0:
         msg += f"New security findings: +{new_findings}\n"
     msg += f"<{dashboard_url}|View full report>"
@@ -164,23 +171,24 @@ async def _send_monitor_alert(repo, score_delta, new_findings, curr_health, sess
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     if not os.getenv("GROQ_API_KEY"):
-        raise RuntimeError(
-            "GROQ_API_KEY is not set.\n"
-            "Create backend/.env with:  GROQ_API_KEY=gsk_..."
-        )
+        raise RuntimeError("GROQ_API_KEY is not set.\nCreate backend/.env with:  GROQ_API_KEY=gsk_...")
     from services.cache import close_redis, init_redis
+
     await init_redis()
     from services.database import init_db
+
     await init_db()
     logger.info("Database initialized")
     from services.task_queue import start as start_task_queue
+
     await start_task_queue()
     logger.info("Background task worker started")
     await _prune_old_analyses()
     try:
         from chroma_utils import prune_old_collections
+
         removed = await asyncio.to_thread(prune_old_collections)
         if removed:
             logger.info("Startup: pruned old ChromaDB collections", count=removed)
@@ -193,17 +201,14 @@ async def lifespan(app: FastAPI):
     yield
     if _periodic_prune_task:
         _periodic_prune_task.cancel()
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await _periodic_prune_task
-        except asyncio.CancelledError:
-            pass
     if _monitoring_task:
         _monitoring_task.cancel()
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await _monitoring_task
-        except asyncio.CancelledError:
-            pass
     from services.task_queue import stop as stop_task_queue
+
     await stop_task_queue()
     await close_redis()
     logger.info("GitMind backend shutting down")
@@ -217,15 +222,21 @@ app.add_middleware(AuthMiddleware)
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request, exc):
     from fastapi.responses import JSONResponse
+
     logger.error("Unhandled exception", path=request.url.path, error=str(exc)[:200])
     return JSONResponse(
         status_code=500,
         content={"error": "Internal server error"},
     )
 
-_CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS",
-    "http://localhost,http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:8002"
-).split(",")]
+
+_CORS_ORIGINS = [
+    o.strip()
+    for o in os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost,http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:8002",
+    ).split(",")
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_CORS_ORIGINS,
@@ -259,18 +270,21 @@ app.include_router(monitor_router)
 
 # ── Task polling ────────────────────────────────────────────────────────────
 
+
 @app.get("/task/{task_id}")
 async def get_task_status(task_id: str, request: Request):
     from services.auth import get_gh_token, get_service_key, require_gh_token_or_service_key
     from services.rate_limit_response import rate_limit_response
     from services.rate_limiter import check_rate_limit
     from services.task_queue import get_task
+
     require_gh_token_or_service_key(request)
     gh_token = get_gh_token(request)
     svc_key = get_service_key(request)
-    allowed, remaining, retry_after = await check_rate_limit("/task/:id", gh_token or svc_key, service_key=svc_key)
+    identity: str = gh_token or svc_key or ""
+    allowed, remaining, retry_after = await check_rate_limit("/task/:id", identity, service_key=svc_key)
     if not allowed:
-        return rate_limit_response(retry_after, remaining)
+        return await rate_limit_response("/task/:id", identity)
     task = get_task(task_id)
     if task is None:
         return {"error": "Task not found"}
@@ -284,12 +298,14 @@ async def get_task_status(task_id: str, request: Request):
 
 # ── Health check ────────────────────────────────────────────────────────────
 
+
 @app.get("/health")
 async def health():
     checks: dict[str, bool] = {}
     checks["database"] = True
     try:
         from services.database import async_session_factory
+
         async with async_session_factory() as conn:
             await conn.execute(__import__("sqlalchemy").text("SELECT 1"))
             checks["database"] = True
@@ -297,6 +313,7 @@ async def health():
         checks["database"] = False
     checks["git"] = bool(__import__("shutil").which("git"))
     from services.cache import get_redis
+
     r = get_redis()
     if r:
         try:
@@ -316,6 +333,7 @@ async def health():
         checks["semgrep"] = bool(__import__("shutil").which("semgrep"))
         try:
             from chroma_utils import _client
+
             _client.list_collections()
             checks["chromadb"] = True
         except Exception:

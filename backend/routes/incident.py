@@ -6,9 +6,9 @@ from langchain_groq import ChatGroq
 
 from llm_cache import invoke_with_retry
 from models.requests import IncidentReportRequest
-from services.rate_limiter import check_rate_limit
 from services.rate_limit_response import rate_limit_response
-from services.session import get_session, _UUID_RE
+from services.rate_limiter import check_rate_limit
+from services.session import _UUID_RE, get_session
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -30,22 +30,26 @@ async def incident_report_endpoint(req: IncidentReportRequest, request: Request)
     outcome = req.outcome
     messages = req.crisis_messages
 
-    timeline = "\n".join(
-        f"  [{m.get('role', '?')}]: {m.get('text', '')[:200]}"
-        for m in messages[:20]
-    ) or "  (no crisis messages recorded)"
+    timeline = (
+        "\n".join(f"  [{m.get('role', '?')}]: {m.get('text', '')[:200]}" for m in messages[:20])
+        or "  (no crisis messages recorded)"
+    )
 
-    outcome_str = "CONTAINED — team issued statement before reporter published" if outcome == "resolved" \
-        else "LEAKED — reporter published before team responded" if outcome == "leaked" \
+    outcome_str = (
+        "CONTAINED — team issued statement before reporter published"
+        if outcome == "resolved"
+        else "LEAKED — reporter published before team responded"
+        if outcome == "leaked"
         else "UNKNOWN"
+    )
 
     prompt = f"""You are a security incident response manager. Generate a complete incident report.
 
-Repository: {session.get('repo_name', 'Unknown')}
-Incident: {finding.title or 'Security Vulnerability'}
-Severity: {finding.severity or 'unknown'}
-File: {finding.file or 'unknown'}  Line: {finding.line_start or '?'}
-Description: {finding.description or finding.exploit_story or ''}
+Repository: {session.get("repo_name", "Unknown")}
+Incident: {finding.title or "Security Vulnerability"}
+Severity: {finding.severity or "unknown"}
+File: {finding.file or "unknown"}  Line: {finding.line_start or "?"}
+Description: {finding.description or finding.exploit_story or ""}
 Crisis Outcome: {outcome_str}
 
 Crisis Timeline:

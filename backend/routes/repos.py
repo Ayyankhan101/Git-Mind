@@ -6,13 +6,13 @@ import structlog
 from fastapi import APIRouter, Request
 
 from services.auth import get_gh_token
-from services.rate_limiter import check_rate_limit
 from services.rate_limit_response import rate_limit_response
+from services.rate_limiter import check_rate_limit
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
 
-_USERNAME_RE = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9\-]{0,38}$')
+_USERNAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9\-]{0,38}$")
 
 
 @router.get("/repos/{username}")
@@ -44,7 +44,7 @@ async def list_repos(username: str, request: Request):
                 resp = await client.get(url, params=params, headers=gh_headers)
             break
         except httpx.TimeoutException as exc:
-            last_exc = exc
+            last_exc = exc  # noqa: F841
             await asyncio.sleep(0.5 * (attempt + 1))
         except httpx.RequestError:
             return {"error": "GitHub API unreachable — try again later"}

@@ -13,6 +13,7 @@ os.environ["DEBUG"] = "1"
 @pytest.fixture
 def app():
     from main import app
+
     return app
 
 

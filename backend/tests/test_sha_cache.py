@@ -1,6 +1,4 @@
-from unittest.mock import patch, AsyncMock
-
-import pytest
+from unittest.mock import AsyncMock, patch
 
 import services.sha_cache as sha_cache
 
@@ -33,10 +31,12 @@ class TestUpdateShaIndex:
             mock_up.assert_awaited_once_with("sha1", "session1")
 
     async def test_logs_warning_on_failure(self):
-        with patch("services.database.upsert_sha_index", new_callable=AsyncMock, side_effect=Exception("db down")):
-            with patch("services.sha_cache.logger") as mock_log:
-                await sha_cache.update_sha_index("sha1", "session1")
-                mock_log.warning.assert_called_once()
+        with (
+            patch("services.database.upsert_sha_index", new_callable=AsyncMock, side_effect=Exception("db down")),
+            patch("services.sha_cache.logger") as mock_log,
+        ):
+            await sha_cache.update_sha_index("sha1", "session1")
+            mock_log.warning.assert_called_once()
 
 
 class TestFindCachedSnapshot:
@@ -46,21 +46,27 @@ class TestFindCachedSnapshot:
             assert result is None
 
     async def test_returns_none_when_analysis_not_found(self):
-        with patch("services.database.get_sha_index_entry", new_callable=AsyncMock, return_value="sess1"):
-            with patch("services.database.get_analysis_db", new_callable=AsyncMock, return_value=None):
-                result = await sha_cache.find_cached_snapshot("https://github.com/owner/repo", "sha1")
-                assert result is None
+        with (
+            patch("services.database.get_sha_index_entry", new_callable=AsyncMock, return_value="sess1"),
+            patch("services.database.get_analysis_db", new_callable=AsyncMock, return_value=None),
+        ):
+            result = await sha_cache.find_cached_snapshot("https://github.com/owner/repo", "sha1")
+            assert result is None
 
     async def test_returns_snapshot_when_match(self):
         snap = {"repo_url": "https://github.com/owner/repo", "data": "test"}
-        with patch("services.database.get_sha_index_entry", new_callable=AsyncMock, return_value="sess1"):
-            with patch("services.database.get_analysis_db", new_callable=AsyncMock, return_value=snap):
-                result = await sha_cache.find_cached_snapshot("https://github.com/owner/repo", "sha1")
-                assert result == snap
+        with (
+            patch("services.database.get_sha_index_entry", new_callable=AsyncMock, return_value="sess1"),
+            patch("services.database.get_analysis_db", new_callable=AsyncMock, return_value=snap),
+        ):
+            result = await sha_cache.find_cached_snapshot("https://github.com/owner/repo", "sha1")
+            assert result == snap
 
     async def test_returns_none_on_repo_url_mismatch(self):
         snap = {"repo_url": "https://github.com/other/repo", "data": "test"}
-        with patch("services.database.get_sha_index_entry", new_callable=AsyncMock, return_value="sess1"):
-            with patch("services.database.get_analysis_db", new_callable=AsyncMock, return_value=snap):
-                result = await sha_cache.find_cached_snapshot("https://github.com/owner/repo", "sha1")
-                assert result is None
+        with (
+            patch("services.database.get_sha_index_entry", new_callable=AsyncMock, return_value="sess1"),
+            patch("services.database.get_analysis_db", new_callable=AsyncMock, return_value=snap),
+        ):
+            result = await sha_cache.find_cached_snapshot("https://github.com/owner/repo", "sha1")
+            assert result is None

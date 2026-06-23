@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import re
 import shutil
 import uuid
@@ -10,16 +11,16 @@ from agents.blame import enrich_findings_with_blame
 from agents.health import compute_health
 from models.requests import AnalyzeRequest
 from orchestrator import graph
-from services.auth import get_gh_token, get_service_key, hash_token
-from services.rate_limiter import check_rate_limit
+from services.auth import get_service_key, hash_token
 from services.rate_limit_response import rate_limit_response
-from services.session import initial_state, put_session, persist_analysis
-from services.sha_cache import get_remote_sha, find_cached_snapshot
+from services.rate_limiter import check_rate_limit
+from services.session import initial_state, persist_analysis, put_session
+from services.sha_cache import find_cached_snapshot, get_remote_sha
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
 
-_GH_URL_RE = re.compile(r'^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+/?$')
+_GH_URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+/?$")
 
 
 async def _run_analysis(repo_url: str, gh_token: str | None, session_id: str) -> dict:
@@ -34,19 +35,22 @@ async def _run_analysis(repo_url: str, gh_token: str | None, session_id: str) ->
         cached = await find_cached_snapshot(repo_url, sha)
         if cached:
             logger.info("Cache hit (REST)", sha=sha[:8], session=session_id)
-            put_session(session_id, {
-                "repo_name": cached.get("repo_name", ""),
-                "chroma_collection_name": cached.get("chroma_collection_name"),
-                "security_findings": cached.get("security_findings", []),
-                "cve_findings": cached.get("cve_findings", []),
-                "api_docs": cached.get("api_docs", []),
-                "architecture_diagram": cached.get("architecture_diagram"),
-                "git_audit": cached.get("git_audit"),
-                "repo_url": repo_url,
-                "chat_history": [],
-                "health": cached.get("health"),
-                "owner_hash": owner_hash,
-            })
+            put_session(
+                session_id,
+                {
+                    "repo_name": cached.get("repo_name", ""),
+                    "chroma_collection_name": cached.get("chroma_collection_name"),
+                    "security_findings": cached.get("security_findings", []),
+                    "cve_findings": cached.get("cve_findings", []),
+                    "api_docs": cached.get("api_docs", []),
+                    "architecture_diagram": cached.get("architecture_diagram"),
+                    "git_audit": cached.get("git_audit"),
+                    "repo_url": repo_url,
+                    "chat_history": [],
+                    "health": cached.get("health"),
+                    "owner_hash": owner_hash,
+                },
+            )
             return {
                 "session_id": session_id,
                 "cached": True,
@@ -57,10 +61,14 @@ async def _run_analysis(repo_url: str, gh_token: str | None, session_id: str) ->
     astream = graph.astream(init, stream_mode="updates")
     try:
         async for chunk in astream:
-            for node, update in chunk.items():
+            for _node, update in chunk.items():
                 for key in (
-                    "architecture_diagram", "api_docs", "security_findings",
-                    "cve_findings", "chroma_collection_name", "git_audit",
+                    "architecture_diagram",
+                    "api_docs",
+                    "security_findings",
+                    "cve_findings",
+                    "chroma_collection_name",
+                    "git_audit",
                 ):
                     if key in update:
                         final_state[key] = update[key]
@@ -72,10 +80,8 @@ async def _run_analysis(repo_url: str, gh_token: str | None, session_id: str) ->
         logger.error("REST analysis pipeline error", session=session_id, error=str(exc))
         return {"session_id": session_id, "cached": False, "error": str(exc)[:500]}
     finally:
-        try:
+        with contextlib.suppress(Exception):
             await astream.aclose()
-        except Exception:
-            pass
 
     local_path_for_blame = final_state.get("local_path")
     if local_path_for_blame and final_state.get("security_findings"):
@@ -101,19 +107,22 @@ async def _run_analysis(repo_url: str, gh_token: str | None, session_id: str) ->
     if local_path:
         await asyncio.to_thread(shutil.rmtree, local_path, True)
 
-    put_session(session_id, {
-        "repo_name": final_state["repo_name"],
-        "chroma_collection_name": final_state.get("chroma_collection_name"),
-        "security_findings": final_state.get("security_findings", []),
-        "cve_findings": final_state.get("cve_findings", []),
-        "api_docs": final_state.get("api_docs", []),
-        "architecture_diagram": final_state.get("architecture_diagram"),
-        "git_audit": final_state.get("git_audit"),
-        "repo_url": repo_url,
-        "chat_history": [],
-        "health": health_score,
-        "owner_hash": owner_hash,
-    })
+    put_session(
+        session_id,
+        {
+            "repo_name": final_state["repo_name"],
+            "chroma_collection_name": final_state.get("chroma_collection_name"),
+            "security_findings": final_state.get("security_findings", []),
+            "cve_findings": final_state.get("cve_findings", []),
+            "api_docs": final_state.get("api_docs", []),
+            "architecture_diagram": final_state.get("architecture_diagram"),
+            "git_audit": final_state.get("git_audit"),
+            "repo_url": repo_url,
+            "chat_history": [],
+            "health": health_score,
+            "owner_hash": owner_hash,
+        },
+    )
 
     await persist_analysis(session_id, final_state, repo_url, sha, owner_hash)
     logger.info("REST analysis complete", session=session_id, repo=final_state["repo_name"])
@@ -145,6 +154,7 @@ async def analyze_endpoint(req: AnalyzeRequest, request: Request):
 
     try:
         from services.task_queue import submit
+
         task_id = submit(lambda: _run_analysis(repo_url, gh_token, session_id))
         return {"task_id": task_id, "session_id": session_id}
     except Exception as exc:

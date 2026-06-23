@@ -3,7 +3,10 @@
 If REDIS_URL not set or Redis unreachable → falls back to no-op stubs.
 All consumers call get_redis() and check `if redis: ...`.
 """
+
+import contextlib
 import os
+
 import structlog
 
 logger = structlog.get_logger(__name__)
@@ -43,10 +46,8 @@ async def init_redis() -> None:
 async def close_redis() -> None:
     global _redis, _fallback
     if _redis:
-        try:
+        with contextlib.suppress(Exception):
             await _redis.aclose()
-        except Exception:
-            pass
         _redis = None
         _fallback = True
 

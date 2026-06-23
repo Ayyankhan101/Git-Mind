@@ -7,18 +7,16 @@ import structlog
 from fastapi import APIRouter, Request
 
 from agents.pr_review import run_pr_review
-from models.requests import PRReviewRequest, PRImpactRequest
+from models.requests import PRImpactRequest, PRReviewRequest
 from services.auth import get_gh_token
-from services.rate_limiter import check_rate_limit
 from services.rate_limit_response import rate_limit_response
+from services.rate_limiter import check_rate_limit
 from services.session import _UUID_RE, get_session
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
 
-_PR_URL_RE = re.compile(
-    r'^https://github\.com/([A-Za-z0-9_.\-]+)/([A-Za-z0-9_.\-]+)/pull/(\d+)/?$'
-)
+_PR_URL_RE = re.compile(r"^https://github\.com/([A-Za-z0-9_.\-]+)/([A-Za-z0-9_.\-]+)/pull/(\d+)/?$")
 
 
 @router.post("/pr-review")
@@ -61,7 +59,7 @@ async def list_open_prs(owner: str, repo: str, request: Request):
                 "url": pr["html_url"],
                 "user": pr["user"]["login"],
                 "updated_at": pr["updated_at"],
-                "labels": [l["name"] for l in pr.get("labels", [])],
+                "labels": [label["name"] for label in pr.get("labels", [])],
                 "draft": pr.get("draft", False),
                 "base_ref": pr["base"]["ref"],
                 "head_ref": pr["head"]["ref"],
@@ -137,17 +135,25 @@ async def pr_impact_endpoint(req: PRImpactRequest, request: Request):
     from services.task_queue import submit
 
     pr_meta = {
-        "title": pr_title, "owner": owner, "repo": repo_name,
-        "pr_num": pr_num, "head_sha": head_sha,
+        "title": pr_title,
+        "owner": owner,
+        "repo": repo_name,
+        "pr_num": pr_num,
+        "head_sha": head_sha,
         "base_branch": base_branch,
-        "additions": additions, "deletions": deletions,
+        "additions": additions,
+        "deletions": deletions,
         "changed_files": changed_files,
         "diff_truncated": len(pr_diff) > 10_000,
     }
     task_id = submit(
         lambda: _compute_pr_impact(
-            repo_url=repo_url, token=token, head_ref=head_ref,
-            base_session=base_session, pr_meta=pr_meta, pr_diff=pr_diff,
+            repo_url=repo_url,
+            token=token,
+            head_ref=head_ref,
+            base_session=base_session,
+            pr_meta=pr_meta,
+            pr_diff=pr_diff,
         )
     )
     logger.info("PR impact submitted", task_id=task_id, pr=req.pr_url)
@@ -155,14 +161,18 @@ async def pr_impact_endpoint(req: PRImpactRequest, request: Request):
 
 
 async def _compute_pr_impact(
-    repo_url: str, token: str | None, head_ref: str,
-    base_session: dict, pr_meta: dict, pr_diff: str,
+    repo_url: str,
+    token: str | None,
+    head_ref: str,
+    base_session: dict,
+    pr_meta: dict,
+    pr_diff: str,
 ) -> dict:
-    from agents.scanner import clone_and_scan
-    from agents.security import run_security_agent
     from agents.cve_scanner import run_cve_scanner
     from agents.health import compute_health
     from agents.impact import compute_impact, run_merge_prediction
+    from agents.scanner import clone_and_scan
+    from agents.security import run_security_agent
 
     local_path = None
     try:
@@ -194,7 +204,8 @@ async def _compute_pr_impact(
 
         logger.info(
             "PR impact computed: pr=%s delta=%+d risk=%s",
-            repo_url, delta["health_delta"],
+            repo_url,
+            delta["health_delta"],
             prediction.get("merge_risk", "?"),
         )
         return {

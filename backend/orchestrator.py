@@ -9,7 +9,7 @@ from agents.cve_scanner import run_cve_scanner
 from agents.git_audit import run_git_audit
 from agents.rag_setup import run_rag_setup
 from agents.scanner import clone_and_scan
-from agents.security import run_security_agent, _synthetic_finding
+from agents.security import _synthetic_finding, run_security_agent
 from agents.solidity_agent import solidity_agent
 from state import RepoState
 
@@ -25,6 +25,7 @@ _circuit_failures = 0
 def _is_circuit_open() -> bool:
     global _circuit_open_until
     import time
+
     return time.time() < _circuit_open_until
 
 
@@ -33,6 +34,7 @@ def _record_circuit_failure():
     _circuit_failures += 1
     if _circuit_failures >= _CIRCUIT_BREAKER_THRESHOLD:
         import time
+
         _circuit_open_until = time.time() + _CIRCUIT_BREAKER_COOLDOWN
         logger.warning("Circuit breaker opened", cooldown=_CIRCUIT_BREAKER_COOLDOWN)
 
@@ -44,6 +46,7 @@ def _record_circuit_success():
 
 # ── Event factory ──────────────────────────────────────────────────────────────
 
+
 def _event(agent: str, status: str, detail: str | None = None) -> dict:
     return {"agent": agent, "status": status, "ts": time.time(), "detail": detail}
 
@@ -52,6 +55,7 @@ def _event(agent: str, status: str, detail: str | None = None) -> dict:
 # Each node is fully error-isolated: a failure returns safe defaults + an error
 # event. The rest of the parallel pipeline continues unaffected.
 
+
 def scanner_node(state: RepoState) -> dict:
     try:
         result = clone_and_scan(state["repo_url"], state.get("gh_token"))
@@ -59,12 +63,12 @@ def scanner_node(state: RepoState) -> dict:
     except Exception as exc:
         logger.error("scanner_node failed: %s", exc)
         return {
-            "local_path":    None,
-            "file_tree":     [],
+            "local_path": None,
+            "file_tree": [],
             "file_contents": {},
-            "repo_name":     "unknown",
+            "repo_name": "unknown",
             "_scanner_failed": True,
-            "events":        [_event("scanner", "error", str(exc)[:200])],
+            "events": [_event("scanner", "error", str(exc)[:200])],
         }
 
 
@@ -189,17 +193,18 @@ def git_audit_node(state: RepoState) -> dict:
 
 # ── Graph definition ───────────────────────────────────────────────────────────
 
+
 def build_graph() -> StateGraph:
     g = StateGraph(RepoState)
 
-    g.add_node("scanner",      scanner_node)
+    g.add_node("scanner", scanner_node)
     g.add_node("architecture", architecture_node)
-    g.add_node("api_docs",     api_doc_node)
-    g.add_node("security",     security_node)
-    g.add_node("rag_setup",    rag_setup_node)
-    g.add_node("cve_scanner",  cve_node)
-    g.add_node("git_audit",    git_audit_node)
-    g.add_node("solidity",     sol_node)
+    g.add_node("api_docs", api_doc_node)
+    g.add_node("security", security_node)
+    g.add_node("rag_setup", rag_setup_node)
+    g.add_node("cve_scanner", cve_node)
+    g.add_node("git_audit", git_audit_node)
+    g.add_node("solidity", sol_node)
 
     g.add_edge(START, "scanner")
 
@@ -218,19 +223,20 @@ logger.info("LangGraph analysis graph compiled and ready")
 
 # ── Crisis graph (Section 9 — stretch) ────────────────────────────────────────
 
+
 def build_crisis_graph():
     """
     Section 9: Engineering briefs first, then router rotates CEO/Legal/Engineering
     until reporter publishes, crisis resolved, or 10-turn cap reached.
     """
     from agents.crisis.ceo import ceo_node
-    from agents.crisis.legal import legal_node
     from agents.crisis.engineer import engineer_node
+    from agents.crisis.legal import legal_node
     from agents.crisis.router import crisis_router
 
     g = StateGraph(RepoState)
-    g.add_node("ceo",      ceo_node)
-    g.add_node("legal",    legal_node)
+    g.add_node("ceo", ceo_node)
+    g.add_node("legal", legal_node)
     g.add_node("engineer", engineer_node)
 
     # Engineering briefs first (Section 9.1 step 3)

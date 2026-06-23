@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import json
 import os
 import shutil
@@ -11,20 +12,25 @@ from agents.blame import enrich_findings_with_blame
 from agents.health import compute_health
 from orchestrator import graph
 from services.auth import hash_token
-from services.sha_cache import get_remote_sha, find_cached_snapshot
-from services.session import initial_state, put_session, persist_analysis
 from services.rate_limiter import check_rate_limit
+from services.session import initial_state, persist_analysis, put_session
+from services.sha_cache import find_cached_snapshot, get_remote_sha
 
 logger = structlog.get_logger(__name__)
 
 HEARTBEAT_INTERVAL = 30  # seconds
-HEARTBEAT_TIMEOUT = 10   # seconds to wait for pong
+HEARTBEAT_TIMEOUT = 10  # seconds to wait for pong
 
 _STATUS_MAP: dict[str, dict[str, str]] = {
     "scanner": {
-        "scanner": "done", "architecture": "running",
-        "api_docs": "running", "security": "running", "chat": "running",
-        "cve_scanner": "running", "git_audit": "running", "solidity": "running",
+        "scanner": "done",
+        "architecture": "running",
+        "api_docs": "running",
+        "security": "running",
+        "chat": "running",
+        "cve_scanner": "running",
+        "git_audit": "running",
+        "solidity": "running",
     },
     "architecture": {"architecture": "done"},
     "api_docs": {"api_docs": "done"},
@@ -70,6 +76,7 @@ async def handle_analyze(ws: WebSocket) -> None:
     _ws_auth_secret = os.environ.get("WS_AUTH_SECRET")
     if _ws_auth_secret:
         import hmac
+
         if not hmac.compare_digest(payload.get("ws_auth_secret", ""), _ws_auth_secret):
             await ws.send_json({"error": "WebSocket auth secret mismatch"})
             await ws.close(code=1008)
@@ -111,43 +118,61 @@ async def handle_analyze(ws: WebSocket) -> None:
         cached = await find_cached_snapshot(repo_url, sha)
         if cached:
             logger.info("Cache hit", sha=sha[:8], session=session_id)
-            await ws.send_json({"agent_status": {
-                "scanner": "done", "architecture": "running", "api_docs": "running",
-                "security": "running", "chat": "running", "cve_scanner": "running",
-                "git_audit": "running", "solidity": "running",
-            }})
+            await ws.send_json(
+                {
+                    "agent_status": {
+                        "scanner": "done",
+                        "architecture": "running",
+                        "api_docs": "running",
+                        "security": "running",
+                        "chat": "running",
+                        "cve_scanner": "running",
+                        "git_audit": "running",
+                        "solidity": "running",
+                    }
+                }
+            )
             await asyncio.sleep(0.2)
-            await ws.send_json({
-                "agent_status": {"architecture": "done", "api_docs": "done"},
-                "architecture_diagram": cached.get("architecture_diagram"),
-                "api_docs": cached.get("api_docs", []),
-            })
+            await ws.send_json(
+                {
+                    "agent_status": {"architecture": "done", "api_docs": "done"},
+                    "architecture_diagram": cached.get("architecture_diagram"),
+                    "api_docs": cached.get("api_docs", []),
+                }
+            )
             await asyncio.sleep(0.15)
-            await ws.send_json({
-                "agent_status": {"security": "done", "cve_scanner": "done"},
-                "security_findings": cached.get("security_findings", []),
-                "cve_findings": cached.get("cve_findings", []),
-            })
+            await ws.send_json(
+                {
+                    "agent_status": {"security": "done", "cve_scanner": "done"},
+                    "security_findings": cached.get("security_findings", []),
+                    "cve_findings": cached.get("cve_findings", []),
+                }
+            )
             await asyncio.sleep(0.1)
-            await ws.send_json({
-                "agent_status": {"chat": "done", "git_audit": "done", "solidity": "done"},
-                "health": cached.get("health"),
-                "git_audit": cached.get("git_audit"),
-                "solidity_audit": cached.get("solidity_audit"),
-            })
-            put_session(session_id, {
-                "repo_name": cached.get("repo_name", ""),
-                "chroma_collection_name": cached.get("chroma_collection_name"),
-                "security_findings": cached.get("security_findings", []),
-                "cve_findings": cached.get("cve_findings", []),
-                "api_docs": cached.get("api_docs", []),
-                "architecture_diagram": cached.get("architecture_diagram"),
-                "git_audit": cached.get("git_audit"),
-                "solidity_audit": cached.get("solidity_audit"),
-                "repo_url": repo_url,
-                "chat_history": [],
-                "owner_hash": owner_hash,
-            })
+            await ws.send_json(
+                {
+                    "agent_status": {"chat": "done", "git_audit": "done", "solidity": "done"},
+                    "health": cached.get("health"),
+                    "git_audit": cached.get("git_audit"),
+                    "solidity_audit": cached.get("solidity_audit"),
+                }
+            )
+            put_session(
+                session_id,
+                {
+                    "repo_name": cached.get("repo_name", ""),
+                    "chroma_collection_name": cached.get("chroma_collection_name"),
+                    "security_findings": cached.get("security_findings", []),
+                    "cve_findings": cached.get("cve_findings", []),
+                    "api_docs": cached.get("api_docs", []),
+                    "architecture_diagram": cached.get("architecture_diagram"),
+                    "git_audit": cached.get("git_audit"),
+                    "solidity_audit": cached.get("solidity_audit"),
+                    "repo_url": repo_url,
+                    "chat_history": [],
+                    "owner_hash": owner_hash,
+                },
+            )
             await ws.send_json({"done": True, "session_id": session_id, "cached": True})
             return
 
@@ -160,13 +185,10 @@ async def handle_analyze(ws: WebSocket) -> None:
                 logger.info("Heartbeat failed, closing connection", session=session_id)
                 break
             for node, update in chunk.items():
-                has_error = any(
-                    ev.get("status") == "error" for ev in update.get("events", [])
-                )
+                has_error = any(ev.get("status") == "error" for ev in update.get("events", []))
                 raw_statuses = _STATUS_MAP.get(node, {})
                 node_statuses = (
-                    {k: ("error" if v == "done" else v) for k, v in raw_statuses.items()}
-                    if has_error else raw_statuses
+                    {k: ("error" if v == "done" else v) for k, v in raw_statuses.items()} if has_error else raw_statuses
                 )
                 msg: dict = {"agent_status": node_statuses}
 
@@ -230,33 +252,32 @@ async def handle_analyze(ws: WebSocket) -> None:
     finally:
         if _heartbeat_task and not _heartbeat_task.done():
             _heartbeat_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await _heartbeat_task
-            except asyncio.CancelledError:
-                pass
-        try:
+        with contextlib.suppress(Exception):
             await astream.aclose()
-        except Exception:
-            pass
         local_path = final_state.get("local_path")
         if local_path:
             await asyncio.to_thread(shutil.rmtree, local_path, True)
             logger.info("Cleaned up temp dir", session=session_id, path=local_path)
 
-    put_session(session_id, {
-        "repo_name": final_state["repo_name"],
-        "chroma_collection_name": final_state["chroma_collection_name"],
-        "security_findings": final_state["security_findings"],
-        "cve_findings": final_state.get("cve_findings", []),
-        "api_docs": final_state.get("api_docs", []),
-        "architecture_diagram": final_state.get("architecture_diagram"),
-        "git_audit": final_state.get("git_audit"),
-        "solidity_audit": final_state.get("solidity_audit"),
-        "repo_url": repo_url,
-        "chat_history": [],
-        "health": final_state.get("health"),
-        "owner_hash": owner_hash,
-    })
+    put_session(
+        session_id,
+        {
+            "repo_name": final_state["repo_name"],
+            "chroma_collection_name": final_state["chroma_collection_name"],
+            "security_findings": final_state["security_findings"],
+            "cve_findings": final_state.get("cve_findings", []),
+            "api_docs": final_state.get("api_docs", []),
+            "architecture_diagram": final_state.get("architecture_diagram"),
+            "git_audit": final_state.get("git_audit"),
+            "solidity_audit": final_state.get("solidity_audit"),
+            "repo_url": repo_url,
+            "chat_history": [],
+            "health": final_state.get("health"),
+            "owner_hash": owner_hash,
+        },
+    )
 
     await persist_analysis(session_id, final_state, repo_url, sha, owner_hash)
     await ws.send_json({"done": True, "session_id": session_id})

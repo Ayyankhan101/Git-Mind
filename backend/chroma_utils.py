@@ -10,7 +10,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 logger = logging.getLogger(__name__)
 
-_COLLECTION_TTL = 60 * 60 * 24 * 7   # 7 days
+_COLLECTION_TTL = 60 * 60 * 24 * 7  # 7 days
+
 
 def _writable(path: Path) -> bool:
     """Return True if path (or its parent) is writable by the current process."""
@@ -23,16 +24,17 @@ def _writable(path: Path) -> bool:
     except OSError:
         return False
 
-_PREFERRED_CHROMA    = Path(__file__).parent / ".chroma"
-_PREFERRED_REGISTRY  = Path(__file__).parent / ".chroma_registry.json"
+
+_PREFERRED_CHROMA = Path(__file__).parent / ".chroma"
+_PREFERRED_REGISTRY = Path(__file__).parent / ".chroma_registry.json"
 
 if _writable(_PREFERRED_CHROMA):
-    _CHROMA_PATH   = _PREFERRED_CHROMA
+    _CHROMA_PATH = _PREFERRED_CHROMA
     _REGISTRY_PATH = _PREFERRED_REGISTRY
 else:
-    _TMP_BASE      = Path(tempfile.gettempdir()) / "gitmind_chroma"
+    _TMP_BASE = Path(tempfile.gettempdir()) / "gitmind_chroma"
     _TMP_BASE.mkdir(exist_ok=True)
-    _CHROMA_PATH   = _TMP_BASE
+    _CHROMA_PATH = _TMP_BASE
     _REGISTRY_PATH = _TMP_BASE / "registry.json"
     logger.warning("ChromaDB falling back to %s (preferred dir not writable)", _CHROMA_PATH)
 
@@ -40,10 +42,11 @@ _client = chromadb.PersistentClient(path=str(_CHROMA_PATH))
 
 _lock: threading.Lock = threading.Lock()
 _collections: dict[str, chromadb.Collection | None] = {}  # None = sentinel (in-progress)
-_embed_events: dict[str, threading.Event] = {}             # guards concurrent embeds
+_embed_events: dict[str, threading.Event] = {}  # guards concurrent embeds
 
 
 # ── Registry helpers (track collection creation times for TTL pruning) ─────────
+
 
 def _load_registry() -> dict[str, float]:
     try:
@@ -67,6 +70,7 @@ def _register_collection(name: str) -> None:
 
 
 # ── Public API ─────────────────────────────────────────────────────────────────
+
 
 def embed_codebase(file_contents: dict[str, str], collection_name: str) -> str:
     """
@@ -103,7 +107,8 @@ def embed_codebase(file_contents: dict[str, str], collection_name: str) -> str:
         if collection.count() > 0:
             logger.debug(
                 "Collection '%s' has %d docs — skipping re-embed",
-                collection_name, collection.count(),
+                collection_name,
+                collection.count(),
             )
         else:
             splitter = RecursiveCharacterTextSplitter(
@@ -112,9 +117,9 @@ def embed_codebase(file_contents: dict[str, str], collection_name: str) -> str:
                 separators=["\nclass ", "\ndef ", "\n\n", "\n", " "],
             )
 
-            docs:  list[str]  = []
+            docs: list[str] = []
             metas: list[dict] = []
-            ids:   list[str]  = []
+            ids: list[str] = []
 
             for fp, content in file_contents.items():
                 for i, chunk in enumerate(splitter.split_text(content)):
@@ -178,7 +183,7 @@ def search_codebase(collection_name: str, query: str, n_results: int = 5) -> lis
     result = collection.query(query_texts=[query], n_results=n)
     return [
         {"filepath": m["filepath"], "content": d}
-        for d, m in zip(result["documents"][0], result["metadatas"][0])
+        for d, m in zip(result["documents"][0], result["metadatas"][0], strict=False)
     ]
 
 

@@ -1,4 +1,4 @@
-from services.rate_limiter import rate_ok, _mem_data, check_rate_limit
+from services.rate_limiter import _mem_data, rate_ok
 
 
 def setup_method():

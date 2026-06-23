@@ -27,9 +27,12 @@ async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
 async def init_db():
     import subprocess
+
     proc = subprocess.run(
         [sys.executable, "-m", "alembic", "upgrade", "head"],
-        capture_output=True, text=True, timeout=30,
+        capture_output=True,
+        text=True,
+        timeout=30,
     )
     if proc.returncode != 0:
         logger.warning("Alembic failed (rc=%d), falling back to create_all: %s", proc.returncode, proc.stderr[:300])
@@ -46,6 +49,7 @@ async def get_db() -> AsyncSession:
 
 async def get_analysis_db(session_id: str) -> dict | None:
     from models.db import Analysis
+
     async with async_session_factory() as session:
         row = await session.get(Analysis, session_id)
         if row is None:
@@ -66,6 +70,7 @@ async def get_analysis_db(session_id: str) -> dict | None:
 
 async def persist_analysis_db(session_id: str, snapshot: dict) -> None:
     from models.db import Analysis
+
     async with async_session_factory() as session:
         existing = await session.get(Analysis, session_id)
         if existing:
@@ -78,24 +83,23 @@ async def persist_analysis_db(session_id: str, snapshot: dict) -> None:
 
 async def delete_expired_analyses(cutoff: float) -> int:
     from sqlalchemy import delete
+
     from models.db import Analysis, ShaIndex
+
     async with async_session_factory() as session:
-        result = await session.execute(
-            delete(Analysis).where(Analysis.saved_at < cutoff)
-        )
+        result = await session.execute(delete(Analysis).where(Analysis.saved_at < cutoff))
         removed = result.rowcount
         if removed:
             remaining = await session.execute(select(Analysis.id))
             remaining_ids = {row[0] for row in remaining.fetchall()}
-            await session.execute(
-                delete(ShaIndex).where(ShaIndex.session_id.notin_(remaining_ids))
-            )
+            await session.execute(delete(ShaIndex).where(ShaIndex.session_id.notin_(remaining_ids)))
         await session.commit()
         return removed or 0
 
 
 async def get_sha_index_entry(sha: str) -> str | None:
     from models.db import ShaIndex
+
     async with async_session_factory() as session:
         row = await session.get(ShaIndex, sha)
         if row is None:
@@ -104,8 +108,10 @@ async def get_sha_index_entry(sha: str) -> str | None:
 
 
 async def get_previous_analysis_db(repo_url: str, exclude_session: str | None = None) -> dict | None:
-    from models.db import Analysis
     from sqlalchemy import desc
+
+    from models.db import Analysis
+
     async with async_session_factory() as session:
         query = select(Analysis).where(Analysis.repo_url == repo_url)
         if exclude_session:
@@ -128,6 +134,7 @@ async def get_previous_analysis_db(repo_url: str, exclude_session: str | None = 
 
 async def upsert_sha_index(sha: str, session_id: str) -> None:
     from models.db import ShaIndex
+
     async with async_session_factory() as session:
         existing = await session.get(ShaIndex, sha)
         if existing:
@@ -139,9 +146,9 @@ async def upsert_sha_index(sha: str, session_id: str) -> None:
 
 async def delete_sha_entries_for_sessions(removed_ids: set[str]) -> None:
     from sqlalchemy import delete
+
     from models.db import ShaIndex
+
     async with async_session_factory() as session:
-        await session.execute(
-            delete(ShaIndex).where(ShaIndex.session_id.in_(removed_ids))
-        )
+        await session.execute(delete(ShaIndex).where(ShaIndex.session_id.in_(removed_ids)))
         await session.commit()

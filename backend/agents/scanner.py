@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import os
 import re
@@ -10,20 +11,44 @@ import git
 logger = logging.getLogger(__name__)
 
 _ALLOWED_EXTENSIONS = {
-    ".py", ".js", ".ts", ".jsx", ".tsx",
-    ".java", ".go", ".rb", ".php",
-    ".md", ".txt", ".json", ".yaml", ".yml", ".toml",
+    ".py",
+    ".js",
+    ".ts",
+    ".jsx",
+    ".tsx",
+    ".java",
+    ".go",
+    ".rb",
+    ".php",
+    ".md",
+    ".txt",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".toml",
 }
 
 _SKIP_DIRS = {
-    "node_modules", "__pycache__", ".git", "venv", ".venv",
-    "dist", "build", ".next", "target", "vendor",
-    ".tox", "coverage", ".pytest_cache", "eggs", ".eggs",
+    "node_modules",
+    "__pycache__",
+    ".git",
+    "venv",
+    ".venv",
+    "dist",
+    "build",
+    ".next",
+    "target",
+    "vendor",
+    ".tox",
+    "coverage",
+    ".pytest_cache",
+    "eggs",
+    ".eggs",
 }
 
-_MAX_TOTAL_BYTES = 50 * 1024 * 1024   # 50 MB hard cap across all files
-_MAX_FILE_BYTES  = 100 * 1024          # 100 KB — skips minified / generated files
-_MAX_FILES       = 150
+_MAX_TOTAL_BYTES = 50 * 1024 * 1024  # 50 MB hard cap across all files
+_MAX_FILE_BYTES = 100 * 1024  # 100 KB — skips minified / generated files
+_MAX_FILES = 150
 
 
 def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None = None) -> dict:
@@ -43,11 +68,11 @@ def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None =
     _askpass_script = None
     _env = {"GIT_TERMINAL_PROMPT": "0"}
     if token:
-        _askpass_script = tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False)
-        _askpass_script.write(f'#!/bin/sh\necho "{token}"\n')
-        _askpass_script.close()
-        os.chmod(_askpass_script.name, stat.S_IRUSR | stat.S_IXUSR)
-        _env["GIT_ASKPASS"] = _askpass_script.name
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False) as _askpass_script:
+            _askpass_script.write(f'#!/bin/sh\necho "{token}"\n')
+            _askpass_name = _askpass_script.name
+        os.chmod(_askpass_name, stat.S_IRUSR | stat.S_IXUSR)
+        _env["GIT_ASKPASS"] = _askpass_name
         _env["GIT_TERMINAL_PROMPT"] = "0"
 
     dest = tempfile.mkdtemp(prefix="gitmind_")
@@ -61,35 +86,31 @@ def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None =
         clone_kwargs["no_single_branch"] = True
     try:
         repo = git.Repo.clone_from(
-            clone_url, dest,
+            clone_url,
+            dest,
             env=_env,
             **clone_kwargs,
         )
         head_sha = repo.head.commit.hexsha
-        repo.close()   # prevents resource leak on Windows
+        repo.close()  # prevents resource leak on Windows
     except git.exc.GitCommandError as exc:
         raise RuntimeError(f"Git clone failed: {exc}") from exc
     finally:
         if _askpass_script:
-            try:
-                os.unlink(_askpass_script.name)
-            except OSError:
-                pass
+            with contextlib.suppress(OSError):
+                os.unlink(_askpass_name)
 
-    file_tree:     list[str]       = []
-    file_contents: dict[str, str]  = {}
+    file_tree: list[str] = []
+    file_contents: dict[str, str] = {}
     total_bytes = 0
-    dest_path   = Path(dest)
+    dest_path = Path(dest)
 
     cap_reached = False
     for root, dirs, files in os.walk(dest):
         if cap_reached:
             break
         # Prune irrelevant directories in-place (modifies dirs to control os.walk)
-        dirs[:] = sorted(
-            d for d in dirs
-            if d not in _SKIP_DIRS and not d.startswith(".")
-        )
+        dirs[:] = sorted(d for d in dirs if d not in _SKIP_DIRS and not d.startswith("."))
 
         for filename in sorted(files):
             if len(file_tree) >= _MAX_FILES:
@@ -108,35 +129,36 @@ def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None =
             try:
                 size = filepath.stat().st_size
                 if size > _MAX_FILE_BYTES:
-                    continue                    # skip large / generated files
+                    continue  # skip large / generated files
                 total_bytes += size
                 if total_bytes > _MAX_TOTAL_BYTES:
                     logger.warning("50 MB cap reached — stopping file reads")
                     break
                 file_contents[rel] = filepath.read_text(errors="ignore")
-                file_tree.append(rel)           # only after successful read — keeps tree and contents in sync
+                file_tree.append(rel)  # only after successful read — keeps tree and contents in sync
             except OSError:
-                pass   # unreadable file — skip silently
+                pass  # unreadable file — skip silently
 
     repo_name = repo_url.rstrip("/").split("/")[-1].removesuffix(".git")
     logger.info(
         "Scan complete — %d files in tree, %d readable, repo=%s",
-        len(file_tree), len(file_contents), repo_name,
+        len(file_tree),
+        len(file_contents),
+        repo_name,
     )
 
     return {
-        "local_path":    dest,
-        "file_tree":     file_tree,
+        "local_path": dest,
+        "file_tree": file_tree,
         "file_contents": file_contents,
-        "repo_name":     repo_name,
-        "head_sha":      head_sha,
+        "repo_name": repo_name,
+        "head_sha": head_sha,
     }
 
 
-_GITHUB_URL_RE = re.compile(r'^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+/?$')
+_GITHUB_URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+/?$")
+
 
 def _validate_url(repo_url: str) -> None:
     if not _GITHUB_URL_RE.match(repo_url):
-        raise ValueError(
-            f"Only public GitHub URLs are supported (https://github.com/owner/repo). Got: {repo_url!r}"
-        )
+        raise ValueError(f"Only public GitHub URLs are supported (https://github.com/owner/repo). Got: {repo_url!r}")

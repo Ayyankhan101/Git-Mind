@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 _UNSAFE_CHARS = re.compile(r"[^a-zA-Z0-9_]")
 _MAX_ATTEMPTS = 3
-_RETRY_DELAY  = 5  # seconds
+_RETRY_DELAY = 5  # seconds
 
 
 def run_rag_setup(file_contents: dict[str, str], repo_name: str, repo_url: str = "") -> str:
@@ -25,8 +25,9 @@ def run_rag_setup(file_contents: dict[str, str], repo_name: str, repo_url: str =
         except Exception as exc:
             last_exc = exc
             if attempt < _MAX_ATTEMPTS:
-                logger.warning("RAG embed attempt %d/%d failed (%s) — retrying in %ds",
-                               attempt, _MAX_ATTEMPTS, exc, _RETRY_DELAY)
+                logger.warning(
+                    "RAG embed attempt %d/%d failed (%s) — retrying in %ds", attempt, _MAX_ATTEMPTS, exc, _RETRY_DELAY
+                )
                 time.sleep(_RETRY_DELAY)
             else:
                 logger.error("RAG embed failed after %d attempts: %s", _MAX_ATTEMPTS, exc)

@@ -7,9 +7,9 @@ from langchain_groq import ChatGroq
 from chroma_utils import search_codebase
 from llm_cache import invoke_with_retry
 from models.requests import SummaryRequest
-from services.rate_limiter import check_rate_limit
 from services.rate_limit_response import rate_limit_response
-from services.session import get_session, _UUID_RE
+from services.rate_limiter import check_rate_limit
+from services.session import _UUID_RE, get_session
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -28,21 +28,26 @@ async def summary_endpoint(req: SummaryRequest, request: Request):
         return {"error": "Session not found. Run /ws/analyze first."}
 
     collection = session.get("chroma_collection_name")
-    chunks = await asyncio.to_thread(
-        search_codebase, collection,
-        "main entry point purpose overview README architecture", 6,
-    ) if collection else []
+    chunks = (
+        await asyncio.to_thread(
+            search_codebase,
+            collection,
+            "main entry point purpose overview README architecture",
+            6,
+        )
+        if collection
+        else []
+    )
 
-    context = "\n\n".join(
-        f"--- {c['filepath']} ---\n{c['content'][:350]}" for c in chunks
-    ) or "No code context available."
+    context = (
+        "\n\n".join(f"--- {c['filepath']} ---\n{c['content'][:350]}" for c in chunks) or "No code context available."
+    )
 
     findings = session.get("security_findings", [])
     n_critical = sum(1 for f in findings if f.get("severity") == "critical")
     n_high = sum(1 for f in findings if f.get("severity") == "high")
     crit_names = ", ".join(
-        f.get("rule") or f.get("check") or "unknown"
-        for f in findings if f.get("severity") == "critical"
+        f.get("rule") or f.get("check") or "unknown" for f in findings if f.get("severity") == "critical"
     )[:200]
 
     prompt = (
@@ -74,6 +79,7 @@ async def get_analysis(session_id: str):
     if not _UUID_RE.match(session_id):
         return {"error": "Invalid session ID"}
     from services.database import get_analysis_db
+
     snap = await get_analysis_db(session_id)
     if snap is None:
         return {"error": "Analysis not found or has expired"}
@@ -87,6 +93,7 @@ async def get_analysis(session_id: str):
 async def get_previous_analysis(repo_url: str, exclude_session: str | None = None, request: Request = None):
     from services.auth import require_gh_token_or_service_key
     from services.database import get_previous_analysis_db
+
     if request:
         require_gh_token_or_service_key(request)
     snap = await get_previous_analysis_db(repo_url, exclude_session)

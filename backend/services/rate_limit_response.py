@@ -1,4 +1,5 @@
 """Shared rate limit response helper."""
+
 from fastapi.responses import JSONResponse
 
 from services.rate_limiter import get_rate_limit_info

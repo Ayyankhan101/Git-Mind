@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import os
 import time
 
@@ -25,6 +26,7 @@ async def handle_crisis(ws: WebSocket) -> None:
     _ws_auth_secret = os.environ.get("WS_AUTH_SECRET")
     if _ws_auth_secret:
         import hmac
+
         if not hmac.compare_digest(payload.get("ws_auth_secret", ""), _ws_auth_secret):
             await ws.send_json({"error": "WebSocket auth secret mismatch"})
             await ws.close(code=1008)
@@ -76,16 +78,14 @@ async def handle_crisis(ws: WebSocket) -> None:
     state_ref: dict = dict(init)
 
     async def ws_send(msg: dict):
-        try:
+        with contextlib.suppress(Exception):
             await ws.send_json(msg)
-        except Exception:
-            pass
 
     reporter_task = asyncio.create_task(reporter_loop(state_ref, ws_send))
 
     try:
         async for chunk in crisis_graph.astream(init, stream_mode="updates"):
-            for node, update in chunk.items():
+            for _node, update in chunk.items():
                 for k in ("crisis_messages", "crisis_turn", "public_signals"):
                     if k in update:
                         if isinstance(update[k], list):
@@ -95,13 +95,15 @@ async def handle_crisis(ws: WebSocket) -> None:
                             state_ref[k] = update[k]
 
                 for msg in update.get("crisis_messages", []):
-                    await ws_send({
-                        "agent": msg.get("agent"),
-                        "kind": "message",
-                        "content": msg.get("content"),
-                        "turn": msg.get("turn"),
-                        "timestamp": time.time(),
-                    })
+                    await ws_send(
+                        {
+                            "agent": msg.get("agent"),
+                            "kind": "message",
+                            "content": msg.get("content"),
+                            "turn": msg.get("turn"),
+                            "timestamp": time.time(),
+                        }
+                    )
 
                 if state_ref.get("reporter_published"):
                     break
@@ -119,9 +121,7 @@ async def handle_crisis(ws: WebSocket) -> None:
         await ws_send({"error": str(exc)})
     finally:
         reporter_task.cancel()
-        try:
+        with contextlib.suppress(asyncio.CancelledError, Exception):
             await reporter_task
-        except (asyncio.CancelledError, Exception):
-            pass
         await ws_send({"kind": "end"})
         await ws.close()

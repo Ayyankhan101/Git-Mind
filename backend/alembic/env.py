@@ -1,18 +1,19 @@
-import os
 import asyncio
+import os
 from logging.config import fileConfig
 
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from alembic import context
+from alembic import context  # type: ignore[attr-defined]
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-from models.db import Base
+from models.db import Base  # noqa: E402
+
 target_metadata = Base.metadata
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:////tmp/gitmind.db")

@@ -1,5 +1,5 @@
-import structlog
 import httpx
+import structlog
 from fastapi import APIRouter, Request
 
 from models.requests import WebhookNotifyRequest

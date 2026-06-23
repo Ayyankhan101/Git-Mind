@@ -7,10 +7,10 @@ def compute_health(
     cve_findings: list,
     api_docs: list,
 ) -> dict:
-    sec  = _security_score(security_findings)
+    sec = _security_score(security_findings)
     docs = _docs_score(file_contents)
-    api  = _api_score(api_docs)
-    dep  = _dep_score(cve_findings)
+    api = _api_score(api_docs)
+    dep = _dep_score(cve_findings)
 
     total = round(sec * 0.40 + docs * 0.20 + api * 0.20 + dep * 0.20)
     grade = "A" if total >= 90 else "B" if total >= 80 else "C" if total >= 70 else "D" if total >= 60 else "F"
@@ -19,9 +19,9 @@ def compute_health(
         "score": total,
         "grade": grade,
         "breakdown": {
-            "security":             round(sec),
-            "documentation":        round(docs),
-            "api_coverage":         round(api),
+            "security": round(sec),
+            "documentation": round(docs),
+            "api_coverage": round(api),
             "dependency_freshness": round(dep),
         },
     }

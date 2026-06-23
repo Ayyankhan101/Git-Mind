@@ -8,6 +8,7 @@ Exports:
     check_rate_limit(endpoint, key) -> bool   (async wrapper)
     get_rate_limit_info(endpoint, key) -> dict (headers for 429 response)
 """
+
 import asyncio
 import os
 import time
@@ -90,8 +91,13 @@ async def _redis_rate_check(endpoint: str, key: str) -> tuple[bool, int, int]:
     member = f"{now}:{os.urandom(4).hex()}"
     try:
         result = await r.eval(
-            _SLIDING_WINDOW_LUA, 1, redis_key,
-            str(window), str(limit), str(now), member,
+            _SLIDING_WINDOW_LUA,
+            1,
+            redis_key,
+            str(window),
+            str(limit),
+            str(now),
+            member,
         )
         allowed = bool(result[0])
         remaining = int(result[1])
@@ -123,6 +129,7 @@ def _mem_rate_check(endpoint: str, key: str) -> tuple[bool, int, int]:
 
 
 # ── Public API ───────────────────────────────────────────────────────────────
+
 
 def rate_ok(endpoint: str, key: str, service_key: str | None = None) -> bool:
     """Sync rate check. Used in sync route handlers."""

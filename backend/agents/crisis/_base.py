@@ -1,7 +1,8 @@
-import time
 import logging
+import time
 
 from langchain_groq import ChatGroq
+
 from llm_cache import invoke_with_retry
 
 logger = logging.getLogger(__name__)
@@ -26,14 +27,11 @@ def make_crisis_agent(name: str, system_prompt: str, leaks: bool = True):
     def node(state: dict) -> dict:
         # Build conversation history (last 12 turns to bound prompt size)
         history_msgs = state.get("crisis_messages", [])[-12:]
-        history = "\n".join(
-            f"{m['agent']}: {m['content']}" for m in history_msgs
-        ) or "No prior messages."
+        history = "\n".join(f"{m['agent']}: {m['content']}" for m in history_msgs) or "No prior messages."
 
         # Find the active incident
         finding = next(
-            (f for f in state.get("security_findings", [])
-             if f.get("id") == state.get("selected_finding_id")),
+            (f for f in state.get("security_findings", []) if f.get("id") == state.get("selected_finding_id")),
             None,
         )
         if not finding and state.get("security_findings"):
@@ -46,8 +44,8 @@ def make_crisis_agent(name: str, system_prompt: str, leaks: bool = True):
 
         prompt = (
             f"{system_prompt}\n\n"
-            f"INCIDENT: {finding.get('title','')} ({finding.get('severity','')})\n"
-            f"EXPLOIT: {finding.get('exploit_story','')}\n\n"
+            f"INCIDENT: {finding.get('title', '')} ({finding.get('severity', '')})\n"
+            f"EXPLOIT: {finding.get('exploit_story', '')}\n\n"
             f"CONVERSATION SO FAR:\n{history}\n\n"
             f"Respond as {name} in 2-4 sentences. Do not break character."
         )
@@ -61,8 +59,8 @@ def make_crisis_agent(name: str, system_prompt: str, leaks: bool = True):
         ts = time.time()
         update: dict = {
             "crisis_messages": [{"agent": name, "content": text, "turn": state.get("crisis_turn", 0)}],
-            "crisis_turn":     state.get("crisis_turn", 0) + 1,
-            "events":          [{"agent": name, "kind": "message", "content": text, "ts": ts}],
+            "crisis_turn": state.get("crisis_turn", 0) + 1,
+            "events": [{"agent": name, "kind": "message", "content": text, "ts": ts}],
         }
 
         # Leak heuristic — Engineering / CEO statements containing breach keywords

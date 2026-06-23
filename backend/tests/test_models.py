@@ -1,7 +1,12 @@
 from models.requests import (
-    ChatRequest, SummaryRequest, PRReviewRequest,
-    FixRequest, AutoPRRequest, PRImpactRequest,
-    OrgAuditRequest, IncidentReportRequest,
+    AutoPRRequest,
+    ChatRequest,
+    FixRequest,
+    IncidentReportRequest,
+    OrgAuditRequest,
+    PRImpactRequest,
+    PRReviewRequest,
+    SummaryRequest,
 )
 
 
@@ -38,7 +43,10 @@ class TestAutoPRRequest:
 
 class TestPRImpactRequest:
     def test_valid(self):
-        r = PRImpactRequest(pr_url="https://github.com/owner/repo/pull/1", session_id="00000000-0000-0000-0000-000000000001")
+        r = PRImpactRequest(
+            pr_url="https://github.com/owner/repo/pull/1",
+            session_id="00000000-0000-0000-0000-000000000001",
+        )
         assert r.pr_url is not None
 
 

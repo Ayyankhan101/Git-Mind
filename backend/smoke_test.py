@@ -7,6 +7,7 @@ Run this from the backend/ directory before every demo session:
 
 All checks must pass. Fix any failure before going on stage.
 """
+
 import os
 import shutil
 import sys
@@ -17,8 +18,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-_PASS  = "[PASS]"
-_FAIL  = "[FAIL]"
+_PASS = "[PASS]"
+_FAIL = "[FAIL]"
 _errors: list[str] = []
 
 
@@ -39,19 +40,18 @@ print("════════════════════════�
 print("[ Environment ]")
 
 api_key = os.getenv("GROQ_API_KEY", "")
-check("GROQ_API_KEY is set",           bool(api_key),               "Add to backend/.env")
-check("GROQ_API_KEY format (gsk_...)", api_key.startswith("gsk_"),  f"Got prefix: {api_key[:6]!r}")
+check("GROQ_API_KEY is set", bool(api_key), "Add to backend/.env")
+check("GROQ_API_KEY format (gsk_...)", api_key.startswith("gsk_"), f"Got prefix: {api_key[:6]!r}")
 _venv_semgrep = Path(__file__).parent / "venv" / "bin" / "semgrep"
-check("semgrep available",
-      shutil.which("semgrep") is not None or _venv_semgrep.exists(),
-      "pip install semgrep")
+check("semgrep available", shutil.which("semgrep") is not None or _venv_semgrep.exists(), "pip install semgrep")
 
 # ── 2. ChromaDB ────────────────────────────────────────────────────────────────
 print("\n[ ChromaDB ]")
 try:
     import chromadb
+
     client = chromadb.Client()
-    col    = client.create_collection("smoketest", get_or_create=True)
+    col = client.create_collection("smoketest", get_or_create=True)
     col.add(documents=["hello world"], ids=["t1"])
     result = col.query(query_texts=["hello"], n_results=1)
     check("ChromaDB in-memory create + query", "hello world" in result["documents"][0])
@@ -63,6 +63,7 @@ except Exception as exc:
 print("\n[ LLM Cache ]")
 try:
     from llm_cache import get_cached, set_cached
+
     set_cached("_smoke", "ping", "pong")
     check("diskcache write + read", get_cached("_smoke", "ping") == "pong")
 except Exception as exc:
@@ -72,7 +73,8 @@ except Exception as exc:
 print("\n[ tiktoken ]")
 try:
     import tiktoken
-    enc    = tiktoken.get_encoding("cl100k_base")
+
+    enc = tiktoken.get_encoding("cl100k_base")
     tokens = enc.encode("Hello, world!")
     check("tiktoken encodes text (cl100k_base)", len(tokens) > 0)
 except Exception as exc:
@@ -83,7 +85,8 @@ print("\n[ Groq API ]")
 if api_key:
     try:
         from langchain_groq import ChatGroq
-        llm  = ChatGroq(model="llama-3.3-70b-versatile", temperature=0, max_tokens=5)
+
+        llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0, max_tokens=5)
         resp = llm.invoke("Reply with the single word: OK")
         check("Groq API reachable", len(resp.content) > 0, resp.content)
     except Exception as exc:
@@ -95,10 +98,9 @@ else:
 print("\n[ GitPython ]")
 try:
     import git
+
     dest = tempfile.mkdtemp(prefix="gitmind_smoke_")
-    repo = git.Repo.clone_from(
-        "https://github.com/octocat/Hello-World", dest, depth=1
-    )
+    repo = git.Repo.clone_from("https://github.com/octocat/Hello-World", dest, depth=1)
     repo.close()
     shutil.rmtree(dest, ignore_errors=True)
     check("GitPython shallow clone (octocat/Hello-World)", True)
@@ -109,13 +111,13 @@ except Exception as exc:
 print("\n[ LangGraph ]")
 try:
     from orchestrator import graph
+
     check("LangGraph analysis graph compiles", graph is not None)
     # Verify all 7 post-scanner nodes are wired up
-    node_names = set(graph.nodes.keys()) if hasattr(graph, 'nodes') else set()
-    expected   = {"scanner", "architecture", "api_docs", "security", "cve_scanner", "rag_setup", "git_audit"}
-    missing    = expected - node_names
-    check("LangGraph: all 7 agent nodes present", not missing,
-          f"Missing: {missing}" if missing else "")
+    node_names = set(graph.nodes.keys()) if hasattr(graph, "nodes") else set()
+    expected = {"scanner", "architecture", "api_docs", "security", "cve_scanner", "rag_setup", "git_audit"}
+    missing = expected - node_names
+    check("LangGraph: all 7 agent nodes present", not missing, f"Missing: {missing}" if missing else "")
 except Exception as exc:
     check("LangGraph analysis graph compiles", False, str(exc))
 

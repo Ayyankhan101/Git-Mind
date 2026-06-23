@@ -11,7 +11,7 @@ from services.auth import hash_token, require_gh_token
 logger = structlog.get_logger(__name__)
 router = APIRouter()
 
-_GH_URL_RE = re.compile(r'^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+/?$')
+_GH_URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+/?$")
 
 
 @router.post("/monitor/subscribe")
@@ -21,14 +21,13 @@ async def subscribe_repo(req: MonitorSubscribeRequest, request: Request):
     if not _GH_URL_RE.match(repo_url):
         return {"error": "Invalid GitHub URL — must be https://github.com/{owner}/{repo}"}
 
-    from models.db import MonitoredRepo
-    from services.database import async_session_factory
     from sqlalchemy import select
 
+    from models.db import MonitoredRepo
+    from services.database import async_session_factory
+
     async with async_session_factory() as session:
-        existing = await session.execute(
-            select(MonitoredRepo).where(MonitoredRepo.repo_url == repo_url)
-        )
+        existing = await session.execute(select(MonitoredRepo).where(MonitoredRepo.repo_url == repo_url))
         if existing.scalar_one_or_none():
             return {"error": "Repo already monitored — unsubscribe first"}
 
@@ -36,17 +35,19 @@ async def subscribe_repo(req: MonitorSubscribeRequest, request: Request):
         owner_hash = hash_token(token)
         repo_name = repo_url.rstrip("/").split("/")[-1]
 
-        session.add(MonitoredRepo(
-            id=monitor_id,
-            repo_url=repo_url,
-            repo_name=repo_name,
-            owner_hash=owner_hash,
-            slack_webhook_url=req.slack_webhook_url,
-            schedule_cron=req.schedule_cron,
-            score_delta_threshold=req.score_delta_threshold,
-            alert_on_new_findings=req.alert_on_new_findings,
-            created_at=time.time(),
-        ))
+        session.add(
+            MonitoredRepo(
+                id=monitor_id,
+                repo_url=repo_url,
+                repo_name=repo_name,
+                owner_hash=owner_hash,
+                slack_webhook_url=req.slack_webhook_url,
+                schedule_cron=req.schedule_cron,
+                score_delta_threshold=req.score_delta_threshold,
+                alert_on_new_findings=req.alert_on_new_findings,
+                created_at=time.time(),
+            )
+        )
         await session.commit()
 
     logger.info("Repo subscribed to monitoring", monitor_id=monitor_id, repo=repo_url)
@@ -56,15 +57,14 @@ async def subscribe_repo(req: MonitorSubscribeRequest, request: Request):
 @router.get("/monitor/status")
 async def monitor_status(request: Request):
     token = require_gh_token(request)
+    from sqlalchemy import select
+
     from models.db import MonitoredRepo
     from services.database import async_session_factory
-    from sqlalchemy import select
 
     owner_hash = hash_token(token)
     async with async_session_factory() as session:
-        result = await session.execute(
-            select(MonitoredRepo).where(MonitoredRepo.owner_hash == owner_hash)
-        )
+        result = await session.execute(select(MonitoredRepo).where(MonitoredRepo.owner_hash == owner_hash))
         repos = result.scalars().all()
 
     return {
@@ -90,9 +90,10 @@ async def monitor_status(request: Request):
 @router.delete("/monitor/{monitor_id}")
 async def unsubscribe_repo(monitor_id: str, request: Request):
     token = require_gh_token(request)
+    from sqlalchemy import delete
+
     from models.db import MonitoredRepo
     from services.database import async_session_factory
-    from sqlalchemy import delete
 
     owner_hash = hash_token(token)
     async with async_session_factory() as session:
