@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldAlert, Wrench, ExternalLink, ArrowUpRight } from 'lucide-react';
+import { ShieldAlert, Wrench } from 'lucide-react';
 
 const SEV_ORDER = ['critical', 'high', 'medium', 'low'];
 
