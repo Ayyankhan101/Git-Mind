@@ -215,7 +215,7 @@ async def lifespan(_app: FastAPI):
     logger.info("GitMind backend shutting down")
 
 
-app = FastAPI(title="GitMind API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="GitMind API", version="1.1.0", lifespan=lifespan)
 app.add_middleware(CorrelationMiddleware)
 app.add_middleware(AuthMiddleware)
 
