@@ -165,29 +165,29 @@ async def github_webhook(request: Request):
     except json.JSONDecodeError:
         return JSONResponse(status_code=400, content={"error": "Invalid JSON"})
 
-    event = request.headers.get("x-github-event", "")
+    github_event = request.headers.get("x-github-event", "")
     delivery_id = request.headers.get("x-github-delivery", "")
 
     logger.info(
         "GitHub webhook received",
-        event=event,
+        github_event=github_event,
         delivery_id=delivery_id,
         action=payload.get("action", "N/A"),
     )
 
     try:
-        if event == "pull_request":
+        if github_event == "pull_request":
             await _handle_pr_event(payload)
-        elif event == "push":
+        elif github_event == "push":
             await _handle_push_event(payload)
-        elif event == "installation":
+        elif github_event == "installation":
             await _handle_installation_event(payload)
-        elif event == "ping":
+        elif github_event == "ping":
             logger.info("GitHub webhook: ping received")
         else:
-            logger.debug("GitHub webhook: unhandled event type", event=event)
+            logger.debug("GitHub webhook: unhandled event type", github_event=github_event)
     except Exception as exc:
-        logger.error("GitHub webhook handler error", event=event, error=str(exc)[:200])
+        logger.error("GitHub webhook handler error", github_event=github_event, error=str(exc)[:200])
         return JSONResponse(status_code=500, content={"error": "Handler error"})
 
     return {"ok": True}
