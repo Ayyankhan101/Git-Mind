@@ -276,7 +276,7 @@ export default function DiagramTab({
         setReady(true);
       }
     },
-    [applyTransform, fitToScreen, diagram],
+    [fitToScreen, diagram],
   );
 
   useEffect(() => {
