@@ -48,11 +48,7 @@ async def _handle_pr_event(payload: dict):
     )
 
     # Run PR review asynchronously to avoid blocking the webhook response
-    import asyncio
-
-    asyncio.get_event_loop().call_soon(
-        lambda: asyncio.ensure_future(_run_pr_review_and_comment(owner, repo, pr_number, pr_url))
-    )
+    asyncio.create_task(_run_pr_review_and_comment(owner, repo, pr_number, pr_url))
 
 
 async def _run_pr_review_and_comment(owner: str, repo: str, pr_number: int, pr_url: str):
