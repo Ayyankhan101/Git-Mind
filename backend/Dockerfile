@@ -63,4 +63,5 @@ EXPOSE 7860
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
     CMD curl -sf http://localhost:7860/health || exit 1
 
+# CACHEBUSTER 2026-06-24 — force rebuild after webhook asyncio fix
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
