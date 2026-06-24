@@ -8,6 +8,7 @@ import os
 
 import structlog
 from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -156,13 +157,13 @@ async def github_webhook(request: Request):
         signature = request.headers.get("x-hub-signature-256", "")
         if not verify_hmac_signature(body, signature, secret):
             logger.warning("GitHub webhook: invalid HMAC signature")
-            return {"error": "Invalid signature"}, 401
+            return JSONResponse(status_code=401, content={"error": "Invalid signature"})
 
     # Parse payload
     try:
         payload = json.loads(body)
     except json.JSONDecodeError:
-        return {"error": "Invalid JSON"}, 400
+        return JSONResponse(status_code=400, content={"error": "Invalid JSON"})
 
     event = request.headers.get("x-github-event", "")
     delivery_id = request.headers.get("x-github-delivery", "")
@@ -187,6 +188,6 @@ async def github_webhook(request: Request):
             logger.debug("GitHub webhook: unhandled event type", event=event)
     except Exception as exc:
         logger.error("GitHub webhook handler error", event=event, error=str(exc)[:200])
-        return {"error": "Handler error"}, 500
+        return JSONResponse(status_code=500, content={"error": "Handler error"})
 
     return {"ok": True}
