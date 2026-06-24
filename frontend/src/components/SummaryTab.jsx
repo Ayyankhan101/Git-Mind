@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { BarChart3, FileCode2, ShieldAlert, Zap } from "lucide-react";
-import { fetchSummary } from "../api";
+import { BarChart3, FileCode2, ShieldAlert, Zap, Activity } from "lucide-react";
+import { fetchSummary, subscribeMonitor, fetchMonitorStatus } from "../api";
+import * as tokenManager from "../tokenManager";
 import HealthCard from "./HealthCard";
 
 const SEV_COLORS = {
@@ -125,10 +126,15 @@ export default function SummaryTab({
   elapsedSec,
   isAnalyzing,
   health,
+  repoUrl,
+  ghToken,
 }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [watching, setWatching] = useState(false);
+  const [watchLoading, setWatchLoading] = useState(false);
+  const [watchError, setWatchError] = useState(null);
 
   useEffect(() => {
     setData(null);
@@ -143,6 +149,37 @@ export default function SummaryTab({
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [enabled, sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Check if repo is already being watched
+  useEffect(() => {
+    if (!repoUrl || !enabled) return;
+    const token = ghToken || tokenManager.get() || null;
+    fetchMonitorStatus(token)
+      .then((res) => {
+        const watched = (res.repos || []).some((r) => r.repo_url === repoUrl);
+        setWatching(watched);
+      })
+      .catch(() => {});
+  }, [repoUrl, enabled, ghToken]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleWatch = async () => {
+    if (!repoUrl) return;
+    const token = ghToken || tokenManager.get() || null;
+    setWatchLoading(true);
+    setWatchError(null);
+    try {
+      const data = await subscribeMonitor(repoUrl, {}, token);
+      if (data.error) {
+        setWatchError(data.error);
+      } else {
+        setWatching(true);
+      }
+    } catch (err) {
+      setWatchError(err.message);
+    } finally {
+      setWatchLoading(false);
+    }
+  };
 
   if (!enabled && !isAnalyzing) {
     return (
@@ -235,6 +272,28 @@ export default function SummaryTab({
     <div className="summary">
       <h2>Executive Summary</h2>
       <HealthCard health={health} />
+      {enabled && repoUrl && (
+        <div className="summary-watch">
+          {watching ? (
+            <span className="summary-watch-badge">
+              <Activity size={12} />
+              Watching
+            </span>
+          ) : (
+            <button
+              className="summary-watch-btn"
+              onClick={handleWatch}
+              disabled={watchLoading}
+            >
+              <Activity size={12} />
+              {watchLoading ? "Subscribing…" : "Watch this repo"}
+            </button>
+          )}
+          {watchError && (
+            <span className="summary-watch-error">{watchError}</span>
+          )}
+        </div>
+      )}
       {loading && (
         <div
           style={{

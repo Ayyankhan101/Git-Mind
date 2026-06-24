@@ -1336,6 +1336,8 @@ export default function App() {
                   elapsedSec={elapsedSec}
                   isAnalyzing={isAnalyzing}
                   health={health}
+                  repoUrl={selectedRepoUrl}
+                  ghToken={ghToken}
                 />
               )}
               {activeTab === "diagram" && (

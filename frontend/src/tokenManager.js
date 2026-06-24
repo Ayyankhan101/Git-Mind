@@ -92,11 +92,3 @@ export async function restore() {
   } catch {}
   return null;
 }
-
-export function clear() {
-  _token = null;
-  _expiry = 0;
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch {}
-}

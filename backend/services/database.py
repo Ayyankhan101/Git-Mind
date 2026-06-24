@@ -3,7 +3,7 @@ import os
 import sys
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from models.db import Base
 
@@ -40,11 +40,6 @@ async def init_db():
             await conn.run_sync(Base.metadata.create_all)
     if proc.stderr:
         logger.warning("Alembic stderr: %s", proc.stderr[:500])
-
-
-async def get_db() -> AsyncSession:
-    async with async_session_factory() as session:
-        yield session
 
 
 def _analysis_row_to_dict(row) -> dict:

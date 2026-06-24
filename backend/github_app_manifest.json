@@ -14,7 +14,7 @@
   "request_oauth_on_install": false,
   "setup_url": "https://gitmind-peach.vercel.app",
   "hook_attributes": {
-    "url": "REPLACE_WITH_YOUR_BACKEND_URL/github/webhook",
+    "url": "https://ak001z-gitmind-backend.hf.space/github/webhook",
     "active": true
   }
 }

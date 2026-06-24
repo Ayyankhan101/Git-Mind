@@ -55,7 +55,3 @@ async def close_redis() -> None:
 def get_redis():
     """Return Redis client or None (in-memory fallback mode)."""
     return _redis
-
-
-def is_fallback() -> bool:
-    return _fallback
