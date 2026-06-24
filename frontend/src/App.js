@@ -27,6 +27,7 @@ import {
   GitCommit,
   Building2,
   Binary,
+  Activity,
 } from "lucide-react";
 
 import Sidebar from "./components/Sidebar";
@@ -44,6 +45,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import GitAuditTab from "./components/GitAuditTab";
 import SolidityTab from "./components/SolidityTab";
 import CodeAuditTab from "./components/CodeAuditTab";
+import MonitoringTab from "./components/MonitoringTab";
 import OrgAuditModal from "./components/OrgAuditModal";
 import CommandPalette from "./components/CommandPalette";
 import ToastSystem from "./components/ToastSystem";
@@ -1002,6 +1004,7 @@ export default function App() {
       ),
     },
     { key: "pr", Icon: GitPullRequest, label: "PR Review" },
+    { key: "monitor", Icon: Activity, label: "Watch" },
     { key: "chat", Icon: MessageSquare, label: "Chat" },
   ];
 
@@ -1410,6 +1413,13 @@ export default function App() {
                   sessionId={SESSION_ID}
                   analyzed={analyzed}
                   repoUrl={selectedRepoUrl}
+                />
+              )}
+              {activeTab === "monitor" && (
+                <MonitoringTab
+                  ghToken={ghToken}
+                  repoUrl={selectedRepoUrl}
+                  analyzed={analyzed}
                 />
               )}
               {activeTab === "chat" && (

@@ -149,6 +149,35 @@ export function fetchOpenPRs(owner, repo, token = null) {
   );
 }
 
+export function subscribeMonitor(repoUrl, opts = {}, token = null) {
+  return _post(
+    `${BASE}/monitor/subscribe`,
+    { repo_url: repoUrl, ...opts },
+    15_000,
+    "Subscribe timed out.",
+    token ? { "X-GH-Token": token } : {},
+  );
+}
+
+export function fetchMonitorStatus(token = null) {
+  const headers = {};
+  if (token) headers["X-GH-Token"] = token;
+  return _apiFetch(`${BASE}/monitor/status`, { headers }, 15_000);
+}
+
+export function unsubscribeMonitor(monitorId, token = null) {
+  const headers = {};
+  if (token) headers["X-GH-Token"] = token;
+  return _apiFetch(
+    `${BASE}/monitor/${monitorId}`,
+    {
+      method: "DELETE",
+      headers,
+    },
+    15_000,
+  );
+}
+
 export function orgAudit(repos, token = null) {
   return _post(
     `${BASE}/org-audit`,

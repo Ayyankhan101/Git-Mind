@@ -28,6 +28,7 @@ from routes.analysis import router as analysis_router  # noqa: E402
 from routes.analyze import router as analyze_router  # noqa: E402
 from routes.chat import router as chat_router  # noqa: E402
 from routes.fix import router as fix_router  # noqa: E402
+from routes.github_webhook import router as github_webhook_router  # noqa: E402
 from routes.incident import router as incident_router  # noqa: E402
 from routes.monitor import router as monitor_router  # noqa: E402
 from routes.org import router as org_router  # noqa: E402
@@ -265,6 +266,7 @@ app.include_router(incident_router)
 app.include_router(fix_router)
 app.include_router(analyze_router)
 app.include_router(webhook_router)
+app.include_router(github_webhook_router)
 app.include_router(monitor_router)
 
 
