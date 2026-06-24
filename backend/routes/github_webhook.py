@@ -58,7 +58,8 @@ async def _run_pr_review_and_comment(owner: str, repo: str, pr_number: int, pr_u
         from agents.pr_review import run_pr_review
         from services.github_app import post_comment
 
-        review = await asyncio.to_thread(run_pr_review, pr_url)
+        token = os.getenv("GITHUB_TOKEN")
+        review = await asyncio.to_thread(run_pr_review, pr_url, token)
         if not review:
             return
 
@@ -71,7 +72,7 @@ async def _run_pr_review_and_comment(owner: str, repo: str, pr_number: int, pr_u
         logger.info("PR review comment posted", repo=f"{owner}/{repo}", pr=pr_number)
 
     except Exception as exc:
-        logger.error("Failed to post PR review", error=str(exc)[:200], pr=pr_number)
+        logger.error("Failed to post PR review", error=str(exc)[:300], pr=pr_number, repo=f"{owner}/{repo}")
 
 
 async def _handle_push_event(payload: dict):
