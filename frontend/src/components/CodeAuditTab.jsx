@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Code, ExternalLink, Wrench } from "lucide-react";
 
-const SEV_ORDER = ["critical", "high", "medium", "low"];
-
 const LANG_COLORS = {
   python: "#3572A5",
   javascript: "#f1e05a",

@@ -276,8 +276,8 @@ export default function DiagramTab({
         setReady(true);
       }
     },
-    [applyTransform, fitToScreen],
-  ); // eslint-disable-line react-hooks/exhaustive-deps
+    [applyTransform, fitToScreen, diagram],
+  );
 
   useEffect(() => {
     return () => {
