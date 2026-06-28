@@ -55,7 +55,7 @@ const ACTION_ITEMS = [
     id: "action:export",
     label: "Export report",
     icon: Download,
-    sub: "Download Markdown",
+    sub: "Download PDF",
   },
   {
     id: "action:kbhelp",

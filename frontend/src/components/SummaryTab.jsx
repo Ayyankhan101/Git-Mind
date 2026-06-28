@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { BarChart3, FileCode2, ShieldAlert, Zap, Activity } from "lucide-react";
+import {
+  BarChart3,
+  FileCode2,
+  ShieldAlert,
+  Zap,
+  Activity,
+  Download,
+} from "lucide-react";
 import { fetchSummary, subscribeMonitor, fetchMonitorStatus } from "../api";
+import { buildSummaryPdf, downloadPdf } from "../pdfBuilder";
 import HealthCard from "./HealthCard";
 
 const SEV_COLORS = {
@@ -267,7 +275,53 @@ export default function SummaryTab({
 
   return (
     <div className="summary">
-      <h2>Executive Summary</h2>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: 12,
+        }}
+      >
+        <h2 style={{ margin: 0 }}>Executive Summary</h2>
+        <button
+          onClick={() => {
+            const docDef = buildSummaryPdf({
+              repoName,
+              summary:
+                data?.summary ||
+                `Analysis of ${repoName} completed in ${elapsedSec}s.`,
+              stats: data?.stats || {
+                endpoints: apiDocs.length,
+                findings: findings.length,
+                scan_time: elapsedSec ? `${elapsedSec}s` : "N/A",
+              },
+              health,
+              elapsedSec,
+            });
+            downloadPdf(
+              docDef,
+              `summary-${repoName || "report"}-${Date.now()}.pdf`,
+            );
+          }}
+          style={{
+            background: "none",
+            border: "1px solid var(--border)",
+            cursor: "pointer",
+            color: "var(--text-3)",
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            fontSize: 11,
+            padding: "4px 8px",
+            borderRadius: 6,
+            marginLeft: "auto",
+          }}
+        >
+          <Download size={12} strokeWidth={1.5} />
+          Export PDF
+        </button>
+      </div>
       <HealthCard health={health} />
       {enabled && repoUrl && (
         <div className="summary-watch">

@@ -5,8 +5,10 @@ import {
   AlertTriangle,
   Copy,
   Check as CheckIcon,
+  Download,
 } from "lucide-react";
 import { WS_BASE, fetchIncidentReport } from "../api";
+import { buildIncidentPdf, downloadPdf } from "../pdfBuilder";
 
 const ROLE_COLOR = {
   CEO: "#fbbf24",
@@ -17,7 +19,7 @@ const ROLE_COLOR = {
 const WS_URL = `${WS_BASE}/ws/crisis`;
 const REPORTER_INTERVAL = 45;
 
-export default function CrisisChat({ finding, sessionId, onClose }) {
+export default function CrisisChat({ finding, sessionId, repoName, onClose }) {
   const [messages, setMessages] = useState([]);
   const [countdown, setCountdown] = useState(REPORTER_INTERVAL);
   const [resolved, setResolved] = useState(false);
@@ -331,6 +333,36 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
               >
                 <FileText size={11} strokeWidth={1.5} />
                 INCIDENT REPORT
+                <button
+                  onClick={() => {
+                    const docDef = buildIncidentPdf({
+                      report,
+                      finding,
+                      outcome: resolved ? "resolved" : "leaked",
+                      repoName,
+                    });
+                    downloadPdf(
+                      docDef,
+                      `incident-${repoName || "report"}-${Date.now()}.pdf`,
+                    );
+                  }}
+                  style={{
+                    marginLeft: "auto",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "var(--text-3)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    fontSize: 11,
+                    padding: "2px 6px",
+                    borderRadius: 4,
+                  }}
+                >
+                  <Download size={10} strokeWidth={1.5} />
+                  PDF
+                </button>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(report).then(() => {

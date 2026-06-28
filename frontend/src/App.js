@@ -30,6 +30,8 @@ import {
   Activity,
 } from "lucide-react";
 
+import { buildAnalysisPdf, downloadPdf } from "./pdfBuilder";
+
 import Sidebar from "./components/Sidebar";
 import DocsTab from "./components/DocsTab";
 import SecurityTab from "./components/SecurityTab";
@@ -725,122 +727,23 @@ export default function App() {
   // ── Export ────────────────────────────────────────────────────────────────────
   const handleExport = useCallback(() => {
     if (!analyzed) return;
-    const lines = [
-      `# GitMind Analysis: ${repoName}`,
-      `> Generated ${new Date().toLocaleString()}`,
-      "",
-      "## Architecture",
-      "```mermaid",
-      diagram || "(no diagram)",
-      "```",
-      "",
-      "## API Endpoints",
-      "",
-      ...(apiDocs.length
-        ? apiDocs.map(
-            (e) =>
-              `- **${e.method || ""}** \`${e.route || ""}\` — ${e.description || ""}`,
-          )
-        : ["No endpoints detected."]),
-      "",
-      "## Security Findings",
-      "",
-      ...(findings.length
-        ? findings.map(
-            (f) =>
-              `### [${(f.severity || "info").toUpperCase()}] ${f.rule || f.check || "Finding"}\n${f.description || f.message || f.exploit_story || ""}\n${f.file ? `File: ${f.file}${f.line_start ? `:${f.line_start}` : ""}` : ""}`,
-          )
-        : ["No findings."]),
-      "",
-      "## CVE Vulnerabilities",
-      "",
-      ...(cveFindings.length
-        ? cveFindings.map(
-            (pkg) =>
-              `### ${pkg.package} v${pkg.version} (${pkg.ecosystem}) — ${pkg.worst_severity}\n` +
-              pkg.vulns
-                .map(
-                  (v) =>
-                    `- **${v.id}** [${v.severity}]: ${v.summary}${v.fixed_in ? ` *(fix: ${v.fixed_in})*` : ""}`,
-                )
-                .join("\n"),
-          )
-        : ["No CVE vulnerabilities found."]),
-      "",
-      "## Git Audit",
-      "",
-      ...(gitAudit
-        ? [
-            `Commits reviewed: ${gitAudit.stats?.total ?? 0}`,
-            `Poor messages: ${gitAudit.stats?.bad_messages ?? 0}`,
-            `Secrets found: ${gitAudit.stats?.secrets_found ?? 0}`,
-            `Sensitive files: ${gitAudit.stats?.sensitive_files ?? 0}`,
-            "",
-            ...(gitAudit.secret_findings?.length
-              ? gitAudit.secret_findings.map(
-                  (s) =>
-                    `- **[${(s.severity || "high").toUpperCase()}]** ${s.type} — \`${s.path}${s.line ? `:${s.line}` : ""}\``,
-                )
-              : ["No secret findings."]),
-            "",
-            ...(gitAudit.sensitive_files?.length
-              ? gitAudit.sensitive_files.map(
-                  (f) => `- Sensitive file: \`${f.path || f}\``,
-                )
-              : []),
-          ]
-        : ["Git audit not available."]),
-      "",
-      "## Solidity Audit",
-      "",
-      ...(solidityAudit?.findings?.length
-        ? solidityAudit.findings.map(
-            (f) =>
-              `### [${(f.severity || "info").toUpperCase()}] ${f.title || "Finding"}\n${f.description || ""}\n${f.contract ? `Contract: ${f.contract}` : ""}${f.remediation ? `\nRemediation: ${f.remediation}` : ""}`,
-          )
-        : ["No Solidity findings."]),
-      "",
-      "## Code Audit",
-      "",
-      ...(codeAudit?.length
-        ? codeAudit.flatMap((langResult) =>
-            (langResult.findings || []).map(
-              (f) =>
-                `### [${(f.severity || "info").toUpperCase()}] ${f.title || "Finding"} (${langResult.language})\n${f.description || ""}\n${f.file ? `File: ${f.file}${f.line ? `:${f.line}` : ""}` : ""}${f.remediation ? `\nRemediation: ${f.remediation}` : ""}`,
-            ),
-          )
-        : ["No code audit findings."]),
-      "",
-      "## Health Score",
-      "",
-      ...(health
-        ? [
-            `**Grade: ${health.grade}** (${health.score}/100)`,
-            "",
-            `| Dimension | Score |`,
-            `|-----------|-------|`,
-            `| Security | ${health.breakdown?.security ?? "—"} |`,
-            `| Documentation | ${health.breakdown?.documentation ?? "—"} |`,
-            `| API Coverage | ${health.breakdown?.api_coverage ?? "—"} |`,
-            `| Dependency Freshness | ${health.breakdown?.dependency_freshness ?? "—"} |`,
-            `| Code Quality | ${health.breakdown?.code_quality ?? "—"} |`,
-          ]
-        : ["Health score not available."]),
-      "",
-      "---",
-      `_Scanned in ${elapsedSec}s by GitMind_`,
-    ];
-    const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `gitmind-${repoName}-${Date.now()}.md`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const docDef = buildAnalysisPdf({
+      repoName,
+      diagram,
+      apiDocs,
+      findings,
+      cveFindings,
+      gitAudit,
+      solidityAudit,
+      codeAudit,
+      health,
+      elapsedSec,
+    });
+    downloadPdf(docDef, `gitmind-${repoName}-${Date.now()}.pdf`);
     addToast({
       kind: "success",
       title: "Report exported",
-      sub: `${repoName}.md`,
+      sub: `${repoName}.pdf`,
     });
     addRecent({
       id: "action:export",
@@ -1491,6 +1394,7 @@ export default function App() {
         <CrisisChat
           finding={crisisFinding}
           sessionId={SESSION_ID}
+          repoName={repoName}
           onClose={() => setCrisisFinding(null)}
         />
       )}

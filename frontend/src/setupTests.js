@@ -1,5 +1,18 @@
 import "@testing-library/jest-dom";
 
+// Mock pdfmake (uses Node.js built-ins not available in jsdom)
+jest.mock("pdfmake/build/pdfmake", () => ({
+  __esModule: true,
+  default: {
+    vfs: {},
+    createPdf: jest.fn(() => ({ download: jest.fn() })),
+  },
+}));
+jest.mock("pdfmake/build/vfs_fonts", () => ({
+  __esModule: true,
+  default: { pdfMake: { vfs: {} } },
+}));
+
 // Mock crypto.randomUUID used in App.js for session IDs
 if (!globalThis.crypto?.randomUUID) {
   Object.defineProperty(globalThis, "crypto", {
