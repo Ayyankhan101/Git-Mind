@@ -56,9 +56,9 @@ async def _run_pr_review_and_comment(owner: str, repo: str, pr_number: int, pr_u
     """Run AI PR review and post results as a PR comment."""
     try:
         from agents.pr_review import run_pr_review
-        from services.github_app import post_comment
+        from services.github_app import get_installation_token, post_comment
 
-        token = os.getenv("GITHUB_TOKEN")
+        token = await get_installation_token()
         review = await asyncio.to_thread(run_pr_review, pr_url, token)
         if not review:
             return
