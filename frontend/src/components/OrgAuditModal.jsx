@@ -176,10 +176,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
     setError(null);
     setResult(null);
     try {
-      const data = await orgAudit(
-        scanList.map((r) => r.url || r),
-        token,
-      );
+      const data = await orgAudit(scanList.map((r) => r.url || r));
       setResult(data);
     } catch (err) {
       setError(err.message);

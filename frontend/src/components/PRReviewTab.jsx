@@ -681,7 +681,7 @@ export default function PRReviewTab({
     const repo = m[2].replace(/\.git$/, "");
     setOpenPRs([]);
     setPrsLoading(true);
-    fetchOpenPRs(owner, repo, token || null)
+    fetchOpenPRs(owner, repo)
       .then((data) => setOpenPRs(data.prs || []))
       .catch(() => setOpenPRs([]))
       .finally(() => setPrsLoading(false));
@@ -697,14 +697,14 @@ export default function PRReviewTab({
       setImpactError(null);
 
       setLoading(true);
-      reviewPR(url, token || undefined)
+      reviewPR(url)
         .then((data) => setResult(data))
         .catch((err) => setError(err.message))
         .finally(() => setLoading(false));
 
       if (analyzed && sessionId) {
         setImpactLoading(true);
-        prImpact(url, sessionId, token || null)
+        prImpact(url, sessionId)
           .then((data) => setImpact(data))
           .catch((err) => setImpactError(err.message))
           .finally(() => setImpactLoading(false));
@@ -744,7 +744,7 @@ export default function PRReviewTab({
     setImpact(null);
     setImpactLoading(true);
     try {
-      const data = await prImpact(url, sessionId, token || null);
+      const data = await prImpact(url, sessionId);
       setImpact(data);
     } catch (err) {
       setImpactError(err.message);

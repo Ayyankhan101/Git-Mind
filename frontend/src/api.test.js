@@ -64,15 +64,20 @@ describe("fetchRepos", () => {
     await expect(fetchRepos("test-user")).resolves.toEqual(repos);
   });
 
-  test("passes X-GH-Token header when provided", async () => {
+  test("passes Authorization header when tokenManager has a token", async () => {
+    const tokenManager = require("./tokenManager");
+    await tokenManager.set("ghp_abc123");
     mockFetchOnce(200, { repos: [] });
-    await fetchRepos("test-user", "ghp_abc123");
+    await fetchRepos("test-user");
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining("/repos/"),
       expect.objectContaining({
-        headers: expect.objectContaining({ "X-GH-Token": "ghp_abc123" }),
+        headers: expect.objectContaining({
+          Authorization: "Bearer ghp_abc123",
+        }),
       }),
     );
+    await tokenManager.set("");
   });
 });
 

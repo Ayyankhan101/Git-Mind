@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BarChart3, FileCode2, ShieldAlert, Zap, Activity } from "lucide-react";
 import { fetchSummary, subscribeMonitor, fetchMonitorStatus } from "../api";
-import * as tokenManager from "../tokenManager";
 import HealthCard from "./HealthCard";
 
 const SEV_COLORS = {
@@ -153,8 +152,7 @@ export default function SummaryTab({
   // Check if repo is already being watched
   useEffect(() => {
     if (!repoUrl || !enabled) return;
-    const token = ghToken || tokenManager.get() || null;
-    fetchMonitorStatus(token)
+    fetchMonitorStatus()
       .then((res) => {
         const watched = (res.repos || []).some((r) => r.repo_url === repoUrl);
         setWatching(watched);
@@ -164,11 +162,10 @@ export default function SummaryTab({
 
   const handleWatch = async () => {
     if (!repoUrl) return;
-    const token = ghToken || tokenManager.get() || null;
     setWatchLoading(true);
     setWatchError(null);
     try {
-      const data = await subscribeMonitor(repoUrl, {}, token);
+      const data = await subscribeMonitor(repoUrl, {});
       if (data.error) {
         setWatchError(data.error);
       } else {

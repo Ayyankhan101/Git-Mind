@@ -15,7 +15,6 @@ import {
   fetchMonitorStatus,
   unsubscribeMonitor,
 } from "../api";
-import * as tokenManager from "../tokenManager";
 
 function relativeTime(ts) {
   if (!ts) return "never";
@@ -76,16 +75,14 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
   const [subLoading, setSubLoading] = useState(false);
   const [subError, setSubError] = useState(null);
 
-  const token = ghToken || tokenManager.get() || "";
-
   const fetchRepos = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetchMonitorStatus(token || null)
+    fetchMonitorStatus()
       .then((data) => setRepos(data.repos || []))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, []);
 
   useEffect(() => {
     fetchRepos();
@@ -106,7 +103,7 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
     try {
       const opts = {};
       if (subSlack.trim()) opts.slack_webhook_url = subSlack.trim();
-      const data = await subscribeMonitor(url, opts, token || null);
+      const data = await subscribeMonitor(url, opts);
       if (data.error) {
         setSubError(data.error);
       } else {
@@ -124,7 +121,7 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
 
   const handleUnsubscribe = async (monitorId) => {
     try {
-      await unsubscribeMonitor(monitorId, token || null);
+      await unsubscribeMonitor(monitorId);
       setRepos((prev) => prev.filter((r) => r.id !== monitorId));
     } catch (err) {
       setError(err.message);
