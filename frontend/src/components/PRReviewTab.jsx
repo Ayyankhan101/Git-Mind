@@ -710,7 +710,7 @@ export default function PRReviewTab({
           .finally(() => setImpactLoading(false));
       }
     },
-    [token, analyzed, sessionId],
+    [analyzed, sessionId],
   ); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-fill + trigger review when a PR URL is pasted anywhere in the app
