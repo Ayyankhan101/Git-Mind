@@ -1,3 +1,5 @@
+import * as tokenManager from "./tokenManager";
+
 // Derive backend base URL.
 //   1. REACT_APP_API_BASE env var wins (set at build time).
 //   2. Cloud Shell preview: hostnames like "3000-cs-xxxx.cloudshell.dev" —
@@ -17,8 +19,6 @@ function deriveHttpBase() {
 
 export const BASE = deriveHttpBase();
 export const WS_BASE = BASE.replace(/^http/, "ws");
-
-import * as tokenManager from "./tokenManager";
 
 const GH_TOKEN_RE = /^(gh[pousr]_|github_pat_)[A-Za-z0-9_]+$/;
 
