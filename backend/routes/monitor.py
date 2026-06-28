@@ -1,3 +1,4 @@
+import asyncio
 import re
 import time
 import uuid
@@ -48,13 +49,14 @@ async def subscribe_repo(req: MonitorSubscribeRequest, request: Request):
                 repo_name=repo_name,
                 owner_hash=owner_hash,
                 slack_webhook_url=req.slack_webhook_url,
-                schedule_cron=req.schedule_cron,
                 score_delta_threshold=req.score_delta_threshold,
                 alert_on_new_findings=req.alert_on_new_findings,
                 created_at=time.time(),
             )
         )
         await session.commit()
+
+    asyncio.create_task(_trigger_initial_check(repo_url, monitor_id))
 
     logger.info("Repo subscribed to monitoring", monitor_id=monitor_id, repo=repo_url)
     return {"ok": True, "monitor_id": monitor_id}
@@ -80,7 +82,6 @@ async def monitor_status(request: Request):
                 "repo_url": r.repo_url,
                 "repo_name": r.repo_name,
                 "slack_webhook_url": bool(r.slack_webhook_url),
-                "schedule_cron": r.schedule_cron,
                 "score_delta_threshold": r.score_delta_threshold,
                 "alert_on_new_findings": r.alert_on_new_findings,
                 "last_sha": r.last_sha,
@@ -120,3 +121,41 @@ async def unsubscribe_repo(monitor_id: str, request: Request):
 
     logger.info("Repo unsubscribed from monitoring", monitor_id=monitor_id)
     return {"ok": True}
+
+
+async def _trigger_initial_check(repo_url: str, monitor_id: str):
+    import time as _time
+
+    from sqlalchemy import select
+
+    from models.db import MonitoredRepo
+    from services.database import async_session_factory
+    from services.sha_cache import get_remote_sha
+
+    try:
+        current_sha = await asyncio.to_thread(get_remote_sha, repo_url)
+        if not current_sha:
+            logger.warning("Monitor initial check: could not fetch SHA", repo=repo_url)
+            return
+
+        from routes.analyze import _run_analysis
+
+        session_id: str = str(uuid.uuid4())
+        result = await _run_analysis(repo_url, None, session_id)
+
+        if result.get("error"):
+            logger.error("Monitor initial check: analysis failed", repo=repo_url, error=result["error"][:200])
+            session_id = ""
+
+        async with async_session_factory() as session:
+            repo = await session.execute(select(MonitoredRepo).where(MonitoredRepo.id == monitor_id))
+            repo = repo.scalar_one_or_none()
+            if repo:
+                repo.last_sha = current_sha
+                repo.last_session_id = session_id
+                repo.last_check_at = _time.time()
+                await session.commit()
+
+        logger.info("Monitor initial check complete", repo=repo_url, session=session_id)
+    except Exception as exc:
+        logger.error("Monitor initial check failed", repo=repo_url, error=str(exc)[:200])

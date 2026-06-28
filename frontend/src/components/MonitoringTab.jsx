@@ -88,6 +88,13 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
     fetchRepos();
   }, [fetchRepos]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchRepos();
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, [fetchRepos]);
+
   const handleSubscribe = async () => {
     const url = subUrl.trim();
     if (!url) {

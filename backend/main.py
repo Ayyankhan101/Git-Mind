@@ -82,8 +82,8 @@ async def _monitoring_loop():
     interval = int(os.getenv("MONITOR_INTERVAL_SECONDS", "3600"))
     logger.info("Monitoring loop started", interval_seconds=interval)
     while True:
-        await asyncio.sleep(interval)
         await _run_monitoring_checks()
+        await asyncio.sleep(interval)
 
 
 async def _run_monitoring_checks():
@@ -123,24 +123,24 @@ async def _run_monitoring_checks():
 
             if result.get("error"):
                 logger.error("Monitor: analysis failed", repo=repo.repo_url, error=result["error"][:200])
-                continue
+                session_id = None
+            else:
+                if repo.last_session_id and repo.slack_webhook_url:
+                    prev = await get_previous_analysis_db(repo.repo_url, exclude_session=session_id)
+                    curr_health = (result.get("health") or {}).get("score", 0)
+                    prev_health = (prev.get("health") or {}).get("score", 0) if prev else 0
+                    score_delta = curr_health - prev_health
 
-            if repo.last_session_id and repo.slack_webhook_url:
-                prev = await get_previous_analysis_db(repo.repo_url, exclude_session=session_id)
-                curr_health = (result.get("health") or {}).get("score", 0)
-                prev_health = (prev.get("health") or {}).get("score", 0) if prev else 0
-                score_delta = curr_health - prev_health
+                    curr_sec = len(result.get("security_findings", []))
+                    prev_sec = len(prev.get("security_findings", [])) if prev else 0
+                    new_findings = curr_sec - prev_sec
 
-                curr_sec = len(result.get("security_findings", []))
-                prev_sec = len(prev.get("security_findings", [])) if prev else 0
-                new_findings = curr_sec - prev_sec
+                    significant = score_delta < repo.score_delta_threshold or (
+                        repo.alert_on_new_findings and new_findings > 0
+                    )
 
-                significant = score_delta < repo.score_delta_threshold or (
-                    repo.alert_on_new_findings and new_findings > 0
-                )
-
-                if significant:
-                    await _send_monitor_alert(repo, score_delta, new_findings, curr_health, session_id)
+                    if significant:
+                        await _send_monitor_alert(repo, score_delta, new_findings, curr_health, session_id)
 
             async with async_session_factory() as session:
                 repo.last_sha = current_sha

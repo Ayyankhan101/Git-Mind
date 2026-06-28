@@ -43,7 +43,6 @@ class MonitoredRepo(Base):
     repo_name: Mapped[str] = mapped_column(String(255))
     owner_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     slack_webhook_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    schedule_cron: Mapped[str] = mapped_column(String(100), default="0 8 * * 1")
     score_delta_threshold: Mapped[int] = mapped_column(default=-5)
     alert_on_new_findings: Mapped[bool] = mapped_column(default=True)
     last_sha: Mapped[str | None] = mapped_column(String(64), nullable=True)
