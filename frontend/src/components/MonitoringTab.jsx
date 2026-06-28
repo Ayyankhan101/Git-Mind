@@ -72,6 +72,8 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
   const [showForm, setShowForm] = useState(false);
   const [subUrl, setSubUrl] = useState("");
   const [subSlack, setSubSlack] = useState("");
+  const [subEmails, setSubEmails] = useState([]);
+  const [emailInput, setEmailInput] = useState("");
   const [subLoading, setSubLoading] = useState(false);
   const [subError, setSubError] = useState(null);
 
@@ -95,6 +97,28 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
     return () => clearInterval(interval);
   }, [fetchRepos]);
 
+  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  const addEmail = () => {
+    const val = emailInput.trim();
+    if (!val) return;
+    if (!isValidEmail(val)) {
+      setSubError("Invalid email address.");
+      return;
+    }
+    if (subEmails.includes(val)) {
+      setSubError("Email already added.");
+      return;
+    }
+    setSubEmails((prev) => [...prev, val]);
+    setEmailInput("");
+    setSubError(null);
+  };
+
+  const removeEmail = (email) => {
+    setSubEmails((prev) => prev.filter((e) => e !== email));
+  };
+
   const handleSubscribe = async () => {
     const url = subUrl.trim();
     if (!url) {
@@ -110,12 +134,15 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
     try {
       const opts = {};
       if (subSlack.trim()) opts.slack_webhook_url = subSlack.trim();
+      if (subEmails.length > 0) opts.email_recipients = subEmails.join(",");
       const data = await subscribeMonitor(url, opts);
       if (data.error) {
         setSubError(data.error);
       } else {
         setSubUrl("");
         setSubSlack("");
+        setSubEmails([]);
+        setEmailInput("");
         setShowForm(false);
         fetchRepos();
       }
@@ -230,6 +257,86 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
               disabled={subLoading}
             />
           </div>
+          <div style={{ marginTop: 8 }}>
+            <div
+              style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 4 }}
+            >
+              Email recipients (optional)
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 4,
+                alignItems: "center",
+                padding: "4px 8px",
+                borderRadius: 6,
+                border: "1px solid var(--border-2)",
+                background: "var(--surface-1)",
+                minHeight: 32,
+              }}
+            >
+              {subEmails.map((email) => (
+                <span
+                  key={email}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    padding: "2px 8px",
+                    borderRadius: 4,
+                    background: "var(--primary-muted)",
+                    color: "var(--primary)",
+                    fontSize: 12,
+                    fontWeight: 500,
+                  }}
+                >
+                  {email}
+                  <button
+                    onClick={() => removeEmail(email)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      cursor: "pointer",
+                      color: "var(--primary)",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                    disabled={subLoading}
+                  >
+                    <X size={10} />
+                  </button>
+                </span>
+              ))}
+              <input
+                type="email"
+                placeholder={
+                  subEmails.length === 0 ? "Type email and press Enter" : ""
+                }
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addEmail();
+                  }
+                }}
+                onBlur={addEmail}
+                disabled={subLoading}
+                style={{
+                  flex: 1,
+                  minWidth: 120,
+                  border: "none",
+                  background: "transparent",
+                  outline: "none",
+                  fontSize: 12,
+                  color: "var(--text-1)",
+                  padding: "2px 0",
+                }}
+              />
+            </div>
+          </div>
           {subError && <div className="mon-error">{subError}</div>}
         </div>
       )}
@@ -304,6 +411,12 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
                       <span className="mon-meta-item">
                         <Bell size={10} />
                         Slack alerts
+                      </span>
+                    )}
+                    {repo.email_recipients && (
+                      <span className="mon-meta-item">
+                        <Bell size={10} />
+                        Email alerts
                       </span>
                     )}
                     {repo.last_session_id && (

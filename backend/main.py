@@ -163,12 +163,27 @@ async def _send_monitor_alert(repo, score_delta, new_findings, curr_health, sess
         msg += f"New security findings: +{new_findings}\n"
     msg += f"<{dashboard_url}|View full report>"
 
-    try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            await client.post(repo.slack_webhook_url, json={"text": msg})
-        logger.info("Monitor alert sent", repo=repo.repo_url)
-    except Exception as exc:
-        logger.warning("Monitor alert failed", repo=repo.repo_url, error=str(exc)[:200])
+    if repo.slack_webhook_url:
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                await client.post(repo.slack_webhook_url, json={"text": msg})
+            logger.info("Monitor alert sent (Slack)", repo=repo.repo_url)
+        except Exception as exc:
+            logger.warning("Monitor alert failed (Slack)", repo=repo.repo_url, error=str(exc)[:200])
+
+    if repo.email_recipients:
+        from services.email import send_alert_email
+
+        recipients = [e.strip() for e in repo.email_recipients.split(",") if e.strip()]
+        if recipients:
+            await send_alert_email(
+                recipients=recipients,
+                repo_name=repo.repo_name,
+                score_delta=score_delta,
+                curr_health=curr_health,
+                new_findings=new_findings,
+                dashboard_url=dashboard_url,
+            )
 
 
 @asynccontextmanager

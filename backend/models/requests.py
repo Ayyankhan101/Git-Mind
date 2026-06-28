@@ -69,5 +69,6 @@ class MonitorSubscribeRequest(BaseModel):
     repo_url: str = Field(..., max_length=500)
     gh_token: str | None = Field(None, max_length=200)
     slack_webhook_url: str | None = Field(None, max_length=500)
+    email_recipients: str | None = Field(None, max_length=500)
     score_delta_threshold: int = Field(default=-5, ge=-50, le=0)
     alert_on_new_findings: bool = Field(default=True)
