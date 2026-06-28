@@ -2,6 +2,7 @@ import asyncio
 import contextlib
 import os
 import re
+import shlex
 import shutil
 import stat
 import subprocess
@@ -102,7 +103,7 @@ def _apply_and_push_pr(
         _env = {}
         if token:
             with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False) as _askpass_script:
-                _askpass_script.write(f'#!/bin/sh\necho "{token}"\n')
+                _askpass_script.write(f"#!/bin/sh\nexec echo {shlex.quote(token)}\n")
                 _askpass_name = _askpass_script.name
             os.chmod(_askpass_name, stat.S_IRUSR | stat.S_IXUSR)
             _env["GIT_ASKPASS"] = _askpass_name
@@ -132,8 +133,9 @@ def _apply_and_push_pr(
             capture_output=True,
         )
 
-        if ".." in patch:
-            raise ValueError("Patch content references parent directory — rejected")
+        # Reject patches that reference parent directories or absolute paths
+        if ".." in patch or re.search(r"^---\s+/\S|^@@\s+.*@@.*\n---\s+/\S", patch, re.MULTILINE):
+            raise ValueError("Patch content references parent directory or absolute path — rejected")
         proc = subprocess.run(
             ["patch", "-p1", "--forward", "--reject", f"--directory={dest}"],
             input=patch,

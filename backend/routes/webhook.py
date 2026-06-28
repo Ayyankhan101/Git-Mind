@@ -4,6 +4,8 @@ from fastapi import APIRouter, Request
 
 from models.requests import WebhookNotifyRequest
 from services.auth import require_gh_token_or_service_key
+from services.rate_limit_response import rate_limit_response
+from services.rate_limiter import check_rate_limit
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -12,6 +14,10 @@ router = APIRouter()
 @router.post("/webhook/notify")
 async def notify_webhook(req: WebhookNotifyRequest, request: Request):
     require_gh_token_or_service_key(request)
+
+    client_ip = request.client.host if request.client else "unknown"
+    if not (await check_rate_limit("webhook_notify", client_ip))[0]:
+        return await rate_limit_response("webhook_notify", client_ip)
 
     if not req.slack_webhook_url.startswith("https://hooks.slack.com/"):
         return {"error": "Invalid Slack webhook URL — must start with https://hooks.slack.com/"}

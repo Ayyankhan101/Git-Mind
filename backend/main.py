@@ -175,6 +175,11 @@ async def _send_monitor_alert(repo, score_delta, new_findings, curr_health, sess
 async def lifespan(_app: FastAPI):
     if not os.getenv("GROQ_API_KEY"):
         raise RuntimeError("GROQ_API_KEY is not set.\nCreate backend/.env with:  GROQ_API_KEY=gsk_...")
+    if not os.getenv("GITHUB_APP_WEBHOOK_SECRET"):
+        raise RuntimeError(
+            "GITHUB_APP_WEBHOOK_SECRET is not set — webhook HMAC verification cannot be enforced.\n"
+            "Set it in your .env or HF Spaces secrets. Refusing to start without it."
+        )
     from services.cache import close_redis, init_redis
 
     await init_redis()
@@ -284,9 +289,9 @@ async def get_task_status(task_id: str, request: Request):
     gh_token = get_gh_token(request)
     svc_key = get_service_key(request)
     identity: str = gh_token or svc_key or ""
-    allowed, remaining, retry_after = await check_rate_limit("/task/:id", identity, service_key=svc_key)
+    allowed, remaining, retry_after = await check_rate_limit("task", identity, service_key=svc_key)
     if not allowed:
-        return await rate_limit_response("/task/:id", identity)
+        return await rate_limit_response("task", identity)
     task = get_task(task_id)
     if task is None:
         return {"error": "Task not found"}

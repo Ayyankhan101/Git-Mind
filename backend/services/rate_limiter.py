@@ -31,6 +31,12 @@ _RATE_WINDOWS: dict[str, tuple[int, int]] = {
     "analyze": (60, 3),
     "analyze_rest": (60, 30),
     "repos": (60, 20),
+    "webhook": (60, 60),
+    "webhook_notify": (60, 10),
+    "analysis_get": (60, 30),
+    "analysis_previous": (60, 20),
+    "monitor": (60, 10),
+    "task": (60, 30),
 }
 
 # ── In-memory fallback ───────────────────────────────────────────────────────
@@ -132,14 +138,10 @@ def _mem_rate_check(endpoint: str, key: str) -> tuple[bool, int, int]:
 
 
 def rate_ok(endpoint: str, key: str, service_key: str | None = None) -> bool:
-    """Sync rate check. Used in sync route handlers."""
+    """Sync rate check. For sync contexts — always uses in-memory fallback.
+    Prefer async check_rate_limit() for proper Redis-based distributed limiting."""
     if _is_service_key(service_key):
         return True
-    r = get_redis()
-    if r:
-        # Redis path — can't await in sync fn, use in-memory fallback check
-        # For sync context we do a quick mem check; async paths use Redis
-        return _mem_rate_check(endpoint, key)[0]
     return _mem_rate_check(endpoint, key)[0]
 
 

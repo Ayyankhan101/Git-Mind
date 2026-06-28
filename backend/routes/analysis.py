@@ -1,4 +1,5 @@
 import asyncio
+import re
 
 import structlog
 from fastapi import APIRouter, Request
@@ -13,6 +14,8 @@ from services.session import _UUID_RE, get_session
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
+
+_GH_URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+/?$")
 
 
 def _count_by_severity(findings: list[dict]) -> tuple[int, int]:
@@ -154,9 +157,14 @@ async def summary_endpoint(req: SummaryRequest, request: Request):
 
 
 @router.get("/analysis/{session_id}")
-async def get_analysis(session_id: str):
+async def get_analysis(session_id: str, request: Request):
     if not _UUID_RE.match(session_id):
         return {"error": "Invalid session ID"}
+
+    client_ip = request.client.host if request.client else "unknown"
+    if not (await check_rate_limit("analysis_get", client_ip))[0]:
+        return await rate_limit_response("analysis_get", client_ip)
+
     from services.database import get_analysis_db
 
     snap = await get_analysis_db(session_id)
@@ -175,6 +183,13 @@ async def get_previous_analysis(repo_url: str, exclude_session: str | None = Non
 
     if request:
         require_gh_token_or_service_key(request)
+        client_ip = request.client.host if request.client else "unknown"
+        if not (await check_rate_limit("analysis_previous", client_ip))[0]:
+            return await rate_limit_response("analysis_previous", client_ip)
+
+    if not _GH_URL_RE.match(repo_url.strip()):
+        return {"error": "Invalid GitHub repo URL — must be https://github.com/{owner}/{repo}"}
+
     snap = await get_previous_analysis_db(repo_url, exclude_session)
     if snap is None:
         return {"error": "No previous analysis found"}

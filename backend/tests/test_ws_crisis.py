@@ -19,7 +19,7 @@ class TestWsCrisis:
     @patch("ws.crisis.get_session", return_value=None)
     def test_session_not_found(self, mock_session, _mock_rate):
         with client.websocket_connect("/ws/crisis") as ws:
-            ws.send_json({"session_id": "nonexistent", "finding_id": "f1"})
+            ws.send_json({"session_id": "nonexistent", "finding_id": "f1", "gh_token": "ghp_test"})
             data = ws.receive_json()
             assert "error" in data
             assert "Session not found" in data["error"]
@@ -29,7 +29,7 @@ class TestWsCrisis:
     def test_no_findings(self, mock_session, _mock_rate):
         mock_session.return_value = {"security_findings": []}
         with client.websocket_connect("/ws/crisis") as ws:
-            ws.send_json({"session_id": "s1", "finding_id": "f1"})
+            ws.send_json({"session_id": "s1", "finding_id": "f1", "gh_token": "ghp_test"})
             data = ws.receive_json()
             assert "error" in data
 
@@ -45,6 +45,6 @@ class TestWsCrisis:
         mock_graph.astream = _astream
 
         with client.websocket_connect("/ws/crisis") as ws:
-            ws.send_json({"session_id": "s1", "finding_id": "f1"})
+            ws.send_json({"session_id": "s1", "finding_id": "f1", "gh_token": "ghp_test"})
             data = ws.receive_json()
             assert data.get("kind") == "message"

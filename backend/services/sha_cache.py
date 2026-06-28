@@ -8,7 +8,7 @@ logger = structlog.get_logger(__name__)
 def get_remote_sha(repo_url: str) -> str | None:
     try:
         result = subprocess.run(
-            ["git", "ls-remote", "--quiet", "--exit-code", repo_url, "HEAD"],
+            ["git", "ls-remote", "--quiet", "--exit-code", "--", repo_url, "HEAD"],
             capture_output=True,
             text=True,
             timeout=10,

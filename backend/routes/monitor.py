@@ -7,6 +7,8 @@ from fastapi import APIRouter, Request
 
 from models.requests import MonitorSubscribeRequest
 from services.auth import hash_token, require_gh_token
+from services.rate_limit_response import rate_limit_response
+from services.rate_limiter import check_rate_limit
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -17,6 +19,10 @@ _GH_URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+
 @router.post("/monitor/subscribe")
 async def subscribe_repo(req: MonitorSubscribeRequest, request: Request):
     token = require_gh_token(request)
+    client_ip = request.client.host if request.client else "unknown"
+    if not (await check_rate_limit("monitor", client_ip))[0]:
+        return await rate_limit_response("monitor", client_ip)
+
     repo_url = req.repo_url.strip()
     if not _GH_URL_RE.match(repo_url):
         return {"error": "Invalid GitHub URL — must be https://github.com/{owner}/{repo}"}
@@ -90,6 +96,10 @@ async def monitor_status(request: Request):
 @router.delete("/monitor/{monitor_id}")
 async def unsubscribe_repo(monitor_id: str, request: Request):
     token = require_gh_token(request)
+    client_ip = request.client.host if request.client else "unknown"
+    if not (await check_rate_limit("monitor", client_ip))[0]:
+        return await rate_limit_response("monitor", client_ip)
+
     from sqlalchemy import delete
 
     from models.db import MonitoredRepo

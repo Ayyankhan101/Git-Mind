@@ -1,45 +1,75 @@
 import hashlib
 import os
 import re
+from typing import NoReturn
 
-from fastapi import Request
+from fastapi import HTTPException, Request
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 _GH_TOKEN_RE = re.compile(r"^(gh[pousr]_|github_pat_)[A-Za-z0-9_]+$")
 
-_PUBLIC_PATHS = frozenset({"/health", "/metrics", "/docs", "/openapi.json"})
+# ── Public paths — no auth required ─────────────────────────────────────────
+# These are intentionally open: health checks, docs, and OpenAPI spec.
+# WebSocket auth is enforced inside the ws handlers (see ws/analyze.py, ws/crisis.py).
+_PUBLIC_PATHS = frozenset({"/health", "/docs", "/openapi.json", "/metrics"})
+
+# Webhook paths — HMAC-verified inside the route handler, not by this middleware.
+_WEBHOOK_PATH_PREFIXES = ("/github/webhook",)
+
+
+def _is_public(path: str) -> bool:
+    if path in _PUBLIC_PATHS:
+        return True
+    return any(path.startswith(prefix) for prefix in _WEBHOOK_PATH_PREFIXES)
+
+
+def _extract_token(request: Request) -> str | None:
+    """Extract GitHub token from Authorization header or X-GH-Token header."""
+    # Standard Bearer token
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.lower().startswith("bearer "):
+        token = auth_header[7:].strip()
+        if token:
+            return token
+    # Legacy custom header (backward compat)
+    token = (request.headers.get("x-gh-token") or "").strip()
+    if token:
+        return token
+    return None
+
+
+def _auth_error(detail: str) -> NoReturn:
+    raise HTTPException(status_code=401, detail=detail)
 
 
 def get_gh_token(request) -> str | None:
-    token = (request.headers.get("X-GH-Token") or "").strip()
+    token = _extract_token(request)
     if token:
         return token
     return os.getenv("GITHUB_TOKEN") or None
 
 
 def require_gh_token(request) -> str:
-    token = (request.headers.get("X-GH-Token") or "").strip() or os.getenv("GITHUB_TOKEN")
+    token = _extract_token(request)
     if not token:
-        from fastapi import HTTPException
-
-        raise HTTPException(
-            status_code=401,
-            detail="GitHub token required — send X-GH-Token header or set GITHUB_TOKEN",
+        token = os.getenv("GITHUB_TOKEN")
+    if not token:
+        _auth_error(
+            "GitHub token required — send Authorization: Bearer <token> header or set GITHUB_TOKEN",
         )
-    return token
+    return token  # type: ignore[return-value]
 
 
 def require_gh_token_or_service_key(request) -> str | None:
     """Require a valid GitHub PAT or service key. Returns token or raises 401."""
-    from fastapi import HTTPException
-
-    token = (request.headers.get("X-GH-Token") or "").strip() or os.getenv("GITHUB_TOKEN")
+    token = _extract_token(request) or os.getenv("GITHUB_TOKEN")
     service_key = (request.headers.get("X-Service-Key") or "").strip() or os.getenv("GITMIND_SERVICE_KEY")
     if token:
         return token
     if service_key:
         return None  # service key accepted, no token needed
-    raise HTTPException(status_code=401, detail="Authentication required — send X-GH-Token header or X-Service-Key")
+    _auth_error("Authentication required — send Authorization: Bearer <token> or X-Service-Key")
 
 
 def hash_token(token: str) -> str:
@@ -51,10 +81,31 @@ def get_service_key(request) -> str | None:
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware-level default-deny authentication.
+
+    All non-public paths require a valid GitHub token or service key.
+    Public paths (/health, /docs, /openapi.json, /metrics) and webhook paths
+    (HMAC-verified in-route) are exempt.
+    """
+
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
-        if path in _PUBLIC_PATHS or path.startswith("/ws/"):
+
+        if _is_public(path):
             return await call_next(request)
-        token = request.headers.get("X-GH-Token", "").strip() or os.getenv("GITHUB_TOKEN", "")
-        request.state.gh_token = token or None
+
+        token = _extract_token(request) or os.getenv("GITHUB_TOKEN")
+        service_key = (request.headers.get("X-Service-Key") or "").strip() or os.getenv("GITMIND_SERVICE_KEY")
+
+        if not token and not service_key:
+            return JSONResponse(
+                status_code=401,
+                content={
+                    "error": "Authentication required — send Authorization: Bearer <token> header or X-Service-Key",
+                },
+            )
+
+        request.state.gh_token = token
+        request.state.service_key = service_key
         return await call_next(request)

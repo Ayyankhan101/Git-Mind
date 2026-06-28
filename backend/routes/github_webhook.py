@@ -148,6 +148,15 @@ async def _handle_installation_event(payload: dict):
 @router.post("/github/webhook")
 async def github_webhook(request: Request):
     """Receive and process GitHub webhook events."""
+    # Rate limit by IP to prevent abuse
+    client_ip = request.client.host if request.client else "unknown"
+    from services.rate_limit_response import rate_limit_response
+    from services.rate_limiter import check_rate_limit
+
+    allowed, _, _ = await check_rate_limit("webhook", client_ip)
+    if not allowed:
+        return await rate_limit_response("webhook", client_ip)
+
     secret = os.getenv("GITHUB_APP_WEBHOOK_SECRET")
 
     # Read raw body for HMAC verification
