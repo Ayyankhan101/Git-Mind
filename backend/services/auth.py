@@ -12,7 +12,7 @@ _GH_TOKEN_RE = re.compile(r"^(gh[pousr]_|github_pat_)[A-Za-z0-9_]+$")
 # ── Public paths — no auth required ─────────────────────────────────────────
 # These are intentionally open: health checks, docs, and OpenAPI spec.
 # WebSocket auth is enforced inside the ws handlers (see ws/analyze.py, ws/crisis.py).
-_PUBLIC_PATHS = frozenset({"/health", "/docs", "/openapi.json", "/metrics"})
+_PUBLIC_PATHS = frozenset({"/health", "/docs", "/openapi.json", "/metrics", "/summary"})
 _PUBLIC_PATH_PREFIXES = ("/repos",)
 
 # Webhook paths — HMAC-verified inside the route handler, not by this middleware.
