@@ -32,18 +32,6 @@ async def handle_crisis(ws: WebSocket) -> None:
             await ws.close(code=1008)
             return
 
-    # WS auth enabled by default; opt-out via REQUIRE_WS_AUTH=false
-    if os.environ.get("REQUIRE_WS_AUTH", "").lower() not in ("false", "0", "no"):
-        gh_token = (payload.get("gh_token") or "").strip()
-        if not gh_token:
-            await ws.send_json(
-                {
-                    "error": "GitHub token required — send gh_token in payload or set REQUIRE_WS_AUTH=false",
-                }
-            )
-            await ws.close(code=1008)
-            return
-
     session_id = payload.get("session_id")
     finding_id = payload.get("finding_id")
 
