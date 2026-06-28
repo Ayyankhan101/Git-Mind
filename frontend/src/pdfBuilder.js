@@ -618,13 +618,11 @@ export function buildAnalysisPdf({
       },
       code: {
         fontSize: 8,
-        font: "Courier",
         color: C.text2,
         fillColor: C.surface2,
         margin: [8, 6, 8, 6],
       },
       codeInline: {
-        font: "Courier",
         fontSize: 8,
         color: C.primaryDark,
       },
