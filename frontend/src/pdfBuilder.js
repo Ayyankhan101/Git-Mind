@@ -1085,13 +1085,5 @@ export function buildSummaryPdf({
 // ── Download helper ────────────────────────────────────────────────────────────
 
 export function downloadPdf(docDef, filename) {
-  const pdf = pdfMake.createPdf(docDef);
-  pdf.getBlob((blob) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename || "gitmind-report.pdf";
-    a.click();
-    URL.revokeObjectURL(url);
-  });
+  pdfMake.createPdf(docDef).download(filename || "gitmind-report.pdf");
 }
