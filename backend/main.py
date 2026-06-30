@@ -134,7 +134,8 @@ async def _run_monitoring_checks():
 
             from routes.analyze import _run_analysis
 
-            session_id = str(__import__("uuid").uuid4())
+            import uuid
+            session_id = str(uuid.uuid4())
             result = await _run_analysis(repo.repo_url, None, session_id)
 
             if result.get("error"):

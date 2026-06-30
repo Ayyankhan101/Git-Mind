@@ -1,7 +1,7 @@
 import logging
 import shutil
 import subprocess
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 _GIT = shutil.which("git") or "git"
@@ -58,7 +58,7 @@ def _parse_porcelain(output: str) -> dict | None:
         elif raw_line.startswith("author-time "):
             try:
                 ts = int(raw_line[12:].strip())
-                info["date"] = datetime.utcfromtimestamp(ts).strftime("%Y-%m-%d")
+                info["date"] = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
             except Exception:
                 pass
         elif raw_line.startswith("summary "):
