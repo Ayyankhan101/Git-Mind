@@ -36,6 +36,7 @@ from routes.pr import router as pr_router  # noqa: E402
 from routes.repos import router as repos_router  # noqa: E402
 from routes.webhook import router as webhook_router  # noqa: E402
 from services.auth import AuthMiddleware  # noqa: E402
+from services.body_limit import BodyLimitMiddleware  # noqa: E402
 from services.correlation import CorrelationMiddleware  # noqa: E402
 from services.session import _sessions as sessions  # noqa: E402
 from services.telemetry import setup_logging, setup_metrics, setup_tracing  # noqa: E402
@@ -248,6 +249,7 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(title="GitMind API", version="1.1.0", lifespan=lifespan)
 app.add_middleware(CorrelationMiddleware)
 app.add_middleware(AuthMiddleware)
+app.add_middleware(BodyLimitMiddleware)
 
 
 @app.exception_handler(Exception)
