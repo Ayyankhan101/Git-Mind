@@ -55,6 +55,14 @@ async def _periodic_prune_loop():
         await asyncio.sleep(30 * 60)  # every 30 minutes
         await _prune_old_analyses()
         try:
+            from services.session import prune_expired_sessions
+
+            pruned = prune_expired_sessions()
+            if pruned:
+                logger.info("Periodic: pruned expired in-memory sessions", count=pruned)
+        except Exception as exc:
+            logger.warning("Could not prune in-memory sessions", error=str(exc))
+        try:
             from chroma_utils import prune_old_collections
 
             removed = await asyncio.to_thread(prune_old_collections)

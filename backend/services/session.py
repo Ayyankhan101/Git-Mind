@@ -20,10 +20,13 @@ _UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f
 _MAX_SESSIONS = 500
 _SESSION_TTL = 3600  # 1 hour
 _sessions: OrderedDict[str, dict] = OrderedDict()
+_session_timestamps: dict[str, float] = {}
 
 
 def put_session(session_id: str, data: dict) -> None:
     """Store session data (Redis or memory)."""
+    import time
+
     r = get_redis()
     if r:
         try:
@@ -32,10 +35,29 @@ def put_session(session_id: str, data: dict) -> None:
         except Exception as exc:
             logger.warning("Redis session set failed, using memory", error=str(exc)[:80])
     _sessions[session_id] = data
+    _session_timestamps[session_id] = time.time()
     _sessions.move_to_end(session_id)
     while len(_sessions) > _MAX_SESSIONS:
         evicted = _sessions.popitem(last=False)
+        _session_timestamps.pop(evicted[0], None)
         logger.debug("Session evicted (LRU cap)", session_id=evicted[0])
+
+
+def prune_expired_sessions() -> int:
+    """Remove in-memory sessions that have exceeded TTL. Returns count removed."""
+    import time
+
+    now = time.time()
+    expired = [
+        sid for sid, ts in list(_session_timestamps.items())
+        if now - ts > _SESSION_TTL
+    ]
+    for sid in expired:
+        _sessions.pop(sid, None)
+        _session_timestamps.pop(sid, None)
+    if expired:
+        logger.debug("Pruned expired in-memory sessions", count=len(expired))
+    return len(expired)
 
 
 def initial_state(repo_url: str, gh_token: str | None = None) -> dict:
@@ -68,6 +90,8 @@ def initial_state(repo_url: str, gh_token: str | None = None) -> dict:
 
 async def get_session(session_id: str) -> dict | None:
     """Load session from Redis, then memory, then DB."""
+    import time
+
     r = get_redis()
     if r:
         try:
@@ -79,7 +103,13 @@ async def get_session(session_id: str) -> dict | None:
 
     session = _sessions.get(session_id)
     if session:
-        return session
+        ts = _session_timestamps.get(session_id, 0)
+        if time.time() - ts > _SESSION_TTL:
+            _sessions.pop(session_id, None)
+            _session_timestamps.pop(session_id, None)
+            logger.debug("Session expired (in-memory)", session_id=session_id)
+        else:
+            return session
 
     from services.database import get_analysis_db
 
