@@ -333,17 +333,19 @@ async def get_task_status(task_id: str, request: Request):
 
 @app.get("/health")
 async def health():
-    checks: dict[str, bool] = {}
+    checks: dict[str, bool | dict] = {}
     checks["database"] = True
     try:
         from services.database import async_session_factory
+        from sqlalchemy import text
 
         async with async_session_factory() as conn:
-            await conn.execute(__import__("sqlalchemy").text("SELECT 1"))
+            await conn.execute(text("SELECT 1"))
             checks["database"] = True
     except Exception:
         checks["database"] = False
-    checks["git"] = bool(__import__("shutil").which("git"))
+    import shutil
+    checks["git"] = bool(shutil.which("git"))
     from services.cache import get_redis
 
     r = get_redis()
@@ -355,14 +357,18 @@ async def health():
             checks["redis"] = False
     else:
         checks["redis"] = False
-    mandatory = {k: v for k, v in checks.items() if k != "redis"}
+    from orchestrator import get_circuit_breaker_state
+    checks["circuit_breaker"] = get_circuit_breaker_state()
+    mandatory = {k: v for k, v in checks.items() if k not in ("redis", "circuit_breaker")}
     all_ok = all(mandatory.values())
     result = {"status": "ok" if all_ok else "degraded"}
     result["checks"] = checks
     result["sessions_active"] = len(sessions)
     if os.getenv("DEBUG"):
+        import shutil
+
         checks["groq_key"] = bool(os.getenv("GROQ_API_KEY"))
-        checks["semgrep"] = bool(__import__("shutil").which("semgrep"))
+        checks["semgrep"] = bool(shutil.which("semgrep"))
         try:
             from chroma_utils import _client
 
@@ -370,6 +376,4 @@ async def health():
             checks["chromadb"] = True
         except Exception:
             checks["chromadb"] = False
-        from orchestrator import get_circuit_breaker_state
-        checks["circuit_breaker"] = get_circuit_breaker_state()
     return result
