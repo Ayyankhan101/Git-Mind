@@ -10,6 +10,9 @@ import git
 
 logger = logging.getLogger(__name__)
 
+# Track active temp dirs for cleanup
+_active_temp_dirs: set[str] = set()
+
 _ALLOWED_EXTENSIONS = {
     ".py",
     ".js",
@@ -76,6 +79,7 @@ def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None =
         _env["GIT_TERMINAL_PROMPT"] = "0"
 
     dest = tempfile.mkdtemp(prefix="gitmind_")
+    _active_temp_dirs.add(dest)
     logger.info("Cloning %s → %s (auth=%s, branch=%s)", repo_url, dest, bool(token), branch or "default")
 
     head_sha = None
@@ -94,6 +98,7 @@ def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None =
         head_sha = repo.head.commit.hexsha
         repo.close()  # prevents resource leak on Windows
     except git.exc.GitCommandError as exc:
+        _cleanup_temp_dir(dest)
         raise RuntimeError(f"Git clone failed: {exc}") from exc
     finally:
         if _askpass_script:
@@ -162,3 +167,32 @@ _GITHUB_URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.
 def _validate_url(repo_url: str) -> None:
     if not _GITHUB_URL_RE.match(repo_url):
         raise ValueError(f"Only public GitHub URLs are supported (https://github.com/owner/repo). Got: {repo_url!r}")
+
+
+def _cleanup_temp_dir(path: str) -> None:
+    """Remove a temp directory and untrack it."""
+    import shutil
+    _active_temp_dirs.discard(path)
+    with contextlib.suppress(OSError):
+        shutil.rmtree(path, ignore_errors=True)
+        logger.debug("Cleaned up temp dir", path=path)
+
+
+def prune_old_temp_dirs(max_age_seconds: int = 3600) -> int:
+    """Remove temp dirs older than max_age_seconds. Returns count removed."""
+    import shutil
+    import time
+
+    now = time.time()
+    removed = 0
+    for path in list(_active_temp_dirs):
+        try:
+            age = now - os.path.getmtime(path)
+            if age > max_age_seconds:
+                _cleanup_temp_dir(path)
+                removed += 1
+        except OSError:
+            _active_temp_dirs.discard(path)
+    if removed:
+        logger.debug("Pruned old temp dirs", count=removed)
+    return removed

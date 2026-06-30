@@ -71,6 +71,13 @@ async def _periodic_prune_loop():
                 logger.info("Periodic: pruned old ChromaDB collections", count=removed)
         except Exception as exc:
             logger.warning("Could not prune old collections", error=str(exc))
+        try:
+            from agents.scanner import prune_old_temp_dirs
+            removed = prune_old_temp_dirs()
+            if removed:
+                logger.info("Periodic: pruned old temp dirs", count=removed)
+        except Exception as exc:
+            logger.warning("Could not prune temp dirs", error=str(exc))
 
 
 async def _prune_old_analyses() -> None:
