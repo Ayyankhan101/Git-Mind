@@ -15,6 +15,8 @@ from services.session import _UUID_RE, get_session
 logger = structlog.get_logger(__name__)
 router = APIRouter()
 
+_LLM = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
+
 _GH_URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+/?$")
 
 
@@ -145,8 +147,7 @@ async def summary_endpoint(req: SummaryRequest, request: Request):
     )
 
     def _gen() -> str:
-        llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
-        return invoke_with_retry(llm, prompt).content.strip()
+        return invoke_with_retry(_LLM, prompt).content.strip()
 
     summary = await asyncio.to_thread(_gen)
     logger.info("Summary generated", session=req.session_id)
