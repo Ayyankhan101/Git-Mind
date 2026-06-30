@@ -45,6 +45,25 @@ def _record_circuit_success():
     _circuit_failures = 0
 
 
+def reset_circuit_breaker():
+    """Reset circuit breaker state — called on startup."""
+    global _circuit_failures, _circuit_open_until
+    _circuit_failures = 0
+    _circuit_open_until = 0.0
+    logger.info("Circuit breaker reset")
+
+
+def get_circuit_breaker_state() -> dict:
+    """Return current circuit breaker state for health checks."""
+    import time
+    now = time.time()
+    return {
+        "failures": _circuit_failures,
+        "open": now < _circuit_open_until,
+        "cooldown_remaining": max(0, _circuit_open_until - now),
+    }
+
+
 # ── Event factory ──────────────────────────────────────────────────────────────
 
 
