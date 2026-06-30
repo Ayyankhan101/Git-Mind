@@ -206,10 +206,11 @@ async def _send_monitor_alert(repo, score_delta, new_findings, curr_health, sess
 async def lifespan(_app: FastAPI):
     if not os.getenv("GROQ_API_KEY"):
         raise RuntimeError("GROQ_API_KEY is not set.\nCreate backend/.env with:  GROQ_API_KEY=gsk_...")
-    if not os.getenv("GITHUB_APP_WEBHOOK_SECRET"):
-        raise RuntimeError(
-            "GITHUB_APP_WEBHOOK_SECRET is not set — webhook HMAC verification cannot be enforced.\n"
-            "Set it in your .env or HF Spaces secrets. Refusing to start without it."
+    _webhook_secret = os.getenv("GITHUB_APP_WEBHOOK_SECRET")
+    if not _webhook_secret:
+        logger.warning(
+            "GITHUB_APP_WEBHOOK_SECRET not set — webhook HMAC verification disabled. "
+            "Set it in .env or HF Spaces secrets for production."
         )
     from services.cache import close_redis, init_redis
 
@@ -366,6 +367,8 @@ async def health():
             checks["redis"] = False
     else:
         checks["redis"] = False
+    _webhook_secret = os.getenv("GITHUB_APP_WEBHOOK_SECRET")
+    checks["webhook_hmac"] = bool(_webhook_secret)
     from orchestrator import get_circuit_breaker_state
     checks["circuit_breaker"] = get_circuit_breaker_state()
     mandatory = {k: v for k, v in checks.items() if k not in ("redis", "circuit_breaker")}
