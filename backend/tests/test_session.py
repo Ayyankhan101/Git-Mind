@@ -4,6 +4,7 @@ import pytest
 
 from services.session import (
     _session_to_snapshot,
+    _session_timestamps,
     _sessions,
     get_session,
     initial_state,
@@ -15,6 +16,7 @@ from services.session import (
 @pytest.fixture(autouse=True)
 def clear_sessions():
     _sessions.clear()
+    _session_timestamps.clear()
 
 
 VALID_UUID = "00000000-0000-0000-0000-000000000001"
