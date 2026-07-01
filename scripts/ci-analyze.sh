@@ -34,7 +34,7 @@ TIMEOUT="${ANALYSIS_TIMEOUT:-300}"
 POLL="${POLL_INTERVAL:-5}"
 
 # ── Trigger ──────────────────────────────────────────────────
-RESPONSE=$(curl -sf -X POST "$API_URL/analyze" \
+RESPONSE=$(curl -sf --retry 3 --retry-delay 10 --max-time 60 -X POST "$API_URL/analyze" \
   -H "Content-Type: application/json" \
   -H "X-GH-Token: $GH_TOKEN" \
   -d "{\"repo_url\": \"$REPO_URL\", \"gh_token\": \"$GH_TOKEN\"}" || echo '{"error":"request failed"}')
@@ -54,7 +54,7 @@ else
   SESSION_ID=""
 
   for i in $(seq 1 $((TIMEOUT / POLL))); do
-    TASK=$(curl -sf "$API_URL/task/$TASK_ID" \
+    TASK=$(curl -sf --retry 2 --retry-delay 5 --max-time 30 "$API_URL/task/$TASK_ID" \
       -H "X-GH-Token: $GH_TOKEN" || echo '{"status":"pending"}')
     STATUS=$(echo "$TASK" | jq -r '.status')
 
@@ -75,7 +75,7 @@ if [ -z "$SESSION_ID" ]; then
 fi
 
 # ── Fetch results ────────────────────────────────────────────
-RESULTS=$(curl -sf "$API_URL/analysis/$SESSION_ID" \
+RESULTS=$(curl -sf --retry 2 --retry-delay 5 --max-time 30 "$API_URL/analysis/$SESSION_ID" \
   -H "X-GH-Token: $GH_TOKEN" || echo '{}')
 
 # Save full JSON for downstream steps
