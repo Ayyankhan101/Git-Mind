@@ -73,6 +73,7 @@ async def _periodic_prune_loop():
             logger.warning("Could not prune old collections", error=str(exc))
         try:
             from agents.scanner import prune_old_temp_dirs
+
             removed = prune_old_temp_dirs()
             if removed:
                 logger.info("Periodic: pruned old temp dirs", count=removed)
@@ -132,9 +133,10 @@ async def _run_monitoring_checks():
                 new=current_sha[:8],
             )
 
+            import uuid
+
             from routes.analyze import _run_analysis
 
-            import uuid
             session_id = str(uuid.uuid4())
             result = await _run_analysis(repo.repo_url, None, session_id)
 
@@ -235,6 +237,7 @@ async def lifespan(_app: FastAPI):
         logger.warning("Could not prune old collections", error=str(exc))
     logger.info("GitMind backend starting — GROQ_API_KEY present")
     from orchestrator import reset_circuit_breaker
+
     reset_circuit_breaker()
     global _periodic_prune_task, _monitoring_task
     _periodic_prune_task = asyncio.create_task(_periodic_prune_loop())
@@ -347,8 +350,9 @@ async def health():
     checks: dict[str, bool | dict] = {}
     checks["database"] = True
     try:
-        from services.database import async_session_factory
         from sqlalchemy import text
+
+        from services.database import async_session_factory
 
         async with async_session_factory() as conn:
             await conn.execute(text("SELECT 1"))
@@ -356,6 +360,7 @@ async def health():
     except Exception:
         checks["database"] = False
     import shutil
+
     checks["git"] = bool(shutil.which("git"))
     from services.cache import get_redis
 
@@ -371,6 +376,7 @@ async def health():
     _webhook_secret = os.getenv("GITHUB_APP_WEBHOOK_SECRET")
     checks["webhook_hmac"] = bool(_webhook_secret)
     from orchestrator import get_circuit_breaker_state
+
     checks["circuit_breaker"] = get_circuit_breaker_state()
     mandatory = {k: v for k, v in checks.items() if k not in ("redis", "circuit_breaker")}
     all_ok = all(mandatory.values())

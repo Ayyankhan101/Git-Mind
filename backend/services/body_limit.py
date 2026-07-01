@@ -1,4 +1,5 @@
 """Middleware to reject requests with oversized bodies."""
+
 import os
 
 import structlog

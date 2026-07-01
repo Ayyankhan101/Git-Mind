@@ -56,6 +56,7 @@ def reset_circuit_breaker():
 def get_circuit_breaker_state() -> dict:
     """Return current circuit breaker state for health checks."""
     import time
+
     now = time.time()
     return {
         "failures": _circuit_failures,

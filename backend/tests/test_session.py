@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from services.session import (
-    _session_to_snapshot,
     _session_timestamps,
+    _session_to_snapshot,
     _sessions,
     get_session,
     initial_state,

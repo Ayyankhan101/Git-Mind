@@ -172,15 +172,15 @@ def _validate_url(repo_url: str) -> None:
 def _cleanup_temp_dir(path: str) -> None:
     """Remove a temp directory and untrack it."""
     import shutil
+
     _active_temp_dirs.discard(path)
     with contextlib.suppress(OSError):
         shutil.rmtree(path, ignore_errors=True)
-        logger.debug("Cleaned up temp dir", path=path)
+        logger.debug("Cleaned up temp dir: %s", path)
 
 
 def prune_old_temp_dirs(max_age_seconds: int = 3600) -> int:
     """Remove temp dirs older than max_age_seconds. Returns count removed."""
-    import shutil
     import time
 
     now = time.time()
@@ -194,5 +194,5 @@ def prune_old_temp_dirs(max_age_seconds: int = 3600) -> int:
         except OSError:
             _active_temp_dirs.discard(path)
     if removed:
-        logger.debug("Pruned old temp dirs", count=removed)
+        logger.debug("Pruned old temp dirs: %d", removed)
     return removed

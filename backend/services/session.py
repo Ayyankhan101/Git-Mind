@@ -48,10 +48,7 @@ def prune_expired_sessions() -> int:
     import time
 
     now = time.time()
-    expired = [
-        sid for sid, ts in list(_session_timestamps.items())
-        if now - ts > _SESSION_TTL
-    ]
+    expired = [sid for sid, ts in list(_session_timestamps.items()) if now - ts > _SESSION_TTL]
     for sid in expired:
         _sessions.pop(sid, None)
         _session_timestamps.pop(sid, None)
