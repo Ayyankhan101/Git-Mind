@@ -17,7 +17,7 @@ Multi-agent repository intelligence platform. Enter a GitHub username (and optio
 | **Git audit**              | Commit log analysis (100 commits): message quality, secret detection, sensitive file tracker. Secret/route scanning accelerated by Rust native module.                                                                        |
 | **Solidity/Web3 audit**    | Parses Solidity `.sol` files via Rust sidecar (solang-parser), then LLM-triage for vulnerabilities (reentrancy, access control, oracle manipulation, etc.)                                                                    |
 | **Code audit**             | Per-language static analysis (pylint, eslint, go vet, clippy) with LLM triage fallback for Python, JS/TS, Go, Rust, and Java                                                                                                  |
-| **Auto-fix patches**       | Click "Generate Fix" on any finding → unified diff patch from LLM + RAG context                                                                                                                                               |
+| **Auto-fix patches**       | Click "Generate Fix" on any finding → unified diff patch from LLM + RAG context; click "Open PR" on any finding → auto-commit and open a GitHub PR with the fix (requires PAT with `repo` scope)                              |
 | **PR review**              | Paste any GitHub PR URL → structured review with file:line issues and verdict; results cached by PR head SHA                                                                                                                  |
 | **Predictive PR impact**   | After analyzing a repo, enter a PR URL → LLM merge-risk prediction (low/medium/high/critical), plain-English narrative, affected areas, breaking changes, health score delta, new/fixed findings and CVEs vs base             |
 | **Org-wide CVE dashboard** | Scan all loaded repos for CVEs via GitHub API — cross-repo shared vulnerability detection                                                                                                                                     |
@@ -260,30 +260,30 @@ Git-Mind/
 
 ## API endpoints
 
-| Endpoint                  | Method | Description                                                                                             |
-| ------------------------- | ------ | ------------------------------------------------------------------------------------------------------- |
-| `/ws/analyze`             | WS     | Streams agent events → diagram, api_docs, findings, CVEs, git_audit, solidity_audit, code_audit, health |
-| `/analyze`                | POST   | `{repo_url, gh_token?}` — triggers full pipeline, returns `{session_id}`                                |
-| `/analysis/{session_id}`  | GET    | Load a saved analysis snapshot (share links)                                                            |
-| `/analysis/previous`      | GET    | `?repo_url=...` — shows last analysis for a repo (SHA-cache hit)                                        |
-| `/chat`                   | POST   | `{session_id, question}` → `{answer}`                                                                   |
-| `/chat/stream`            | POST   | SSE streaming chat — yields `data: {"token": "..."}`                                                    |
-| `/fix`                    | POST   | `{session_id, finding}` → unified diff patch                                                            |
-| `/fix/pr`                 | POST   | `{session_id, finding}` — requires `X-GH-Token`; creates GitHub PR with fix                             |
-| `/pr-review`              | POST   | `{pr_url}` — pass `X-GH-Token` for private repos                                                        |
-| `/pr-impact`              | POST   | `{pr_url, session_id}` → `{"task_id": "..."}`; poll `GET /task/{task_id}`                               |
-| `/task/{task_id}`         | GET    | Poll background task: `{id, status, result?, error?}`                                                   |
-| `/org-audit`              | POST   | `{repos: [urls]}` — cross-repo CVE scan                                                                 |
-| `/pr-list/{owner}/{repo}` | GET    | List open PRs for a repo                                                                                |
-| `/incident-report`        | POST   | `{session_id, ...}` → 6-section incident report                                                         |
-| `/repos/{username}`       | GET    | List repos — pass `X-GH-Token` for private repos                                                        |
-| `/monitor`                | POST   | `{repo_url}` — subscribe repo to monitoring                                                             |
-| `/monitor`                | GET    | List monitored repos with latest health deltas                                                          |
-| `/monitor`                | DELETE | `{repo_url}` — unsubscribe                                                                              |
-| `/webhook/notify`         | POST   | `{session_id, webhook_url}` — push results to external URL                                              |
-| `/ws/crisis`              | WS     | Crisis Mode — streams CEO/Legal/Engineering role-play                                                   |
-| `/health`                 | GET    | `{status, sessions_active, checks, debug?}`                                                             |
-| `/metrics`                | GET    | Prometheus metrics (text/plain format)                                                                  |
+| Endpoint                  | Method | Description                                                                                                        |
+| ------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------ |
+| `/ws/analyze`             | WS     | Streams agent events → diagram, api_docs, findings, CVEs, git_audit, solidity_audit, code_audit, health            |
+| `/analyze`                | POST   | `{repo_url, gh_token?}` — triggers full pipeline, returns `{session_id}`                                           |
+| `/analysis/{session_id}`  | GET    | Load a saved analysis snapshot (share links)                                                                       |
+| `/analysis/previous`      | GET    | `?repo_url=...` — shows last analysis for a repo (SHA-cache hit)                                                   |
+| `/chat`                   | POST   | `{session_id, question}` → `{answer}`                                                                              |
+| `/chat/stream`            | POST   | SSE streaming chat — yields `data: {"token": "..."}`                                                               |
+| `/fix`                    | POST   | `{session_id, finding}` → unified diff patch                                                                       |
+| `/fix/pr`                 | POST   | `{session_id, finding}` — requires `X-GH-Token` (PAT with `repo` scope); creates GitHub PR with fix (any severity) |
+| `/pr-review`              | POST   | `{pr_url}` — pass `X-GH-Token` for private repos                                                                   |
+| `/pr-impact`              | POST   | `{pr_url, session_id}` → `{"task_id": "..."}`; poll `GET /task/{task_id}`                                          |
+| `/task/{task_id}`         | GET    | Poll background task: `{id, status, result?, error?}`                                                              |
+| `/org-audit`              | POST   | `{repos: [urls]}` — cross-repo CVE scan                                                                            |
+| `/pr-list/{owner}/{repo}` | GET    | List open PRs for a repo                                                                                           |
+| `/incident-report`        | POST   | `{session_id, ...}` → 6-section incident report                                                                    |
+| `/repos/{username}`       | GET    | List repos — pass `X-GH-Token` for private repos                                                                   |
+| `/monitor`                | POST   | `{repo_url}` — subscribe repo to monitoring                                                                        |
+| `/monitor`                | GET    | List monitored repos with latest health deltas                                                                     |
+| `/monitor`                | DELETE | `{repo_url}` — unsubscribe                                                                                         |
+| `/webhook/notify`         | POST   | `{session_id, webhook_url}` — push results to external URL                                                         |
+| `/ws/crisis`              | WS     | Crisis Mode — streams CEO/Legal/Engineering role-play                                                              |
+| `/health`                 | GET    | `{status, sessions_active, checks, debug?}`                                                                        |
+| `/metrics`                | GET    | Prometheus metrics (text/plain format)                                                                             |
 
 ---
 
@@ -490,7 +490,7 @@ npx react-scripts test --watchAll=false
 Enter a Personal Access Token in the token field (lock icon in the command bar). Stored in memory + encrypted `localStorage` (AES-GCM via `tokenManager.js`, 1h TTL). Sent to the backend as the `X-GH-Token` request header — never stored in cookies or request bodies.
 
 - Create at: `github.com/settings/tokens/new` → select **`repo`** scope
-- Enables: loading private repos, analyzing private repos, PR review of private repos, auto-fix PRs
+- Enables: loading private repos, analyzing private repos, PR review of private repos, auto-fix PRs (all severity levels)
 - Cleared on browser close or TTL expiry
 
 **Server-side `GITHUB_TOKEN` env var**
