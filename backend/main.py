@@ -144,7 +144,7 @@ async def _run_monitoring_checks():
                 logger.error("Monitor: analysis failed", repo=repo.repo_url, error=result["error"][:200])
                 session_id = None
             else:
-                if repo.last_session_id and repo.slack_webhook_url:
+                if repo.last_session_id and (repo.slack_webhook_url or repo.email_recipients):
                     prev = await get_previous_analysis_db(repo.repo_url, exclude_session=session_id)
                     curr_health = (result.get("health") or {}).get("score", 0)
                     prev_health = (prev.get("health") or {}).get("score", 0) if prev else 0
@@ -162,9 +162,10 @@ async def _run_monitoring_checks():
                         await _send_monitor_alert(repo, score_delta, new_findings, curr_health, session_id)
 
             async with async_session_factory() as session:
-                repo.last_sha = current_sha
-                repo.last_session_id = session_id
-                repo.last_check_at = time.time()
+                merged = await session.merge(repo)
+                merged.last_sha = current_sha
+                merged.last_session_id = session_id
+                merged.last_check_at = time.time()
                 await session.commit()
 
             logger.info("Monitor: analysis complete", repo=repo.repo_url, session=session_id)

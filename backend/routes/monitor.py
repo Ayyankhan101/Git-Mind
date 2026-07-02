@@ -126,6 +126,11 @@ async def unsubscribe_repo(monitor_id: str, request: Request):
 
 
 async def _trigger_initial_check(repo_url: str, monitor_id: str):
+    """Run the first analysis for a newly subscribed repo.
+
+    Establishes the baseline SHA and health score.
+    No alerts are sent — there is no previous baseline to compare against.
+    """
     import time as _time
 
     from sqlalchemy import select
