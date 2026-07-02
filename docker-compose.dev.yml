@@ -1,0 +1,63 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: gitmind
+      POSTGRES_PASSWORD: gitmind
+      POSTGRES_DB: gitmind
+    volumes:
+      - gitmind_db_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gitmind"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend-builder
+    ports:
+      - "8002:8001"
+    env_file:
+      - backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://gitmind:gitmind@db:5432/gitmind
+    volumes:
+      - ./backend:/app
+      - gitmind_chroma:/app/.chroma
+      - chroma_model_cache:/root/.cache/chroma
+    command: uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8001/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  frontend:
+    image: node:18-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3002:3000"
+    environment:
+      - REACT_APP_API_BASE=http://backend:8001
+      - BROWSER=none
+      - CHOKIDAR_USEPOLLING=true
+      - WDS_SOCKET_PORT=3002
+    command: sh -c "npm ci --legacy-peer-deps && npm start"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  gitmind_chroma:
+  chroma_model_cache:
+  gitmind_db_dev:

@@ -1,0 +1,75 @@
+services:
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - gitmind_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gitmind}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gitmind}
+      POSTGRES_DB: ${POSTGRES_DB:-gitmind}
+    volumes:
+      - gitmind_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gitmind}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  solidity-parser:
+    build:
+      context: rust-sidecar
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8001"
+      - "80:80"
+    env_file:
+      - backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-gitmind}:${POSTGRES_PASSWORD:-gitmind}@db:5432/${POSTGRES_DB:-gitmind}
+      REDIS_URL: redis://redis:6379/0
+      SIDECAR_URL: http://solidity-parser:8003
+    volumes:
+      - gitmind_chroma:/app/.chroma
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      solidity-parser:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  gitmind_chroma:
+  gitmind_db:
+  gitmind_redis:

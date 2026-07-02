@@ -1,0 +1,129 @@
+name: GitMind Monitor
+
+on:
+  schedule:
+    - cron: "0 8 * * 1" # Monday 8am UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  DASHBOARD_BASE: https://gitmind-peach.vercel.app
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get previous analysis
+        id: prev
+        env:
+          GITMIND_API_URL: ${{ secrets.GITMIND_API_URL }}
+          GITMIND_TOKEN: ${{ secrets.GITMIND_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          REPO_URL="${{ github.server_url }}/${{ github.repository }}"
+          PREV=$(curl -sf "$GITMIND_API_URL/analysis/previous?repo_url=$REPO_URL" \
+            -H "X-GH-Token: $GITMIND_TOKEN" || echo '{}')
+          echo "$PREV" > /tmp/gitmind-prev.json
+
+          echo "prev_score=$(echo "$PREV" | jq -r '.health.score // 0')" >> "$GITHUB_OUTPUT"
+          echo "prev_sec=$(echo "$PREV" | jq -r '.security_findings | length // 0')" >> "$GITHUB_OUTPUT"
+          echo "prev_cve=$(echo "$PREV" | jq -r '.cve_findings | length // 0')" >> "$GITHUB_OUTPUT"
+
+      - name: Run analysis
+        id: analyze
+        env:
+          GITMIND_API_URL: ${{ secrets.GITMIND_API_URL }}
+          GITMIND_TOKEN: ${{ secrets.GITMIND_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          REPO_URL="${{ github.server_url }}/${{ github.repository }}"
+          source ./scripts/ci-analyze.sh "$REPO_URL" "$GITMIND_TOKEN" "$GITMIND_API_URL"
+
+          for var in ANALYSIS_SESSION_ID ANALYSIS_SCORE ANALYSIS_SEC_COUNT ANALYSIS_CVE_COUNT; do
+            val="${!var}"
+            echo "${var,,}=$val" >> "$GITHUB_OUTPUT"
+          done
+
+          # Save current results
+          cp /tmp/gitmind-results.json /tmp/gitmind-curr.json 2>/dev/null || true
+
+      - name: Compare + alert
+        id: compare
+        env:
+          PREV_SCORE: ${{ steps.prev.outputs.prev_score }}
+          PREV_SEC: ${{ steps.prev.outputs.prev_sec }}
+          PREV_CVE: ${{ steps.prev.outputs.prev_cve }}
+          CURR_SCORE: ${{ steps.analyze.outputs.analysis_score }}
+          CURR_SEC: ${{ steps.analyze.outputs.analysis_sec_count }}
+          CURR_CVE: ${{ steps.analyze.outputs.analysis_cve_count }}
+          SESSION_ID: ${{ steps.analyze.outputs.analysis_session_id }}
+        run: |
+          SCORE_DIFF=$((CURR_SCORE - PREV_SCORE))
+          NEW_FINDINGS=$((CURR_SEC - PREV_SEC))
+          NEW_CVES=$((CURR_CVE - PREV_CVE))
+
+          SIGNIFICANT=false
+          [ "$SCORE_DIFF" -lt -5 ] && SIGNIFICANT=true
+          [ "$NEW_FINDINGS" -gt 0 ] && SIGNIFICANT=true
+          [ "$NEW_CVES" -gt 0 ] && SIGNIFICANT=true
+
+          echo "score_diff=$SCORE_DIFF" >> "$GITHUB_OUTPUT"
+          echo "new_findings=$NEW_FINDINGS" >> "$GITHUB_OUTPUT"
+          echo "new_cves=$NEW_CVES" >> "$GITHUB_OUTPUT"
+          echo "significant=$SIGNIFICANT" >> "$GITHUB_OUTPUT"
+
+      - name: Slack alert
+        if: steps.compare.outputs.significant == 'true'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SCORE_DIFF: ${{ steps.compare.outputs.score_diff }}
+          NEW_FINDINGS: ${{ steps.compare.outputs.new_findings }}
+          NEW_CVES: ${{ steps.compare.outputs.new_cves }}
+          CURR_SCORE: ${{ steps.analyze.outputs.analysis_score }}
+          PREV_SCORE: ${{ steps.prev.outputs.prev_score }}
+          SESSION_ID: ${{ steps.analyze.outputs.analysis_session_id }}
+        run: |
+          [ -z "$SLACK_WEBHOOK_URL" ] && exit 0
+          DASHBOARD="$DASHBOARD_BASE/?share=$SESSION_ID"
+          MSG="⚠️ *GitMind Alert: ${{ github.repository }}*\n"
+          MSG+="Score: $PREV_SCORE → $CURR_SCORE ($SCORE_DIFF)\n"
+          [ "$NEW_FINDINGS" -gt 0 ] && MSG+="New findings: +$NEW_FINDINGS\n"
+          [ "$NEW_CVES" -gt 0 ] && MSG+="New CVEs: +$NEW_CVES\n"
+          MSG+="<$DASHBOARD|View report>"
+          curl -sf -X POST "$SLACK_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"text\": \"$MSG\"}"
+
+      - name: GitHub issue
+        if: steps.compare.outputs.significant == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SCORE_DIFF: ${{ steps.compare.outputs.score_diff }}
+          NEW_FINDINGS: ${{ steps.compare.outputs.new_findings }}
+          NEW_CVES: ${{ steps.compare.outputs.new_cves }}
+          CURR_SCORE: ${{ steps.analyze.outputs.analysis_score }}
+          PREV_SCORE: ${{ steps.prev.outputs.prev_score }}
+          SESSION_ID: ${{ steps.analyze.outputs.analysis_session_id }}
+        run: |
+          DASHBOARD="$DASHBOARD_BASE/?share=$SESSION_ID"
+          cat > /tmp/issue.md << EOF
+          ## Weekly Monitor Alert
+
+          | Metric | Previous | Current | Delta |
+          |--------|----------|---------|-------|
+          | Health Score | $PREV_SCORE | $CURR_SCORE | $SCORE_DIFF |
+          | Security Findings | - | - | +$NEW_FINDINGS |
+          | CVE Findings | - | - | +$NEW_CVES |
+
+          [View report]($DASHBOARD)
+
+          ---
+          EOF
+          gh issue create \
+            --title "⚠️ Monitor: score delta $SCORE_DIFF (${{ github.repository }})" \
+            --body-file /tmp/issue.md \
+            --label "gitmind,security" \
+            2>/dev/null || echo "Issue creation skipped (label may not exist)"
