@@ -1,0 +1,102 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
+from fastapi.testclient import TestClient
+
+from main import app
+
+client = TestClient(app)
+
+
+class TestAnalyzeEndpoint:
+    @patch("routes.analyze.check_rate_limit", return_value=(True, 30, 0))
+    def test_analyze_invalid_url(self, _mock_rate):
+        response = client.post("/analyze", json={"repo_url": "not-a-url"})
+        assert response.status_code == 200
+        assert "error" in response.json()
+
+    def test_analyze_missing_url(self):
+        response = client.post("/analyze", json={})
+        assert response.status_code == 422
+
+    @patch("routes.analyze.check_rate_limit", return_value=(False, 0, 60))
+    def test_analyze_rate_limited(self, _mock_rate):
+        response = client.post(
+            "/analyze",
+            json={
+                "repo_url": "https://github.com/vercel/next.js",
+            },
+        )
+        assert response.status_code == 429
+        assert "Rate limit" in response.json().get("error", "")
+        assert "Retry-After" in response.headers
+
+    @patch("routes.analyze.check_rate_limit", return_value=(True, 30, 0))
+    def test_analyze_github_only(self, _mock_rate):
+        response = client.post("/analyze", json={"repo_url": "https://gitlab.com/user/repo"})
+        assert response.status_code == 200
+        assert "error" in response.json()
+
+
+class TestWebhookEndpoint:
+    def test_webhook_invalid_url(self):
+        response = client.post(
+            "/webhook/notify",
+            json={
+                "slack_webhook_url": "https://evil.com/hook",
+                "message": "test",
+            },
+        )
+        assert response.status_code == 200
+        assert "error" in response.json()
+
+    def test_webhook_missing_fields(self):
+        response = client.post("/webhook/notify", json={"message": "test"})
+        assert response.status_code == 422
+
+    def test_webhook_rejects_non_slack(self):
+        response = client.post(
+            "/webhook/notify",
+            json={
+                "slack_webhook_url": "https://not-slack.example.com/hook",
+                "message": "hi",
+            },
+        )
+        assert response.status_code == 200
+        assert "error" in response.json()
+
+
+class TestMonitorEndpoint:
+    def test_monitor_subscribe_invalid_url(self):
+        response = client.post("/monitor/subscribe", json={"repo_url": "not-a-url"})
+        assert response.status_code == 200
+        assert "error" in response.json()
+
+    def test_monitor_subscribe_missing_fields(self):
+        response = client.post("/monitor/subscribe", json={})
+        assert response.status_code == 422
+
+    @patch("services.database.async_session_factory")
+    def test_monitor_status_empty(self, mock_factory):
+        mock_session = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.scalars.return_value.all.return_value = []
+        mock_session.execute.return_value = mock_result
+        mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
+
+        response = client.get("/monitor/status")
+        assert response.status_code == 200
+        assert response.json()["repos"] == []
+
+    @patch("services.database.async_session_factory")
+    def test_monitor_delete_not_found(self, mock_factory):
+        mock_session = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.rowcount = 0
+        mock_session.execute.return_value = mock_result
+        mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
+
+        response = client.delete("/monitor/nonexistent-id")
+        assert response.status_code == 200
+        assert "error" in response.json()

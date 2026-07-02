@@ -1,0 +1,16 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.chroma/
+.chroma_registry.json
+.llm_cache/
+analyses/
+gitmind.db
+.env
+*.log
+.pytest_cache/
+tests/
+pytest.ini
+README.md
+smoke_test.py

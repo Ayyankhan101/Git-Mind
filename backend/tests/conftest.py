@@ -1,0 +1,24 @@
+import os
+import tempfile
+
+import pytest
+from fastapi.testclient import TestClient
+
+os.environ["GROQ_API_KEY"] = "gsk_test_placeholder"
+os.environ["GITHUB_TOKEN"] = "ghp_test_placeholder"
+os.environ["GITHUB_APP_WEBHOOK_SECRET"] = "test-secret"
+os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{tempfile.mktemp(suffix='.db')}"
+os.environ["DEBUG"] = "1"
+
+
+@pytest.fixture
+def app():
+    from main import app
+
+    return app
+
+
+@pytest.fixture
+def client(app):
+    with TestClient(app) as c:
+        yield c
