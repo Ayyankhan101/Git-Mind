@@ -242,7 +242,10 @@ async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
             ],
         )
     )
-    chunks = await asyncio.to_thread(search_codebase, collection, query, 4) if collection else []
+    try:
+        chunks = await asyncio.to_thread(search_codebase, collection, query, 4) if collection else []
+    except Exception:
+        chunks = []
     context = "\n\n".join(f"--- {c['filepath']} ---\n{c['content']}" for c in chunks) or "No context."
 
     prompt = (
@@ -259,9 +262,8 @@ async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
         llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
         return invoke_with_retry(llm, prompt).content.strip()
 
-    raw_patch = await asyncio.to_thread(_gen_patch)
-
     try:
+        raw_patch = await asyncio.to_thread(_gen_patch)
         result = await asyncio.to_thread(_apply_and_push_pr, repo_url, raw_patch, finding.model_dump(), token)
         logger.info("Auto-PR created", pr_url=result.get("pr_url"))
         return result
