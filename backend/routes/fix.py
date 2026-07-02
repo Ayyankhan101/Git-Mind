@@ -153,7 +153,14 @@ def _apply_and_push_pr(
         safe_rule = re.sub(r"[\x00-\x1f\x7f]", "", finding.get("rule", "gitmind"))[:40]
         msg = f"fix: {safe_title} [{safe_rule}]"
         subprocess.run(["git", "commit", "-m", msg], cwd=dest, check=True, capture_output=True)
-        subprocess.run(["git", "push", "origin", branch], cwd=dest, check=True, capture_output=True, timeout=30)
+        subprocess.run(
+            ["git", "push", "origin", branch],
+            cwd=dest,
+            env={**os.environ, **_env},
+            check=True,
+            capture_output=True,
+            timeout=30,
+        )
     finally:
         shutil.rmtree(dest, ignore_errors=True)
         if _askpass_script:
