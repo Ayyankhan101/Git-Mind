@@ -195,3 +195,24 @@ async def get_previous_analysis(repo_url: str, exclude_session: str | None = Non
     if snap is None:
         return {"error": "No previous analysis found"}
     return snap
+
+
+@router.get("/analysis/history")
+async def get_analysis_history(repo_url: str, days: int = 0, request: Request = None):
+    import time
+
+    from services.database import get_analysis_history_db
+
+    client_ip = request.client.host if request.client else "unknown"
+    if not (await check_rate_limit("analysis_history", client_ip))[0]:
+        return await rate_limit_response("analysis_history", client_ip)
+
+    if not _GH_URL_RE.match(repo_url.strip()):
+        return {"error": "Invalid GitHub repo URL — must be https://github.com/{owner}/{repo}"}
+
+    since = None
+    if days > 0:
+        since = time.time() - days * 86400
+
+    history = await get_analysis_history_db(repo_url, since=since, limit=50)
+    return {"history": list(reversed(history))}

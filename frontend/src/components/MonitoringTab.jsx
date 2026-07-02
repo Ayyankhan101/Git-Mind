@@ -9,12 +9,16 @@ import {
   AlertTriangle,
   Plus,
   X,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import {
   subscribeMonitor,
   fetchMonitorStatus,
   unsubscribeMonitor,
+  fetchAnalysisHistory,
 } from "../api";
+import TrendChart from "./TrendChart";
 
 function relativeTime(ts) {
   if (!ts) return "never";
@@ -76,6 +80,9 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
   const [emailInput, setEmailInput] = useState("");
   const [subLoading, setSubLoading] = useState(false);
   const [subError, setSubError] = useState(null);
+  const [expandedRepo, setExpandedRepo] = useState(null);
+  const [trendData, setTrendData] = useState({});
+  const [trendDays, setTrendDays] = useState({});
 
   const fetchRepos = useCallback(() => {
     setLoading(true);
@@ -96,6 +103,16 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
     }, 60_000);
     return () => clearInterval(interval);
   }, [fetchRepos]);
+
+  useEffect(() => {
+    if (!expandedRepo) return;
+    const days = trendDays[expandedRepo] ?? 30;
+    fetchAnalysisHistory(expandedRepo, days)
+      .then((d) =>
+        setTrendData((prev) => ({ ...prev, [expandedRepo]: d.history || [] })),
+      )
+      .catch(() => setTrendData((prev) => ({ ...prev, [expandedRepo]: [] })));
+  }, [expandedRepo, trendDays]);
 
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -387,57 +404,101 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
             const repoShort = repo.repo_url
               .replace("https://github.com/", "")
               .replace(/\.git$/, "");
+            const isExpanded = expandedRepo === repo.repo_url;
             return (
-              <div key={repo.id} className="mon-row">
-                <div className="mon-row-main">
-                  <div className="mon-row-top">
-                    <a
-                      href={repo.repo_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mon-repo-name"
-                    >
-                      {repoShort}
-                      <ExternalLink size={11} style={{ opacity: 0.5 }} />
-                    </a>
-                    <StatusBadge last_sha={repo.last_sha} />
-                  </div>
-                  <div className="mon-row-meta">
-                    <span className="mon-meta-item">
-                      <Clock size={10} />
-                      Last check: {relativeTime(repo.last_check_at)}
-                    </span>
-                    {repo.slack_webhook_url && (
-                      <span className="mon-meta-item">
-                        <Bell size={10} />
-                        Slack alerts
-                      </span>
-                    )}
-                    {repo.email_recipients && (
-                      <span className="mon-meta-item">
-                        <Bell size={10} />
-                        Email alerts
-                      </span>
-                    )}
-                    {repo.last_session_id && (
+              <div key={repo.id}>
+                <div className="mon-row">
+                  <div className="mon-row-main">
+                    <div className="mon-row-top">
+                      <button
+                        onClick={() =>
+                          setExpandedRepo(isExpanded ? null : repo.repo_url)
+                        }
+                        style={{
+                          background: "none",
+                          border: "none",
+                          padding: 0,
+                          cursor: "pointer",
+                          color: "var(--text-3)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        {isExpanded ? (
+                          <ChevronDown size={12} />
+                        ) : (
+                          <ChevronRight size={12} />
+                        )}
+                      </button>
                       <a
-                        href={`/?share=${repo.last_session_id}`}
+                        href={repo.repo_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mon-meta-item mon-link"
+                        className="mon-repo-name"
                       >
-                        View latest analysis →
+                        {repoShort}
+                        <ExternalLink size={11} style={{ opacity: 0.5 }} />
                       </a>
-                    )}
+                      <StatusBadge last_sha={repo.last_sha} />
+                    </div>
+                    <div className="mon-row-meta">
+                      <span className="mon-meta-item">
+                        <Clock size={10} />
+                        Last check: {relativeTime(repo.last_check_at)}
+                      </span>
+                      {repo.slack_webhook_url && (
+                        <span className="mon-meta-item">
+                          <Bell size={10} />
+                          Slack alerts
+                        </span>
+                      )}
+                      {repo.email_recipients && (
+                        <span className="mon-meta-item">
+                          <Bell size={10} />
+                          Email alerts
+                        </span>
+                      )}
+                      {repo.last_session_id && (
+                        <a
+                          href={`/?share=${repo.last_session_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mon-meta-item mon-link"
+                        >
+                          View latest analysis →
+                        </a>
+                      )}
+                    </div>
                   </div>
+                  <button
+                    className="btn-icon mon-unsub"
+                    onClick={() => handleUnsubscribe(repo.id)}
+                    title="Stop monitoring"
+                  >
+                    <Trash2 size={13} />
+                  </button>
                 </div>
-                <button
-                  className="btn-icon mon-unsub"
-                  onClick={() => handleUnsubscribe(repo.id)}
-                  title="Stop monitoring"
-                >
-                  <Trash2 size={13} />
-                </button>
+                {isExpanded && (
+                  <div
+                    style={{
+                      padding: "12px 16px 16px",
+                      borderTop: "1px solid var(--border-2)",
+                      background: "var(--surface-1)",
+                    }}
+                  >
+                    <TrendChart
+                      data={trendData[repo.repo_url] || []}
+                      days={trendDays[repo.repo_url] ?? 30}
+                      onDaysChange={(d) =>
+                        setTrendDays((prev) => ({
+                          ...prev,
+                          [repo.repo_url]: d,
+                        }))
+                      }
+                    />
+                  </div>
+                )}
               </div>
             );
           })}

@@ -135,6 +135,28 @@ async def get_previous_analysis_db(repo_url: str, exclude_session: str | None = 
         }
 
 
+async def get_analysis_history_db(repo_url: str, since: float | None = None, limit: int = 50) -> list[dict]:
+    from sqlalchemy import desc
+
+    from models.db import Analysis
+
+    async with async_session_factory() as session:
+        query = select(Analysis).where(Analysis.repo_url == repo_url, Analysis.health.isnot(None))
+        if since:
+            query = query.where(Analysis.saved_at >= since)
+        query = query.order_by(desc(Analysis.saved_at)).limit(limit)
+        result = await session.execute(query)
+        rows = result.scalars().all()
+        return [
+            {
+                "saved_at": r.saved_at,
+                "health": r.health,
+                "head_sha": r.head_sha,
+            }
+            for r in rows
+        ]
+
+
 async def upsert_sha_index(sha: str, session_id: str) -> None:
     from models.db import ShaIndex
 

@@ -176,6 +176,14 @@ export function fetchMonitorStatus() {
   return _apiFetch(`${BASE}/monitor/status`, {}, 15_000);
 }
 
+export function fetchAnalysisHistory(repoUrl, days = 0) {
+  const params = new URLSearchParams({
+    repo_url: repoUrl,
+    days: String(days),
+  });
+  return _apiFetch(`${BASE}/analysis/history?${params}`, {}, 15_000);
+}
+
 export function unsubscribeMonitor(monitorId) {
   return _apiFetch(
     `${BASE}/monitor/${monitorId}`,

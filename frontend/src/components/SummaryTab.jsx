@@ -7,9 +7,15 @@ import {
   Activity,
   Download,
 } from "lucide-react";
-import { fetchSummary, subscribeMonitor, fetchMonitorStatus } from "../api";
+import {
+  fetchSummary,
+  subscribeMonitor,
+  fetchMonitorStatus,
+  fetchAnalysisHistory,
+} from "../api";
 import { buildSummaryPdf, downloadPdf } from "../pdfBuilder";
 import HealthCard from "./HealthCard";
+import TrendChart from "./TrendChart";
 
 const SEV_COLORS = {
   critical: "var(--sev-critical)",
@@ -142,6 +148,8 @@ export default function SummaryTab({
   const [watching, setWatching] = useState(false);
   const [watchLoading, setWatchLoading] = useState(false);
   const [watchError, setWatchError] = useState(null);
+  const [trendData, setTrendData] = useState(null);
+  const [trendDays, setTrendDays] = useState(0);
 
   useEffect(() => {
     setData(null);
@@ -156,6 +164,13 @@ export default function SummaryTab({
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [enabled, sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!repoUrl) return;
+    fetchAnalysisHistory(repoUrl, trendDays)
+      .then((d) => setTrendData(d.history || []))
+      .catch(() => setTrendData([]));
+  }, [repoUrl, trendDays]);
 
   // Check if repo is already being watched
   useEffect(() => {
@@ -323,6 +338,23 @@ export default function SummaryTab({
         </button>
       </div>
       <HealthCard health={health} />
+      {repoUrl && (
+        <div
+          style={{
+            marginTop: 16,
+            padding: 16,
+            borderRadius: 8,
+            border: "1px solid var(--border-2)",
+            background: "var(--surface-1)",
+          }}
+        >
+          <TrendChart
+            data={trendData}
+            days={trendDays}
+            onDaysChange={setTrendDays}
+          />
+        </div>
+      )}
       {enabled && repoUrl && (
         <div className="summary-watch">
           {watching ? (
