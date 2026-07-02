@@ -29,6 +29,9 @@ jobs:
         run: npm ci --legacy-peer-deps
       - name: Run pre-commit
         run: pre-commit run --all-files --show-diff-on-failure
+      - name: ESLint
+        working-directory: frontend
+        run: npx eslint src/
 
   backend-tests:
     runs-on: ubuntu-latest

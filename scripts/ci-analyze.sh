@@ -53,7 +53,7 @@ else
   TASK_ID=$(echo "$RESPONSE" | jq -r '.task_id')
   SESSION_ID=""
 
-  for i in $(seq 1 $((TIMEOUT / POLL))); do
+  for _ in $(seq 1 $((TIMEOUT / POLL))); do
     TASK=$(curl -sf --retry 2 --retry-delay 5 --max-time 30 "$API_URL/task/$TASK_ID" \
       -H "X-GH-Token: $GH_TOKEN" || echo '{"status":"pending"}')
     STATUS=$(echo "$TASK" | jq -r '.status')
