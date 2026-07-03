@@ -19,9 +19,9 @@ pub struct ContractInfo {
 pub struct FunctionInfo {
     pub name: String,
     pub visibility: String,
-    pub params: Vec::<String>,
-    pub returns: Vec::<String>,
-    pub modifiers: Vec::<String>,
+    pub params: Vec<String>,
+    pub returns: Vec<String>,
+    pub modifiers: Vec<String>,
     pub line: u32,
 }
 
