@@ -3,7 +3,10 @@ use pyo3::types::PyDict;
 use regex::Regex;
 
 #[pyfunction]
-pub fn parse_dependencies(py: Python<'_>, file_contents: std::collections::HashMap<String, String>) -> Vec<PyObject> {
+pub fn parse_dependencies(
+    py: Python<'_>,
+    file_contents: std::collections::HashMap<String, String>,
+) -> Vec<PyObject> {
     let has_npm_lock = file_contents.keys().any(|fp| {
         let fname = fp.rsplit('/').next().unwrap_or(fp);
         matches!(fname, "package-lock.json" | "yarn.lock" | "pnpm-lock.yaml")
@@ -57,7 +60,15 @@ fn parse_requirements_txt(content: &str) -> Vec<(String, String, String)> {
     for line in content.lines() {
         let line = line.split('#').next().unwrap_or("").trim();
         if let Some(cap) = re.captures(line) {
-            let ver = cap.get(2).unwrap().as_str().split(',').next().unwrap_or("").trim().to_string();
+            let ver = cap
+                .get(2)
+                .unwrap()
+                .as_str()
+                .split(',')
+                .next()
+                .unwrap_or("")
+                .trim()
+                .to_string();
             deps.push((cap[1].to_string(), ver, "PyPI".to_string()));
         }
     }
@@ -67,16 +78,23 @@ fn parse_requirements_txt(content: &str) -> Vec<(String, String, String)> {
 fn parse_package_lock(content: &str) -> Vec<(String, String, String)> {
     let data: serde_json::Value = serde_json::from_str(content).unwrap_or(serde_json::Value::Null);
     let empty_map = serde_json::Map::new();
-    let packages = data.get("packages").and_then(|v| v.as_object()).unwrap_or(&empty_map);
+    let packages = data
+        .get("packages")
+        .and_then(|v| v.as_object())
+        .unwrap_or(&empty_map);
     let re = Regex::new(r"^node_modules/").unwrap();
     let mut deps = Vec::new();
     for (pkg, info) in packages {
-        if pkg.is_empty() { continue; }
+        if pkg.is_empty() {
+            continue;
+        }
         let name = re.replace(pkg, "").to_string();
         if let Some(ver) = info.get("version").and_then(|v| v.as_str()) {
             if !ver.is_empty() {
                 deps.push((name, ver.to_string(), "npm".to_string()));
-                if deps.len() >= 120 { break; }
+                if deps.len() >= 120 {
+                    break;
+                }
             }
         }
     }
@@ -126,11 +144,17 @@ fn parse_go_sum(content: &str) -> Vec<(String, String, String)> {
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() >= 2 && parts[1].contains('/') {
             let mod_name = parts[0];
-            let ver = parts[1].split('/').next().unwrap_or("").trim_start_matches('v');
+            let ver = parts[1]
+                .split('/')
+                .next()
+                .unwrap_or("")
+                .trim_start_matches('v');
             if !seen.contains(mod_name) && re.is_match(ver) {
                 seen.insert(mod_name.to_string());
                 deps.push((mod_name.to_string(), ver.to_string(), "Go".to_string()));
-                if deps.len() >= 100 { break; }
+                if deps.len() >= 100 {
+                    break;
+                }
             }
         }
     }
@@ -144,10 +168,22 @@ fn parse_go_mod(content: &str) -> Vec<(String, String, String)> {
     let mut in_require = false;
     for line in content.lines() {
         let s = line.trim();
-        if s.starts_with("require (") { in_require = true; continue; }
-        if in_require && s == ")" { in_require = false; continue; }
-        let target = if in_require { s } else { s.strip_prefix("require ").unwrap_or("") };
-        if target.is_empty() { continue; }
+        if s.starts_with("require (") {
+            in_require = true;
+            continue;
+        }
+        if in_require && s == ")" {
+            in_require = false;
+            continue;
+        }
+        let target = if in_require {
+            s
+        } else {
+            s.strip_prefix("require ").unwrap_or("")
+        };
+        if target.is_empty() {
+            continue;
+        }
         let parts: Vec<&str> = target.split_whitespace().collect();
         if parts.len() >= 2 {
             let m = parts[0];
@@ -155,7 +191,9 @@ fn parse_go_mod(content: &str) -> Vec<(String, String, String)> {
             if !seen.contains(m) && re.is_match(v) {
                 seen.insert(m.to_string());
                 deps.push((m.to_string(), v.to_string(), "Go".to_string()));
-                if deps.len() >= 100 { break; }
+                if deps.len() >= 100 {
+                    break;
+                }
             }
         }
     }
@@ -175,7 +213,9 @@ fn parse_composer_lock(content: &str) -> Vec<(String, String, String)> {
                 let ver = re_strip.replace(raw, "").to_string();
                 if !name.is_empty() && !ver.is_empty() && re_digit.is_match(&ver) {
                     deps.push((name.to_string(), ver, "Packagist".to_string()));
-                    if deps.len() >= 100 { break; }
+                    if deps.len() >= 100 {
+                        break;
+                    }
                 }
             }
         }
@@ -184,24 +224,45 @@ fn parse_composer_lock(content: &str) -> Vec<(String, String, String)> {
 }
 
 fn parse_yarn_lock(content: &str) -> Vec<(String, String, String)> {
-    let block_re = Regex::new(r"\n(?=\S)").unwrap();
     let name_re = Regex::new(r#"^"?(@?[^@"\s,]+)@"#).unwrap();
     let ver_re = Regex::new(r#"(?m)^\s+version "([^"]+)""#).unwrap();
     let re_digit = Regex::new(r"^\d").unwrap();
+    let mut blocks = Vec::new();
+    let mut current = String::new();
+    for line in content.lines() {
+        if !line.starts_with(' ')
+            && !line.starts_with('\t')
+            && !line.is_empty()
+            && !current.is_empty()
+        {
+            blocks.push(std::mem::take(&mut current));
+        }
+        current.push_str(line);
+        current.push('\n');
+    }
+    if !current.is_empty() {
+        blocks.push(current);
+    }
     let mut deps = Vec::new();
     let mut seen = std::collections::HashSet::new();
-    for block in block_re.split(content) {
+    for block in &blocks {
         let block = block.trim();
-        if block.is_empty() || block.starts_with('#') { continue; }
+        if block.is_empty() || block.starts_with('#') {
+            continue;
+        }
         let n = name_re.captures(block);
         let v = ver_re.captures(block);
         if let (Some(nc), Some(vc)) = (n, v) {
             let name = nc[1].to_string();
             let version = vc[1].to_string();
-            if !seen.contains(&(name.to_lowercase(), version.clone())) && re_digit.is_match(&version) {
+            if !seen.contains(&(name.to_lowercase(), version.clone()))
+                && re_digit.is_match(&version)
+            {
                 seen.insert((name.to_lowercase(), version.clone()));
                 deps.push((name, version, "npm".to_string()));
-                if deps.len() >= 150 { break; }
+                if deps.len() >= 150 {
+                    break;
+                }
             }
         }
     }
@@ -218,7 +279,9 @@ fn parse_pnpm_lock(content: &str) -> Vec<(String, String, String)> {
         if !seen.contains(&(name.to_lowercase(), version.clone())) {
             seen.insert((name.to_lowercase(), version.clone()));
             deps.push((name, version, "npm".to_string()));
-            if deps.len() >= 150 { break; }
+            if deps.len() >= 150 {
+                break;
+            }
         }
     }
     deps
@@ -232,8 +295,13 @@ fn parse_poetry_lock(content: &str) -> Vec<(String, String, String)> {
     let mut name: Option<String> = None;
     for line in content.lines() {
         let s = line.trim();
-        if s == "[[package]]" { name = None; continue; }
-        if let Some(cap) = re_name.captures(s) { name = Some(cap[1].to_string()); }
+        if s == "[[package]]" {
+            name = None;
+            continue;
+        }
+        if let Some(cap) = re_name.captures(s) {
+            name = Some(cap[1].to_string());
+        }
         if let Some(cap) = re_ver.captures(s) {
             let ver = cap[1].to_string();
             if let Some(n) = name.take() {
@@ -272,8 +340,13 @@ fn parse_gemfile_lock(content: &str) -> Vec<(String, String, String)> {
     let mut seen = std::collections::HashSet::new();
     let mut in_specs = false;
     for line in content.lines() {
-        if line.trim() == "specs:" { in_specs = true; continue; }
-        if in_specs && !line.is_empty() && !line.starts_with(' ') { in_specs = false; }
+        if line.trim() == "specs:" {
+            in_specs = true;
+            continue;
+        }
+        if in_specs && !line.is_empty() && !line.starts_with(' ') {
+            in_specs = false;
+        }
         if in_specs {
             if let Some(cap) = re.captures(line) {
                 let name = cap[1].to_string();
@@ -282,7 +355,9 @@ fn parse_gemfile_lock(content: &str) -> Vec<(String, String, String)> {
                 if !seen.contains(&key) && re_digit.is_match(&version) {
                     seen.insert(key);
                     deps.push((name, version, "RubyGems".to_string()));
-                    if deps.len() >= 100 { break; }
+                    if deps.len() >= 100 {
+                        break;
+                    }
                 }
             }
         }

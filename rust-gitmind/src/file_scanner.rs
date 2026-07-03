@@ -6,16 +6,34 @@ use regex::RegexSet;
 // ── Secret scanning ──────────────────────────────────────────────────────
 
 const SECRET_PATTERNS: &[(&str, &str)] = &[
-    (r"-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY", "Private key"),
+    (
+        r"-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY",
+        "Private key",
+    ),
     (r"AKIA[0-9A-Z]{16}", "AWS Access Key ID"),
-    (r#"(?i)(?:password|passwd|pwd)\s*=\s*["\'][^"\']{6,}["\']"#, "Hardcoded password"),
-    (r#"(?i)(?:api[_-]?key|apikey)\s*=\s*["\'][^"\']{8,}["\']"#, "Hardcoded API key"),
-    (r#"(?i)(?:secret|token)\s*=\s*["\'][^"\']{8,}["\']"#, "Hardcoded secret/token"),
+    (
+        r#"(?i)(?:password|passwd|pwd)\s*=\s*["\'][^"\']{6,}["\']"#,
+        "Hardcoded password",
+    ),
+    (
+        r#"(?i)(?:api[_-]?key|apikey)\s*=\s*["\'][^"\']{8,}["\']"#,
+        "Hardcoded API key",
+    ),
+    (
+        r#"(?i)(?:secret|token)\s*=\s*["\'][^"\']{8,}["\']"#,
+        "Hardcoded secret/token",
+    ),
     (r"ghp_[a-zA-Z0-9]{36}", "GitHub Personal Access Token"),
     (r"gsk_[a-zA-Z0-9_]{48}", "Groq API Key"),
     (r"sk-[a-zA-Z0-9]{48}", "OpenAI API Key"),
-    (r"(?i)mongodb(?:\+srv)?://[^@\s]+@", "MongoDB connection string with credentials"),
-    (r"(?i)postgres(?:ql)?://[^@\s]+:[^@\s]+@", "PostgreSQL connection string with credentials"),
+    (
+        r"(?i)mongodb(?:\+srv)?://[^@\s]+@",
+        "MongoDB connection string with credentials",
+    ),
+    (
+        r"(?i)postgres(?:ql)?://[^@\s]+:[^@\s]+@",
+        "PostgreSQL connection string with credentials",
+    ),
 ];
 
 const SKIP_PATH_RE: &str = r"(?i)(test|spec|mock|fixture|example|sample|\.example|placeholder)";
@@ -47,21 +65,30 @@ const ROUTE_PATTERNS: &[&str] = &[
 // ── Comment ratio ────────────────────────────────────────────────────────
 
 const COMMENT_RE: &str = r#"^\s*(#|//|/\*|\*|""")"#;
-const CODE_EXTS: &[&str] = &[".py", ".js", ".ts", ".jsx", ".tsx", ".java", ".go", ".rb", ".php"];
+const CODE_EXTS: &[&str] = &[
+    ".py", ".js", ".ts", ".jsx", ".tsx", ".java", ".go", ".rb", ".php",
+];
 
 // ── Public API ───────────────────────────────────────────────────────────
 
 #[pyfunction]
-pub fn scan_secrets(py: Python<'_>, file_contents: std::collections::HashMap<String, String>) -> Vec<PyObject> {
+pub fn scan_secrets(
+    py: Python<'_>,
+    file_contents: std::collections::HashMap<String, String>,
+) -> Vec<PyObject> {
     let skip_re = Regex::new(SKIP_PATH_RE).unwrap();
     let set = RegexSet::new(SECRET_PATTERNS.iter().map(|(r, _)| r)).unwrap();
-    let regexes: Vec<Regex> = set.patterns().iter()
+    let regexes: Vec<Regex> = set
+        .patterns()
+        .iter()
         .map(|p| Regex::new(p).unwrap())
         .collect();
     let mut results = Vec::new();
 
     for (path, content) in &file_contents {
-        if skip_re.is_match(path) { continue; }
+        if skip_re.is_match(path) {
+            continue;
+        }
         for (idx, re) in regexes.iter().enumerate() {
             if let Some(m) = re.find(content) {
                 let line_no = content[..m.start()].matches('\n').count() as u32 + 1;
@@ -93,7 +120,8 @@ pub fn scan_sensitive_files(py: Python<'_>, file_tree: Vec<String>) -> Vec<PyObj
         if re.is_match(path) {
             let d = PyDict::new(py);
             d.set_item("path", path).ok();
-            d.set_item("reason", "Sensitive filename tracked in git").ok();
+            d.set_item("reason", "Sensitive filename tracked in git")
+                .ok();
             results.push(d.into());
         }
     }
@@ -118,8 +146,14 @@ pub fn compute_docs_score(file_contents: std::collections::HashMap<String, Strin
     let mut total_lines = 0usize;
     let mut comment_lines = 0usize;
     for (path, content) in &file_contents {
-        let ext = path.rsplit('.').next().map(|e| format!(".{}", e)).unwrap_or_default();
-        if !CODE_EXTS.contains(&ext.as_str()) { continue; }
+        let ext = path
+            .rsplit('.')
+            .next()
+            .map(|e| format!(".{}", e))
+            .unwrap_or_default();
+        if !CODE_EXTS.contains(&ext.as_str()) {
+            continue;
+        }
         for line in content.lines() {
             total_lines += 1;
             if comment_re.is_match(line) {
@@ -127,7 +161,9 @@ pub fn compute_docs_score(file_contents: std::collections::HashMap<String, Strin
             }
         }
     }
-    if total_lines == 0 { return 50.0; }
+    if total_lines == 0 {
+        return 50.0;
+    }
     let ratio = comment_lines as f64 / total_lines as f64;
     (ratio * 1000.0).min(100.0)
 }

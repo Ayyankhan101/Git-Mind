@@ -21,3 +21,37 @@ repos:
     hooks:
       - id: prettier
         types_or: [javascript, jsx, ts, tsx, json, css, markdown, yaml]
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        args: [--severity=warning]
+        files: \.(sh|bash)$
+
+  - repo: local
+    hooks:
+      - id: clippy-gitmind
+        name: clippy (rust-gitmind)
+        entry: cargo clippy --manifest-path rust-gitmind/Cargo.toml -- -D warnings
+        language: rust
+        pass_filenames: false
+        files: ^rust-gitmind/
+      - id: clippy-sidecar
+        name: clippy (rust-sidecar)
+        entry: cargo clippy --manifest-path rust-sidecar/Cargo.toml -- -D warnings
+        language: rust
+        pass_filenames: false
+        files: ^rust-sidecar/
+      - id: rustfmt-gitmind
+        name: rustfmt (rust-gitmind)
+        entry: cargo fmt --manifest-path rust-gitmind/Cargo.toml -- --check
+        language: rust
+        pass_filenames: false
+        files: ^rust-gitmind/
+      - id: rustfmt-sidecar
+        name: rustfmt (rust-sidecar)
+        entry: cargo fmt --manifest-path rust-sidecar/Cargo.toml -- --check
+        language: rust
+        pass_filenames: false
+        files: ^rust-sidecar/

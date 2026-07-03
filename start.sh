@@ -58,7 +58,7 @@ fi
 echo ""
 echo "Starting backend on http://127.0.0.1:8002 ..."
 (
-  cd "$ROOT/backend"
+  cd "$ROOT/backend" || exit
   source venv/bin/activate
   exec uvicorn main:app --host 127.0.0.1 --port 8002 --reload \
     >> "$LOG_DIR/backend.log" 2>&1
@@ -68,7 +68,7 @@ BACKEND_PID=$!
 # Wait for backend health (up to 30 s)
 BACKEND_UP=0
 printf "  Waiting for backend"
-for i in $(seq 1 30); do
+for _ in $(seq 1 30); do
   if curl -sf http://127.0.0.1:8002/health &>/dev/null; then
     BACKEND_UP=1
     printf " ✓\n"
@@ -88,7 +88,7 @@ fi
 # ── Start frontend ─────────────────────────────────────────────────────────────
 echo "Starting frontend on http://localhost:3000 ..."
 (
-  cd "$ROOT/frontend"
+  cd "$ROOT/frontend" || exit
   BROWSER=none REACT_APP_API_BASE=http://127.0.0.1:8002 npm start \
     >> "$LOG_DIR/frontend.log" 2>&1
 ) &

@@ -14,6 +14,7 @@ jest.mock("pdfmake/build/vfs_fonts", () => ({
 }));
 
 // Mock crypto.randomUUID used in App.js for session IDs
+/* global globalThis */
 if (!globalThis.crypto?.randomUUID) {
   Object.defineProperty(globalThis, "crypto", {
     value: { randomUUID: () => "00000000-0000-0000-0000-000000000001" },
