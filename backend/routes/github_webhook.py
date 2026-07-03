@@ -3,9 +3,9 @@
 import asyncio
 import hashlib
 import hmac
-import json
 import os
 
+import orjson
 import structlog
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
@@ -171,8 +171,8 @@ async def github_webhook(request: Request):
 
     # Parse payload
     try:
-        payload = json.loads(body)
-    except json.JSONDecodeError:
+        payload = orjson.loads(body)
+    except orjson.JSONDecodeError:
         return JSONResponse(status_code=400, content={"error": "Invalid JSON"})
 
     github_event = request.headers.get("x-github-event", "")

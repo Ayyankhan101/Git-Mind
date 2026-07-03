@@ -1,6 +1,6 @@
-import json
 import logging
 
+import orjson
 from langchain_groq import ChatGroq
 
 from llm_cache import get_cached, invoke_with_retry, set_cached
@@ -79,7 +79,7 @@ def run_merge_prediction(
     if cached:
         logger.debug("merge_prediction: cache hit %s", cache_key)
         try:
-            return json.loads(cached)
+            return orjson.loads(cached)
         except Exception as exc:
             logger.debug("merge_prediction: cache decode failed: %s", exc)
 
@@ -152,7 +152,7 @@ def run_merge_prediction(
         raw = raw.strip()
 
     try:
-        result = json.loads(raw)
+        result = orjson.loads(raw)
     except Exception:
         # Graceful fallback — still useful partial data
         logger.warning("merge_prediction: JSON parse failed, returning raw")
@@ -166,7 +166,7 @@ def run_merge_prediction(
             "confidence": "low",
         }
 
-    set_cached(_CACHE_NAMESPACE, cache_key, json.dumps(result))
+    set_cached(_CACHE_NAMESPACE, cache_key, orjson.dumps(result))
     logger.info(
         "merge_prediction done: risk=%s rec=%s",
         result.get("merge_risk"),

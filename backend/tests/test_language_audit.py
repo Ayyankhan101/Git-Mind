@@ -1,6 +1,7 @@
-import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+
+import orjson
 
 from agents.language_audit import _materialize_workspace, run_code_audit
 
@@ -16,7 +17,7 @@ class TestRunCodeAudit:
     def test_python_tool_and_triage(self, mock_invoke, mock_get_cached, mock_run, mock_which):
         mock_which.return_value = "/usr/bin/pylint"
         mock_run.return_value = MagicMock(
-            stdout=json.dumps(
+            stdout=orjson.dumps(
                 [
                     {
                         "message": "Unused import os",
@@ -25,10 +26,10 @@ class TestRunCodeAudit:
                         "line": 1,
                     }
                 ]
-            )
+            ).decode()
         )
         mock_invoke.return_value = MagicMock(
-            content=json.dumps(
+            content=orjson.dumps(
                 {
                     "findings": [
                         {
@@ -42,7 +43,7 @@ class TestRunCodeAudit:
                         }
                     ]
                 }
-            )
+            ).decode()
         )
 
         results = run_code_audit(["src/main.py"], {"src/main.py": "import os\n"})
@@ -58,7 +59,7 @@ class TestRunCodeAudit:
     @patch("agents.language_audit.invoke_with_retry")
     def test_llm_fallback_when_tool_missing(self, mock_invoke, mock_get_cached, mock_which):
         mock_invoke.return_value = MagicMock(
-            content=json.dumps(
+            content=orjson.dumps(
                 {
                     "findings": [
                         {
@@ -72,7 +73,7 @@ class TestRunCodeAudit:
                         }
                     ]
                 }
-            )
+            ).decode()
         )
 
         results = run_code_audit(["src/main.py"], {"src/main.py": "def foo():\n    pass\n"})
@@ -86,7 +87,7 @@ class TestRunCodeAudit:
     @patch("agents.language_audit.get_cached")
     def test_cache_hit_skips_llm(self, mock_get_cached, mock_which):
         mock_which.return_value = "/usr/bin/pylint"
-        mock_get_cached.return_value = json.dumps(
+        mock_get_cached.return_value = orjson.dumps(
             {
                 "findings": [
                     {
@@ -100,11 +101,11 @@ class TestRunCodeAudit:
                     }
                 ]
             }
-        )
+        ).decode()
 
         with patch("agents.language_audit.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
-                stdout=json.dumps(
+                stdout=orjson.dumps(
                     [
                         {
                             "message": "test",
@@ -113,7 +114,7 @@ class TestRunCodeAudit:
                             "line": 1,
                         }
                     ]
-                )
+                ).decode()
             )
             results = run_code_audit(["src/main.py"], {"src/main.py": "x = 1\n"})
 
@@ -128,7 +129,7 @@ class TestRunCodeAudit:
         mock_which.return_value = "/usr/bin/pylint"
         mock_run.side_effect = RuntimeError("pylint crashed")
         mock_invoke.return_value = MagicMock(
-            content=json.dumps(
+            content=orjson.dumps(
                 {
                     "findings": [
                         {
@@ -142,7 +143,7 @@ class TestRunCodeAudit:
                         }
                     ]
                 }
-            )
+            ).decode()
         )
 
         results = run_code_audit(["src/main.py"], {"src/main.py": "x = 1\n"})
@@ -155,7 +156,7 @@ class TestRunCodeAudit:
     @patch("agents.language_audit.get_cached", return_value=None)
     @patch("agents.language_audit.invoke_with_retry")
     def test_llm_returns_empty_findings(self, mock_invoke, mock_get_cached, mock_which):
-        mock_invoke.return_value = MagicMock(content=json.dumps({"findings": []}))
+        mock_invoke.return_value = MagicMock(content=orjson.dumps({"findings": []}).decode())
 
         results = run_code_audit(["src/main.py"], {"src/main.py": "x = 1\n"})
 
@@ -168,7 +169,7 @@ class TestRunCodeAudit:
             patch(
                 "agents.language_audit.invoke_with_retry",
                 return_value=MagicMock(
-                    content=json.dumps(
+                    content=orjson.dumps(
                         {
                             "findings": [
                                 {
@@ -182,7 +183,7 @@ class TestRunCodeAudit:
                                 }
                             ]
                         }
-                    )
+                    ).decode()
                 ),
             ),
         ):

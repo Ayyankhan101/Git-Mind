@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import shutil
@@ -8,6 +7,7 @@ import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
+import orjson
 from langchain_groq import ChatGroq
 
 from llm_cache import get_cached, invoke_with_retry, set_cached
@@ -308,12 +308,12 @@ def _run_tool(tool: tuple[str, ...], matching: list[str], file_contents: dict[st
             )
         stdout = proc.stdout or ""
         if lang == "rust":
-            raw = json.loads(stdout)
+            raw = orjson.loads(stdout)
             return [r for r in raw if isinstance(r, dict) and "message" in r]
         if lang == "python":
-            data = json.loads(stdout)
+            data = orjson.loads(stdout)
             return data if isinstance(data, list) else data.get("results", data)
-        return json.loads(stdout)
+        return orjson.loads(stdout)
     except Exception as exc:
         logger.warning("Tool audit failed for %s: %s", lang, exc)
         return []
@@ -334,15 +334,15 @@ def _triage_with_llm(prompt_template: str, tool_results: list[dict], lang: str) 
         for r in tool_results[:_MAX_FINDINGS]
     ]
 
-    prompt = f"{prompt_template}\n\nTool findings:\n{json.dumps(truncated, indent=2)}"
+    prompt = f"{prompt_template}\n\nTool findings:\n{orjson.dumps(truncated, option=orjson.OPT_INDENT_2).decode()}"
 
     cached = get_cached(_CACHE_NS, prompt)
     if cached:
-        return json.loads(cached).get("findings", [])
+        return orjson.loads(cached).get("findings", [])
 
     try:
         raw = invoke_with_retry(_LLM, prompt).content
-        findings = json.loads(raw).get("findings", [])
+        findings = orjson.loads(raw).get("findings", [])
         set_cached(_CACHE_NS, prompt, raw)
     except Exception as exc:
         logger.error("LLM triage failed for %s: %s", lang, exc)
@@ -360,15 +360,15 @@ def _run_llm_fallback(
     if not sources:
         return []
 
-    prompt = f"{prompt_template}\n\nFiles:\n{json.dumps(sources, indent=2)}"
+    prompt = f"{prompt_template}\n\nFiles:\n{orjson.dumps(sources, option=orjson.OPT_INDENT_2).decode()}"
 
     cached = get_cached(_CACHE_NS, prompt)
     if cached:
-        return json.loads(cached).get("findings", [])
+        return orjson.loads(cached).get("findings", [])
 
     try:
         raw = invoke_with_retry(_LLM, prompt).content
-        findings = json.loads(raw).get("findings", [])
+        findings = orjson.loads(raw).get("findings", [])
         set_cached(_CACHE_NS, prompt, raw)
     except Exception as exc:
         logger.error("LLM fallback failed for %s: %s", lang, exc)
