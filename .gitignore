@@ -49,7 +49,9 @@ graphify-out/
 # ── HF Spaces deploy repo (separate git root) ────────────────
 gitmind-backend-space/
 
-# ── Misc ──────────────────────────────────────────────────────────────────────
+# ── Rust ──────────────────────────────────────────────────────────────────────
+rust-gitmind/target/
+rust-sidecar/target/
 .DS_Store
 Thumbs.db
 .env.local
@@ -57,3 +59,4 @@ Thumbs.db
 .env.test.local
 .env.production.local
 *.pdf
+.zai/

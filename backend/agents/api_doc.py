@@ -1,6 +1,6 @@
-import json
 import logging
 
+import orjson
 from gitmind_core import scan_route_files
 from langchain_groq import ChatGroq
 
@@ -45,14 +45,14 @@ def run_api_doc_agent(file_contents: dict[str, str]) -> list[dict]:
 
         cached = get_cached(_CACHE_NAMESPACE, prompt)
         if cached:
-            endpoints = json.loads(cached).get("endpoints", [])
+            endpoints = orjson.loads(cached).get("endpoints", [])
             logger.debug("API doc agent: cache hit for %s", fp)
         else:
             try:
                 raw = invoke_with_retry(_LLM, prompt).content
-                endpoints = json.loads(raw).get("endpoints", [])
+                endpoints = orjson.loads(raw).get("endpoints", [])
                 set_cached(_CACHE_NAMESPACE, prompt, raw)
-            except (json.JSONDecodeError, Exception) as exc:
+            except (orjson.JSONDecodeError, Exception) as exc:
                 logger.warning("API doc agent: parse failed for %s — %s", fp, exc)
                 endpoints = []
 

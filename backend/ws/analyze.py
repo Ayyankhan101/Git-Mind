@@ -1,10 +1,10 @@
 import asyncio
 import contextlib
-import json
 import os
 import shutil
 import uuid
 
+import orjson
 import structlog
 from fastapi import WebSocket, WebSocketDisconnect
 
@@ -70,7 +70,7 @@ async def handle_analyze(ws: WebSocket) -> None:
         await ws.close(code=1003)
         return
 
-    if len(json.dumps(payload)) > 1_000_000:
+    if len(orjson.dumps(payload)) > 1_000_000:
         await ws.send_json({"error": "Payload too large"})
         await ws.close(code=1009)
         return

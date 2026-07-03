@@ -1,5 +1,6 @@
-import json
 from unittest.mock import MagicMock, patch
+
+import orjson
 
 
 class TestHealthAgent:
@@ -22,7 +23,7 @@ class TestArchitectureAgent:
     def test_api_doc_returns_diagram(self, mock_cache, mock_invoke):
         from agents.architecture import run_architecture_agent
 
-        mock_invoke.return_value = MagicMock(content=json.dumps({"diagram": "graph TD\n    A[test]\n"}))
+        mock_invoke.return_value = MagicMock(content=orjson.dumps({"diagram": "graph TD\n    A[test]\n"}).decode())
 
         result = run_architecture_agent(["src/main.py"], {"src/main.py": "print('hello')"})
         assert isinstance(result, str)

@@ -1,9 +1,10 @@
-import json
 import logging
 import shutil
 import subprocess
 import uuid
 from pathlib import Path
+
+import orjson
 
 _SEMGREP = shutil.which("semgrep") or "semgrep"  # fallback for type narrowing
 
@@ -92,14 +93,14 @@ def _run_semgrep(local_path: str) -> list[dict]:
                 proc.stderr[:300],
             )
             return []
-        data = json.loads(proc.stdout or '{"results":[]}')
+        data = orjson.loads(proc.stdout or b'{"results":[]}')
         results = data.get("results", [])
         logger.info("semgrep returned %d raw findings", len(results))
         return results
     except subprocess.TimeoutExpired:
         logger.warning("semgrep timed out after 90 s")
         return []
-    except (json.JSONDecodeError, OSError) as exc:
+    except (orjson.JSONDecodeError, OSError) as exc:
         logger.error("semgrep execution error: %s", exc)
         return []
 
@@ -117,18 +118,18 @@ def _triage_with_llm(raw_results: list[dict]) -> list[dict]:
         for r in raw_results[:_MAX_FINDINGS]
     ]
 
-    prompt = f"{_TRIAGE_PROMPT}\n\nFindings:\n{json.dumps(truncated, indent=2)}"
+    prompt = f"{_TRIAGE_PROMPT}\n\nFindings:\n{orjson.dumps(truncated, option=orjson.OPT_INDENT_2).decode()}"
     cached = get_cached(_CACHE_NAMESPACE, prompt)
 
     if cached:
         logger.debug("Security agent: cache hit")
-        findings = json.loads(cached).get("findings", [])
+        findings = orjson.loads(cached).get("findings", [])
     else:
         try:
             raw = invoke_with_retry(_LLM, prompt).content
-            findings = json.loads(raw).get("findings", [])
+            findings = orjson.loads(raw).get("findings", [])
             set_cached(_CACHE_NAMESPACE, prompt, raw)
-        except (json.JSONDecodeError, Exception) as exc:
+        except (orjson.JSONDecodeError, Exception) as exc:
             logger.error(
                 "Security triage LLM failed: %s — dropping %d semgrep findings, using demo fallback",
                 exc,

@@ -1,4 +1,3 @@
-import json
 import logging
 import tempfile
 import threading
@@ -6,6 +5,7 @@ import time
 from pathlib import Path
 
 import chromadb
+import orjson
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 logger = logging.getLogger(__name__)
@@ -50,14 +50,14 @@ _embed_events: dict[str, threading.Event] = {}  # guards concurrent embeds
 
 def _load_registry() -> dict[str, float]:
     try:
-        return json.loads(_REGISTRY_PATH.read_text())
+        return orjson.loads(_REGISTRY_PATH.read_bytes())
     except Exception:
         return {}
 
 
 def _save_registry(reg: dict[str, float]) -> None:
     try:
-        _REGISTRY_PATH.write_text(json.dumps(reg))
+        _REGISTRY_PATH.write_bytes(orjson.dumps(reg))
     except Exception as exc:
         logger.debug("registry write failed: %s", exc)
 
