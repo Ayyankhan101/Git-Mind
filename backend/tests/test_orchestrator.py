@@ -1,36 +1,10 @@
 from unittest.mock import patch
 
 from orchestrator import (
-    _record_circuit_failure,
-    _record_circuit_success,
     build_graph,
     code_audit_node,
     scanner_node,
 )
-
-
-class TestCircuitBreaker:
-    def setup_method(self):
-        import orchestrator as o
-
-        o._circuit_failures = 0
-        o._circuit_open_until = 0.0
-
-    def test_failure_threshold_trips_breaker(self):
-        with patch("time.time", return_value=1000.0):
-            for _ in range(3):
-                _record_circuit_failure()
-        import orchestrator as o
-
-        assert o._circuit_open_until > 1000.0
-
-    def test_success_resets_failures(self):
-        _record_circuit_failure()
-        _record_circuit_failure()
-        _record_circuit_success()
-        import orchestrator as o
-
-        assert o._circuit_failures == 0
 
 
 class TestScannerNode:
@@ -70,12 +44,6 @@ class TestCodeAuditNode:
 
     def test_scanner_failed(self):
         result = code_audit_node({"_scanner_failed": True, "file_tree": [], "file_contents": {}})
-        assert result["code_audit"] is None
-        assert any(ev["status"] == "skipped" for ev in result.get("events", []))
-
-    @patch("orchestrator._is_circuit_open", return_value=True)
-    def test_circuit_breaker_open(self, _mock):
-        result = code_audit_node({"file_tree": [], "file_contents": {}})
         assert result["code_audit"] is None
         assert any(ev["status"] == "skipped" for ev in result.get("events", []))
 

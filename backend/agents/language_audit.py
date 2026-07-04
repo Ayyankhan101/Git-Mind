@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import tempfile
 import uuid
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -199,14 +200,30 @@ _LANGUAGE_MAP: dict[str, AuditorDef] = {
 
 
 def run_code_audit(file_tree: list[str], file_contents: dict[str, str]) -> list[dict]:
-    results: list[dict] = []
+    # Pre-filter matching files per language
+    lang_tasks: list[tuple[str, AuditorDef, list[str]]] = []
     for lang, cfg in _LANGUAGE_MAP.items():
         matching = [f for f in file_tree if Path(f).suffix in cfg.extensions]
-        if not matching:
-            continue
-        lang_result = _audit_language(lang, cfg, matching, file_contents)
-        if lang_result and lang_result.get("findings"):
-            results.append(lang_result)
+        if matching:
+            lang_tasks.append((lang, cfg, matching))
+
+    if not lang_tasks:
+        return []
+
+    # Run all language audits in parallel (each linter runs in its own thread)
+    results: list[dict] = []
+    with ThreadPoolExecutor(max_workers=min(len(lang_tasks), 6)) as pool:
+        futures = {
+            pool.submit(_audit_language, lang, cfg, matching, file_contents): lang for lang, cfg, matching in lang_tasks
+        }
+        for future in as_completed(futures):
+            lang = futures[future]
+            try:
+                lang_result = future.result()
+                if lang_result and lang_result.get("findings"):
+                    results.append(lang_result)
+            except Exception as exc:
+                logger.warning("Language audit failed for %s: %s", lang, exc)
     return results
 
 

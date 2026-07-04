@@ -12,7 +12,7 @@ class Analysis(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     owner_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     repo_name: Mapped[str] = mapped_column(String(255), default="")
-    repo_url: Mapped[str] = mapped_column(String(1024), default="")
+    repo_url: Mapped[str] = mapped_column(String(1024), default="", index=True)
     architecture_diagram: Mapped[str | None] = mapped_column(Text, nullable=True)
     api_docs: Mapped[list | None] = mapped_column(JSON, nullable=True)
     security_findings: Mapped[list | None] = mapped_column(JSON, nullable=True)
@@ -24,7 +24,7 @@ class Analysis(Base):
     health: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     head_sha: Mapped[str | None] = mapped_column(String(64), nullable=True)
     chat_history: Mapped[list | None] = mapped_column(JSON, nullable=True)
-    saved_at: Mapped[float] = mapped_column(Float, default=0.0)
+    saved_at: Mapped[float] = mapped_column(Float, default=0.0, index=True)
     expires_at: Mapped[float | None] = mapped_column(Float, nullable=True)
 
 
@@ -39,7 +39,7 @@ class MonitoredRepo(Base):
     __tablename__ = "monitored_repos"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    repo_url: Mapped[str] = mapped_column(String(1024))
+    repo_url: Mapped[str] = mapped_column(String(1024), index=True)
     repo_name: Mapped[str] = mapped_column(String(255))
     owner_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     slack_webhook_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
