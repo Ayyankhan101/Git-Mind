@@ -70,11 +70,11 @@ def api_doc_node(state: RepoState) -> dict:
         return {"api_docs": [], "events": [_event("api_docs", "error", str(exc)[:200])]}
 
 
-def security_node(state: RepoState) -> dict:
+async def security_node(state: RepoState) -> dict:
     if state.get("_scanner_failed"):
         return {"security_findings": [], "events": [_event("security", "skipped", "scanner failed")]}
     try:
-        findings = run_security_agent(state["local_path"] or "")
+        findings = await run_security_agent(state["local_path"] or "")
         return {"security_findings": findings, "events": [_event("security", "done")]}
     except Exception as exc:
         logger.error("security_node failed: %s", exc)

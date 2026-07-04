@@ -32,8 +32,8 @@ class TestArchitectureAgent:
 
 class TestSecurityAgent:
     @patch("agents.security.shutil.which", return_value=None)
-    def test_security_returns_list(self, mock_which):
+    async def test_security_returns_list(self, mock_which):
         from agents.security import run_security_agent
 
-        result = run_security_agent("/tmp/repo")
+        result = await run_security_agent("/tmp/repo")
         assert isinstance(result, list)
