@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/Ayyankhan101/Git-Mind/actions"><img src="https://github.com/Ayyankhan101/Git-Mind/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/Ayyankhan101/Git-Mind/blob/main/backend/tests/"><img src="https://img.shields.io/badge/backend-109%20tests-brightgreen" alt="Backend Tests"></a>
+  <a href="https://github.com/Ayyankhan101/Git-Mind/blob/main/backend/tests/"><img src="https://img.shields.io/badge/backend-106%20tests-brightgreen" alt="Backend Tests"></a>
   <a href="https://github.com/Ayyankhan101/Git-Mind/blob/main/frontend/src/"><img src="https://img.shields.io/badge/frontend-70%20tests-brightgreen" alt="Frontend Tests"></a>
   <a href="https://huggingface.co/spaces/Ak001z/gitmind-backend"><img src="https://img.shields.io/badge/Backend-Hugging%20Face-orange" alt="HF Spaces"></a>
   <a href="https://gitmind-peach.vercel.app"><img src="https://img.shields.io/badge/Frontend-Vercel-blue" alt="Vercel"></a>
@@ -22,6 +22,27 @@
 | ⚙️  | **[ak001z-gitmind-backend.hf.space](https://ak001z-gitmind-backend.hf.space)** | FastAPI backend — Hugging Face Spaces (Docker)    |
 
 > **Tip:** Enter a GitHub PAT in the command bar (`⌘K`) to access private repos and enable auto-fix PRs.
+
+---
+
+## Table of Contents
+
+- [Architecture](#architecture)
+- [Features](#features)
+- [Quickstart](#quickstart)
+- [Environment Variables](#️-environment-variables-18)
+- [Project Layout](#️-project-layout)
+- [API Endpoints](#-api-endpoints-19)
+- [Rust Native Acceleration](#rust-native-acceleration)
+- [Persistence](#persistence)
+- [Rate Limiting](#rate-limiting)
+- [Telemetry](#telemetry)
+- [GitHub Authentication](#github-authentication)
+- [CI/CD](#cicd)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Keyboard Shortcuts](#keyboard-shortcuts)
+- [Contributing](#contributing)
 
 ---
 
@@ -152,28 +173,50 @@ Logs are written to `logs/backend.log` and `logs/frontend.log`.
 ---
 
 <details>
-<summary><strong>⚙️ Environment Variables (28)</strong></summary>
+<summary><strong>⚙️ Environment Variables (18)</strong></summary>
 
-| Variable                      | Required | Default                            | Description                                                         |
-| ----------------------------- | -------- | ---------------------------------- | ------------------------------------------------------------------- |
-| `GROQ_API_KEY`                | ✅       | —                                  | Groq API key — free at [console.groq.com](https://console.groq.com) |
-| `DATABASE_URL`                |          | `sqlite+aiosqlite:///./gitmind.db` | SQLite for local dev; PostgreSQL+asyncpg for production             |
-| `GITHUB_TOKEN`                |          | —                                  | Server-side GitHub PAT — raises rate limit to 5,000 req/hr          |
-| `REDIS_URL`                   |          | —                                  | Redis URL — enables shared rate limiter, session cache, task queue  |
-| `CORS_ORIGINS`                |          | `http://localhost:3000,…`          | Comma-separated allowed origins                                     |
-| `WS_AUTH_SECRET`              |          | —                                  | WebSocket auth secret — clients must send matching value            |
-| `REQUIRE_WS_AUTH`             |          | —                                  | If `true`, WS connections rejected without valid `WS_AUTH_SECRET`   |
-| `SENTRY_DSN`                  |          | —                                  | Sentry DSN for error tracking                                       |
-| `ENVIRONMENT`                 |          | —                                  | Environment tag for Sentry (e.g. `production`)                      |
-| `GITMIND_SERVICE_KEY`         |          | —                                  | CI/service auth key — bypasses rate limits                          |
-| `SIDECAR_URL`                 |          | `http://127.0.0.1:8003`            | Solidity parser sidecar endpoint                                    |
-| `TASK_WORKERS`                |          | `3`                                | Background task queue worker count                                  |
-| `MONITOR_INTERVAL_SECONDS`    |          | `3600`                             | Repository monitoring loop interval                                 |
-| `REPORTER_INTERVAL_SEC`       |          | `45`                               | Crisis Mode reporter check interval                                 |
-| `JSON_LOGS`                   |          | —                                  | Enable JSON-formatted structured logging                            |
-| `LOG_LEVEL`                   |          | `INFO`                             | Logging level                                                       |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` |          | —                                  | OpenTelemetry OTLP gRPC endpoint                                    |
-| `DEBUG`                       |          | —                                  | Enable health check debug info                                      |
+**Required**
+
+| Variable       | Description                                                               |
+| -------------- | ------------------------------------------------------------------------- |
+| `GROQ_API_KEY` | Groq API key — free at [console.groq.com](https://console.groq.com)       |
+| `CORS_ORIGINS` | Comma-separated allowed origins (e.g. `https://gitmind-peach.vercel.app`) |
+
+**Database & Storage**
+
+| Variable       | Default                            | Description                                            |
+| -------------- | ---------------------------------- | ------------------------------------------------------ |
+| `DATABASE_URL` | `sqlite+aiosqlite:///./gitmind.db` | SQLite for dev; `postgresql+asyncpg://...` for prod    |
+| `REDIS_URL`    | —                                  | Enables shared rate limiter, session cache, task queue |
+
+**Authentication & Security**
+
+| Variable              | Description                                         |
+| --------------------- | --------------------------------------------------- |
+| `GITHUB_TOKEN`        | Server-side PAT — raises rate limit to 5,000 req/hr |
+| `WS_AUTH_SECRET`      | WebSocket auth — clients must send matching value   |
+| `REQUIRE_WS_AUTH`     | When `true`, reject WS without valid auth           |
+| `GITMIND_SERVICE_KEY` | CI/service key — bypasses rate limits               |
+
+**Observability**
+
+| Variable                      | Description                               |
+| ----------------------------- | ----------------------------------------- |
+| `SENTRY_DSN`                  | Sentry DSN for error tracking             |
+| `ENVIRONMENT`                 | Environment tag (`production`, `staging`) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OpenTelemetry OTLP gRPC endpoint          |
+| `JSON_LOGS`                   | Enable JSON structured logging            |
+| `LOG_LEVEL`                   | Logging level (default: `INFO`)           |
+
+**Tuning**
+
+| Variable                   | Default                 | Description                         |
+| -------------------------- | ----------------------- | ----------------------------------- |
+| `SIDECAR_URL`              | `http://127.0.0.1:8003` | Solidity parser sidecar endpoint    |
+| `TASK_WORKERS`             | `3`                     | Background task queue worker count  |
+| `MONITOR_INTERVAL_SECONDS` | `3600`                  | Repo monitoring loop interval       |
+| `REPORTER_INTERVAL_SEC`    | `45`                    | Crisis Mode reporter check interval |
+| `DEBUG`                    | —                       | Enable health check debug info      |
 
 </details>
 
@@ -200,7 +243,7 @@ Git-Mind/
 │   ├── models/                     ← SQLAlchemy + Pydantic
 │   ├── services/                   ← Auth, cache, rate limiter, task queue, telemetry
 │   ├── alembic/                    ← Database migrations
-│   └── tests/                      ← 109 pytest tests
+    │   └── tests/                      ← 106 pytest tests
 │
 ├── rust-gitmind/                   ← PyO3 native module (gitmind_core)
 │   └── src/
@@ -218,7 +261,8 @@ Git-Mind/
 ├── .github/workflows/              ← CI/CD pipelines
 └── frontend/
     └── src/
-        ├── App.js                  ← Root component
+        ├── App.js                  ← Root component (useReducer state)
+    ├── appReducer.js           ← Typed actions + state transitions
         ├── api.js                  ← All API calls
         ├── components/             ← Tab components + CommandPalette
         └── ...                     ← 70 Jest tests
@@ -229,30 +273,48 @@ Git-Mind/
 ---
 
 <details>
-<summary><strong>🔌 API Endpoints (26)</strong></summary>
+<summary><strong>🔌 API Endpoints (19)</strong></summary>
 
-| Endpoint                  | Method          | Description                       |
-| ------------------------- | --------------- | --------------------------------- |
-| `/ws/analyze`             | WS              | Streams agent events              |
-| `/analyze`                | POST            | Triggers full pipeline            |
-| `/analysis/{session_id}`  | GET             | Load saved analysis snapshot      |
-| `/analysis/previous`      | GET             | Last analysis for a repo          |
-| `/chat`                   | POST            | Ask a question about the codebase |
-| `/chat/stream`            | POST            | SSE streaming chat                |
-| `/fix`                    | POST            | Generate a fix patch              |
-| `/fix/pr`                 | POST            | Auto-create GitHub PR with fix    |
-| `/pr-review`              | POST            | Review a GitHub PR                |
-| `/pr-impact`              | POST            | Predict PR merge risk             |
-| `/task/{task_id}`         | GET             | Poll background task              |
-| `/org-audit`              | POST            | Cross-repo CVE scan               |
-| `/pr-list/{owner}/{repo}` | GET             | List open PRs                     |
-| `/incident-report`        | POST            | Generate incident report          |
-| `/repos/{username}`       | GET             | List user repos                   |
-| `/monitor`                | POST/GET/DELETE | Subscribe / list / unsubscribe    |
-| `/webhook/notify`         | POST            | Push results to external URL      |
-| `/ws/crisis`              | WS              | Crisis Mode role-play             |
-| `/health`                 | GET             | Health check                      |
-| `/metrics`                | GET             | Prometheus metrics                |
+**Analysis**
+
+| Endpoint                 | Method | Description                       |
+| ------------------------ | ------ | --------------------------------- |
+| `/ws/analyze`            | WS     | Streams agent events              |
+| `/analyze`               | POST   | Triggers full pipeline            |
+| `/analysis/{session_id}` | GET    | Load saved analysis snapshot      |
+| `/analysis/previous`     | GET    | Last analysis for a repo          |
+| `/analysis/history`      | GET    | Health trend data over time       |
+| `/chat`                  | POST   | Ask a question about the codebase |
+| `/chat/stream`           | POST   | SSE streaming chat                |
+| `/fix`                   | POST   | Generate a fix patch              |
+
+**PR Review**
+
+| Endpoint                  | Method | Description           |
+| ------------------------- | ------ | --------------------- |
+| `/fix/pr`                 | POST   | Auto-create GitHub PR |
+| `/pr-review`              | POST   | Review a GitHub PR    |
+| `/pr-impact`              | POST   | Predict PR merge risk |
+| `/pr-list/{owner}/{repo}` | GET    | List open PRs         |
+| `/task/{task_id}`         | GET    | Poll background task  |
+
+**Monitoring & Org**
+
+| Endpoint            | Method          | Description                |
+| ------------------- | --------------- | -------------------------- |
+| `/repos/{username}` | GET             | List user repos            |
+| `/monitor`          | POST/GET/DELETE | Subscribe/list/unsubscribe |
+| `/org-audit`        | POST            | Cross-repo CVE scan        |
+| `/webhook/notify`   | POST            | Push results to webhook    |
+| `/incident-report`  | POST            | Generate incident report   |
+
+**System**
+
+| Endpoint     | Method | Description           |
+| ------------ | ------ | --------------------- |
+| `/ws/crisis` | WS     | Crisis Mode role-play |
+| `/health`    | GET    | Health check          |
+| `/metrics`   | GET    | Prometheus metrics    |
 
 </details>
 
@@ -343,7 +405,7 @@ Rate-limited requests return HTTP 429 with `Retry-After` header.
 ## Testing
 
 ```
-✅ Backend:  109 tests passing (pytest-asyncio)
+✅ Backend:  106 tests passing (pytest-asyncio)
 ✅ Frontend:  70 tests passing (Jest + React Testing Library)
 ✅ Rust:      clippy + rustfmt clean
 ```
