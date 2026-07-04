@@ -80,7 +80,7 @@ def solidity_agent(state: dict) -> dict:
 
 
 def _triage_with_llm(contracts: list) -> list:
-    prompt = f"{_TRIAGE_PROMPT}\n\nContracts:\n{orjson.dumps(contracts, option=orjson.OPT_INDENT_2).decode()}"
+    prompt = f"{_TRIAGE_PROMPT}\n\nContracts:\n{orjson.dumps(contracts).decode()}"
     cached = get_cached(_CACHE_NS, prompt)
 
     if cached:

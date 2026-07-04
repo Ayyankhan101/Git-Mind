@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import shutil
 import subprocess
@@ -43,7 +44,7 @@ Do NOT include any explanation outside the JSON object.\
 """
 
 
-def run_security_agent(local_path: str) -> list[dict]:
+async def run_security_agent(local_path: str) -> list[dict]:
     if not _SEMGREP:
         logger.warning("semgrep not found in PATH — returning synthetic finding")
         return _synthetic_finding()
@@ -52,7 +53,7 @@ def run_security_agent(local_path: str) -> list[dict]:
         logger.warning("security agent called with empty local_path")
         return _synthetic_finding()
 
-    raw_results = _run_semgrep(local_path)
+    raw_results = await asyncio.to_thread(_run_semgrep, local_path)
     if not raw_results:
         logger.info("semgrep returned zero findings — repo is clean")
         return []
@@ -118,7 +119,7 @@ def _triage_with_llm(raw_results: list[dict]) -> list[dict]:
         for r in raw_results[:_MAX_FINDINGS]
     ]
 
-    prompt = f"{_TRIAGE_PROMPT}\n\nFindings:\n{orjson.dumps(truncated, option=orjson.OPT_INDENT_2).decode()}"
+    prompt = f"{_TRIAGE_PROMPT}\n\nFindings:\n{orjson.dumps(truncated).decode()}"
     cached = get_cached(_CACHE_NAMESPACE, prompt)
 
     if cached:

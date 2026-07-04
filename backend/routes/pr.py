@@ -180,7 +180,7 @@ async def _compute_pr_impact(
         scan = await asyncio.to_thread(clone_and_scan, repo_url, token, head_ref)
         local_path = scan["local_path"]
 
-        sec_findings = await asyncio.to_thread(run_security_agent, local_path)
+        sec_findings = await run_security_agent(local_path)
         cve_findings = await asyncio.to_thread(run_cve_scanner, scan["file_contents"])
         code_audit = await asyncio.to_thread(
             run_code_audit,

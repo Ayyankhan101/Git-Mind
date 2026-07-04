@@ -351,7 +351,7 @@ def _triage_with_llm(prompt_template: str, tool_results: list[dict], lang: str) 
         for r in tool_results[:_MAX_FINDINGS]
     ]
 
-    prompt = f"{prompt_template}\n\nTool findings:\n{orjson.dumps(truncated, option=orjson.OPT_INDENT_2).decode()}"
+    prompt = f"{prompt_template}\n\nTool findings:\n{orjson.dumps(truncated).decode()}"
 
     cached = get_cached(_CACHE_NS, prompt)
     if cached:
@@ -377,7 +377,7 @@ def _run_llm_fallback(
     if not sources:
         return []
 
-    prompt = f"{prompt_template}\n\nFiles:\n{orjson.dumps(sources, option=orjson.OPT_INDENT_2).decode()}"
+    prompt = f"{prompt_template}\n\nFiles:\n{orjson.dumps(sources).decode()}"
 
     cached = get_cached(_CACHE_NS, prompt)
     if cached:
