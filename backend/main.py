@@ -120,58 +120,63 @@ async def _run_monitoring_checks():
         logger.error("Failed to fetch monitored repos", error=str(exc))
         return
 
-    for repo in monitored:
-        try:
-            current_sha = await asyncio.to_thread(get_remote_sha, repo.repo_url)
-            if not current_sha or current_sha == repo.last_sha:
-                continue
+    sem = asyncio.Semaphore(5)  # max 5 concurrent analyses
 
-            logger.info(
-                "Monitor: SHA changed, triggering analysis",
-                repo=repo.repo_url,
-                old=(repo.last_sha or "")[:8],
-                new=current_sha[:8],
-            )
+    async def _check_one(repo):
+        async with sem:
+            try:
+                current_sha = await asyncio.to_thread(get_remote_sha, repo.repo_url)
+                if not current_sha or current_sha == repo.last_sha:
+                    return
 
-            import uuid
+                logger.info(
+                    "Monitor: SHA changed, triggering analysis",
+                    repo=repo.repo_url,
+                    old=(repo.last_sha or "")[:8],
+                    new=current_sha[:8],
+                )
 
-            from routes.analyze import _run_analysis
+                import uuid
 
-            session_id = str(uuid.uuid4())
-            result = await _run_analysis(repo.repo_url, None, session_id)
+                from routes.analyze import _run_analysis
 
-            if result.get("error"):
-                logger.error("Monitor: analysis failed", repo=repo.repo_url, error=result["error"][:200])
-                session_id = None
-            else:
-                if repo.last_session_id and (repo.slack_webhook_url or repo.email_recipients):
-                    prev = await get_previous_analysis_db(repo.repo_url, exclude_session=session_id)
-                    curr_health = (result.get("health") or {}).get("score", 0)
-                    prev_health = (prev.get("health") or {}).get("score", 0) if prev else 0
-                    score_delta = curr_health - prev_health
+                session_id = str(uuid.uuid4())
+                result = await _run_analysis(repo.repo_url, None, session_id)
 
-                    curr_sec = len(result.get("security_findings", []))
-                    prev_sec = len(prev.get("security_findings", [])) if prev else 0
-                    new_findings = curr_sec - prev_sec
+                if result.get("error"):
+                    logger.error("Monitor: analysis failed", repo=repo.repo_url, error=result["error"][:200])
+                    session_id = None
+                else:
+                    if repo.last_session_id and (repo.slack_webhook_url or repo.email_recipients):
+                        prev = await get_previous_analysis_db(repo.repo_url, exclude_session=session_id)
+                        curr_health = (result.get("health") or {}).get("score", 0)
+                        prev_health = (prev.get("health") or {}).get("score", 0) if prev else 0
+                        score_delta = curr_health - prev_health
 
-                    significant = score_delta < repo.score_delta_threshold or (
-                        repo.alert_on_new_findings and new_findings > 0
-                    )
+                        curr_sec = len(result.get("security_findings", []))
+                        prev_sec = len(prev.get("security_findings", [])) if prev else 0
+                        new_findings = curr_sec - prev_sec
 
-                    if significant:
-                        await _send_monitor_alert(repo, score_delta, new_findings, curr_health, session_id)
+                        significant = score_delta < repo.score_delta_threshold or (
+                            repo.alert_on_new_findings and new_findings > 0
+                        )
 
-            async with async_session_factory() as session:
-                merged = await session.merge(repo)
-                merged.last_sha = current_sha
-                merged.last_session_id = session_id
-                merged.last_check_at = time.time()
-                await session.commit()
+                        if significant:
+                            await _send_monitor_alert(repo, score_delta, new_findings, curr_health, session_id)
 
-            logger.info("Monitor: analysis complete", repo=repo.repo_url, session=session_id)
+                async with async_session_factory() as session:
+                    merged = await session.merge(repo)
+                    merged.last_sha = current_sha
+                    merged.last_session_id = session_id
+                    merged.last_check_at = time.time()
+                    await session.commit()
 
-        except Exception as exc:
-            logger.error("Monitor check failed", repo=repo.repo_url, error=str(exc)[:200])
+                logger.info("Monitor: analysis complete", repo=repo.repo_url, session=session_id)
+
+            except Exception as exc:
+                logger.error("Monitor check failed", repo=repo.repo_url, error=str(exc)[:200])
+
+    await asyncio.gather(*[_check_one(repo) for repo in monitored], return_exceptions=True)
 
 
 async def _send_monitor_alert(repo, score_delta, new_findings, curr_health, session_id):
