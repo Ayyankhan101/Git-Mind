@@ -1,15 +1,14 @@
 import "@testing-library/jest-dom";
+import { vi } from "vitest";
 
 // Mock pdfmake (uses Node.js built-ins not available in jsdom)
-jest.mock("pdfmake/build/pdfmake", () => ({
-  __esModule: true,
+vi.mock("pdfmake/build/pdfmake", () => ({
   default: {
     vfs: {},
-    createPdf: jest.fn(() => ({ download: jest.fn() })),
+    createPdf: vi.fn(() => ({ download: vi.fn() })),
   },
 }));
-jest.mock("pdfmake/build/vfs_fonts", () => ({
-  __esModule: true,
+vi.mock("pdfmake/build/vfs_fonts", () => ({
   default: { pdfMake: { vfs: {} } },
 }));
 
@@ -26,14 +25,14 @@ if (!globalThis.crypto?.randomUUID) {
 const store = {};
 Object.defineProperty(window, "sessionStorage", {
   value: {
-    getItem: jest.fn((key) => store[key] ?? null),
-    setItem: jest.fn((key, val) => {
+    getItem: vi.fn((key) => store[key] ?? null),
+    setItem: vi.fn((key, val) => {
       store[key] = String(val);
     }),
-    removeItem: jest.fn((key) => {
+    removeItem: vi.fn((key) => {
       delete store[key];
     }),
-    clear: jest.fn(() => {
+    clear: vi.fn(() => {
       Object.keys(store).forEach((k) => delete store[k]);
     }),
   },
@@ -43,14 +42,14 @@ Object.defineProperty(window, "sessionStorage", {
 // Mock localStorage
 Object.defineProperty(window, "localStorage", {
   value: {
-    getItem: jest.fn((key) => store[key] ?? null),
-    setItem: jest.fn((key, val) => {
+    getItem: vi.fn((key) => store[key] ?? null),
+    setItem: vi.fn((key, val) => {
       store[key] = String(val);
     }),
-    removeItem: jest.fn((key) => {
+    removeItem: vi.fn((key) => {
       delete store[key];
     }),
-    clear: jest.fn(() => {
+    clear: vi.fn(() => {
       Object.keys(store).forEach((k) => delete store[k]);
     }),
   },
@@ -63,7 +62,7 @@ Object.defineProperty(navigator, "userAgentData", {
   writable: true,
 });
 
-// CRA's jsdom doesn't have AbortSignal.timeout
+// AbortSignal.timeout polyfill for jsdom
 if (!AbortSignal.timeout) {
   AbortSignal.timeout = (ms) => {
     const ctrl = new AbortController();

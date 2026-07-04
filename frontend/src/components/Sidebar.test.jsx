@@ -1,21 +1,32 @@
+import {
+  vi,
+  describe,
+  it,
+  test,
+  expect,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+} from "vitest";
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import Sidebar from "./Sidebar";
 
 const defaultProps = {
   repos: [],
-  onSelect: jest.fn(),
+  onSelect: vi.fn(),
   selectedUrl: null,
   loading: false,
   error: null,
   history: [],
-  onHistorySelect: jest.fn(),
+  onHistorySelect: vi.fn(),
   agentStatus: {},
   isAnalyzing: false,
   analyzed: false,
   elapsedSec: 0,
   repoName: "",
-  onLoadUser: jest.fn(),
+  onLoadUser: vi.fn(),
   currentUser: null,
   loadedUsers: [],
 };

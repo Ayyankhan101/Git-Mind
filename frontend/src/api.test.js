@@ -1,7 +1,18 @@
+import {
+  vi,
+  describe,
+  it,
+  test,
+  expect,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+} from "vitest";
 import { fetchRepos, fetchSummary, loadSharedAnalysis, orgAudit } from "./api";
 
 function mockFetchOnce(status, body) {
-  global.fetch = jest.fn().mockResolvedValue({
+  global.fetch = vi.fn().mockResolvedValue({
     ok: status < 400,
     status,
     json: () => Promise.resolve(body),
@@ -9,16 +20,16 @@ function mockFetchOnce(status, body) {
 }
 
 function mockFetchError(message) {
-  global.fetch = jest.fn().mockRejectedValue(new Error(message));
+  global.fetch = vi.fn().mockRejectedValue(new Error(message));
 }
 
 beforeEach(() => {
-  jest.useFakeTimers();
+  vi.useFakeTimers();
 });
 
 afterEach(() => {
   delete global.fetch;
-  jest.useRealTimers();
+  vi.useRealTimers();
 });
 
 describe("error parsing", () => {
@@ -65,7 +76,7 @@ describe("fetchRepos", () => {
   });
 
   test("passes Authorization header when tokenManager has a token", async () => {
-    const tokenManager = require("./tokenManager");
+    const tokenManager = await import("./tokenManager");
     await tokenManager.set("ghp_abc123");
     mockFetchOnce(200, { repos: [] });
     await fetchRepos("test-user");
