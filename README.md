@@ -49,35 +49,122 @@
 ## Architecture
 
 ```mermaid
-graph TD
-    UI[React Frontend] -->|REST + WebSocket| BE[FastAPI Backend]
-    BE -->|clone + index| SCANNER[Scanner Agent]
-    SCANNER --> A1[🏛️ Architecture]
-    SCANNER --> A2[📡 API Docs]
-    SCANNER --> A3[🔒 Security]
-    SCANNER --> A4[🛡️ CVE Scan]
-    SCANNER --> A5[📋 Git Audit]
-    SCANNER --> A6[⛓️ Solidity Audit]
-    SCANNER --> A7[🔍 Code Audit]
-    SCANNER --> A8[💬 RAG Setup]
-    SCANNER --> A9[👤 Blame Enrichment]
+graph TB
+  %% ── Styles ──────────────────────────────────────────────
+  classDef frontend fill:#61dafb,stroke:#333,color:#111
+  classDef backend fill:#009688,stroke:#333,color:#fff
+  classDef agent fill:#e0f2f1,stroke:#004d40,color:#111
+  classDef infra fill:#e8eaf6,stroke:#283593,color:#111
+  classDef external fill:#fff3e0,stroke:#e65100,color:#111
+  classDef rust fill:#fff8e1,stroke:#f57f17,color:#111
+  classDef storage fill:#f3e5f5,stroke:#6a1b9a,color:#111
 
-    A3 --> SEM[semgrep]
-    A4 --> OSV[OSV.dev]
-    A6 --> SOLANG[Rust Sidecar]
-    A1 & A2 & A3 & A4 & A5 & A6 & A7 --> LLM[Groq llama-3.3-70b]
-    A8 --> CDB[ChromaDB]
+  %% ── Frontend ────────────────────────────────────────────
+  subgraph FE["React Frontend (Vercel)"]
+    UI["App.js / appReducer.js"]
+  end
 
-    style UI fill:#61dafb,stroke:#333
-    style BE fill:#009688,stroke:#333,color:#fff
-    style LLM fill:#ff6f00,stroke:#333,color:#fff
-    style CDB fill:#4caf50,stroke:#333,color:#fff
-    style SOLANG fill:#e65100,stroke:#333,color:#fff
-    style SEM fill:#f44336,stroke:#333,color:#fff
-    style OSV fill:#9c27b0,stroke:#333,color:#fff
+  %% ── Backend ─────────────────────────────────────────────
+  subgraph BE["FastAPI Backend (HF Spaces / Docker)"]
+    direction TB
+    REST["REST Routes<br/>(/analyze, /fix, /chat, /pr-review, ...)"]
+    WS["WebSocket<br/>(/ws/analyze, /ws/crisis)"]
+    ORCH["LangGraph Orchestrator<br/>9-agent DAG"]
+    CRISIS["Crisis Mode<br/>CEO / Legal / Engineering / Reporter"]
+    MONITOR["Background Monitor<br/>SHA polling loop"]
+
+    ORCH --> REST & WS
+    REST --> ORCH
+    WS --> ORCH
+    MONITOR -.-> ORCH
+  end
+
+  %% ── Agents (inside backend) ─────────────────────────────
+  subgraph AGENTS["Agent Pipeline"]
+    SCANNER["Scanner Agent<br/>clone + index"]
+    A1["Architecture"]
+    A2["API Docs"]
+    A3["Security (semgrep)"]
+    A4["CVE (OSV.dev)"]
+    A5["Git Audit"]
+    A6["Solidity Audit"]
+    A7["Code Audit"]
+    A8["RAG Embedding"]
+    A9["Blame Enrichment"]
+
+    ORCH --> SCANNER
+    SCANNER --> A1 & A2 & A3 & A4 & A5 & A6 & A7 & A8 & A9
+  end
+
+  %% ── Rust Native ─────────────────────────────────────────
+  subgraph RUST["Rust Native"]
+    PYO3["gitmind_core (PyO3)<br/>lockfile parsers, secrets,<br/>blame, text splitter"]
+    SIDECAR["solang-parser sidecar<br/>Axum :8003"]
+  end
+
+  SCANNER -.-> PYO3
+  A6 -.-> SIDECAR
+  A3 -.-> PYO3
+  A5 -.-> PYO3
+  A8 -.-> PYO3
+
+  %% ── External APIs ───────────────────────────────────────
+  subgraph EXT["External APIs"]
+    GROQ["Groq API<br/>llama-3.3-70b"]
+    OSV["OSV.dev"]
+    GH_API["GitHub API"]
+    GH_CLONE["git clone<br/>(GIT_ASKPASS)"]
+  end
+
+  A1 & A2 & A3 & A4 & A5 & A6 & A7 --> GROQ
+  A4 --> OSV
+  SCANNER --> GH_CLONE
+  A9 --> GH_API
+
+  %% ── Storage ─────────────────────────────────────────────
+  subgraph STORE["Persistence"]
+    DB[("SQLite / PostgreSQL<br/>asyncpg/aiosqlite")]
+    REDIS[("Redis<br/>rate limiter, queue")]
+    CHROMA[("ChromaDB<br/>vector store")]
+    CACHE[("diskcache<br/>LLM response cache")]
+    FS[("File system<br/>cloned repos")]
+  end
+
+  ORCH --- DB
+  MONITOR --- DB
+  A8 --> CHROMA
+  A8 -.-> REDIS
+  ORCH -.-> REDIS
+  REST --- DB
+
+  %% ── Auth ────────────────────────────────────────────────
+  subgraph AUTH["Auth Layer"]
+    PAT["PAT via Cmd+K<br/>AES-GCM encrypted"]
+    SERVER_TOKEN["GITHUB_TOKEN<br/>(env var)"]
+    SERVICE_KEY["GITMIND_SERVICE_KEY<br/>(CI bypass)"]
+  end
+
+  UI --> PAT
+  PAT -.-> GH_API
+  PAT -.-> GH_CLONE
+
+  %% ── CI/CD ──────────────────────────────────────────────
+  subgraph CICD["CI/CD"]
+    CI["ci.yml<br/>tests > build > deploy"]
+    PR_CHECK["pr-analysis.yml<br/>auto-comment"]
+    WEEKLY["weekly-monitor.yml<br/>Slack + issue"]
+  end
+
+  CI -.->|deploy to| BE
+  CI -.->|deploy to| FE
+
+  %% ── FE <-> BE ────────────────────────────────────────────
+  UI <-->|"REST + WebSocket<br/>port 8002"| BE
 ```
 
-All 8 post-scanner agents run **in parallel**. Each is fully error-isolated — a failure returns safe defaults and the rest of the pipeline continues.
+All 9 post-scanner agents run **in parallel**. Each is fully error-isolated — a failure returns safe defaults and the rest of the pipeline continues.
+
+> **Dashed lines** (`.->`) indicate indirect/Rust calls. **Solid lines** are primary data flow.
 
 ---
 
