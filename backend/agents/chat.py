@@ -29,14 +29,37 @@ Previous conversation:
 """
 
 
+def _build_context(chunks: list[dict]) -> str:
+    """Format chunks into context string with file headers.
+
+    Deduplicates by filepath — if the same file appears in multiple chunks
+    (e.g. from different search methods), only the first occurrence is kept.
+    """
+    seen: set[str] = set()
+    parts: list[str] = []
+    for c in chunks:
+        fp = c["filepath"]
+        if fp in seen:
+            continue
+        seen.add(fp)
+        parts.append(f"--- {fp} ---\n{c['content']}")
+    return "\n\n".join(parts) or "No relevant code found."
+
+
 def _build_messages(
     question: str,
     collection_name: str,
     chat_history: list[dict],
     repo_name: str,
 ) -> list[dict]:
-    chunks = search_codebase(collection_name, question, n_results=8)
-    context = "\n\n".join(f"--- {c['filepath']} ---\n{c['content']}" for c in chunks) or "No relevant code found."
+    chunks = search_codebase(
+        collection_name,
+        question,
+        n_results=8,
+        use_hybrid=True,
+        use_reranker=True,
+    )
+    context = _build_context(chunks)
     history = "\n".join(f"{m['role'].upper()}: {m['content']}" for m in chat_history[-10:]) or "None."
     system = _SYSTEM_TEMPLATE.format(repo_name=repo_name, context=context, history=history)
     return [{"role": "system", "content": system}, {"role": "user", "content": question}]
