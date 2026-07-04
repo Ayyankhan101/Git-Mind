@@ -1,18 +1,31 @@
+import {
+  vi,
+  describe,
+  it,
+  test,
+  expect,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+} from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import MonitoringTab from "./MonitoringTab";
 
-jest.mock("../api", () => ({
-  subscribeMonitor: jest.fn(),
-  fetchMonitorStatus: jest.fn(),
-  unsubscribeMonitor: jest.fn(),
-  fetchAnalysisHistory: jest.fn(),
+vi.mock("../api", () => ({
+  subscribeMonitor: vi.fn(),
+  fetchMonitorStatus: vi.fn(),
+  unsubscribeMonitor: vi.fn(),
+  fetchAnalysisHistory: vi.fn(),
 }));
-jest.mock("./TrendChart", () => () => <div data-testid="trend-chart" />);
+vi.mock("./TrendChart", () => ({
+  default: () => <div data-testid="trend-chart" />,
+}));
 
-const { fetchMonitorStatus } = require("../api");
+const { fetchMonitorStatus } = await import("../api");
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 test("renders empty state when no subscriptions", async () => {

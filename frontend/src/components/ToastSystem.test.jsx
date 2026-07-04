@@ -1,3 +1,14 @@
+import {
+  vi,
+  describe,
+  it,
+  test,
+  expect,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+} from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import ToastSystem from "./ToastSystem";
 
@@ -30,7 +41,7 @@ test("shows count badge when count > 1", () => {
 });
 
 test("calls onDismiss when dismiss button clicked", () => {
-  const handleDismiss = jest.fn();
+  const handleDismiss = vi.fn();
   const toasts = [{ id: 4, kind: "danger", title: "Error" }];
   render(<ToastSystem toasts={toasts} onDismiss={handleDismiss} />);
   fireEvent.click(screen.getByRole("button"));

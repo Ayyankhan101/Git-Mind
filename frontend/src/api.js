@@ -1,12 +1,12 @@
 import * as tokenManager from "./tokenManager";
 
 // Derive backend base URL.
-//   1. REACT_APP_API_BASE env var wins (set at build time).
+//   1. VITE_API_BASE env var wins (set at build time).
 //   2. Cloud Shell preview: hostnames like "3000-cs-xxxx.cloudshell.dev" —
 //      swap the leading port with 8002 so frontend and backend share host.
 //   3. Default to localhost:8002 for dev.
 function deriveHttpBase() {
-  if (process.env.REACT_APP_API_BASE) return process.env.REACT_APP_API_BASE;
+  if (import.meta.env.VITE_API_BASE) return import.meta.env.VITE_API_BASE;
   if (typeof window !== "undefined") {
     const { protocol, host, port, hostname } = window.location;
     if (/^\d+-/.test(host))

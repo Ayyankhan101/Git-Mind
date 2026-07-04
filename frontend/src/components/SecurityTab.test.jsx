@@ -1,3 +1,14 @@
+import {
+  vi,
+  describe,
+  it,
+  test,
+  expect,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+} from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import SecurityTab from "./SecurityTab";
 
@@ -20,13 +31,13 @@ const mockFindings = [
   },
 ];
 
-jest.mock("../api", () => ({
-  generateFix: jest.fn(),
-  createFixPR: jest.fn(),
+vi.mock("../api", () => ({
+  generateFix: vi.fn(),
+  createFixPR: vi.fn(),
 }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 test("renders findings", () => {
@@ -51,7 +62,7 @@ test("expands finding details on click", async () => {
 });
 
 test("shows PR button and token input flow", async () => {
-  const { createFixPR } = require("../api");
+  const { createFixPR } = await import("../api");
   createFixPR.mockResolvedValue({
     pr_url: "https://github.com/test/repo/pull/1",
   });

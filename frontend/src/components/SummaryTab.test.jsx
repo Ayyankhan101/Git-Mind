@@ -1,18 +1,33 @@
+import {
+  vi,
+  describe,
+  it,
+  test,
+  expect,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+} from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import SummaryTab from "./SummaryTab";
 
-jest.mock("../api", () => ({
-  fetchSummary: jest.fn(),
-  subscribeMonitor: jest.fn(),
-  fetchMonitorStatus: jest.fn(),
-  fetchAnalysisHistory: jest.fn(),
+vi.mock("../api", () => ({
+  fetchSummary: vi.fn(),
+  subscribeMonitor: vi.fn(),
+  fetchMonitorStatus: vi.fn(),
+  fetchAnalysisHistory: vi.fn(),
 }));
-jest.mock("../pdfBuilder", () => ({
-  buildSummaryPdf: jest.fn(),
-  downloadPdf: jest.fn(),
+vi.mock("../pdfBuilder", () => ({
+  buildSummaryPdf: vi.fn(),
+  downloadPdf: vi.fn(),
 }));
-jest.mock("./HealthCard", () => () => <div data-testid="health-card" />);
-jest.mock("./TrendChart", () => () => <div data-testid="trend-chart" />);
+vi.mock("./HealthCard", () => ({
+  default: () => <div data-testid="health-card" />,
+}));
+vi.mock("./TrendChart", () => ({
+  default: () => <div data-testid="trend-chart" />,
+}));
 
 const baseProps = {
   sessionId: "sess-1",
@@ -26,14 +41,11 @@ const baseProps = {
   elapsedSec: 15,
 };
 
-const {
-  fetchSummary,
-  fetchMonitorStatus,
-  fetchAnalysisHistory,
-} = require("../api");
+const { fetchSummary, fetchMonitorStatus, fetchAnalysisHistory } =
+  await import("../api");
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   fetchSummary.mockResolvedValue({ summary: "Test summary" });
   fetchMonitorStatus.mockResolvedValue({ repos: [] });
   fetchAnalysisHistory.mockResolvedValue({ history: [] });
