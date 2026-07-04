@@ -1,0 +1,291 @@
+import * as tokenManager from "./tokenManager";
+
+const INITIAL_AGENT_STATUS = {
+  scanner: "waiting",
+  architecture: "waiting",
+  api_docs: "waiting",
+  security: "waiting",
+  cve_scanner: "waiting",
+  chat: "waiting",
+  git_audit: "waiting",
+  solidity: "waiting",
+  code_audit: "waiting",
+};
+
+const getInitialHistory = () => {
+  try {
+    return JSON.parse(localStorage.getItem("gitmind_history") || "[]");
+  } catch {
+    return [];
+  }
+};
+
+const getInitialRecents = () => {
+  try {
+    return JSON.parse(localStorage.getItem("gm-recents") || "[]");
+  } catch {
+    return [];
+  }
+};
+
+const getInitialLoadedUsers = () => {
+  try {
+    return JSON.parse(localStorage.getItem("gm-users") || "[]");
+  } catch {
+    return [];
+  }
+};
+
+export const initialState = {
+  // Theme & density
+  theme: localStorage.getItem("gm-theme") || "obsidian",
+  density: localStorage.getItem("gm-density") || "comfortable",
+
+  // Core
+  githubUser: "",
+  ghToken: tokenManager.get() || "",
+  repos: [],
+  reposLoading: false,
+  reposError: null,
+  selectedRepoUrl: null,
+  activeTab: "summary",
+  repoName: "",
+
+  // Analysis
+  isAnalyzing: false,
+  analyzed: false,
+  agentStatus: INITIAL_AGENT_STATUS,
+  elapsedSec: 0,
+  diagram: null,
+  apiDocs: [],
+  findings: [],
+  cveFindings: [],
+  gitAudit: null,
+  solidityAudit: null,
+  codeAudit: null,
+  health: null,
+  agentWarnings: [],
+
+  // Fix
+  fixLoading: null,
+  fixResult: null,
+  crisisFinding: null,
+
+  // Errors
+  globalError: null,
+  retryUrl: null,
+
+  // UI
+  showOnboarding: true,
+  showKbHelp: false,
+  showPalette: false,
+  filePreview: null,
+  shareCopied: false,
+  prAutoUrl: null,
+  showOrgAudit: false,
+  drawerOpen: false,
+
+  // Persisted
+  repoHistory: getInitialHistory(),
+  recents: getInitialRecents(),
+  loadedUsers: getInitialLoadedUsers(),
+};
+
+export function appReducer(state, action) {
+  switch (action.type) {
+    // ── Theme & density ──────────────────────────────────────
+    case "SET_THEME": {
+      const root = document.documentElement;
+      if (action.theme === "obsidian") root.removeAttribute("data-theme");
+      else root.setAttribute("data-theme", action.theme);
+      localStorage.setItem("gm-theme", action.theme);
+      return { ...state, theme: action.theme };
+    }
+    case "SET_DENSITY": {
+      const root = document.documentElement;
+      if (action.density === "comfortable")
+        root.removeAttribute("data-density");
+      else root.setAttribute("data-density", action.density);
+      localStorage.setItem("gm-density", action.density);
+      return { ...state, density: action.density };
+    }
+
+    // ── Core setters ─────────────────────────────────────────
+    case "SET_GITHUB_USER":
+      return { ...state, githubUser: action.value };
+    case "SET_GH_TOKEN":
+      return { ...state, ghToken: action.value };
+    case "SET_SELECTED_REPO_URL":
+      return { ...state, selectedRepoUrl: action.url };
+    case "SET_ACTIVE_TAB":
+      return { ...state, activeTab: action.tab };
+    case "SET_REPOS":
+      return { ...state, repos: action.repos };
+    case "SET_REPOS_LOADING":
+      return { ...state, reposLoading: action.loading };
+    case "SET_REPOS_ERROR":
+      return { ...state, reposError: action.error };
+    case "SET_REPO_NAME":
+      return { ...state, repoName: action.name };
+
+    // ── Analysis lifecycle ───────────────────────────────────
+    case "START_ANALYSIS": {
+      const name = action.url.split("/").slice(-1)[0] || "repository";
+      return {
+        ...state,
+        globalError: null,
+        retryUrl: null,
+        agentWarnings: [],
+        diagram: null,
+        apiDocs: [],
+        findings: [],
+        cveFindings: [],
+        gitAudit: null,
+        solidityAudit: null,
+        codeAudit: null,
+        fixResult: null,
+        fixLoading: null,
+        health: null,
+        analyzed: false,
+        elapsedSec: 0,
+        agentStatus: INITIAL_AGENT_STATUS,
+        repoName: name,
+        isAnalyzing: true,
+        showOnboarding: false,
+        activeTab: "summary",
+        selectedRepoUrl: action.url,
+      };
+    }
+    case "SET_AGENT_STATUS":
+      return {
+        ...state,
+        agentStatus: { ...state.agentStatus, ...action.status },
+      };
+    case "SET_ELAPSED_SEC":
+      return { ...state, elapsedSec: action.sec };
+    case "SET_DIAGRAM":
+      return { ...state, diagram: action.diagram };
+    case "SET_API_DOCS":
+      return { ...state, apiDocs: action.docs };
+    case "SET_FINDINGS":
+      return { ...state, findings: action.findings };
+    case "SET_CVE_FINDINGS":
+      return { ...state, cveFindings: action.findings };
+    case "SET_GIT_AUDIT":
+      return { ...state, gitAudit: action.audit };
+    case "SET_SOLIDITY_AUDIT":
+      return { ...state, solidityAudit: action.audit };
+    case "SET_CODE_AUDIT":
+      return { ...state, codeAudit: action.audit };
+    case "SET_HEALTH":
+      return { ...state, health: action.health };
+    case "ADD_AGENT_WARNING":
+      return {
+        ...state,
+        agentWarnings: [...state.agentWarnings, action.warning],
+      };
+    case "DISMISS_AGENT_WARNING":
+      return {
+        ...state,
+        agentWarnings: state.agentWarnings.filter((_, i) => i !== action.index),
+      };
+    case "ANALYSIS_DONE":
+      return {
+        ...state,
+        isAnalyzing: false,
+        analyzed: true,
+      };
+    case "ANALYSIS_ERROR":
+      return {
+        ...state,
+        globalError: action.error,
+        retryUrl: action.retryUrl || state.selectedRepoUrl,
+        isAnalyzing: false,
+      };
+
+    // ── Fix ──────────────────────────────────────────────────
+    case "SET_FIX_LOADING":
+      return { ...state, fixLoading: action.id };
+    case "SET_FIX_RESULT":
+      return { ...state, fixResult: action.result };
+    case "SET_CRISIS_FINDING":
+      return { ...state, crisisFinding: action.finding };
+
+    // ── Errors ───────────────────────────────────────────────
+    case "SET_GLOBAL_ERROR":
+      return { ...state, globalError: action.error };
+    case "CLEAR_ERROR":
+      return { ...state, globalError: null, retryUrl: null };
+
+    // ── UI toggles ───────────────────────────────────────────
+    case "SET_SHOW_ONBOARDING":
+      return { ...state, showOnboarding: action.show };
+    case "SET_SHOW_KB_HELP":
+      return { ...state, showKbHelp: action.show };
+    case "SET_SHOW_PALETTE":
+      return { ...state, showPalette: action.show };
+    case "SET_FILE_PREVIEW":
+      return { ...state, filePreview: action.preview };
+    case "SET_SHARE_COPIED":
+      return { ...state, shareCopied: action.copied };
+    case "SET_PR_AUTO_URL":
+      return { ...state, prAutoUrl: action.url };
+    case "SET_SHOW_ORG_AUDIT":
+      return { ...state, showOrgAudit: action.show };
+    case "SET_DRAWER_OPEN":
+      return { ...state, drawerOpen: action.open };
+
+    // ── Persisted lists ──────────────────────────────────────
+    case "ADD_TO_HISTORY": {
+      const next = [
+        action.entry,
+        ...state.repoHistory.filter((h) => h.url !== action.entry.url),
+      ].slice(0, 5);
+      try {
+        localStorage.setItem("gitmind_history", JSON.stringify(next));
+      } catch {}
+      return { ...state, repoHistory: next };
+    }
+    case "ADD_RECENT": {
+      const next = [
+        action.cmd,
+        ...state.recents.filter((r) => r.id !== action.cmd.id),
+      ].slice(0, 5);
+      try {
+        localStorage.setItem("gm-recents", JSON.stringify(next));
+      } catch {}
+      return { ...state, recents: next };
+    }
+    case "ADD_LOADED_USER": {
+      const next = [
+        action.user,
+        ...state.loadedUsers.filter((x) => x !== action.user),
+      ].slice(0, 6);
+      try {
+        localStorage.setItem("gm-users", JSON.stringify(next));
+      } catch {}
+      return { ...state, loadedUsers: next };
+    }
+
+    // ── Bulk update (for shared analysis) ────────────────────
+    case "LOAD_SHARED_ANALYSIS":
+      return {
+        ...state,
+        diagram: action.data.architecture_diagram || state.diagram,
+        apiDocs: action.data.api_docs?.length
+          ? action.data.api_docs
+          : state.apiDocs,
+        findings: action.data.security_findings || state.findings,
+        cveFindings: action.data.cve_findings || state.cveFindings,
+        gitAudit: action.data.git_audit || state.gitAudit,
+        repoName: action.data.repo_name || state.repoName,
+        health: action.data.health || state.health,
+        analyzed: true,
+        showOnboarding: false,
+        activeTab: "summary",
+      };
+
+    default:
+      return state;
+  }
+}
