@@ -6,7 +6,6 @@ from pathlib import Path
 
 import chromadb
 import orjson
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 logger = logging.getLogger(__name__)
 
@@ -111,21 +110,31 @@ def embed_codebase(file_contents: dict[str, str], collection_name: str) -> str:
                 collection.count(),
             )
         else:
-            splitter = RecursiveCharacterTextSplitter(
-                chunk_size=800,
-                chunk_overlap=80,
-                separators=["\nclass ", "\ndef ", "\n\n", "\n", " "],
-            )
+            try:
+                from gitmind_core import split_files
 
-            docs: list[str] = []
-            metas: list[dict] = []
-            ids: list[str] = []
+                docs, metas_json, ids = split_files(
+                    file_contents,
+                    800,  # chunk_size
+                    80,  # chunk_overlap
+                    ["\nclass ", "\ndef ", "\n\n", "\n", " "],
+                )
+                metas = [orjson.loads(m) for m in metas_json]
+            except ImportError:
+                # Fallback to Python splitter if Rust module unavailable
+                from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-            for fp, content in file_contents.items():
-                for i, chunk in enumerate(splitter.split_text(content)):
-                    docs.append(chunk)
-                    metas.append({"filepath": fp, "chunk_index": i})
-                    ids.append(f"{fp}::{i}")
+                splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=800,
+                    chunk_overlap=80,
+                    separators=["\nclass ", "\ndef ", "\n\n", "\n", " "],
+                )
+                docs, metas, ids = [], [], []
+                for fp, content in file_contents.items():
+                    for i, chunk in enumerate(splitter.split_text(content)):
+                        docs.append(chunk)
+                        metas.append({"filepath": fp, "chunk_index": i})
+                        ids.append(f"{fp}::{i}")
 
             for i in range(0, len(docs), 100):
                 collection.add(
