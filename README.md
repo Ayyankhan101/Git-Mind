@@ -34,6 +34,7 @@
 - [Project Layout](#️-project-layout)
 - [API Endpoints](#-api-endpoints-19)
 - [Rust Native Acceleration](#rust-native-acceleration)
+- [RAG Pipeline](#rag-pipeline)
 - [Persistence](#persistence)
 - [Rate Limiting](#rate-limiting)
 - [Telemetry](#telemetry)
@@ -424,6 +425,45 @@ Git-Mind/
 ### Solidity Sidecar
 
 Standalone Axum HTTP server (port 8003) using `solang-parser` for Solidity AST extraction. Runs as a separate Docker container.
+
+---
+
+## RAG Pipeline
+
+The codebase chat (`POST /chat`) uses a multi-stage retrieval pipeline:
+
+```
+User question
+    ↓
+ChromaDB vector search (top-20)
+    ↓
+BM25 keyword search (top-20)        ← catches exact identifier matches
+    ↓
+Reciprocal Rank Fusion (RRF)         ← merges both result sets
+    ↓
+Cross-encoder reranker               ← re-scores by relevance
+    ↓
+Context dedup + file-header formatting
+    ↓
+Llama 3.3 70B via Groq               ← generates answer with citations
+```
+
+### What each layer does
+
+| Layer                      | What it does                                                                            |
+| -------------------------- | --------------------------------------------------------------------------------------- |
+| **ChromaDB (vector)**      | Semantic similarity search using `all-MiniLM-L6-v2` embeddings                          |
+| **BM25 (keyword)**         | Exact term matching — catches function names, class names, imports                      |
+| **RRF fusion**             | Combines rank positions from both searchers; weighted blend (default 70/30 vector/BM25) |
+| **Cross-encoder reranker** | `ms-marco-MiniLM-L-6-v2` — scores each (query, chunk) pair; removes false positives     |
+| **Context dedup**          | Drops duplicate file headers in context window; max 8 unique file chunks                |
+| **LLM cache**              | `diskcache` (SQLite, 2 GB, 24h TTL) — instant return for repeated questions             |
+
+### Chunking
+
+- **Chunk size:** 800 chars / 80 overlap (10%)
+- **Language-aware separators:** `.py` splits on `class`/`def`; `.js/.ts` on `export`/`function`/`class`; `.go` on `func`/`type`; `.rs` on `fn`/`struct`/`impl`
+- **Rust acceleration:** `gitmind_core.split_files()` (PyO3) — 10-20x faster than Python fallback
 
 ---
 

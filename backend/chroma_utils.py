@@ -12,6 +12,24 @@ logger = logging.getLogger(__name__)
 _COLLECTION_TTL = 60 * 60 * 24 * 7  # 7 days
 
 
+# ── Language-aware chunking separators ─────────────────────────────────────
+# Keyed by file extension; falls back to the default Python-oriented list.
+_LANG_SEPARATORS: dict[str, list[str]] = {
+    ".py": ["\nclass ", "\ndef ", "\n    def ", "\n\n", "\n", " "],
+    ".js": ["\nexport ", "\nconst ", "\nfunction ", "\nclass ", "\n\n", "\n", " "],
+    ".ts": ["\nexport ", "\nconst ", "\nfunction ", "\nclass ", "\ninterface ", "\n\n", "\n", " "],
+    ".jsx": ["\nexport ", "\nconst ", "\nfunction ", "\nclass ", "\n\n", "\n", " "],
+    ".tsx": ["\nexport ", "\nconst ", "\nfunction ", "\nclass ", "\ninterface ", "\n\n", "\n", " "],
+    ".go": ["\nfunc ", "\ntype ", "\npackage ", "\n\n", "\n", " "],
+    ".rs": ["\nfn ", "\npub fn ", "\nimpl ", "\nstruct ", "\nenum ", "\n\n", "\n", " "],
+    ".java": ["\npublic class ", "\nclass ", "\npublic void ", "\nprivate void ", "\n\n", "\n", " "],
+    ".rb": ["\ndef ", "\nclass ", "\nmodule ", "\n\n", "\n", " "],
+    ".php": ["\nfunction ", "\nclass ", "\npublic function ", "\nprivate function ", "\n\n", "\n", " "],
+}
+
+_DEFAULT_SEPARATORS = ["\nclass ", "\ndef ", "\n\n", "\n", " "]
+
+
 def _writable(path: Path) -> bool:
     """Return True if path (or its parent) is writable by the current process."""
     try:
@@ -42,6 +60,12 @@ _client = chromadb.PersistentClient(path=str(_CHROMA_PATH))
 _lock: threading.Lock = threading.Lock()
 _collections: dict[str, chromadb.Collection | None] = {}  # None = sentinel (in-progress)
 _embed_events: dict[str, threading.Event] = {}  # guards concurrent embeds
+
+
+def _separators_for(filepath: str) -> list[str]:
+    """Return language-appropriate chunking separators for a file."""
+    ext = Path(filepath).suffix.lower()
+    return _LANG_SEPARATORS.get(ext, _DEFAULT_SEPARATORS)
 
 
 # ── Registry helpers (track collection creation times for TTL pruning) ─────────
@@ -113,24 +137,37 @@ def embed_codebase(file_contents: dict[str, str], collection_name: str) -> str:
             try:
                 from gitmind_core import split_files
 
-                docs, metas_json, ids = split_files(
-                    file_contents,
-                    800,  # chunk_size
-                    80,  # chunk_overlap
-                    ["\nclass ", "\ndef ", "\n\n", "\n", " "],
-                )
-                metas = [orjson.loads(m) for m in metas_json]
+                # Use per-file separators: group files by extension, split
+                # each group with its own separator set, then merge.
+                ext_groups: dict[str, dict[str, str]] = {}
+                for fp, content in file_contents.items():
+                    ext = Path(fp).suffix.lower()
+                    ext_groups.setdefault(ext, {})[fp] = content
+
+                all_docs: list[str] = []
+                all_metas: list[dict] = []
+                all_ids: list[str] = []
+
+                for ext, group in ext_groups.items():
+                    seps = _LANG_SEPARATORS.get(ext, _DEFAULT_SEPARATORS)
+                    docs, metas_json, ids = split_files(group, 800, 80, seps)
+                    all_docs.extend(docs)
+                    all_metas.extend(orjson.loads(m) for m in metas_json)
+                    all_ids.extend(ids)
+
+                docs, metas, ids = all_docs, all_metas, all_ids
             except ImportError:
                 # Fallback to Python splitter if Rust module unavailable
                 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-                splitter = RecursiveCharacterTextSplitter(
-                    chunk_size=800,
-                    chunk_overlap=80,
-                    separators=["\nclass ", "\ndef ", "\n\n", "\n", " "],
-                )
                 docs, metas, ids = [], [], []
                 for fp, content in file_contents.items():
+                    seps = _LANG_SEPARATORS.get(Path(fp).suffix.lower(), _DEFAULT_SEPARATORS)
+                    splitter = RecursiveCharacterTextSplitter(
+                        chunk_size=800,
+                        chunk_overlap=80,
+                        separators=seps,
+                    )
                     for i, chunk in enumerate(splitter.split_text(content)):
                         docs.append(chunk)
                         metas.append({"filepath": fp, "chunk_index": i})
@@ -149,6 +186,14 @@ def embed_codebase(file_contents: dict[str, str], collection_name: str) -> str:
             _collections[collection_name] = collection
         _register_collection(collection_name)
 
+        # Invalidate any stale BM25 index from a previous embed
+        try:
+            from services.bm25_index import invalidate as _invalidate_bm25
+
+            _invalidate_bm25(collection_name)
+        except Exception:
+            pass
+
     except Exception:
         with _lock:
             _collections.pop(collection_name, None)
@@ -163,7 +208,29 @@ def embed_codebase(file_contents: dict[str, str], collection_name: str) -> str:
     return collection_name
 
 
-def search_codebase(collection_name: str, query: str, n_results: int = 5) -> list[dict]:
+def search_codebase(
+    collection_name: str,
+    query: str,
+    n_results: int = 5,
+    *,
+    use_hybrid: bool = True,
+    use_reranker: bool = True,
+    bm25_weight: float = 0.3,
+) -> list[dict]:
+    """Search a ChromaDB collection with optional hybrid search and reranking.
+
+    Parameters
+    ----------
+    use_hybrid : bool
+        When True (default), BM25 keyword search is combined with vector
+        search using Reciprocal Rank Fusion (RRF).
+    use_reranker : bool
+        When True (default), a cross-encoder reranker is applied on top of
+        the fused results to re-score and select the best chunks.
+    bm25_weight : float
+        Weight for BM25 scores in the RRF fusion (0–1). Lower values
+        favour vector similarity; higher values favour keyword matching.
+    """
     with _lock:
         collection = _collections.get(collection_name)
         # If embedding is in progress, grab the event to wait on
@@ -188,12 +255,86 @@ def search_codebase(collection_name: str, query: str, n_results: int = 5) -> lis
     count = collection.count()
     if count == 0:
         return []
+
     n = min(n_results, count)
-    result = collection.query(query_texts=[query], n_results=n)
-    return [
-        {"filepath": m["filepath"], "content": d}
-        for d, m in zip(result["documents"][0], result["metadatas"][0], strict=False)
+
+    # ── Vector search ──────────────────────────────────────────────────────
+    vec_result = collection.query(query_texts=[query], n_results=n)
+    vec_candidates = [
+        {
+            "filepath": m["filepath"],
+            "content": d,
+            "vec_score": 1.0 - (i / n),  # approximate rank-based score
+        }
+        for i, (d, m) in enumerate(zip(vec_result["documents"][0], vec_result["metadatas"][0], strict=False))
     ]
+
+    # ── Hybrid search (RRF fusion) ─────────────────────────────────────────
+    if use_hybrid and count >= 10:
+        try:
+            from services.bm25_index import bm25_search
+
+            bm25_results = bm25_search(collection, query, n_results=n)
+            if bm25_results:
+                vec_candidates = _rrf_fuse(vec_candidates, bm25_results, bm25_weight=bm25_weight)
+        except Exception as exc:
+            logger.debug("Hybrid search fallback to vector-only: %s", exc)
+
+    # ── Reranking ──────────────────────────────────────────────────────────
+    if use_reranker and len(vec_candidates) > n:
+        try:
+            from services.reranker import rerank
+
+            vec_candidates = rerank(query, vec_candidates, top_k=n)
+        except Exception as exc:
+            logger.debug("Reranker fallback: %s", exc)
+
+    # ── Dedup and final selection ──────────────────────────────────────────
+    seen: set[str] = set()
+    final: list[dict] = []
+    for c in vec_candidates[:n_results]:
+        fp = c["filepath"]
+        if fp in seen:
+            continue
+        seen.add(fp)
+        final.append({"filepath": fp, "content": c["content"]})
+
+    return final
+
+
+def _rrf_fuse(
+    vec_candidates: list[dict],
+    bm25_results: list[dict],
+    k: int = 60,
+    bm25_weight: float = 0.3,
+) -> list[dict]:
+    """Reciprocal Rank Fusion of vector and BM25 results.
+
+    RRF score = weight / (k + rank).
+    A higher *bm25_weight* gives more influence to keyword matches.
+    """
+    score_map: dict[str, float] = {}
+    content_map: dict[str, dict] = {}
+
+    for rank, c in enumerate(vec_candidates):
+        key = c["filepath"]
+        vec_score = 1.0 / (k + rank + 1)
+        score_map[key] = score_map.get(key, 0) + vec_score * (1.0 - bm25_weight)
+        content_map[key] = c
+
+    for rank, c in enumerate(bm25_results):
+        key = c["filepath"]
+        bm25_score = 1.0 / (k + rank + 1)
+        score_map[key] = score_map.get(key, 0) + bm25_score * bm25_weight
+        if key not in content_map:
+            content_map[key] = c
+
+    fused = []
+    for fp, score in sorted(score_map.items(), key=lambda x: x[1], reverse=True):
+        item = {**content_map[fp], "rrf_score": score}
+        fused.append(item)
+
+    return fused
 
 
 def delete_collection(name: str) -> None:
