@@ -2,9 +2,9 @@ import logging
 
 import orjson
 from gitmind_core import scan_route_files
-from langchain_groq import ChatGroq
 
-from llm_cache import get_cached, invoke_with_retry, set_cached
+from llm_cache import get_cached, invoke_json_with_retry, set_cached
+from settings import get_llm
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +12,7 @@ _MODEL = "llama-3.3-70b-versatile"
 _MAX_FILES = 10
 _MAX_FILE_CHARS = 6_000
 _CACHE_NAMESPACE = "llama-3.3-70b-versatile:api_doc:json"
-_LLM = ChatGroq(model=_MODEL, temperature=0).bind(response_format={"type": "json_object"})
+_LLM = get_llm(temperature_key="analysis", json_mode=True)
 
 _PROMPT = """\
 You are a senior API documentation engineer. Extract every HTTP API endpoint from the code below.
@@ -49,10 +49,10 @@ def run_api_doc_agent(file_contents: dict[str, str]) -> list[dict]:
             logger.debug("API doc agent: cache hit for %s", fp)
         else:
             try:
-                raw = invoke_with_retry(_LLM, prompt).content
-                endpoints = orjson.loads(raw).get("endpoints", [])
-                set_cached(_CACHE_NAMESPACE, prompt, raw)
-            except (orjson.JSONDecodeError, Exception) as exc:
+                parsed = invoke_json_with_retry(_LLM, prompt)
+                endpoints = parsed.get("endpoints", [])
+                set_cached(_CACHE_NAMESPACE, prompt, orjson.dumps(parsed).decode())
+            except Exception as exc:
                 logger.warning("API doc agent: parse failed for %s — %s", fp, exc)
                 endpoints = []
 

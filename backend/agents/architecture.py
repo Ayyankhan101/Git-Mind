@@ -4,9 +4,9 @@ from collections import Counter
 from pathlib import Path
 
 import tiktoken
-from langchain_groq import ChatGroq
 
 from llm_cache import get_cached, invoke_with_retry, set_cached
+from settings import get_llm
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +119,7 @@ def run_architecture_agent(file_tree: list[str], file_contents: dict[str, str]) 
 # ── Private helpers ────────────────────────────────────────────────────────────
 
 _ENC = tiktoken.get_encoding("cl100k_base")  # load once at import time
-_LLM = ChatGroq(model=_MODEL, temperature=0)
+_LLM = get_llm(temperature_key="analysis")
 
 
 def _build_prompt(file_tree: list[str], file_contents: dict[str, str], primary_lang: str = "Unknown") -> str:

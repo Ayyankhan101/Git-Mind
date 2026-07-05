@@ -29,82 +29,15 @@ function relativeTime(iso) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-const VERDICT_CLASS = {
-  APPROVE: "approve",
-  "REQUEST CHANGES": "changes",
-  "NEEDS DISCUSSION": "discuss",
-};
-
-function parseReview(text) {
-  const sections = { summary: "", issues: [], verdict: "", verdictLine: "" };
-  const lines = text.split("\n");
-  let current = null;
-  for (const line of lines) {
-    if (line.startsWith("## Summary")) {
-      current = "summary";
-      continue;
-    }
-    if (line.startsWith("## Issues")) {
-      current = "issues";
-      continue;
-    }
-    if (line.startsWith("## Verdict")) {
-      current = "verdict";
-      continue;
-    }
-    if (current === "summary")
-      sections.summary += (sections.summary ? "\n" : "") + line;
-    if (current === "issues") {
-      const t = line.trim();
-      if (!t) continue;
-      if (t === "No significant issues found.") {
-        sections.issues = [];
-        current = null;
-        continue;
-      }
-      const m = t.match(
-        /^(.+?):(\d+)\s*[—–-]+\s*\[([A-Z]+)\]\s*(.+?)\s*[—–-]+\s*(.+)$/,
-      );
-      if (m)
-        sections.issues.push({
-          file: m[1],
-          line: m[2],
-          severity: m[3],
-          title: m[4],
-          explanation: m[5],
-        });
-      else sections.issues.push({ raw: t });
-    }
-    if (current === "verdict")
-      sections.verdictLine += (sections.verdictLine ? "\n" : "") + line;
-  }
-  const vMatch = sections.verdictLine.match(
-    /APPROVE|REQUEST CHANGES|NEEDS DISCUSSION/,
-  );
-  sections.verdict = vMatch ? vMatch[0] : "";
-  return sections;
-}
-
 function IssueRow({ issue }) {
-  const sev = issue.severity || "";
-  const sevClass = sev.toLowerCase();
-  if (issue.raw) {
-    return (
-      <div className={`row ${sevClass || "low"}`} style={{ cursor: "default" }}>
-        <div className="row-line">
-          <div className="row-main">
-            <span className="row-sub">{issue.raw}</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const sev = (issue.severity || "").toLowerCase();
+  const sevClass = sev;
   return (
     <div className={`row ${sevClass || "low"}`} style={{ cursor: "default" }}>
       <div className="row-line">
         <span className="row-sev">
           <span className="glyph" />
-          {sev || "INFO"}
+          {(issue.severity || "INFO").toUpperCase()}
         </span>
         <div className="row-main">
           <span className="row-title">{issue.title}</span>
@@ -114,13 +47,19 @@ function IssueRow({ issue }) {
         </div>
         {issue.file && (
           <span className="row-path">
-            {issue.file}:{issue.line}
+            {issue.file}:{issue.line || "?"}
           </span>
         )}
       </div>
     </div>
   );
 }
+
+const VERDICT_CLASS = {
+  APPROVE: "approve",
+  "REQUEST CHANGES": "changes",
+  "NEEDS DISCUSSION": "discuss",
+};
 
 const RISK_META = {
   low: {
@@ -753,7 +692,7 @@ export default function PRReviewTab({
     }
   };
 
-  const parsed = result?.review ? parseReview(result.review) : null;
+  const parsed = result?.review_data || null;
   const verdictClass = parsed?.verdict ? VERDICT_CLASS[parsed.verdict] : "";
 
   return (
@@ -1091,15 +1030,11 @@ export default function PRReviewTab({
                     )}
                     {parsed.verdict}
                   </div>
-                  {parsed.verdictLine &&
-                    parsed.verdictLine !== parsed.verdict && (
-                      <div className="verdict-just">
-                        {parsed.verdictLine
-                          .replace(parsed.verdict, "")
-                          .replace(/[—–:]/g, "")
-                          .trim()}
-                      </div>
-                    )}
+                  {parsed.verdict_justification && (
+                    <div className="verdict-just">
+                      {parsed.verdict_justification}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -2,6 +2,7 @@ import asyncio
 import contextlib
 import os
 import shutil
+import time
 import uuid
 
 import orjson
@@ -42,6 +43,17 @@ _STATUS_MAP: dict[str, dict[str, str]] = {
     "solidity": {"solidity": "done"},
     "code_audit": {"code_audit": "done"},
 }
+
+
+def _compute_partial_health(state: dict) -> dict:
+    """Compute health from whatever data is available so far."""
+    return compute_health(
+        file_contents=state.get("file_contents", {}),
+        security_findings=state.get("security_findings", []),
+        cve_findings=state.get("cve_findings", []),
+        api_docs=state.get("api_docs", []),
+        code_audit=state.get("code_audit"),
+    )
 
 
 async def handle_analyze(ws: WebSocket) -> None:
@@ -103,6 +115,9 @@ async def handle_analyze(ws: WebSocket) -> None:
     logger.info("Analysis started", session=session_id, repo=repo_url, auth=bool(gh_token))
     init = initial_state(repo_url, gh_token)
     final_state = dict(init)
+
+    # Track per-agent timing
+    agent_timing: dict[str, float] = {}
 
     # Start heartbeat
     _heartbeat_task = asyncio.create_task(_heartbeat())
@@ -176,12 +191,20 @@ async def handle_analyze(ws: WebSocket) -> None:
     await ws.send_json({"agent_status": {"scanner": "running"}})
 
     astream = graph.astream(init, stream_mode="updates")
+    _analysis_start = time.time()
+    _last_status_time = _analysis_start
     try:
         async for chunk in astream:
             if _dead.is_set():
                 logger.info("Heartbeat failed, closing connection", session=session_id)
                 break
             for node, update in chunk.items():
+                # Track agent timing (approximate — parallel nodes share wall time)
+                now = time.time()
+                elapsed_since_last = round(now - _last_status_time, 2)
+                agent_timing[node] = elapsed_since_last
+                _last_status_time = now
+
                 has_error = any(ev.get("status") == "error" for ev in update.get("events", []))
                 raw_statuses = _STATUS_MAP.get(node, {})
                 node_statuses = (
@@ -213,6 +236,14 @@ async def handle_analyze(ws: WebSocket) -> None:
                         msg["agent_error"] = ev
                         logger.warning("Agent error surfaced", error=ev)
 
+                # Send incremental health after each agent completes
+                if node != "scanner" and not has_error:
+                    try:
+                        partial = _compute_partial_health(final_state)
+                        msg["health_partial"] = partial
+                    except Exception:
+                        pass
+
                 await ws.send_json(msg)
 
     except WebSocketDisconnect:
@@ -220,7 +251,42 @@ async def handle_analyze(ws: WebSocket) -> None:
         return
     except Exception as exc:
         logger.error("Analysis pipeline error", session=session_id, error=str(exc))
-        await ws.send_json({"error": "Analysis failed — check server logs for details."})
+        # Crash recovery: persist partial state so user gets whatever we have
+        try:
+            put_session(
+                session_id,
+                {
+                    "repo_name": final_state.get("repo_name", ""),
+                    "chroma_collection_name": final_state.get("chroma_collection_name"),
+                    "security_findings": final_state.get("security_findings", []),
+                    "cve_findings": final_state.get("cve_findings", []),
+                    "api_docs": final_state.get("api_docs", []),
+                    "architecture_diagram": final_state.get("architecture_diagram"),
+                    "git_audit": final_state.get("git_audit"),
+                    "solidity_audit": final_state.get("solidity_audit"),
+                    "code_audit": final_state.get("code_audit"),
+                    "repo_url": repo_url,
+                    "chat_history": [],
+                    "owner_hash": owner_hash,
+                },
+            )
+            logger.info("Crash recovery: partial state persisted", session=session_id)
+        except Exception as persist_exc:
+            logger.error("Crash recovery: failed to persist", error=str(persist_exc))
+
+        # Send partial results to client before closing
+        try:
+            partial_health = _compute_partial_health(final_state)
+            await ws.send_json(
+                {
+                    "error": "Analysis failed — partial results returned.",
+                    "partial": True,
+                    "health": partial_health,
+                    "agent_timing": agent_timing,
+                }
+            )
+        except Exception:
+            await ws.send_json({"error": "Analysis failed — check server logs for details."})
         await ws.close()
         return
     else:
@@ -280,5 +346,5 @@ async def handle_analyze(ws: WebSocket) -> None:
     )
 
     await persist_analysis(session_id, final_state, repo_url, sha, owner_hash)
-    await ws.send_json({"done": True, "session_id": session_id})
+    await ws.send_json({"done": True, "session_id": session_id, "agent_timing": agent_timing})
     logger.info("Analysis complete", session=session_id, repo=final_state["repo_name"])

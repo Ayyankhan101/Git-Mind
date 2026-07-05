@@ -146,9 +146,11 @@ export function appReducer(state, action) {
         fixResult: null,
         fixLoading: null,
         health: null,
+        healthPartial: null,
         analyzed: false,
         elapsedSec: 0,
         agentStatus: INITIAL_AGENT_STATUS,
+        agentTiming: null,
         repoName: name,
         isAnalyzing: true,
         showOnboarding: false,
@@ -178,7 +180,11 @@ export function appReducer(state, action) {
     case "SET_CODE_AUDIT":
       return { ...state, codeAudit: action.audit };
     case "SET_HEALTH":
-      return { ...state, health: action.health };
+      return { ...state, health: action.health, healthPartial: null };
+    case "SET_HEALTH_PARTIAL":
+      return { ...state, healthPartial: action.health };
+    case "SET_AGENT_TIMING":
+      return { ...state, agentTiming: action.timing };
     case "ADD_AGENT_WARNING":
       return {
         ...state,
