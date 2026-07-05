@@ -1,13 +1,17 @@
 <p align="center">
-  <h1 align="center">🧠 GitMind</h1>
+  <h1 align="center">🧠 Git-Mind</h1>
   <p align="center"><strong>Multi-agent repository intelligence platform</strong></p>
   <p align="center">Enter a GitHub username — 9 AI agents run in parallel and produce architecture diagrams, security audits, CVE scans, code analysis, and a shareable report.</p>
 </p>
 
 <p align="center">
+  <img alt="Version" src="https://img.shields.io/badge/version-1.0.0-blue.svg?cacheSeconds=2592000" />
   <a href="https://github.com/Ayyankhan101/Git-Mind/actions"><img src="https://github.com/Ayyankhan101/Git-Mind/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/Ayyankhan101/Git-Mind/blob/main/backend/tests/"><img src="https://img.shields.io/badge/backend-106%20tests-brightgreen" alt="Backend Tests"></a>
   <a href="https://github.com/Ayyankhan101/Git-Mind/blob/main/frontend/src/"><img src="https://img.shields.io/badge/frontend-70%20tests-brightgreen" alt="Frontend Tests"></a>
+  <a href="https://github.com/Ayyankhan101/Git-Mind/blob/master/LICENSE" target="_blank">
+    <img alt="License: MIT" src="https://img.shields.io/github/license/Ayyankhan101/Git-Mind" />
+  </a>
   <a href="https://huggingface.co/spaces/Ak001z/gitmind-backend"><img src="https://img.shields.io/badge/Backend-Hugging%20Face-orange" alt="HF Spaces"></a>
   <a href="https://gitmind-peach.vercel.app"><img src="https://img.shields.io/badge/Frontend-Vercel-blue" alt="Vercel"></a>
 </p>
@@ -30,9 +34,9 @@
 - [Architecture](#architecture)
 - [Features](#features)
 - [Quickstart](#quickstart)
-- [Environment Variables](#️-environment-variables-18)
+- [Environment Variables](#️-environment-variables-20)
 - [Project Layout](#️-project-layout)
-- [API Endpoints](#-api-endpoints-19)
+- [API Endpoints (19)](#-api-endpoints-19)
 - [Rust Native Acceleration](#rust-native-acceleration)
 - [RAG Pipeline](#rag-pipeline)
 - [Persistence](#persistence)
@@ -44,6 +48,8 @@
 - [Deployment](#deployment)
 - [Keyboard Shortcuts](#keyboard-shortcuts)
 - [Contributing](#contributing)
+- [Author](#author)
+- [License](#-license)
 
 ---
 
@@ -265,7 +271,7 @@ Logs are written to `logs/backend.log` and `logs/frontend.log`.
 ---
 
 <details>
-<summary><strong>⚙️ Environment Variables (20)</strong></summary>
+<summary><strong>Environment Variables (20)</strong></summary>
 
 **Required**
 
@@ -317,7 +323,7 @@ Logs are written to `logs/backend.log` and `logs/frontend.log`.
 ---
 
 <details>
-<summary><strong>📁 Project Layout</strong></summary>
+<summary><strong>Project Layout</strong></summary>
 
 ```
 Git-Mind/
@@ -371,7 +377,7 @@ Git-Mind/
 ---
 
 <details>
-<summary><strong>🔌 API Endpoints (19)</strong></summary>
+<summary><strong>API Endpoints (19)</strong></summary>
 
 **Analysis**
 
@@ -420,7 +426,7 @@ Git-Mind/
 
 ## Rust Native Acceleration
 
-> ⚡ **240 lines of Rust replace 341 lines of Python regex** — zero IPC overhead, compiled via PyO3.
+> **240 lines of Rust replace 341 lines of Python regex** — zero IPC overhead, compiled via PyO3.
 
 | Function                 | Replaces                                     | Speed-up                        |
 | ------------------------ | -------------------------------------------- | ------------------------------- |
@@ -498,14 +504,14 @@ Llama 3.3 70B via Groq                           ← generates answer with citat
 
 ## Rate Limiting
 
-| Tier                 | Rate        | Applied to                 |
-| -------------------- | ----------- | -------------------------- |
-| 🔑 **Service key**   | Unlimited   | `X-Service-Key` header     |
-| 👤 **Authenticated** | 30 req/min  | `X-GH-Token` header        |
-| 🌐 **Anonymous**     | 3 req/min   | No auth                    |
-| 🔍 **Analyze**       | 1 req/60s   | `POST /analyze` (per repo) |
-| 📊 **PR impact**     | 5 req/10min | `POST /pr-impact`          |
-| 🩹 **Fix**           | 5 req/min   | `POST /fix`                |
+| Tier              | Rate        | Applied to                 |
+| ----------------- | ----------- | -------------------------- |
+| **Service key**   | Unlimited   | `X-Service-Key` header     |
+| **Authenticated** | 30 req/min  | `X-GH-Token` header        |
+| **Anonymous**     | 3 req/min   | No auth                    |
+| **Analyze**       | 1 req/60s   | `POST /analyze` (per repo) |
+| **PR impact**     | 5 req/10min | `POST /pr-impact`          |
+| **Fix**           | 5 req/min   | `POST /fix`                |
 
 Rate-limited requests return HTTP 429 with `Retry-After` header.
 
@@ -565,12 +571,12 @@ cd frontend && npx vitest run
 
 ## Deployment
 
-| Platform                   | What                   | URL                                                                                     |
-| -------------------------- | ---------------------- | --------------------------------------------------------------------------------------- |
-| 🟢 **Hugging Face Spaces** | Backend (Docker)       | [ak001z-gitmind-backend.hf.space](https://huggingface.co/spaces/Ak001z/gitmind-backend) |
-| 🔵 **Vercel**              | Frontend (auto-deploy) | [gitmind-peach.vercel.app](https://gitmind-peach.vercel.app)                            |
-| 🐳 **Docker Compose**      | Full stack (self-host) | `docker compose up -d --build`                                                          |
-| ☁️ **Any Python host**     | Backend                | Render, Fly.io, EC2, etc.                                                               |
+| Platform                | What                   | URL                                                                                     |
+| ----------------------- | ---------------------- | --------------------------------------------------------------------------------------- |
+| **Hugging Face Spaces** | Backend (Docker)       | [ak001z-gitmind-backend.hf.space](https://huggingface.co/spaces/Ak001z/gitmind-backend) |
+| **Vercel**              | Frontend (auto-deploy) | [gitmind-peach.vercel.app](https://gitmind-peach.vercel.app)                            |
+| **Docker Compose**      | Full stack (self-host) | `docker compose up -d --build`                                                          |
+| **Any Python host**     | Backend                | Render, Fly.io, EC2, etc.                                                               |
 
 ### Quick Deploy
 
@@ -605,6 +611,14 @@ Contributions welcome! Fork the repo, create a feature branch, and open a PR. CI
 
 ---
 
+## Author
+
+**Ayyan Khan**
+GitHub: [@Ayyankhan101](https://github.com/Ayyankhan101)
+
+---
+
 ## License
 
-MIT
+Copyright © 2026 [Ayyan Khan](https://github.com/Ayyankhan101).
+This project is [MIT](https://github.com/Ayyankhan101/Git-Mind/blob/master/LICENSE) licensed.

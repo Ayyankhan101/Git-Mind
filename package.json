@@ -1,0 +1,20 @@
+{
+  "name": "Git-Mind",
+  "description": "Multi-agent repository intelligence platform",
+  "version": "1.0.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ayyankhan101/Git-Mind"
+  },
+  "bugs": {
+    "url": "https://github.com/Ayyankhan101/Git-Mind/issues"
+  },
+  "author": {
+    "name": "Ayyan Khan",
+    "url": "https://github.com/Ayyankhan101"
+  },
+  "scripts": {
+    "test": "echo 'run backend and frontend tests separately'"
+  }
+}
