@@ -23,7 +23,7 @@ orjson>=3.10.0
 sentry-sdk[fastapi]>=2.0
 PyJWT>=2.8
 cryptography>=42.0
-aiosmtplib>=3.0
+aiosmtplib>=5.1.2
 pre-commit>=4.0
 
 # RAG improvements
