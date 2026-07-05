@@ -9,14 +9,14 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import orjson
-from langchain_groq import ChatGroq
 
-from llm_cache import get_cached, invoke_with_retry, set_cached
+from llm_cache import get_cached, invoke_json_with_retry, set_cached
+from settings import get_llm
 
 logger = logging.getLogger(__name__)
 
 _MODEL = "llama-3.3-70b-versatile"
-_LLM = ChatGroq(model=_MODEL, temperature=0.1).bind(response_format={"type": "json_object"})
+_LLM = get_llm(temperature_key="code_audit", json_mode=True)
 _CACHE_NS = "llama-3.3-70b-versatile:lang_audit:json"
 _MAX_FINDINGS = 40
 
@@ -358,9 +358,9 @@ def _triage_with_llm(prompt_template: str, tool_results: list[dict], lang: str) 
         return orjson.loads(cached).get("findings", [])
 
     try:
-        raw = invoke_with_retry(_LLM, prompt).content
-        findings = orjson.loads(raw).get("findings", [])
-        set_cached(_CACHE_NS, prompt, raw)
+        parsed = invoke_json_with_retry(_LLM, prompt)
+        findings = parsed.get("findings", [])
+        set_cached(_CACHE_NS, prompt, orjson.dumps(parsed).decode())
     except Exception as exc:
         logger.error("LLM triage failed for %s: %s", lang, exc)
         return []
@@ -384,9 +384,9 @@ def _run_llm_fallback(
         return orjson.loads(cached).get("findings", [])
 
     try:
-        raw = invoke_with_retry(_LLM, prompt).content
-        findings = orjson.loads(raw).get("findings", [])
-        set_cached(_CACHE_NS, prompt, raw)
+        parsed = invoke_json_with_retry(_LLM, prompt)
+        findings = parsed.get("findings", [])
+        set_cached(_CACHE_NS, prompt, orjson.dumps(parsed).decode())
     except Exception as exc:
         logger.error("LLM fallback failed for %s: %s", lang, exc)
         return []

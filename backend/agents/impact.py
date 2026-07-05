@@ -1,16 +1,16 @@
 import logging
 
 import orjson
-from langchain_groq import ChatGroq
 
 from llm_cache import get_cached, invoke_with_retry, set_cached
+from settings import get_llm
 
 logger = logging.getLogger(__name__)
 
 _MODEL = "llama-3.3-70b-versatile"
 _CACHE_NAMESPACE = "llama-3.3-70b-versatile:merge_prediction"
 _MAX_DIFF_CHARS = 10_000
-_LLM = ChatGroq(model=_MODEL, temperature=0.15)
+_LLM = get_llm(temperature_key="impact")
 
 
 def compute_impact(base: dict, pr: dict) -> dict:

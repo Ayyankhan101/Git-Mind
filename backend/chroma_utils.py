@@ -150,7 +150,7 @@ def embed_codebase(file_contents: dict[str, str], collection_name: str) -> str:
 
                 for ext, group in ext_groups.items():
                     seps = _LANG_SEPARATORS.get(ext, _DEFAULT_SEPARATORS)
-                    docs, metas_json, ids = split_files(group, 800, 80, seps)
+                    docs, metas_json, ids = split_files(group, 800, 120, seps)
                     all_docs.extend(docs)
                     all_metas.extend(orjson.loads(m) for m in metas_json)
                     all_ids.extend(ids)
@@ -165,7 +165,7 @@ def embed_codebase(file_contents: dict[str, str], collection_name: str) -> str:
                     seps = _LANG_SEPARATORS.get(Path(fp).suffix.lower(), _DEFAULT_SEPARATORS)
                     splitter = RecursiveCharacterTextSplitter(
                         chunk_size=800,
-                        chunk_overlap=80,
+                        chunk_overlap=120,
                         separators=seps,
                     )
                     for i, chunk in enumerate(splitter.split_text(content)):
@@ -290,13 +290,17 @@ def search_codebase(
             logger.debug("Reranker fallback: %s", exc)
 
     # ── Dedup and final selection ──────────────────────────────────────────
+    # Dedup by filepath+content prefix — allows multiple chunks per file
+    # if they cover different code regions.
     seen: set[str] = set()
     final: list[dict] = []
     for c in vec_candidates[:n_results]:
         fp = c["filepath"]
-        if fp in seen:
+        content_prefix = c["content"][:120]
+        key = f"{fp}::{content_prefix}"
+        if key in seen:
             continue
-        seen.add(fp)
+        seen.add(key)
         final.append({"filepath": fp, "content": c["content"]})
 
     return final

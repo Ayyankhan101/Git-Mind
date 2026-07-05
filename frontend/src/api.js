@@ -2,11 +2,14 @@ import * as tokenManager from "./tokenManager";
 
 // Derive backend base URL.
 //   1. VITE_API_BASE env var wins (set at build time).
-//   2. Cloud Shell preview: hostnames like "3000-cs-xxxx.cloudshell.dev" —
+//   2. window.__ENV__.API_BASE — runtime config (injected in index.html).
+//   3. Cloud Shell preview: hostnames like "3000-cs-xxxx.cloudshell.dev" —
 //      swap the leading port with 8002 so frontend and backend share host.
-//   3. Default to localhost:8002 for dev.
+//   4. Default to localhost:8002 for dev.
 function deriveHttpBase() {
   if (import.meta.env.VITE_API_BASE) return import.meta.env.VITE_API_BASE;
+  if (typeof window !== "undefined" && window.__ENV__?.API_BASE)
+    return window.__ENV__.API_BASE;
   if (typeof window !== "undefined") {
     const { protocol, host, port, hostname } = window.location;
     if (/^\d+-/.test(host))
@@ -236,8 +239,15 @@ export function loadSharedAnalysis(sessionId) {
 
 /**
  * POST /chat/stream — streaming chat via SSE. Calls onToken(token) for each chunk.
+ * Calls onDone(sources) when stream completes.
  */
-export async function postChatStream(sessionId, question, onToken, signal) {
+export async function postChatStream(
+  sessionId,
+  question,
+  onToken,
+  signal,
+  onDone,
+) {
   const timeout = AbortSignal.timeout(90_000);
   const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
   const token = tokenManager.get();
@@ -271,6 +281,7 @@ export async function postChatStream(sessionId, question, onToken, signal) {
       const data = JSON.parse(line.slice(6));
       if (data.error) throw new Error(data.error);
       if (data.token) onToken(data.token);
+      if (data.done && onDone) onDone(data.sources || []);
     }
   }
 }

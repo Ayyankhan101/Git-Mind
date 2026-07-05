@@ -40,20 +40,37 @@ function MiniBar({ value, color }) {
   );
 }
 
-export default function HealthCard({ health }) {
+export default function HealthCard({ health, partial }) {
   if (!health) return null;
   const gradeColor = GRADE_COLOR[health.grade] || "#94a3b8";
 
   return (
     <div
       style={{
-        border: "1px solid var(--border)",
+        border: `1px solid ${partial ? "#f59e0b" : "var(--border)"}`,
         borderRadius: 10,
         padding: "18px 22px",
         marginBottom: 24,
         background: "var(--surface)",
+        position: "relative",
       }}
     >
+      {partial && (
+        <span
+          style={{
+            position: "absolute",
+            top: 8,
+            right: 12,
+            fontSize: 9,
+            color: "#f59e0b",
+            fontWeight: 600,
+            letterSpacing: "0.05em",
+            textTransform: "uppercase",
+          }}
+        >
+          live
+        </span>
+      )}
       <div
         style={{
           display: "flex",

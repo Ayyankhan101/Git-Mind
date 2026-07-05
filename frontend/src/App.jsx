@@ -440,6 +440,10 @@ export default function App() {
         if (data.code_audit)
           dispatch({ type: "SET_CODE_AUDIT", audit: data.code_audit });
         if (data.health) dispatch({ type: "SET_HEALTH", health: data.health });
+        if (data.health_partial)
+          dispatch({ type: "SET_HEALTH_PARTIAL", health: data.health_partial });
+        if (data.agent_timing)
+          dispatch({ type: "SET_AGENT_TIMING", timing: data.agent_timing });
         if (data.agent_error) {
           const ev = data.agent_error;
           dispatch({
@@ -463,10 +467,21 @@ export default function App() {
           ws.close();
         }
         if (data.error) {
-          dispatch({
-            type: "ANALYSIS_ERROR",
-            error: `Backend error: ${data.error}`,
-          });
+          // Crash recovery: partial results available
+          if (data.partial && data.health) {
+            dispatch({ type: "SET_HEALTH", health: data.health });
+            dispatch({
+              type: "ADD_AGENT_WARNING",
+              warning:
+                "Analysis partially completed — showing available results.",
+            });
+            dispatch({ type: "ANALYSIS_DONE" });
+          } else {
+            dispatch({
+              type: "ANALYSIS_ERROR",
+              error: `Backend error: ${data.error}`,
+            });
+          }
           clearInterval(timerRef.current);
           analyzingRef.current = false;
           ws.close();
@@ -1156,6 +1171,7 @@ export default function App() {
                   elapsedSec={elapsedSec}
                   isAnalyzing={isAnalyzing}
                   health={health}
+                  healthPartial={state.healthPartial}
                   repoUrl={selectedRepoUrl}
                   ghToken={ghToken}
                 />

@@ -1,9 +1,9 @@
 import asyncio
 import re
 
+import orjson
 import structlog
 from fastapi import APIRouter, Request
-from langchain_groq import ChatGroq
 
 from chroma_utils import search_codebase
 from llm_cache import invoke_with_retry
@@ -11,11 +11,12 @@ from models.requests import SummaryRequest
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit
 from services.session import _UUID_RE, get_session
+from settings import get_llm
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
 
-_LLM = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
+_LLM = get_llm(temperature_key="analysis", json_mode=True)
 
 _GH_URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+/?$")
 
@@ -39,6 +40,9 @@ def _flatten_code_audit_findings(code_audit: list | None) -> list[dict]:
 def _build_summary_audit_context(session: dict) -> tuple[str, dict]:
     security = session.get("security_findings", [])
     sec_crit, sec_high = _count_by_severity(security)
+    high_names = ", ".join(
+        f.get("rule") or f.get("check") or "unknown" for f in security if f.get("severity") == "high"
+    )[:200]
     crit_names = ", ".join(
         f.get("rule") or f.get("check") or "unknown" for f in security if f.get("severity") == "critical"
     )[:200]
@@ -69,6 +73,7 @@ def _build_summary_audit_context(session: dict) -> tuple[str, dict]:
     audit_context = (
         f"Security: {len(security)} findings — {sec_crit} critical, {sec_high} high.\n"
         + (f"Critical security rules: {crit_names}\n" if sec_crit else "")
+        + (f"High security rules: {high_names}\n" if sec_high else "")
         + (
             f"Git audit: {git_secrets} secret(s), {git_sensitive} sensitive file(s), "
             f"{git_bad_msgs} poor commit message(s).\n"
@@ -138,21 +143,31 @@ async def summary_endpoint(req: SummaryRequest, request: Request):
         f"Repo: {session['repo_name']}\n\n"
         f"Key code context:\n{context}\n\n"
         f"{audit_context}\n"
-        "Write exactly 3 sentences as a technical executive summary:\n"
-        "1. What this codebase is and does (be specific about tech stack / purpose)\n"
-        "2. Key architectural patterns\n"
-        "3. Overall quality posture — cover security, git hygiene, Solidity (if any), and code-audit findings; "
-        "name critical issues if present, else confirm the area is clean\n\n"
-        "No bullet points. No headers. Just 3 sentences. Be precise and technical."
+        "Return JSON with exactly these keys:\n"
+        '- "executive_summary": 2-3 sentence technical overview (tech stack, purpose, what it does)\n'
+        '- "key_architectural_patterns": 1-2 sentence description of architecture and design patterns\n'
+        "- 'quality_assessment': 1-2 sentence eval covering security, git hygiene, "
+        "Solidity (if any), and code audit; name critical issues if present, else confirm clean\n"
+        '- "risk_areas": list of strings naming specific risk areas (empty list if none)\n'
+        "Be precise and technical. No markdown. Only valid JSON."
     )
 
-    def _gen() -> str:
-        return invoke_with_retry(_LLM, prompt).content.strip()
+    def _gen() -> dict:
+        raw = invoke_with_retry(_LLM, prompt).content.strip()
+        parsed = orjson.loads(raw)
+        return {
+            "executive_summary": str(parsed.get("executive_summary", "")),
+            "key_architectural_patterns": str(parsed.get("key_architectural_patterns", "")),
+            "quality_assessment": str(parsed.get("quality_assessment", "")),
+            "risk_areas": [str(r) for r in (parsed.get("risk_areas") or [])],
+        }
 
-    summary = await asyncio.to_thread(_gen)
+    structured = await asyncio.to_thread(_gen)
+    summary_text = structured["executive_summary"]
     logger.info("Summary generated", session=req.session_id)
     return {
-        "summary": summary,
+        "summary": summary_text,
+        "structured_summary": structured,
         "stats": stats,
     }
 

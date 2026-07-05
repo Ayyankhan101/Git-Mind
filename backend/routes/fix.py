@@ -12,7 +12,6 @@ import uuid
 import httpx as _httpx
 import structlog
 from fastapi import APIRouter, Request
-from langchain_groq import ChatGroq
 
 from agents.scanner import _GITHUB_URL_RE
 from chroma_utils import search_codebase
@@ -21,6 +20,7 @@ from models.requests import AutoPRRequest, FixRequest
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit
 from services.session import _UUID_RE, get_session
+from settings import get_llm
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -80,7 +80,7 @@ async def fix_endpoint(req: FixRequest, request: Request):
     )
 
     def _generate() -> str:
-        llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
+        llm = get_llm(temperature_key="fix")
         return invoke_with_retry(llm, prompt).content.strip()
 
     fix = await asyncio.to_thread(_generate)
@@ -259,7 +259,7 @@ async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
     )
 
     def _gen_patch() -> str:
-        llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
+        llm = get_llm(temperature_key="fix")
         return invoke_with_retry(llm, prompt).content.strip()
 
     try:

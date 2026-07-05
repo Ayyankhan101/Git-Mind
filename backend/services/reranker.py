@@ -6,15 +6,20 @@ This dramatically improves precision — chunks that are semantically similar
 to the query but irrelevant to the specific question get downranked.
 
 The model is loaded lazily on first use so import time is not affected.
+
+Environment variables:
+    RERANKER_MODEL — override the default cross-encoder model name.
 """
 
 from __future__ import annotations
 
 import logging
+import os
+from hashlib import sha256
 
 logger = logging.getLogger(__name__)
 
-_MODEL_NAME = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+_MODEL_NAME = os.environ.get("RERANKER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
 _reranker = None  # lazy singleton
 
 
@@ -57,7 +62,7 @@ def rerank(
         return candidates[:top_k]
 
     pairs = [(query, c.get("content", "")) for c in candidates]
-    scores = model.predict(pairs)
+    scores = model.predict(pairs, show_progress_bar=False)
 
     ranked = []
     for candidate, score in zip(candidates, scores, strict=False):
@@ -68,3 +73,9 @@ def rerank(
     ranked.sort(key=lambda x: x["rerank_score"], reverse=True)
 
     return ranked[:top_k]
+
+
+def rerank_cache_key(query: str, candidate_fps: list[str]) -> str:
+    """Generate a cache key for a reranking result."""
+    payload = f"{query}::{'|'.join(candidate_fps)}"
+    return sha256(payload.encode()).hexdigest()

@@ -7,16 +7,15 @@ from pathlib import Path
 
 import orjson
 
+from llm_cache import get_cached, invoke_json_with_retry, set_cached  # noqa: E402
+from settings import get_llm  # noqa: E402
+
 _SEMGREP = shutil.which("semgrep") or "semgrep"  # fallback for type narrowing
-
-from langchain_groq import ChatGroq  # noqa: E402
-
-from llm_cache import get_cached, invoke_with_retry, set_cached  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
 _MODEL = "llama-3.3-70b-versatile"
-_LLM = ChatGroq(model=_MODEL, temperature=0.1).bind(response_format={"type": "json_object"})
+_LLM = get_llm(temperature_key="security", json_mode=True)
 _CACHE_NAMESPACE = "llama-3.3-70b-versatile:security:json"
 _MAX_FINDINGS = 40
 _MAX_MSG_CHARS = 300
@@ -127,10 +126,10 @@ def _triage_with_llm(raw_results: list[dict]) -> list[dict]:
         findings = orjson.loads(cached).get("findings", [])
     else:
         try:
-            raw = invoke_with_retry(_LLM, prompt).content
-            findings = orjson.loads(raw).get("findings", [])
-            set_cached(_CACHE_NAMESPACE, prompt, raw)
-        except (orjson.JSONDecodeError, Exception) as exc:
+            parsed = invoke_json_with_retry(_LLM, prompt)
+            findings = parsed.get("findings", [])
+            set_cached(_CACHE_NAMESPACE, prompt, orjson.dumps(parsed).decode())
+        except Exception as exc:
             logger.error(
                 "Security triage LLM failed: %s — dropping %d semgrep findings, using demo fallback",
                 exc,

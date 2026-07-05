@@ -27,7 +27,6 @@ aiosmtplib>=3.0
 pre-commit>=4.0
 
 # RAG improvements
-rank_bm25>=0.2.2
 sentence-transformers>=3.0.0
 
 # Test/dev
