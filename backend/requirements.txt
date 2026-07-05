@@ -24,7 +24,7 @@ sentry-sdk[fastapi]>=2.0
 PyJWT>=2.8
 cryptography>=42.0
 aiosmtplib>=3.0
-pre-commit>=4.0
+pre-commit>=4.6.0
 
 # RAG improvements
 sentence-transformers>=3.0.0
