@@ -110,3 +110,30 @@ class _CachedResponse:
 
     def __init__(self, content: str):
         self.content = content
+
+
+def invoke_json_with_retry(
+    llm,
+    prompt,
+    max_retries: int = 2,
+    base_delay: float = 2.0,
+    use_cache: bool = True,
+):
+    """Invoke an LLM expecting JSON output, with retry on parse failure.
+
+    Calls invoke_with_retry normally. If the result fails to parse as JSON,
+    retries up to *max_retries* additional times (with cache bypass on retries).
+    Returns the parsed dict on success, raises on final failure.
+    """
+    import orjson as _orjson
+
+    last_exc: Exception | None = None
+    for attempt in range(max_retries + 1):
+        try:
+            resp = invoke_with_retry(llm, prompt, use_cache=use_cache and attempt == 0)
+            return _orjson.loads(resp.content)
+        except (_orjson.JSONDecodeError, Exception) as exc:
+            last_exc = exc
+            if attempt < max_retries:
+                time.sleep(base_delay * (2**attempt))
+    raise last_exc  # type: ignore[misc]

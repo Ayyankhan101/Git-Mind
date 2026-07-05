@@ -139,6 +139,7 @@ export default function SummaryTab({
   elapsedSec,
   isAnalyzing,
   health,
+  healthPartial,
   repoUrl,
   ghToken,
 }) {
@@ -337,7 +338,10 @@ export default function SummaryTab({
           Export PDF
         </button>
       </div>
-      <HealthCard health={health} />
+      <HealthCard
+        health={health || healthPartial}
+        partial={!health && !!healthPartial}
+      />
       {repoUrl && (
         <div
           style={{
@@ -398,6 +402,30 @@ export default function SummaryTab({
         </p>
       )}
       {data?.summary && <p className="lead">{data.summary}</p>}
+      {data?.structured_summary?.risk_areas?.length > 0 && (
+        <div style={{ marginTop: 8 }}>
+          <div className="t-label">RISK AREAS</div>
+          <div
+            style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}
+          >
+            {data.structured_summary.risk_areas.map((r, i) => (
+              <span
+                key={i}
+                style={{
+                  fontSize: 11,
+                  padding: "3px 8px",
+                  borderRadius: 4,
+                  background: "rgba(234,179,8,0.10)",
+                  color: "var(--warning)",
+                  border: "1px solid rgba(234,179,8,0.20)",
+                }}
+              >
+                {r}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
       {!loading && !data && !error && (
         <p className="lead" style={{ color: "var(--text-3)" }}>
           Analysis of{" "}

@@ -46,7 +46,15 @@ const { fetchSummary, fetchMonitorStatus, fetchAnalysisHistory } =
 
 beforeEach(() => {
   vi.clearAllMocks();
-  fetchSummary.mockResolvedValue({ summary: "Test summary" });
+  fetchSummary.mockResolvedValue({
+    summary: "Test summary",
+    structured_summary: {
+      executive_summary: "Test summary",
+      key_architectural_patterns: "MVC",
+      quality_assessment: "Good",
+      risk_areas: [],
+    },
+  });
   fetchMonitorStatus.mockResolvedValue({ repos: [] });
   fetchAnalysisHistory.mockResolvedValue({ history: [] });
 });

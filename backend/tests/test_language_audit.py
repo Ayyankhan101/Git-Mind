@@ -13,7 +13,7 @@ class TestRunCodeAudit:
     @patch("agents.language_audit.shutil.which")
     @patch("agents.language_audit.subprocess.run")
     @patch("agents.language_audit.get_cached", return_value=None)
-    @patch("agents.language_audit.invoke_with_retry")
+    @patch("llm_cache.invoke_with_retry")
     def test_python_tool_and_triage(self, mock_invoke, mock_get_cached, mock_run, mock_which):
         mock_which.return_value = "/usr/bin/pylint"
         mock_run.return_value = MagicMock(
@@ -56,7 +56,7 @@ class TestRunCodeAudit:
 
     @patch("agents.language_audit.shutil.which", return_value=None)
     @patch("agents.language_audit.get_cached", return_value=None)
-    @patch("agents.language_audit.invoke_with_retry")
+    @patch("llm_cache.invoke_with_retry")
     def test_llm_fallback_when_tool_missing(self, mock_invoke, mock_get_cached, mock_which):
         mock_invoke.return_value = MagicMock(
             content=orjson.dumps(
@@ -124,7 +124,7 @@ class TestRunCodeAudit:
     @patch("agents.language_audit.shutil.which")
     @patch("agents.language_audit.subprocess.run")
     @patch("agents.language_audit.get_cached", return_value=None)
-    @patch("agents.language_audit.invoke_with_retry")
+    @patch("llm_cache.invoke_with_retry")
     def test_tool_failure_falls_back_to_llm(self, mock_invoke, mock_get_cached, mock_run, mock_which):
         mock_which.return_value = "/usr/bin/pylint"
         mock_run.side_effect = RuntimeError("pylint crashed")
@@ -154,7 +154,7 @@ class TestRunCodeAudit:
 
     @patch("agents.language_audit.shutil.which", return_value=None)
     @patch("agents.language_audit.get_cached", return_value=None)
-    @patch("agents.language_audit.invoke_with_retry")
+    @patch("llm_cache.invoke_with_retry")
     def test_llm_returns_empty_findings(self, mock_invoke, mock_get_cached, mock_which):
         mock_invoke.return_value = MagicMock(content=orjson.dumps({"findings": []}).decode())
 
@@ -167,7 +167,7 @@ class TestRunCodeAudit:
             patch("agents.language_audit.shutil.which", return_value=None),
             patch("agents.language_audit.get_cached", return_value=None),
             patch(
-                "agents.language_audit.invoke_with_retry",
+                "llm_cache.invoke_with_retry",
                 return_value=MagicMock(
                     content=orjson.dumps(
                         {
@@ -219,7 +219,7 @@ class TestMaterializeWorkspace:
     @patch("agents.language_audit.shutil.which")
     @patch("agents.language_audit.subprocess.run")
     @patch("agents.language_audit.get_cached", return_value=None)
-    @patch("agents.language_audit.invoke_with_retry")
+    @patch("llm_cache.invoke_with_retry")
     def test_go_tool_runs_in_materialized_workspace(self, mock_invoke, mock_get_cached, mock_run, mock_which):
         from pathlib import Path
 

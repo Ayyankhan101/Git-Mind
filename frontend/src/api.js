@@ -239,8 +239,15 @@ export function loadSharedAnalysis(sessionId) {
 
 /**
  * POST /chat/stream — streaming chat via SSE. Calls onToken(token) for each chunk.
+ * Calls onDone(sources) when stream completes.
  */
-export async function postChatStream(sessionId, question, onToken, signal) {
+export async function postChatStream(
+  sessionId,
+  question,
+  onToken,
+  signal,
+  onDone,
+) {
   const timeout = AbortSignal.timeout(90_000);
   const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
   const token = tokenManager.get();
@@ -274,6 +281,7 @@ export async function postChatStream(sessionId, question, onToken, signal) {
       const data = JSON.parse(line.slice(6));
       if (data.error) throw new Error(data.error);
       if (data.token) onToken(data.token);
+      if (data.done && onDone) onDone(data.sources || []);
     }
   }
 }

@@ -173,15 +173,17 @@ All 9 post-scanner agents run **in parallel**. Each is fully error-isolated — 
 
 ### 🔍 Core Analysis
 
-| Feature                     | What it does                                                                                                                                                   |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 🏛️ **Architecture diagram** | Mermaid graph of component relationships using 24K-token context; pan/zoom/fullscreen with keyboard shortcuts                                                  |
-| 📡 **API doc agent**        | Extracts every HTTP endpoint (method, route, description, parameters, auth) across FastAPI, Flask, Express, Django, Rails, Spring, NestJS, Gin, Echo, and more |
-| 🔒 **Security auditor**     | semgrep SAST scan triaged by llama-3.3-70b; findings ranked Critical → Low with exploit scenario + remediation                                                 |
-| 🛡️ **CVE scanner**          | Checks dependency lockfiles against [OSV.dev](https://osv.dev) — PyPI, npm, Cargo, Go, Ruby, PHP. Parsers accelerated by Rust native module                    |
-| 📋 **Git audit**            | Commit log analysis (100 commits): message quality, secret detection, sensitive file tracking                                                                  |
-| ⛓️ **Solidity/Web3 audit**  | Parses `.sol` files via Rust sidecar (solang-parser), then LLM-triage for reentrancy, access control, oracle manipulation, etc.                                |
-| 🔍 **Code audit**           | Per-language static analysis (pylint, eslint, go vet, clippy) with LLM triage for Python, JS/TS, Go, Rust, Java                                                |
+| Feature                       | What it does                                                                                                                                                   |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🏛️ **Architecture diagram**   | Mermaid graph of component relationships using 24K-token context; pan/zoom/fullscreen with keyboard shortcuts                                                  |
+| 📡 **API doc agent**          | Extracts every HTTP endpoint (method, route, description, parameters, auth) across FastAPI, Flask, Express, Django, Rails, Spring, NestJS, Gin, Echo, and more |
+| 🔒 **Security auditor**       | semgrep SAST scan triaged by llama-3.3-70b; findings ranked Critical → Low with exploit scenario + remediation                                                 |
+| 🛡️ **CVE scanner**            | Checks dependency lockfiles against [OSV.dev](https://osv.dev) — PyPI, npm, Cargo, Go, Ruby, PHP. Parsers accelerated by Rust native module                    |
+| 📋 **Git audit**              | Commit log analysis (100 commits): message quality, secret detection, sensitive file tracking                                                                  |
+| ⛓️ **Solidity/Web3 audit**    | Parses `.sol` files via Rust sidecar (solang-parser), then LLM-triage for reentrancy, access control, oracle manipulation, etc.                                |
+| 🔍 **Code audit**             | Per-language static analysis (pylint, eslint, go vet, clippy) with LLM triage for Python, JS/TS, Go, Rust, Java                                                |
+| 📊 **Structured LLM outputs** | Summary, PR review, and incident report return structured JSON — parsed deterministically, no markdown fragility                                               |
+| 🔍 **RAG pipeline**           | Hybrid search (ChromaDB + BM25 FTS5), cross-encoder reranker, language-aware chunking, context dedup by file+content prefix                                    |
 
 ### 🛠️ Developer Experience
 
@@ -190,10 +192,11 @@ All 9 post-scanner agents run **in parallel**. Each is fully error-isolated — 
 | 🩹 **Auto-fix patches**     | Click "Generate Fix" → unified diff patch from LLM + RAG; click "Open PR" → auto-commit and open a GitHub PR        |
 | 👀 **PR review**            | Paste any GitHub PR URL → structured review with file:line issues and verdict; cached by PR head SHA                |
 | 📊 **Predictive PR impact** | Enter a PR URL → LLM merge-risk prediction (low/medium/high/critical) with health score delta                       |
-| 💬 **RAG chat**             | Ask anything about the codebase; ChromaDB (8 context chunks) + streaming SSE                                        |
+| 💬 **RAG chat**             | Ask anything about the codebase; ChromaDB (8 context chunks) + source badges + streaming SSE                        |
 | 🆘 **Crisis Mode**          | Escalation simulation: CEO / Legal / Engineering debate a live incident; reporter publishes if the team is too slow |
 | 📄 **Shareable links**      | Analysis snapshots saved server-side; share via `?share=SESSION_ID` URL                                             |
-| ⬇️ **Export report**        | Download full analysis as Markdown or PDF                                                                           |
+| ⬇️ **Export report**        | Full analysis as PDF with syntax-highlighted code blocks, cached by session for instant re-download                 |
+| 📊 **Live health score**    | Incremental health grade streams during analysis — see score update in real-time as agents complete                 |
 
 ### 🏢 Enterprise / Ops
 
@@ -202,6 +205,7 @@ All 9 post-scanner agents run **in parallel**. Each is fully error-isolated — 
 | 🏢 **Org-wide CVE dashboard** | Scan all loaded repos for CVEs via GitHub API — cross-repo shared vulnerability detection      |
 | 🔄 **Repository monitoring**  | Subscribe repos — background loop fetches latest shas, triggers re-analysis on change          |
 | 🔔 **Webhook notifications**  | Push analysis results to external URLs for CI/CD integration                                   |
+| 📧 **Email notifications**    | Optional SMTP alerts on monitoring score changes                                               |
 | 🚀 **CI/CD integration**      | 3 GitHub Actions workflows: CI, PR analysis (auto-comment), weekly monitoring (Slack + issues) |
 
 ---
@@ -261,7 +265,7 @@ Logs are written to `logs/backend.log` and `logs/frontend.log`.
 ---
 
 <details>
-<summary><strong>⚙️ Environment Variables (18)</strong></summary>
+<summary><strong>⚙️ Environment Variables (20)</strong></summary>
 
 **Required**
 
@@ -298,13 +302,15 @@ Logs are written to `logs/backend.log` and `logs/frontend.log`.
 
 **Tuning**
 
-| Variable                   | Default                 | Description                         |
-| -------------------------- | ----------------------- | ----------------------------------- |
-| `SIDECAR_URL`              | `http://127.0.0.1:8003` | Solidity parser sidecar endpoint    |
-| `TASK_WORKERS`             | `3`                     | Background task queue worker count  |
-| `MONITOR_INTERVAL_SECONDS` | `3600`                  | Repo monitoring loop interval       |
-| `REPORTER_INTERVAL_SEC`    | `45`                    | Crisis Mode reporter check interval |
-| `DEBUG`                    | —                       | Enable health check debug info      |
+| Variable                   | Default                   | Description                         |
+| -------------------------- | ------------------------- | ----------------------------------- |
+| `LLM_MODEL`                | `llama-3.3-70b-versatile` | Override Groq model for all agents  |
+| `RERANKER_MODEL`           | `ms-marco-MiniLM-L-6-v2`  | Cross-encoder reranker model        |
+| `SIDECAR_URL`              | `http://127.0.0.1:8003`   | Solidity parser sidecar endpoint    |
+| `TASK_WORKERS`             | `3`                       | Background task queue worker count  |
+| `MONITOR_INTERVAL_SECONDS` | `3600`                    | Repo monitoring loop interval       |
+| `REPORTER_INTERVAL_SEC`    | `45`                      | Crisis Mode reporter check interval |
+| `DEBUG`                    | —                         | Enable health check debug info      |
 
 </details>
 
@@ -324,14 +330,16 @@ Git-Mind/
 │   ├── main.py                     ← FastAPI app
 │   ├── orchestrator.py             ← LangGraph analysis + crisis graphs (9-agent DAG)
 │   ├── state.py                    ← RepoState TypedDict
-│   ├── chroma_utils.py             ← ChromaDB helpers
+│   ├── settings.py                 ← Centralized LLM config (model, temps, factory)
+│   ├── llm_cache.py                ← diskcache + invoke_json_with_retry
+│   ├── chroma_utils.py             ← ChromaDB helpers + hybrid search
 │   ├── agents/                     ← 9 LangGraph agent nodes + crisis sub-agents
 │   ├── routes/                     ← REST API endpoints
-│   ├── ws/                         ← WebSocket handlers
+│   ├── ws/                         ← WebSocket handlers (analyze, crisis)
 │   ├── models/                     ← SQLAlchemy + Pydantic
-│   ├── services/                   ← Auth, cache, rate limiter, task queue, telemetry
+│   ├── services/                   ← Auth, cache, rate limiter, BM25 FTS5, reranker
 │   ├── alembic/                    ← Database migrations
-    │   └── tests/                      ← 106 pytest tests
+│   └── tests/                      ← 106 pytest tests
 │
 ├── rust-gitmind/                   ← PyO3 native module (gitmind_core)
 │   └── src/
@@ -349,11 +357,13 @@ Git-Mind/
 ├── .github/workflows/              ← CI/CD pipelines
 └── frontend/
     └── src/
-        ├── App.js                  ← Root component (useReducer state)
-    ├── appReducer.js           ← Typed actions + state transitions
-        ├── api.js                  ← All API calls
+        ├── App.jsx                 ← Root component (useReducer state)
+        ├── appReducer.js           ← Typed actions + state transitions
+        ├── api.js                  ← All API calls (postChatStream with sources)
+        ├── pdfBuilder.js           ← PDF generation + caching + syntax highlighting
+        ├── tokenManager.js         ← Encrypted PAT storage (AES-GCM)
         ├── components/             ← Tab components + CommandPalette
-        └── ...                     ← 70 Jest tests
+        └── ...                     ← 70 Vitest tests
 ```
 
 </details>
@@ -437,15 +447,15 @@ User question
     ↓
 ChromaDB vector search (top-20)
     ↓
-BM25 keyword search (top-20)        ← catches exact identifier matches
+BM25 keyword search via SQLite FTS5 (top-20)   ← zero external deps, built-in
     ↓
-Reciprocal Rank Fusion (RRF)         ← merges both result sets
+Reciprocal Rank Fusion (RRF)                    ← merges both result sets
     ↓
-Cross-encoder reranker               ← re-scores by relevance
+Cross-encoder reranker (configurable model)      ← re-scores by relevance
     ↓
-Context dedup + file-header formatting
+Context dedup (filepath + content prefix)        ← multiple chunks per file
     ↓
-Llama 3.3 70B via Groq               ← generates answer with citations
+Llama 3.3 70B via Groq                           ← generates answer with citations
 ```
 
 ### What each layer does
@@ -453,17 +463,23 @@ Llama 3.3 70B via Groq               ← generates answer with citations
 | Layer                      | What it does                                                                            |
 | -------------------------- | --------------------------------------------------------------------------------------- |
 | **ChromaDB (vector)**      | Semantic similarity search using `all-MiniLM-L6-v2` embeddings                          |
-| **BM25 (keyword)**         | Exact term matching — catches function names, class names, imports                      |
+| **BM25 (FTS5)**            | SQLite FTS5 — exact term matching with zero external dependencies                       |
 | **RRF fusion**             | Combines rank positions from both searchers; weighted blend (default 70/30 vector/BM25) |
-| **Cross-encoder reranker** | `ms-marco-MiniLM-L-6-v2` — scores each (query, chunk) pair; removes false positives     |
-| **Context dedup**          | Drops duplicate file headers in context window; max 8 unique file chunks                |
+| **Cross-encoder reranker** | `ms-marco-MiniLM-L-6-v2` (configurable via `RERANKER_MODEL` env var)                    |
+| **Context dedup**          | Allows multiple chunks per file (dedup by filepath + content prefix, not filepath-only) |
 | **LLM cache**              | `diskcache` (SQLite, 2 GB, 24h TTL) — instant return for repeated questions             |
 
 ### Chunking
 
-- **Chunk size:** 800 chars / 80 overlap (10%)
+- **Chunk size:** 800 chars / 120 overlap (15%)
 - **Language-aware separators:** `.py` splits on `class`/`def`; `.js/.ts` on `export`/`function`/`class`; `.go` on `func`/`type`; `.rs` on `fn`/`struct`/`impl`
 - **Rust acceleration:** `gitmind_core.split_files()` (PyO3) — 10-20x faster than Python fallback
+
+### LLM Output Reliability
+
+- **Structured JSON outputs:** Summary, PR review, security triage, code audit, and incident report all use `response_format={"type": "json_object"}`
+- **Parse retry:** `invoke_json_with_retry()` retries up to 2x on JSON parse failure (bypasses stale cache on retries)
+- **Centralized model config:** All agents use `get_llm()` from `settings.py` — single source of truth for model name and temperature
 
 ---
 
@@ -533,7 +549,7 @@ Rate-limited requests return HTTP 429 with `Retry-After` header.
 
 ```
 ✅ Backend:  106 tests passing (pytest-asyncio)
-✅ Frontend:  70 tests passing (Jest + React Testing Library)
+✅ Frontend:  70 tests passing (Vitest + React Testing Library)
 ✅ Rust:      clippy + rustfmt clean
 ```
 
@@ -542,7 +558,7 @@ Rate-limited requests return HTTP 429 with `Retry-After` header.
 cd backend && python -m pytest tests/ -v
 
 # Frontend
-cd frontend && npx react-scripts test --watchAll=false
+cd frontend && npx vitest run
 ```
 
 ---
