@@ -41,6 +41,7 @@ import CveTab from "./components/CveTab";
 import PRReviewTab from "./components/PRReviewTab";
 import CrisisChat from "./components/CrisisChat";
 import Onboarding from "./components/Onboarding";
+import LandingPage from "./components/LandingPage";
 import KeyboardHelp from "./components/KeyboardHelp";
 import FilePreviewDrawer from "./components/FilePreviewDrawer";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -1155,7 +1156,7 @@ export default function App() {
 
         <div className="tab-content" role="tabpanel">
           {showOnboarding && !repos.length ? (
-            <Onboarding
+            <LandingPage
               onLoad={handleLoadRepos}
               onAnalyzeUrl={handleSelectRepo}
             />
