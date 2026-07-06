@@ -128,6 +128,12 @@ const THEMES = [
     colors: ["#0a0a18", "#a78bfa"],
   },
   {
+    id: "spatial",
+    name: "Spatial",
+    sub: "Glass cyan",
+    colors: ["#050510", "#22d3ee"],
+  },
+  {
     id: "mist",
     name: "Mist",
     sub: "Light glass",
