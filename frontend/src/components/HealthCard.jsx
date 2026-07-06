@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 
 const GRADE_COLOR = {
   A: "#10b981",
@@ -16,24 +16,37 @@ const DIM_LABEL = {
   code_quality: "Code Quality",
 };
 
-function MiniBar({ value, color }) {
+function MiniBar({ value, color, delay = 0 }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const el = ref.current;
+    el.style.width = "0%";
+    const timer = setTimeout(() => {
+      el.style.width = `${value}%`;
+    }, 100 + delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
   return (
     <div
       style={{
-        background: "var(--surface-2)",
-        borderRadius: 3,
-        height: 5,
+        background: "rgba(255,255,255,0.06)",
+        borderRadius: 4,
+        height: 6,
         width: "100%",
         overflow: "hidden",
       }}
     >
       <div
+        ref={ref}
         style={{
-          background: color,
-          width: `${value}%`,
+          background: `linear-gradient(90deg, ${color}, ${color}dd)`,
           height: "100%",
-          borderRadius: 3,
-          transition: "width 0.6s ease",
+          borderRadius: 4,
+          transition: "width 0.8s cubic-bezier(0.22, 1, 0.36, 1)",
+          boxShadow: `0 0 8px ${color}44`,
         }}
       />
     </div>
@@ -45,16 +58,15 @@ export default function HealthCard({ health, partial }) {
   const gradeColor = GRADE_COLOR[health.grade] || "#94a3b8";
 
   return (
-    <div
-      style={{
-        border: `1px solid ${partial ? "#f59e0b" : "var(--border)"}`,
-        borderRadius: 10,
-        padding: "18px 22px",
-        marginBottom: 24,
-        background: "var(--surface)",
-        position: "relative",
-      }}
-    >
+    <div className="health-card">
+      {/* Glow backdrop */}
+      <div
+        className="health-card-glow"
+        style={{
+          background: `radial-gradient(circle at 30% 50%, ${gradeColor}18, transparent 60%)`,
+        }}
+      />
+
       {partial && (
         <span
           style={{
@@ -66,71 +78,68 @@ export default function HealthCard({ health, partial }) {
             fontWeight: 600,
             letterSpacing: "0.05em",
             textTransform: "uppercase",
+            zIndex: 1,
           }}
         >
           live
         </span>
       )}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 20,
-          marginBottom: 16,
-        }}
-      >
-        <div
-          style={{
-            width: 72,
-            height: 72,
-            borderRadius: "50%",
-            border: `3px solid ${gradeColor}`,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          <span
-            style={{
-              fontSize: 28,
-              fontWeight: 700,
-              color: gradeColor,
-              lineHeight: 1,
-            }}
+
+      <div className="health-card-inner">
+        {/* Grade ring */}
+        <div className="health-grade-ring">
+          <svg
+            viewBox="0 0 80 80"
+            width="80"
+            height="80"
+            className="health-ring-svg"
           >
-            {health.grade}
-          </span>
-          <span
-            style={{
-              fontSize: 11,
-              color: "var(--text-3)",
-              letterSpacing: "0.1em",
-            }}
-          >
-            {health.score}/100
-          </span>
+            <defs>
+              <linearGradient id="health-ring-grad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor={gradeColor} stopOpacity="0.3" />
+                <stop offset="100%" stopColor={gradeColor} stopOpacity="1" />
+              </linearGradient>
+            </defs>
+            <circle
+              cx="40"
+              cy="40"
+              r="34"
+              fill="none"
+              stroke="rgba(255,255,255,0.06)"
+              strokeWidth="4"
+            />
+            <circle
+              cx="40"
+              cy="40"
+              r="34"
+              fill="none"
+              stroke="url(#health-ring-grad)"
+              strokeWidth="4"
+              strokeLinecap="round"
+              strokeDasharray={`${(health.score / 100) * 213.6} 213.6`}
+              transform="rotate(-90 40 40)"
+              className="health-ring-progress"
+            />
+          </svg>
+          <div className="health-grade-text">
+            <span className="health-grade-letter" style={{ color: gradeColor }}>
+              {health.grade}
+            </span>
+            <span className="health-grade-score">{health.score}/100</span>
+          </div>
         </div>
 
-        <div style={{ flex: 1, display: "grid", gap: 10 }}>
-          {Object.entries(health.breakdown).map(([key, val]) => (
-            <div key={key}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontSize: 11,
-                  color: "var(--text-3)",
-                  marginBottom: 4,
-                }}
-              >
+        {/* Breakdown bars */}
+        <div className="health-breakdown">
+          {Object.entries(health.breakdown).map(([key, val], i) => (
+            <div key={key} className="health-bar-row">
+              <div className="health-bar-label">
                 <span>{DIM_LABEL[key] || key}</span>
                 <span
+                  className="health-bar-value"
                   style={{
                     color:
                       val >= 80 ? "#10b981" : val >= 60 ? "#f59e0b" : "#ef4444",
-                    fontWeight: 600,
                   }}
                 >
                   {val}
@@ -141,6 +150,7 @@ export default function HealthCard({ health, partial }) {
                 color={
                   val >= 80 ? "#10b981" : val >= 60 ? "#f59e0b" : "#ef4444"
                 }
+                delay={i * 80}
               />
             </div>
           ))}

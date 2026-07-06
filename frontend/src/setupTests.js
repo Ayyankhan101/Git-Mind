@@ -70,3 +70,26 @@ if (!AbortSignal.timeout) {
     return ctrl.signal;
   };
 }
+
+// Mock window.matchMedia for GSAP ScrollTrigger
+if (!window.matchMedia) {
+  window.matchMedia = (query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  });
+}
+
+// Mock ResizeObserver for Lenis smooth scroll
+if (!window.ResizeObserver) {
+  window.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
