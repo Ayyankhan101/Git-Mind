@@ -93,3 +93,13 @@ if (!window.ResizeObserver) {
     disconnect() {}
   };
 }
+
+// Mock IntersectionObserver for active nav indicator
+if (!window.IntersectionObserver) {
+  window.IntersectionObserver = class {
+    constructor() {}
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}

@@ -14,7 +14,7 @@
   --lp-glass-border-dim: rgba(255, 255, 255, 0.05);
   --lp-text-primary: #ffffff;
   --lp-text-secondary: rgba(255, 255, 255, 0.85);
-  --lp-text-tertiary: rgba(255, 255, 255, 0.6);
+  --lp-text-tertiary: rgba(255, 255, 255, 0.75);
   --lp-pixel-font: "Press Start 2P", monospace;
 }
 
@@ -26,6 +26,28 @@ html.lenis body {
 
 .lenis.lenis-smooth {
   scroll-behavior: auto !important;
+}
+
+/* ── Skip to content (accessible) ─────────────────────────── */
+.lp-skip-link {
+  position: absolute;
+  top: -100%;
+  left: 16px;
+  z-index: 9999;
+  padding: 12px 24px;
+  background: var(--lp-cyan);
+  color: #050510;
+  font-weight: 700;
+  font-size: 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: top 0.2s;
+}
+
+.lp-skip-link:focus {
+  top: 16px;
+  outline: 2px solid var(--lp-cyan);
+  outline-offset: 2px;
 }
 
 .lenis.lenis-smooth [data-lenis-prevent] {
@@ -284,6 +306,7 @@ html.lenis body {
 /* ── Glass System ───────────────────────────────────────────── */
 .lp-glass {
   position: relative;
+  background: rgba(5, 5, 16, 0.95);
   background: var(--lp-glass-bg);
   backdrop-filter: blur(24px) saturate(200%);
   -webkit-backdrop-filter: blur(24px) saturate(200%);
@@ -418,7 +441,9 @@ html.lenis body {
   white-space: nowrap;
 }
 
-.lp-btn:focus-visible {
+.lp-btn:focus-visible,
+.lp-nav-link:focus-visible,
+.lp-hint-link:focus-visible {
   outline: 2px solid var(--lp-cyan);
   outline-offset: 2px;
 }
@@ -646,7 +671,18 @@ html.lenis body {
 }
 
 .lp-hint-link:hover {
+  color: var(--lp-cyan);
   text-decoration-color: var(--lp-cyan);
+}
+
+.lp-hint-link {
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.lp-nav-link--active {
+  color: var(--lp-text-primary) !important;
+  border-bottom: 2px solid var(--lp-cyan);
 }
 
 /* ── Sections Common ────────────────────────────────────────── */
@@ -1024,6 +1060,66 @@ html.lenis body {
   }
 }
 
+/* ── Responsive — Small Mobile ───────────────────────────────── */
+@media (max-width: 480px) {
+  .lp-hero {
+    padding: 80px 16px 40px;
+  }
+
+  .lp-headline {
+    font-size: 28px;
+  }
+
+  .lp-hero-3d-title {
+    font-size: 28px;
+  }
+
+  .lp-subhead {
+    font-size: 14px;
+  }
+
+  .lp-nav-inner {
+    padding: 8px 12px;
+  }
+
+  .lp-nav-brand {
+    gap: 6px;
+  }
+
+  .lp-logo-text {
+    font-size: 10px;
+  }
+
+  .lp-btn-nav {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+
+  .lp-features {
+    padding: 40px 0 60px;
+  }
+
+  .lp-feature-card {
+    padding: 20px 16px;
+  }
+
+  .lp-cta-card {
+    padding: 32px 20px;
+  }
+
+  .lp-cta-title {
+    font-size: 22px;
+  }
+
+  .lp-cta-desc {
+    font-size: 14px;
+  }
+
+  .lp-stat-value {
+    font-size: 24px;
+  }
+}
+
 /* ── Reduced Motion ─────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .lp-gradient-orb,
@@ -1035,6 +1131,11 @@ html.lenis body {
   .lp-stat-item {
     animation: none !important;
     transition: none !important;
+  }
+
+  .lp-feature-card:hover,
+  .lp-stat-item:hover {
+    transform: none !important;
   }
 
   .lp-spline-fullpage {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   ArrowRight,
   Zap,
@@ -99,6 +99,7 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
   const statsRef = useRef(null);
   const ctaRef = useRef(null);
   const reducedMotion = useRef(false);
+  const [activeSection, setActiveSection] = useState("");
 
   useEffect(() => {
     reducedMotion.current = window.matchMedia(
@@ -302,7 +303,7 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
     return () => ctx.revert();
   }, []);
 
-  /* Stats: scale-in + counter animation */
+  /* Stats: scale-in animation */
   useEffect(() => {
     if (reducedMotion.current || !statsRef.current) return;
 
@@ -353,16 +354,19 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
   const splineUrl =
     "https://my.spline.design/aidatamodelinteraction-eeyThmwWx2FAcM8oe2sM3RYs/";
 
-  /* Magnetic hover for primary buttons */
+  /* Magnetic hover for primary buttons (event delegation) */
   useEffect(() => {
-    const buttons = rootRef.current?.querySelectorAll(".lp-btn-primary");
-    if (!buttons) return;
+    if (reducedMotion.current) return;
+    const root = rootRef.current;
+    if (!root) return;
 
     const handleMove = (e) => {
-      const rect = e.currentTarget.getBoundingClientRect();
+      const btn = e.target.closest(".lp-btn-primary");
+      if (!btn) return;
+      const rect = btn.getBoundingClientRect();
       const x = e.clientX - rect.left - rect.width / 2;
       const y = e.clientY - rect.top - rect.height / 2;
-      gsap.to(e.currentTarget, {
+      gsap.to(btn, {
         x: x * 0.3,
         y: y * 0.3,
         duration: 0.3,
@@ -371,7 +375,9 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
     };
 
     const handleLeave = (e) => {
-      gsap.to(e.currentTarget, {
+      const btn = e.target.closest(".lp-btn-primary");
+      if (!btn) return;
+      gsap.to(btn, {
         x: 0,
         y: 0,
         duration: 0.5,
@@ -379,17 +385,37 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
       });
     };
 
-    buttons.forEach((btn) => {
-      btn.addEventListener("mousemove", handleMove);
-      btn.addEventListener("mouseleave", handleLeave);
-    });
+    root.addEventListener("mousemove", handleMove);
+    root.addEventListener("mouseleave", handleLeave);
 
     return () => {
-      buttons.forEach((btn) => {
-        btn.removeEventListener("mousemove", handleMove);
-        btn.removeEventListener("mouseleave", handleLeave);
-      });
+      root.removeEventListener("mousemove", handleMove);
+      root.removeEventListener("mouseleave", handleLeave);
     };
+  }, []);
+
+  /* Active nav section indicator via IntersectionObserver */
+  useEffect(() => {
+    const sections = ["features", "stats", "cta"];
+    const observers = [];
+
+    sections.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setActiveSection(id);
+          }
+        },
+        { rootMargin: "-40% 0px -55% 0px" },
+      );
+      observer.observe(el);
+      observers.push(observer);
+    });
+
+    return () => observers.forEach((o) => o.disconnect());
   }, []);
 
   const handleSubmit = (e) => {
@@ -409,6 +435,11 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
 
   return (
     <div className="lp-root" ref={rootRef}>
+      {/* Skip to content (accessible) */}
+      <a href="#features" className="lp-skip-link">
+        Skip to content
+      </a>
+
       {/* Animated Background */}
       <div className="lp-bg" aria-hidden="true">
         <div className="lp-gradient-orb lp-orb-1" />
@@ -423,6 +454,7 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
           title="3D Spline Scene"
           frameBorder="0"
           allow="autoplay"
+          loading="lazy"
         />
       </div>
 
@@ -437,13 +469,22 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
           </div>
 
           <div className="lp-nav-links">
-            <a href="#features" className="lp-nav-link">
+            <a
+              href="#features"
+              className={`lp-nav-link${activeSection === "features" ? " lp-nav-link--active" : ""}`}
+            >
               Features
             </a>
-            <a href="#stats" className="lp-nav-link">
+            <a
+              href="#stats"
+              className={`lp-nav-link${activeSection === "stats" ? " lp-nav-link--active" : ""}`}
+            >
               Capabilities
             </a>
-            <a href="#cta" className="lp-nav-link">
+            <a
+              href="#cta"
+              className={`lp-nav-link${activeSection === "cta" ? " lp-nav-link--active" : ""}`}
+            >
               Get Started
             </a>
           </div>
@@ -481,6 +522,7 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
                 value={inputVal}
                 onChange={(e) => setInputVal(e.target.value)}
                 aria-label="GitHub URL or username"
+                required
               />
             </div>
             <button
@@ -520,69 +562,73 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="lp-features" id="features" ref={featuresRef}>
-        <div className="lp-section-inner">
-          <div className="lp-section-header">
-            <span className="lp-section-label">What's Inside</span>
-            <h2 className="lp-section-title">
-              Everything you need to
-              <br />
-              understand any codebase
-            </h2>
-          </div>
+      <main>
+        {/* Features Section */}
+        <section className="lp-features" id="features" ref={featuresRef}>
+          <div className="lp-section-inner">
+            <div className="lp-section-header">
+              <span className="lp-section-label">What's Inside</span>
+              <h2 className="lp-section-title">
+                Everything you need to
+                <br />
+                understand any codebase
+              </h2>
+            </div>
 
-          <div className="lp-features-grid">
-            {FEATURES.map(({ Icon, title, desc }) => (
-              <div key={title} className="lp-feature-card lp-glass">
-                <div className="lp-feature-icon">
-                  <Icon size={22} strokeWidth={1.5} />
+            <div className="lp-features-grid">
+              {FEATURES.map(({ Icon, title, desc }) => (
+                <div key={title} className="lp-feature-card lp-glass">
+                  <div className="lp-feature-icon">
+                    <Icon size={22} strokeWidth={1.5} />
+                  </div>
+                  <h3 className="lp-feature-title">{title}</h3>
+                  <p className="lp-feature-desc">{desc}</p>
                 </div>
-                <h3 className="lp-feature-title">{title}</h3>
-                <p className="lp-feature-desc">{desc}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Stats Section */}
-      <section className="lp-stats" id="stats" ref={statsRef}>
-        <div className="lp-section-inner">
-          <div className="lp-stats-grid">
-            {STATS.map(({ value, label, Icon }) => (
-              <div key={label} className="lp-stat-item lp-glass">
-                <div className="lp-stat-icon">
-                  <Icon size={18} strokeWidth={1.5} />
+        {/* Stats Section */}
+        <section className="lp-stats" id="stats" ref={statsRef}>
+          <div className="lp-section-inner">
+            <div className="lp-stats-grid">
+              {STATS.map(({ value, label, Icon }) => (
+                <div key={label} className="lp-stat-item lp-glass">
+                  <div className="lp-stat-icon">
+                    <Icon size={18} strokeWidth={1.5} />
+                  </div>
+                  <div className="lp-stat-value">{value}</div>
+                  <div className="lp-stat-label">{label}</div>
                 </div>
-                <div className="lp-stat-value">{value}</div>
-                <div className="lp-stat-label">{label}</div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Final CTA */}
-      <section className="lp-cta" id="cta" ref={ctaRef}>
-        <div className="lp-section-inner">
-          <div className="lp-cta-card lp-glass">
-            <h2 className="lp-cta-title">Ready to understand your codebase?</h2>
-            <p className="lp-cta-desc">
-              Drop in a GitHub URL. Get a senior engineer's understanding in 60
-              seconds.
-            </p>
-            <button
-              className="lp-btn lp-btn-primary lp-btn-large"
-              onClick={handleGetStarted}
-            >
-              <Zap size={16} />
-              Get Started — It's Free
-              <ArrowRight size={16} />
-            </button>
+        {/* Final CTA */}
+        <section className="lp-cta" id="cta" ref={ctaRef}>
+          <div className="lp-section-inner">
+            <div className="lp-cta-card lp-glass">
+              <h2 className="lp-cta-title">
+                Ready to understand your codebase?
+              </h2>
+              <p className="lp-cta-desc">
+                Drop in a GitHub URL. Get a senior engineer's understanding in
+                60 seconds.
+              </p>
+              <button
+                className="lp-btn lp-btn-primary lp-btn-large"
+                onClick={handleGetStarted}
+              >
+                <Zap size={16} />
+                Get Started — It's Free
+                <ArrowRight size={16} />
+              </button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
       {/* Footer */}
       <footer className="lp-footer">
