@@ -277,6 +277,7 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
             ref={inputRef}
             className="node-panel-input"
             value={input}
+            aria-label={`Ask about ${node}`}
             onChange={(e) => setInput(e.target.value)}
             onInput={(e) => {
               e.target.style.height = "auto";
@@ -304,6 +305,7 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
             className="node-send-btn"
             onClick={() => send()}
             disabled={!input.trim() || busy || !chatEnabled}
+            aria-label="Send message"
           >
             <Send size={13} />
           </button>

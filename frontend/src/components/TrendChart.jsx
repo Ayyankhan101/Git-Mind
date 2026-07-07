@@ -168,6 +168,8 @@ export default function TrendChart({ data, days, onDaysChange }) {
       </div>
 
       <svg
+        role="img"
+        aria-label="Health score trend over time"
         viewBox={`0 0 ${width} ${height}`}
         style={{ width: "100%", height: "auto" }}
         onMouseLeave={() => setHoverIdx(null)}

@@ -46,6 +46,8 @@ function Sparkline({
   const fillPath = `${path} L${width},${height} L0,${height} Z`;
   return (
     <svg
+      role="img"
+      aria-label="Sparkline trend chart"
       viewBox={`0 0 ${width} ${height}`}
       width="100%"
       height={height}
@@ -96,7 +98,13 @@ function Donut({ segments, size = 120, thickness = 14 }) {
     return `M${sx},${sy} A${r},${r} 0 ${big} 1 ${ex},${ey} L${isx},${isy} A${inner},${inner} 0 ${big} 0 ${iex},${iey} Z`;
   };
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size}>
+    <svg
+      role="img"
+      aria-label="Severity breakdown donut chart"
+      viewBox={`0 0 ${size} ${size}`}
+      width={size}
+      height={size}
+    >
       {segments.map((s, i) => {
         const start = (acc / total) * TAU;
         acc += s.value;

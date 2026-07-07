@@ -89,6 +89,8 @@ export default function HealthCard({ health, partial }) {
         {/* Grade ring */}
         <div className="health-grade-ring">
           <svg
+            role="img"
+            aria-label={`Health grade: ${health.grade}`}
             viewBox="0 0 80 80"
             width="80"
             height="80"

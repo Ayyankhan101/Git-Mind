@@ -19,7 +19,7 @@
 
   --success: #22c55e;
   --warning: #eab308;
-  --danger: #ef4444;
+  --danger: #f87171;
   --info: #38bdf8;
   --critical: #a21caf;
 
@@ -2853,7 +2853,7 @@ select {
   --primary-glow: rgba(34, 211, 238, 0.28);
   --success: #22c55e;
   --warning: #eab308;
-  --danger: #ef4444;
+  --danger: #f87171;
   --info: #38bdf8;
   --critical: #e879f9;
   --sev-critical: #ef4444;
@@ -4248,7 +4248,7 @@ a:focus-visible,
   border-radius: 6px;
   border: 1px solid var(--border-2);
   background: var(--surface-1);
-  min-height: 32px;
+  min-height: 44px;
 }
 .email-chip {
   display: inline-flex;

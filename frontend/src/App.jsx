@@ -890,6 +890,7 @@ export default function App() {
           <input
             ref={usernameRef}
             placeholder="github username"
+            aria-label="GitHub username"
             value={githubUser}
             onChange={(e) => {
               dispatch({ type: "SET_GITHUB_USER", value: e.target.value });
@@ -923,6 +924,7 @@ export default function App() {
                 ? "unrecognized format"
                 : "token (optional)"
             }
+            aria-label="GitHub personal access token"
             value={ghToken}
             onChange={(e) => {
               dispatch({ type: "SET_GH_TOKEN", value: e.target.value });

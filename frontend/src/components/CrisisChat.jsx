@@ -174,6 +174,7 @@ export default function CrisisChat({ finding, sessionId, repoName, onClose }) {
             className="btn-icon"
             style={{ position: "absolute", top: 16, right: 16 }}
             onClick={onClose}
+            aria-label="Close crisis chat"
           >
             <X size={14} strokeWidth={1.5} />
           </button>

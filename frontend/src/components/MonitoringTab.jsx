@@ -171,6 +171,7 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
   };
 
   const handleUnsubscribe = async (monitorId) => {
+    if (!window.confirm("Stop monitoring this repository?")) return;
     try {
       await unsubscribeMonitor(monitorId);
       setRepos((prev) => prev.filter((r) => r.id !== monitorId));
@@ -244,6 +245,7 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
             <input
               className="mon-input"
               placeholder="https://github.com/owner/repo"
+              aria-label="Repository URL"
               value={subUrl}
               onChange={(e) => setSubUrl(e.target.value)}
               disabled={subLoading}
@@ -262,6 +264,7 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
                 setSubError(null);
               }}
               disabled={subLoading}
+              aria-label="Close form"
             >
               <X size={13} />
             </button>
@@ -270,6 +273,7 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
             <input
               className="mon-input"
               placeholder="Slack webhook URL (optional)"
+              aria-label="Slack webhook URL"
               value={subSlack}
               onChange={(e) => setSubSlack(e.target.value)}
               disabled={subLoading}
@@ -387,6 +391,7 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
                         onClick={() =>
                           setExpandedRepo(isExpanded ? null : repo.repo_url)
                         }
+                        aria-label={isExpanded ? "Collapse" : "Expand"}
                         style={{
                           background: "none",
                           border: "none",
