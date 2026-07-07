@@ -12,7 +12,7 @@ import { buildIncidentPdf, downloadPdf } from "../pdfBuilder";
 
 const ROLE_COLOR = {
   CEO: "var(--warning)",
-  Legal: "#818cf8",
+  Legal: "var(--info)",
   Engineering: "var(--success)",
   Reporter: "var(--danger)",
 };

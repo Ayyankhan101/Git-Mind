@@ -6,6 +6,7 @@
   /* Base surfaces — true blacks with subtle blue undertone */
   --bg: #09090b;
   --surface: #0f0f13;
+  --surface-1: #141418;
   --surface-2: #18181f;
   --surface-3: #1e1e28;
 
@@ -2545,6 +2546,7 @@ select {
 [data-theme="daylight"] {
   --bg: #fafafa;
   --surface: #ffffff;
+  --surface-1: #f8f8fa;
   --surface-2: #f4f4f5;
   --surface-3: #e4e4e7;
   --border: #e4e4e7;
@@ -2609,6 +2611,7 @@ select {
 [data-theme="amber"] {
   --bg: #1a1612;
   --surface: #221c16;
+  --surface-1: #27201a;
   --surface-2: #2c241c;
   --surface-3: #3a2f23;
   --border: #3a2f24;
@@ -2634,6 +2637,7 @@ select {
 [data-theme="verdant"] {
   --bg: #0a100d;
   --surface: #0e1814;
+  --surface-1: #111d18;
   --surface-2: #14221c;
   --surface-3: #1c2f26;
   --border: #1f3329;
@@ -2659,6 +2663,7 @@ select {
 [data-theme="glacier"] {
   --bg: #0b1220;
   --surface: #111a2e;
+  --surface-1: #152038;
   --surface-2: #1a2540;
   --surface-3: #243556;
   --border: #243556;
@@ -2768,6 +2773,7 @@ select {
 [data-theme="aurora"] {
   --bg: #0a0a18;
   --surface: rgba(20, 18, 38, 0.62);
+  --surface-1: rgba(28, 24, 50, 0.55);
   --surface-2: rgba(38, 32, 64, 0.55);
   --surface-3: rgba(58, 48, 94, 0.55);
   --border: rgba(167, 139, 250, 0.16);
@@ -2837,6 +2843,7 @@ select {
 [data-theme="spatial"] {
   --bg: #050510;
   --surface: rgba(5, 5, 20, 0.62);
+  --surface-1: rgba(10, 10, 28, 0.55);
   --surface-2: rgba(15, 15, 35, 0.55);
   --surface-3: rgba(25, 25, 50, 0.55);
   --border: rgba(34, 211, 238, 0.12);
@@ -2987,6 +2994,33 @@ select {
   -webkit-backdrop-filter: blur(28px) saturate(160%);
 }
 
+/* ── Spatial: crisis header border ──────────────────────────── */
+[data-theme="spatial"] .crisis-header {
+  border-bottom-color: rgba(34, 211, 238, 0.12);
+}
+
+/* ── Spatial: node panel glass ──────────────────────────────── */
+[data-theme="spatial"] .node-panel {
+  background: rgba(5, 5, 16, 0.65);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-left-color: rgba(34, 211, 238, 0.12);
+}
+
+/* ── Spatial: chat glass ────────────────────────────────────── */
+[data-theme="spatial"] .chat-input-wrap {
+  background: rgba(5, 5, 16, 0.55);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+
+/* ── Spatial: monitor tab glass ─────────────────────────────── */
+[data-theme="spatial"] .monitor-tab {
+  background: rgba(5, 5, 16, 0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
 /* ── Spatial: diagram controls ─────────────────────────────── */
 [data-theme="spatial"] .diagram-controls {
   background: rgba(5, 5, 16, 0.7);
@@ -3070,6 +3104,7 @@ select {
 [data-theme="mist"] {
   --bg: #eef1f8;
   --surface: rgba(255, 255, 255, 0.62);
+  --surface-1: rgba(248, 250, 255, 0.65);
   --surface-2: rgba(244, 247, 255, 0.65);
   --surface-3: rgba(225, 232, 250, 0.65);
   --border: rgba(99, 102, 241, 0.16);
@@ -4251,4 +4286,24 @@ a:focus-visible,
 .stat-pill-value {
   font-weight: 700;
   font-family: var(--font-mono);
+}
+
+/* === Tab content layout === */
+.tab-content-inner {
+  padding: 16px 0;
+}
+
+/* === Empty state === */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 24px;
+  color: var(--text-3);
+  text-align: center;
+}
+.empty-state svg {
+  opacity: 0.4;
 }

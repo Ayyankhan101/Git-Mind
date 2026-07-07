@@ -18,6 +18,7 @@ const LIGHT_THEMES = new Set(["daylight", "mist"]);
 function getMermaidConfig(theme) {
   const isLight = LIGHT_THEMES.has(theme);
   const isAurora = theme === "aurora";
+  const isSpatial = theme === "spatial";
   return {
     startOnLoad: false,
     theme: isLight ? "default" : "dark",
@@ -43,23 +44,59 @@ function getMermaidConfig(theme) {
           signalTextColor: "#1e1b4b",
         }
       : {
-          primaryColor: isAurora ? "#2d2252" : "#1a1a2e",
+          primaryColor: isSpatial
+            ? "rgba(34,211,238,0.12)"
+            : isAurora
+              ? "#2d2252"
+              : "#1a1a2e",
           primaryTextColor: "#f1f5f9",
-          primaryBorderColor: isAurora ? "#a78bfa" : "#7c6fe0",
-          lineColor: isAurora ? "#4a3d7a" : "#3f3f52",
-          secondaryColor: isAurora ? "#1f1840" : "#12121c",
-          tertiaryColor: isAurora ? "#161030" : "#0d0d14",
-          edgeLabelBackground: isAurora ? "#1a1435" : "#0f0f17",
-          titleColor: isAurora ? "#c4b5fd" : "#a78bfa",
+          primaryBorderColor: isSpatial
+            ? "#22d3ee"
+            : isAurora
+              ? "#a78bfa"
+              : "#7c6fe0",
+          lineColor: isSpatial
+            ? "rgba(34,211,238,0.2)"
+            : isAurora
+              ? "#4a3d7a"
+              : "#3f3f52",
+          secondaryColor: isSpatial
+            ? "rgba(15,15,35,0.55)"
+            : isAurora
+              ? "#1f1840"
+              : "#12121c",
+          tertiaryColor: isSpatial
+            ? "rgba(25,25,50,0.55)"
+            : isAurora
+              ? "#161030"
+              : "#0d0d14",
+          edgeLabelBackground: isSpatial
+            ? "rgba(10,10,28,0.7)"
+            : isAurora
+              ? "#1a1435"
+              : "#0f0f17",
+          titleColor: isSpatial ? "#22d3ee" : isAurora ? "#c4b5fd" : "#a78bfa",
           fontFamily: "'DM Sans', system-ui, sans-serif",
           fontSize: "13px",
-          noteBkgColor: isAurora ? "#1f1840" : "#12121c",
+          noteBkgColor: isSpatial
+            ? "rgba(15,15,35,0.55)"
+            : isAurora
+              ? "#1f1840"
+              : "#12121c",
           noteTextColor: "#e2e8f0",
-          noteBorderColor: isAurora ? "#4a3d7a" : "#3f3f52",
-          actorBkg: isAurora ? "#2d2252" : "#1a1a2e",
+          noteBorderColor: isSpatial
+            ? "rgba(34,211,238,0.2)"
+            : isAurora
+              ? "#4a3d7a"
+              : "#3f3f52",
+          actorBkg: isSpatial
+            ? "rgba(34,211,238,0.12)"
+            : isAurora
+              ? "#2d2252"
+              : "#1a1a2e",
           actorTextColor: "#f1f5f9",
-          actorBorder: isAurora ? "#a78bfa" : "#7c6fe0",
-          signalColor: isAurora ? "#a78bfa" : "#7c6fe0",
+          actorBorder: isSpatial ? "#22d3ee" : isAurora ? "#a78bfa" : "#7c6fe0",
+          signalColor: isSpatial ? "#22d3ee" : isAurora ? "#a78bfa" : "#7c6fe0",
           signalTextColor: "#f1f5f9",
         },
     flowchart: {

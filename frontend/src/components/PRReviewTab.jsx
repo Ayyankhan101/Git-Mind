@@ -79,7 +79,7 @@ const RISK_META = {
   },
   critical: {
     color: "var(--critical)",
-    bg: "rgba(162,28,175,0.10)",
+    bg: "color-mix(in srgb, var(--critical) 10%, transparent)",
     label: "Critical",
   },
 };
