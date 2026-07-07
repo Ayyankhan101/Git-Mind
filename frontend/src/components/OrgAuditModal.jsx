@@ -17,7 +17,7 @@ function SeverityDot({ sev }) {
     sev === "critical"
       ? "var(--danger)"
       : sev === "high"
-        ? "#f97316"
+        ? "var(--sev-high)"
         : sev === "medium"
           ? "var(--warning)"
           : "var(--text-3)";
@@ -230,6 +230,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
             className="btn-icon"
             style={{ position: "absolute", top: 16, right: 16 }}
             onClick={onClose}
+            aria-label="Close"
           >
             <X size={14} strokeWidth={1.5} />
           </button>

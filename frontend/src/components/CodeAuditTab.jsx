@@ -43,7 +43,7 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
                   fontSize: 11,
                   fontWeight: 600,
                   color: "var(--text-3)",
-                  background: "rgba(255,255,255,0.05)",
+                  background: "var(--surface-2)",
                   border: "1px solid var(--border)",
                   borderRadius: 4,
                   padding: "1px 7px",
@@ -134,7 +134,7 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
 function LangSection({ langResult, onFix, fixLoading, fixResult }) {
   const { language, tool, findings, file_count } = langResult;
   const [langExpanded, setLangExpanded] = useState(true);
-  const color = LANG_COLORS[language] || "#888";
+  const color = LANG_COLORS[language] || "var(--text-3)";
 
   return (
     <div style={{ marginBottom: 16 }}>

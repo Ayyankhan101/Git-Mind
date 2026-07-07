@@ -30,24 +30,12 @@ const QUALITY_META = {
 function StatPill({ label, value, color }) {
   return (
     <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        padding: "10px 18px",
-        background: "var(--surface-2)",
-        borderRadius: 8,
-        border: "1px solid var(--border)",
-        minWidth: 80,
-      }}
+      className="stat-pill"
+      style={{ flexDirection: "column", minWidth: 80 }}
     >
       <span
-        style={{
-          fontSize: 22,
-          fontWeight: 700,
-          color: color || "var(--text-1)",
-          fontFamily: "var(--font-mono)",
-        }}
+        className="stat-pill-value"
+        style={{ fontSize: 22, color: color || "var(--text-1)" }}
       >
         {value}
       </span>

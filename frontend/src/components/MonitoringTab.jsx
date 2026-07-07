@@ -222,6 +222,7 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
             onClick={() => fetchRepos()}
             disabled={loading}
             title="Refresh"
+            aria-label="Refresh repos"
           >
             <RefreshCw size={13} className={loading ? "spin" : ""} />
           </button>
@@ -274,40 +275,11 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
               disabled={subLoading}
             />
           </div>
-          <div style={{ marginTop: 8 }}>
-            <div
-              style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 4 }}
-            >
-              Email recipients (optional)
-            </div>
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 4,
-                alignItems: "center",
-                padding: "4px 8px",
-                borderRadius: 6,
-                border: "1px solid var(--border-2)",
-                background: "var(--surface-1)",
-                minHeight: 32,
-              }}
-            >
+          <div className="email-container">
+            <div className="email-label">Email recipients (optional)</div>
+            <div className="email-chips">
               {subEmails.map((email) => (
-                <span
-                  key={email}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                    padding: "2px 8px",
-                    borderRadius: 4,
-                    background: "var(--primary-muted)",
-                    color: "var(--primary)",
-                    fontSize: 12,
-                    fontWeight: 500,
-                  }}
-                >
+                <span key={email} className="email-chip">
                   {email}
                   <button
                     onClick={() => removeEmail(email)}
@@ -321,6 +293,7 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
                       alignItems: "center",
                     }}
                     disabled={subLoading}
+                    aria-label={`Remove ${email}`}
                   >
                     <X size={10} />
                   </button>
@@ -475,6 +448,7 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
                     className="btn-icon mon-unsub"
                     onClick={() => handleUnsubscribe(repo.id)}
                     title="Stop monitoring"
+                    aria-label="Stop monitoring"
                   >
                     <Trash2 size={13} />
                   </button>

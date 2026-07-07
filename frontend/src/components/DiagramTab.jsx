@@ -534,6 +534,7 @@ export default function DiagramTab({
                     applyTransform(x, y, Math.max(scale - 0.2, 0.2));
                   }}
                   title="Zoom out (-)"
+                  aria-label="Zoom out"
                 >
                   <ZoomOut size={13} strokeWidth={1.5} />
                 </button>
@@ -555,6 +556,7 @@ export default function DiagramTab({
                     applyTransform(x, y, Math.min(scale + 0.2, 4));
                   }}
                   title="Zoom in (+)"
+                  aria-label="Zoom in"
                 >
                   <ZoomIn size={13} strokeWidth={1.5} />
                 </button>
@@ -562,6 +564,7 @@ export default function DiagramTab({
                   className="btn-icon"
                   onClick={() => applyTransform(0, 0, 1)}
                   title="Reset zoom (0)"
+                  aria-label="Reset zoom"
                 >
                   <Maximize2 size={13} strokeWidth={1.5} />
                 </button>
@@ -569,6 +572,7 @@ export default function DiagramTab({
                   className="btn-icon"
                   onClick={fitToScreen}
                   title="Fit to screen (F)"
+                  aria-label="Fit to screen"
                 >
                   <Scan size={13} strokeWidth={1.5} />
                 </button>
@@ -578,6 +582,7 @@ export default function DiagramTab({
                   className="btn-icon"
                   onClick={handleCopy}
                   title="Copy source"
+                  aria-label="Copy source"
                 >
                   {copied ? (
                     <Check size={13} strokeWidth={1.5} />
@@ -589,6 +594,7 @@ export default function DiagramTab({
                   className="btn-icon"
                   onClick={handleFullscreen}
                   title="Fullscreen"
+                  aria-label="Toggle fullscreen"
                 >
                   <Expand size={13} strokeWidth={1.5} />
                 </button>

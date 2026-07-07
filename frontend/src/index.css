@@ -20,6 +20,7 @@
   --warning: #eab308;
   --danger: #ef4444;
   --info: #38bdf8;
+  --critical: #a21caf;
 
   --sev-critical: #ef4444;
   --sev-high: #f97316;
@@ -31,6 +32,13 @@
   --text-3: #a0a0ab;
 
   --code: #c4b5fd;
+
+  /* Border radius scale */
+  --radius-xs: 3px;
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 
   /* Chrome tokens — overridden by glass themes for translucency */
   --chrome-bg: var(--bg);
@@ -141,7 +149,7 @@ select {
   padding: 6px 10px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
@@ -220,7 +228,7 @@ select {
   width: 36px;
   height: 36px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text-3);
   cursor: pointer;
@@ -255,7 +263,7 @@ select {
   font-size: 11px;
   font-weight: 500;
   padding: 4px 8px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
@@ -273,7 +281,7 @@ select {
   right: 3px;
   min-width: 14px;
   height: 14px;
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   background: var(--danger);
   color: white;
   font-size: 10px;
@@ -615,7 +623,7 @@ select {
 .tab-badge {
   font-size: 11px;
   padding: 1px 7px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   background: var(--surface-2);
   color: var(--text-2);
   font-variant-numeric: tabular-nums;
@@ -680,7 +688,7 @@ select {
   align-items: center;
   gap: 7px;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -721,7 +729,7 @@ select {
   border: none;
   color: var(--text-3);
   cursor: pointer;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   transition:
     color 0.1s,
     background 0.1s;
@@ -760,7 +768,7 @@ select {
 }
 ::-webkit-scrollbar-thumb {
   background: var(--border-2);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-3);
@@ -799,7 +807,7 @@ select {
   padding: 7px 14px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   color: var(--text-2);
   font-size: 13px;
   cursor: pointer;
@@ -822,7 +830,7 @@ select {
   padding: 5px 10px;
   background: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.2);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   color: #10b981;
   font-size: 12px;
   font-weight: 500;
@@ -844,7 +852,7 @@ select {
   padding: 20px 22px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition: border-color 0.15s;
 }
 .stat:hover {
@@ -882,7 +890,7 @@ select {
   height: 10px;
   margin-right: 8px;
   vertical-align: -1px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
 }
 
 /* ── API Docs ─────────────────────────────────────────────── */
@@ -903,7 +911,7 @@ select {
   display: inline-block;
   padding: 2px 8px;
   border: 1px solid;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -1003,7 +1011,7 @@ select {
   width: 9px;
   height: 9px;
   display: inline-block;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
 }
 .row.critical .row-sev {
   color: var(--sev-critical);
@@ -1152,7 +1160,7 @@ select {
   line-height: 1.75;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   padding: 12px 0;
   overflow-x: auto;
 }
@@ -1187,7 +1195,7 @@ select {
   gap: 4px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 3px;
   transition:
     background 0.2s,
@@ -1425,7 +1433,7 @@ select {
 .tab-header-icon {
   width: 32px;
   height: 32px;
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   background: var(--primary-dim);
   color: var(--primary);
   display: inline-flex;
@@ -1510,7 +1518,7 @@ select {
   padding: 0 4px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   color: var(--text-2);
   font-size: 10px;
 }
@@ -1523,7 +1531,7 @@ select {
   padding: 3px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: var(--radius-md);
 }
 .sev-pill {
   display: inline-flex;
@@ -1535,7 +1543,7 @@ select {
   color: var(--text-3);
   background: transparent;
   border: none;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition:
     color 0.1s,
@@ -1567,7 +1575,7 @@ select {
   font-variant-numeric: tabular-nums;
   padding: 0 5px;
   background: var(--bg);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   min-width: 20px;
   text-align: center;
 }
@@ -1589,7 +1597,7 @@ select {
   flex: 1;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   padding: 10px 14px;
   color: var(--text-1);
   font-family: var(--font-mono);
@@ -1619,7 +1627,7 @@ select {
   width: 100%;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   padding: 10px 14px;
   color: var(--text-1);
   font-family: var(--font-mono);
@@ -1640,7 +1648,7 @@ select {
   gap: 14px;
   padding: 20px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   height: fit-content;
 }
 .pr-meta .key {
@@ -1713,7 +1721,7 @@ select {
 .mon-form {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 16px;
   margin-bottom: 20px;
 }
@@ -1726,7 +1734,7 @@ select {
   flex: 1;
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   padding: 9px 12px;
   color: var(--text-1);
   font-size: 13px;
@@ -1748,7 +1756,7 @@ select {
   padding: 14px 16px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition: border-color 0.15s;
 }
 .mon-row:hover {
@@ -1784,7 +1792,7 @@ select {
   font-weight: 600;
   letter-spacing: 0.04em;
   padding: 2px 7px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 .mon-badge.active {
   background: rgba(16, 185, 129, 0.12);
@@ -1848,7 +1856,7 @@ select {
   padding: 10px 14px;
   background: rgba(239, 68, 68, 0.08);
   border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font-size: 13px;
   color: #ef4444;
 }
@@ -1923,7 +1931,7 @@ select {
   width: 100%;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 12px 14px;
   color: var(--text-1);
   font-size: 15px;
@@ -2033,7 +2041,7 @@ select {
   background: rgba(34, 197, 94, 0.12);
   color: var(--success);
   font-size: 10px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 .crisis-tag .live::before {
   content: "";
@@ -2159,7 +2167,7 @@ select {
 .workspace .logo-mark {
   width: 22px;
   height: 22px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   background: linear-gradient(135deg, var(--primary), #5b4fc0);
   display: inline-flex;
   align-items: center;
@@ -2252,7 +2260,7 @@ select {
   padding: 7px 10px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
 }
 .sb-filter:focus-within {
   border-color: var(--border-2);
@@ -2348,7 +2356,7 @@ select {
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-bottom-width: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 600;
@@ -2432,7 +2440,7 @@ select {
   -webkit-backdrop-filter: var(--chrome-blur);
   border: 1px solid var(--border-2);
   border-left: 3px solid var(--primary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 12px 14px;
   width: 320px;
   font-size: 13.5px;
@@ -2682,7 +2690,7 @@ select {
   gap: 7px;
   background: transparent;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   padding: 6px 10px;
   color: var(--text-2);
   cursor: pointer;
@@ -2696,7 +2704,7 @@ select {
 .theme-btn .swatch {
   width: 14px;
   height: 14px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
@@ -2720,7 +2728,7 @@ select {
   gap: 12px;
   align-items: center;
   padding: 8px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 0.1s;
 }
@@ -2733,7 +2741,7 @@ select {
 .theme-opt-swatch {
   width: 38px;
   height: 26px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   display: flex;
   overflow: hidden;
   border: 1px solid var(--border);
@@ -2840,6 +2848,7 @@ select {
   --warning: #eab308;
   --danger: #ef4444;
   --info: #38bdf8;
+  --critical: #e879f9;
   --sev-critical: #ef4444;
   --sev-high: #f97316;
   --sev-medium: #eab308;
@@ -2892,7 +2901,7 @@ select {
 [data-theme="spatial"] .stat {
   background: rgba(5, 5, 20, 0.55);
   border: 1px solid rgba(34, 211, 238, 0.1);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   transition:
@@ -3200,13 +3209,14 @@ select {
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
+a:focus-visible,
 [role="button"]:focus-visible,
 .repo-card:focus-visible,
 .tab:focus-visible,
 .row:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 /* ── prefers-reduced-motion ──────────────────────────────── */
@@ -3297,7 +3307,7 @@ textarea:focus-visible,
   text-align: center;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
 }
 .onboarding-mark {
@@ -3343,7 +3353,7 @@ textarea:focus-visible,
   flex: 1;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   padding: 11px 14px;
   color: var(--text-1);
   font-size: 14px;
@@ -3362,7 +3372,7 @@ textarea:focus-visible,
 .onboarding-hint {
   padding: 16px 18px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 .onboarding-hint-icon {
   color: var(--primary);
@@ -3405,7 +3415,7 @@ textarea:focus-visible,
   min-width: 0;
   padding: 14px 16px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   text-align: left;
   background: transparent;
@@ -3482,7 +3492,7 @@ textarea:focus-visible,
   max-height: 84vh;
   background: var(--surface);
   border: 1px solid var(--border-2);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 36px 72px rgba(0, 0, 0, 0.55);
   overflow: hidden;
   display: flex;
@@ -3499,7 +3509,7 @@ textarea:focus-visible,
 .kbhelp-icon {
   width: 32px;
   height: 32px;
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   background: var(--primary-dim);
   color: var(--primary);
   display: inline-flex;
@@ -3551,7 +3561,7 @@ textarea:focus-visible,
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-bottom-width: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-1);
@@ -3599,7 +3609,7 @@ textarea:focus-visible,
 .drawer-icon {
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--primary-dim);
   color: var(--primary);
   display: inline-flex;
@@ -3678,7 +3688,7 @@ textarea:focus-visible,
 /* ── Skeleton loaders ─────────────────────────────────────── */
 .sk {
   background: var(--surface-2);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   animation: gm-pulse 1.5s ease-in-out infinite;
   display: block;
 }
@@ -3801,7 +3811,7 @@ textarea:focus-visible,
   display: inline-block;
   width: 9px;
   height: 9px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   margin-right: 8px;
   vertical-align: -1px;
 }
@@ -3818,7 +3828,7 @@ textarea:focus-visible,
   width: 280px;
   background: var(--surface);
   border: 1px solid var(--border-2);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
   padding: 14px 16px;
   pointer-events: none;
@@ -3860,7 +3870,7 @@ textarea:focus-visible,
   width: 100%;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   padding: 9px 12px;
   cursor: pointer;
   color: var(--text-2);
@@ -3875,7 +3885,7 @@ textarea:focus-visible,
 .ws-btn .ws-mark {
   width: 26px;
   height: 26px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: linear-gradient(
     135deg,
     var(--primary),
@@ -3908,7 +3918,7 @@ textarea:focus-visible,
   right: 0;
   background: var(--surface);
   border: 1px solid var(--border-2);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 6px;
   z-index: 30;
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.4);
@@ -3919,7 +3929,7 @@ textarea:focus-visible,
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 0.1s;
 }
@@ -3973,7 +3983,7 @@ textarea:focus-visible,
   padding: 1px 7px;
   background: var(--surface-2);
   color: var(--text-2);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
@@ -4039,7 +4049,7 @@ textarea:focus-visible,
   text-align: left;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   padding: 5px 10px;
   margin-bottom: 5px;
   font-size: 12px;
@@ -4077,7 +4087,7 @@ textarea:focus-visible,
   flex: 1;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: var(--text-1);
   font-size: 13px;
   padding: 7px 10px;
@@ -4097,7 +4107,7 @@ textarea:focus-visible,
 .node-send-btn {
   background: var(--primary);
   border: none;
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   color: #fff;
   width: 30px;
   height: 30px;
@@ -4183,4 +4193,62 @@ textarea:focus-visible,
 }
 .health-bar-value {
   font-weight: 600;
+}
+
+/* === MonitoringTab email section === */
+.email-label {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-bottom: 4px;
+}
+.email-container {
+  margin-top: 8px;
+}
+.email-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-2);
+  background: var(--surface-1);
+  min-height: 32px;
+}
+.email-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--primary-muted);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* === DocsTab auth badge === */
+.auth-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* === GitAuditTab stat pill === */
+.stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  font-size: 13px;
+}
+.stat-pill-value {
+  font-weight: 700;
+  font-family: var(--font-mono);
 }

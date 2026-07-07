@@ -11,10 +11,10 @@ import { WS_BASE, fetchIncidentReport } from "../api";
 import { buildIncidentPdf, downloadPdf } from "../pdfBuilder";
 
 const ROLE_COLOR = {
-  CEO: "#fbbf24",
+  CEO: "var(--warning)",
   Legal: "#818cf8",
-  Engineering: "#34d399",
-  Reporter: "#f87171",
+  Engineering: "var(--success)",
+  Reporter: "var(--danger)",
 };
 const WS_URL = `${WS_BASE}/ws/crisis`;
 const REPORTER_INTERVAL = 45;
@@ -86,7 +86,7 @@ export default function CrisisChat({ finding, sessionId, repoName, onClose }) {
           ...prev,
           {
             role: data.agent,
-            color: ROLE_COLOR[data.agent] || "#94a3b8",
+            color: ROLE_COLOR[data.agent] || "var(--text-3)",
             text: data.content,
           },
         ]);
@@ -227,7 +227,7 @@ export default function CrisisChat({ finding, sessionId, repoName, onClose }) {
                 border: "1px solid rgba(239,68,68,0.2)",
                 borderRadius: 6,
                 fontSize: 12,
-                color: "#fca5a5",
+                color: "var(--danger)",
               }}
             >
               {error}
@@ -415,7 +415,7 @@ export default function CrisisChat({ finding, sessionId, repoName, onClose }) {
                 background: "rgba(239,68,68,0.08)",
                 borderRadius: 6,
                 fontSize: 12,
-                color: "#fca5a5",
+                color: "var(--danger)",
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
