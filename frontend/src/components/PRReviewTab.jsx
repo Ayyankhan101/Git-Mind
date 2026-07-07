@@ -78,7 +78,7 @@ const RISK_META = {
     label: "High Risk",
   },
   critical: {
-    color: "#a21caf",
+    color: "var(--critical)",
     bg: "rgba(162,28,175,0.10)",
     label: "Critical",
   },
