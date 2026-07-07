@@ -28,6 +28,9 @@
   --sev-medium: #eab308;
   --sev-low: #38bdf8;
 
+  --danger-bg: rgba(248, 113, 113, 0.1);
+  --grade-b: #34d399;
+
   --text-1: #fafafa;
   --text-2: #d4d4de;
   --text-3: #a0a0ab;
@@ -2562,6 +2565,8 @@ select {
   --sev-high: #ea580c;
   --sev-medium: #ca8a04;
   --sev-low: #0284c7;
+  --danger-bg: rgba(220, 38, 38, 0.1);
+  --grade-b: #22c55e;
   --text-1: #18181b;
   --text-2: #3f3f45;
   --text-3: #6b6b75;
@@ -2627,6 +2632,8 @@ select {
   --sev-high: #fb923c;
   --sev-medium: #facc15;
   --sev-low: #67e8f9;
+  --danger-bg: rgba(248, 113, 113, 0.1);
+  --grade-b: #84cc16;
   --text-1: #faf6ee;
   --text-2: #d6cdb8;
   --text-3: #8c8270;
@@ -2653,6 +2660,8 @@ select {
   --sev-high: #fb923c;
   --sev-medium: #facc15;
   --sev-low: #5eead4;
+  --danger-bg: rgba(248, 113, 113, 0.1);
+  --grade-b: #34d399;
   --text-1: #f0fdf4;
   --text-2: #c0d6c8;
   --text-3: #6f8479;
@@ -2679,6 +2688,8 @@ select {
   --sev-high: #fb923c;
   --sev-medium: #fbbf24;
   --sev-low: #67e8f9;
+  --danger-bg: rgba(248, 113, 113, 0.1);
+  --grade-b: #34d399;
   --text-1: #f0f9ff;
   --text-2: #b8c7df;
   --text-3: #6e809e;
@@ -2789,6 +2800,8 @@ select {
   --sev-high: #fb923c;
   --sev-medium: #fbbf24;
   --sev-low: #67e8f9;
+  --danger-bg: rgba(248, 113, 113, 0.1);
+  --grade-b: #4ade80;
   --text-1: #fafafa;
   --text-2: #d4d2e3;
   --text-3: #9d9ab8;
@@ -2860,6 +2873,8 @@ select {
   --sev-high: #f97316;
   --sev-medium: #eab308;
   --sev-low: #67e8f9;
+  --danger-bg: rgba(248, 113, 113, 0.1);
+  --grade-b: #34d399;
   --text-1: #fafafa;
   --text-2: #d4d2e3;
   --text-3: #9d9ab8;
@@ -3120,6 +3135,8 @@ select {
   --sev-high: #ea580c;
   --sev-medium: #ca8a04;
   --sev-low: #0284c7;
+  --danger-bg: rgba(220, 38, 38, 0.1);
+  --grade-b: #22c55e;
   --text-1: #1e1b4b;
   --text-2: #36336d;
   --text-3: #6a679a;
@@ -4142,6 +4159,9 @@ a:focus-visible,
 .node-send-btn {
   background: var(--primary);
   border: none;
+  border-radius: var(--radius-md);
+  color: #fff;
+  width: ne;
   border-radius: var(--radius-md);
   color: #fff;
   width: 30px;

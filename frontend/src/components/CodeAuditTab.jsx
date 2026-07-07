@@ -68,8 +68,10 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
                 marginTop: 8,
                 padding: "8px 12px",
                 borderRadius: 6,
-                background: "rgba(34,197,94,0.08)",
-                border: "1px solid rgba(34,197,94,0.2)",
+                background:
+                  "color-mix(in srgb, var(--success) 8%, transparent)",
+                border:
+                  "1px solid color-mix(in srgb, var(--success) 20%, transparent)",
                 fontSize: 12,
                 lineHeight: 1.5,
                 color: "var(--success)",

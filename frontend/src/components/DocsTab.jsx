@@ -10,8 +10,9 @@ function AuthBadge({ authRequired }) {
         className="auth-badge"
         style={{
           color: "var(--warning)",
-          background: "rgba(234,179,8,0.1)",
-          border: "1px solid rgba(234,179,8,0.2)",
+          background: "color-mix(in srgb, var(--warning) 10%, transparent)",
+          border:
+            "1px solid color-mix(in srgb, var(--warning) 20%, transparent)",
         }}
       >
         <Lock size={9} strokeWidth={2} /> AUTH

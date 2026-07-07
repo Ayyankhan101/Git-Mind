@@ -64,17 +64,17 @@ const VERDICT_CLASS = {
 const RISK_META = {
   low: {
     color: "var(--success)",
-    bg: "rgba(34,197,94,0.10)",
+    bg: "color-mix(in srgb, var(--success) 10%, transparent)",
     label: "Low Risk",
   },
   medium: {
     color: "var(--warning)",
-    bg: "rgba(234,179,8,0.10)",
+    bg: "color-mix(in srgb, var(--warning) 10%, transparent)",
     label: "Medium Risk",
   },
   high: {
     color: "var(--danger)",
-    bg: "rgba(239,68,68,0.10)",
+    bg: "color-mix(in srgb, var(--danger) 10%, transparent)",
     label: "High Risk",
   },
   critical: {
@@ -346,7 +346,7 @@ function ImpactPanel({ impact, loading, error }) {
               fontSize: 11,
               color: "var(--warning)",
               padding: "6px 10px",
-              background: "rgba(234,179,8,0.08)",
+              background: "color-mix(in srgb, var(--warning) 8%, transparent)",
               borderRadius: 6,
               marginBottom: 10,
             }}
@@ -466,7 +466,7 @@ function ImpactPanel({ impact, loading, error }) {
                 fontSize: 11,
                 color: "var(--danger)",
                 padding: "4px 9px",
-                background: "rgba(239,68,68,0.08)",
+                background: "color-mix(in srgb, var(--danger) 8%, transparent)",
                 borderRadius: 5,
               }}
             >
@@ -484,7 +484,8 @@ function ImpactPanel({ impact, loading, error }) {
                 fontSize: 11,
                 color: "var(--success)",
                 padding: "4px 9px",
-                background: "rgba(34,197,94,0.08)",
+                background:
+                  "color-mix(in srgb, var(--success) 8%, transparent)",
                 borderRadius: 5,
               }}
             >
@@ -501,7 +502,8 @@ function ImpactPanel({ impact, loading, error }) {
                 fontSize: 11,
                 color: "var(--warning)",
                 padding: "4px 9px",
-                background: "rgba(234,179,8,0.08)",
+                background:
+                  "color-mix(in srgb, var(--warning) 8%, transparent)",
                 borderRadius: 5,
               }}
             >
@@ -518,7 +520,8 @@ function ImpactPanel({ impact, loading, error }) {
                 fontSize: 11,
                 color: "var(--success)",
                 padding: "4px 9px",
-                background: "rgba(34,197,94,0.08)",
+                background:
+                  "color-mix(in srgb, var(--success) 8%, transparent)",
                 borderRadius: 5,
               }}
             >
@@ -575,8 +578,8 @@ function ImpactPanel({ impact, loading, error }) {
                           borderRadius: 4,
                           background:
                             v > 0
-                              ? "rgba(34,197,94,0.1)"
-                              : "rgba(239,68,68,0.1)",
+                              ? "color-mix(in srgb, var(--success) 10%, transparent)"
+                              : "color-mix(in srgb, var(--danger) 10%, transparent)",
                           color: v > 0 ? "var(--success)" : "var(--danger)",
                         }}
                       >

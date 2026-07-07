@@ -93,7 +93,9 @@ export default function Onboarding({ onLoad, onAnalyzeUrl }) {
               <div className="oec-meta">
                 <span
                   className="lang-dot"
-                  style={{ background: LANG_COLOR[repo.language] || "#64748b" }}
+                  style={{
+                    background: LANG_COLOR[repo.language] || "var(--text-3)",
+                  }}
                 />
                 {repo.language}
               </div>
