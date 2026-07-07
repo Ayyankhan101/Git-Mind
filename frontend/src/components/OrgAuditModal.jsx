@@ -418,7 +418,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                         style={{
                           fontSize: 11,
                           padding: "2px 6px",
-                          background: "rgba(239,68,68,0.1)",
+                          background: "var(--danger-bg)",
                           borderRadius: 4,
                           color: "var(--danger)",
                         }}

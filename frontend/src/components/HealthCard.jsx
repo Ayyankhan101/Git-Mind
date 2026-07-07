@@ -1,12 +1,5 @@
 import React, { useEffect, useRef } from "react";
-
-const GRADE_COLOR = {
-  A: "var(--success)",
-  B: "#34d399",
-  C: "var(--warning)",
-  D: "var(--sev-high)",
-  F: "var(--danger)",
-};
+import { GRADE_COLOR } from "../constants";
 
 const DIM_LABEL = {
   security: "Security",
@@ -32,7 +25,7 @@ function MiniBar({ value, color, delay = 0 }) {
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.06)",
+        background: "var(--border)",
         borderRadius: 4,
         height: 6,
         width: "100%",
@@ -55,7 +48,7 @@ function MiniBar({ value, color, delay = 0 }) {
 
 export default function HealthCard({ health, partial }) {
   if (!health) return null;
-  const gradeColor = GRADE_COLOR[health.grade] || "#94a3b8";
+  const gradeColor = GRADE_COLOR[health.grade] || "var(--text-3)";
 
   return (
     <div className="health-card">
@@ -107,7 +100,7 @@ export default function HealthCard({ health, partial }) {
               cy="40"
               r="34"
               fill="none"
-              stroke="rgba(255,255,255,0.06)"
+              stroke="var(--border)"
               strokeWidth="4"
             />
             <circle

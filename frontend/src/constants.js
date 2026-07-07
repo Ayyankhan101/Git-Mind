@@ -11,3 +11,11 @@ export const LANG_COLOR = {
   "C#": "#178600",
   Shell: "#89e051",
 };
+
+export const GRADE_COLOR = {
+  A: "var(--success)",
+  B: "var(--grade-b)",
+  C: "var(--warning)",
+  D: "var(--sev-high)",
+  F: "var(--danger)",
+};

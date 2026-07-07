@@ -423,9 +423,9 @@ export default function SummaryTab({
                   fontSize: 11,
                   padding: "3px 8px",
                   borderRadius: 4,
-                  background: "rgba(234,179,8,0.10)",
+                  background: "var(--warning-bg-strong)",
                   color: "var(--warning)",
-                  border: "1px solid rgba(234,179,8,0.20)",
+                  border: "1px solid var(--warning-bg-strong)",
                 }}
               >
                 {r}

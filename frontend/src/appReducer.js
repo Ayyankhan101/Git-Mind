@@ -284,6 +284,8 @@ export function appReducer(state, action) {
         findings: action.data.security_findings || state.findings,
         cveFindings: action.data.cve_findings || state.cveFindings,
         gitAudit: action.data.git_audit || state.gitAudit,
+        solidityAudit: action.data.solidity_audit || state.solidityAudit,
+        codeAudit: action.data.code_audit || state.codeAudit,
         repoName: action.data.repo_name || state.repoName,
         health: action.data.health || state.health,
         analyzed: true,

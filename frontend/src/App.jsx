@@ -1102,9 +1102,9 @@ export default function App() {
             className="error-banner"
             role="status"
             style={{
-              borderColor: "rgba(234,179,8,0.2)",
-              background: "rgba(234,179,8,0.06)",
-              color: "#fcd34d",
+              borderColor: "var(--warning-bg-strong)",
+              background: "var(--warning-bg)",
+              color: "var(--warning)",
             }}
           >
             <AlertTriangle size={14} style={{ flexShrink: 0 }} />
@@ -1135,7 +1135,8 @@ export default function App() {
                 <span
                   className="lang-dot"
                   style={{
-                    background: LANG_COLOR[selectedRepo.language] || "#64748b",
+                    background:
+                      LANG_COLOR[selectedRepo.language] || "var(--text-3)",
                     width: 8,
                     height: 8,
                   }}

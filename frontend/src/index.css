@@ -29,6 +29,12 @@
   --sev-low: #38bdf8;
 
   --danger-bg: rgba(248, 113, 113, 0.1);
+  --danger-bg-strong: rgba(239, 68, 68, 0.15);
+  --success-bg: rgba(34, 197, 94, 0.08);
+  --success-bg-strong: rgba(34, 197, 94, 0.12);
+  --warning-bg: rgba(234, 179, 8, 0.08);
+  --warning-bg-strong: rgba(234, 179, 8, 0.12);
+
   --grade-b: #34d399;
 
   --text-1: #fafafa;
@@ -634,8 +640,8 @@ select {
   font-weight: 500;
 }
 .tab-badge.danger {
-  background: rgba(239, 68, 68, 0.15);
-  color: #fca5a5;
+  background: var(--danger-bg-strong);
+  color: var(--danger);
 }
 .tab-rail-right {
   margin-left: auto;
@@ -832,16 +838,16 @@ select {
   align-items: center;
   gap: 5px;
   padding: 5px 10px;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: var(--success-bg);
+  border: 1px solid var(--success-bg-strong);
   border-radius: var(--radius-md);
-  color: #10b981;
+  color: var(--success);
   font-size: 12px;
   font-weight: 500;
 }
 .summary-watch-error {
   font-size: 12px;
-  color: #ef4444;
+  color: var(--danger);
 }
 .stat-grid {
   display: grid;
@@ -1173,12 +1179,12 @@ select {
   white-space: pre;
 }
 .diff-line.add {
-  background: rgba(34, 197, 94, 0.08);
-  color: #4ade80;
+  background: var(--success-bg);
+  color: var(--success);
 }
 .diff-line.del {
-  background: rgba(239, 68, 68, 0.08);
-  color: #fca5a5;
+  background: var(--danger-bg);
+  color: var(--danger);
 }
 .diff-line.ctx {
   color: var(--text-3);
@@ -1799,12 +1805,12 @@ select {
   border-radius: var(--radius-xs);
 }
 .mon-badge.active {
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
+  background: var(--success-bg-strong);
+  color: var(--success);
 }
 .mon-badge.pending {
-  background: rgba(245, 158, 11, 0.12);
-  color: #f59e0b;
+  background: var(--warning-bg-strong);
+  color: var(--warning);
 }
 .mon-row-meta {
   display: flex;
@@ -1832,7 +1838,7 @@ select {
 }
 .mon-unsub:hover {
   opacity: 1;
-  color: #ef4444;
+  color: var(--danger);
 }
 .mon-empty {
   display: flex;
@@ -1858,11 +1864,11 @@ select {
   align-items: center;
   gap: 6px;
   padding: 10px 14px;
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-bg-strong);
   border-radius: var(--radius-md);
   font-size: 13px;
-  color: #ef4444;
+  color: var(--danger);
 }
 
 /* ── Chat ─────────────────────────────────────────────────── */
@@ -2001,7 +2007,7 @@ select {
   right: 0;
   bottom: 0;
   width: 520px;
-  background: #0c0a0a;
+  background: var(--bg);
   border-left: 3px solid var(--danger);
   z-index: 51;
   display: flex;
@@ -2020,7 +2026,7 @@ select {
 }
 .crisis-header {
   padding: 22px 26px 18px;
-  border-bottom: 1px solid #2a1717;
+  border-bottom: 1px solid var(--danger-bg);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -2144,9 +2150,9 @@ select {
   gap: 10px;
   height: 40px;
   padding: 0 20px;
-  background: rgba(239, 68, 68, 0.06);
-  border-bottom: 1px solid rgba(239, 68, 68, 0.2);
-  color: #fca5a5;
+  background: var(--danger-bg);
+  border-bottom: 1px solid var(--danger-bg-strong);
+  color: var(--danger);
   font-size: 13px;
 }
 .error-banner .spacer {
@@ -2172,7 +2178,7 @@ select {
   width: 22px;
   height: 22px;
   border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, var(--primary), #5b4fc0);
+  background: var(--primary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2566,6 +2572,12 @@ select {
   --sev-medium: #ca8a04;
   --sev-low: #0284c7;
   --danger-bg: rgba(220, 38, 38, 0.1);
+  --danger-bg-strong: rgba(220, 38, 38, 0.15);
+  --success-bg: rgba(22, 163, 74, 0.08);
+  --success-bg-strong: rgba(22, 163, 74, 0.12);
+  --warning-bg: rgba(202, 138, 4, 0.08);
+  --warning-bg-strong: rgba(202, 138, 4, 0.12);
+
   --grade-b: #22c55e;
   --text-1: #18181b;
   --text-2: #3f3f45;
@@ -2633,6 +2645,12 @@ select {
   --sev-medium: #facc15;
   --sev-low: #67e8f9;
   --danger-bg: rgba(248, 113, 113, 0.1);
+  --danger-bg-strong: rgba(248, 113, 113, 0.15);
+  --success-bg: rgba(132, 204, 22, 0.08);
+  --success-bg-strong: rgba(132, 204, 22, 0.12);
+  --warning-bg: rgba(251, 191, 36, 0.08);
+  --warning-bg-strong: rgba(251, 191, 36, 0.12);
+
   --grade-b: #84cc16;
   --text-1: #faf6ee;
   --text-2: #d6cdb8;
@@ -2661,6 +2679,12 @@ select {
   --sev-medium: #facc15;
   --sev-low: #5eead4;
   --danger-bg: rgba(248, 113, 113, 0.1);
+  --danger-bg-strong: rgba(248, 113, 113, 0.15);
+  --success-bg: rgba(52, 211, 153, 0.08);
+  --success-bg-strong: rgba(52, 211, 153, 0.12);
+  --warning-bg: rgba(250, 204, 21, 0.08);
+  --warning-bg-strong: rgba(250, 204, 21, 0.12);
+
   --grade-b: #34d399;
   --text-1: #f0fdf4;
   --text-2: #c0d6c8;
@@ -2689,6 +2713,12 @@ select {
   --sev-medium: #fbbf24;
   --sev-low: #67e8f9;
   --danger-bg: rgba(248, 113, 113, 0.1);
+  --danger-bg-strong: rgba(248, 113, 113, 0.15);
+  --success-bg: rgba(56, 189, 248, 0.08);
+  --success-bg-strong: rgba(56, 189, 248, 0.12);
+  --warning-bg: rgba(251, 191, 36, 0.08);
+  --warning-bg-strong: rgba(251, 191, 36, 0.12);
+
   --grade-b: #34d399;
   --text-1: #f0f9ff;
   --text-2: #b8c7df;
@@ -2801,6 +2831,12 @@ select {
   --sev-medium: #fbbf24;
   --sev-low: #67e8f9;
   --danger-bg: rgba(248, 113, 113, 0.1);
+  --danger-bg-strong: rgba(248, 113, 113, 0.15);
+  --success-bg: rgba(16, 185, 129, 0.08);
+  --success-bg-strong: rgba(16, 185, 129, 0.12);
+  --warning-bg: rgba(245, 158, 11, 0.08);
+  --warning-bg-strong: rgba(245, 158, 11, 0.12);
+
   --grade-b: #4ade80;
   --text-1: #fafafa;
   --text-2: #d4d2e3;
@@ -2874,6 +2910,12 @@ select {
   --sev-medium: #eab308;
   --sev-low: #67e8f9;
   --danger-bg: rgba(248, 113, 113, 0.1);
+  --danger-bg-strong: rgba(248, 113, 113, 0.15);
+  --success-bg: rgba(34, 211, 238, 0.08);
+  --success-bg-strong: rgba(34, 211, 238, 0.12);
+  --warning-bg: rgba(234, 179, 8, 0.08);
+  --warning-bg-strong: rgba(234, 179, 8, 0.12);
+
   --grade-b: #34d399;
   --text-1: #fafafa;
   --text-2: #d4d2e3;
@@ -3136,6 +3178,12 @@ select {
   --sev-medium: #ca8a04;
   --sev-low: #0284c7;
   --danger-bg: rgba(220, 38, 38, 0.1);
+  --danger-bg-strong: rgba(220, 38, 38, 0.15);
+  --success-bg: rgba(22, 163, 74, 0.08);
+  --success-bg-strong: rgba(22, 163, 74, 0.12);
+  --warning-bg: rgba(202, 138, 4, 0.08);
+  --warning-bg-strong: rgba(202, 138, 4, 0.12);
+
   --grade-b: #22c55e;
   --text-1: #1e1b4b;
   --text-2: #36336d;

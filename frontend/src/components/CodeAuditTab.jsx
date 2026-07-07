@@ -1,14 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Code, ExternalLink, Wrench } from "lucide-react";
-
-const LANG_COLORS = {
-  python: "#3572A5",
-  javascript: "#f1e05a",
-  typescript: "#3178c6",
-  go: "#00ADD8",
-  rust: "#dea584",
-  java: "#b07219",
-};
+import { LANG_COLOR } from "../constants";
 
 function FindingRow({ finding, onFix, fixLoading, fixResult }) {
   const [expanded, setExpanded] = useState(false);
@@ -136,7 +128,7 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
 function LangSection({ langResult, onFix, fixLoading, fixResult }) {
   const { language, tool, findings, file_count } = langResult;
   const [langExpanded, setLangExpanded] = useState(true);
-  const color = LANG_COLORS[language] || "var(--text-3)";
+  const color = LANG_COLOR[language] || "var(--text-3)";
 
   return (
     <div style={{ marginBottom: 16 }}>

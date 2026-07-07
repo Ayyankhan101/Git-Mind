@@ -124,9 +124,9 @@ function FindingRow({
                 alignItems: "flex-start",
                 marginTop: 10,
                 padding: "8px 12px",
-                background: "rgba(34,197,94,0.06)",
+                background: "var(--success-bg)",
                 borderRadius: 6,
-                border: "1px solid rgba(34,197,94,0.18)",
+                border: "1px solid var(--success-bg-strong)",
               }}
             >
               <Wrench

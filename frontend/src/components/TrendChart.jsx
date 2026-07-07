@@ -1,12 +1,5 @@
 import { useState } from "react";
-
-const GRADE_COLORS = {
-  A: "var(--success)",
-  B: "#34d399",
-  C: "var(--warning)",
-  D: "var(--sev-high)",
-  F: "var(--danger)",
-};
+import { GRADE_COLOR } from "../constants";
 
 const DIM_KEYS = [
   "security",
@@ -24,7 +17,7 @@ const DIM_LABELS = {
 };
 const DIM_COLORS = {
   security: "var(--danger)",
-  documentation: "#8b5cf6",
+  documentation: "var(--primary)",
   api_coverage: "var(--info)",
   dependency_freshness: "var(--warning)",
   code_quality: "var(--success)",
@@ -263,7 +256,7 @@ export default function TrendChart({ data, days, onDaysChange }) {
               cx={xScale(i)}
               cy={yScale(score)}
               r={isHovered ? 5 : 3}
-              fill={GRADE_COLORS[grade]}
+              fill={GRADE_COLOR[grade]}
               stroke="var(--surface-1)"
               strokeWidth={1.5}
               style={{ cursor: "pointer" }}
