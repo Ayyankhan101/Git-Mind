@@ -103,3 +103,21 @@ if (!window.IntersectionObserver) {
     disconnect() {}
   };
 }
+
+// Mock scrollIntoView for refs (used by ChatTab, NodePanel, DiagramTab)
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = vi.fn();
+}
+
+// Mock document.elementFromPoint (used by DiagramTab click handler)
+if (!document.elementFromPoint) {
+  document.elementFromPoint = vi.fn(() => null);
+}
+
+// Mock fullscreen API (used by DiagramTab)
+if (!Element.prototype.requestFullscreen) {
+  Element.prototype.requestFullscreen = vi.fn();
+}
+if (!document.exitFullscreen) {
+  document.exitFullscreen = vi.fn();
+}
