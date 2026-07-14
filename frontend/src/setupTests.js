@@ -121,3 +121,45 @@ if (!Element.prototype.requestFullscreen) {
 if (!document.exitFullscreen) {
   document.exitFullscreen = vi.fn();
 }
+
+// Mock GSAP (used by LandingPage animations)
+vi.mock("gsap", () => ({
+  gsap: {
+    context: vi.fn(() => ({ revert: vi.fn() })),
+    registerPlugin: vi.fn(),
+    timeline: vi.fn(() => ({
+      from: vi.fn().mockReturnThis(),
+      to: vi.fn().mockReturnThis(),
+    })),
+    ticker: {
+      add: vi.fn(),
+      remove: vi.fn(),
+      lagSmoothing: vi.fn(),
+    },
+  },
+  ScrollTrigger: {
+    update: vi.fn(),
+    getAll: vi.fn(() => []),
+    register: vi.fn(),
+  },
+}));
+
+// Mock gsap/ScrollTrigger (used by LandingPage)
+vi.mock("gsap/ScrollTrigger", () => ({
+  ScrollTrigger: {
+    update: vi.fn(),
+    getAll: vi.fn(() => []),
+    register: vi.fn(),
+  },
+}));
+
+// Mock Lenis smooth scroll (used by LandingPage)
+vi.mock("lenis", () => {
+  return {
+    default: vi.fn().mockImplementation(function () {
+      this.on = vi.fn();
+      this.destroy = vi.fn();
+      this.raf = vi.fn();
+    }),
+  };
+});

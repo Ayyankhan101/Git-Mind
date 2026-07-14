@@ -22,6 +22,17 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: "./src/setupTests.js",
     css: false,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary", "html"],
+      exclude: ["node_modules/", "src/setupTests.js"],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80,
+      },
+    },
   },
   build: {
     outDir: "build",
