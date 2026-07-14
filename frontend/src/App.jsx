@@ -870,7 +870,9 @@ export default function App() {
   const mod = IS_MAC ? "⌘" : "Ctrl";
 
   return (
-    <div className="app">
+    <div
+      className={`app${showOnboarding && !repos.length ? " landing-active" : ""}`}
+    >
       {/* ── Top bar ─────────────────────────────────────────────── */}
       <div className="command-bar">
         <span className="cb-wordmark">GitMind</span>
