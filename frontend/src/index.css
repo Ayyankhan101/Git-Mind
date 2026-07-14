@@ -4384,13 +4384,6 @@ a:focus-visible,
   }
 }
 @media (max-width: 768px) {
-  .app {
-    grid-template-columns: 1fr;
-    grid-template-rows: 52px 1fr;
-  }
-  .nav-rail {
-    display: none;
-  }
   .stat-grid {
     grid-template-columns: 1fr;
   }
