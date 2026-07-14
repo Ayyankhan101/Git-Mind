@@ -132,7 +132,7 @@ select {
   display: grid;
   grid-template-columns: 48px 1fr;
   grid-template-rows: 52px 1fr;
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -176,7 +176,6 @@ select {
   flex: 1;
   background: transparent;
   border: none;
-  outline: none;
   font-size: 13px;
   color: var(--text-1);
 }
@@ -702,7 +701,11 @@ select {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s,
+    transform 0.12s;
   white-space: nowrap;
 }
 .btn:disabled {
@@ -1612,7 +1615,6 @@ select {
   color: var(--text-1);
   font-family: var(--font-mono);
   font-size: 13px;
-  outline: none;
 }
 .pr-url:focus {
   border-color: var(--border-2);
@@ -1642,7 +1644,6 @@ select {
   color: var(--text-1);
   font-family: var(--font-mono);
   font-size: 13px;
-  outline: none;
   margin: 4px 0 18px;
 }
 
@@ -1748,7 +1749,6 @@ select {
   padding: 9px 12px;
   color: var(--text-1);
   font-size: 13px;
-  outline: none;
   min-width: 0;
 }
 .mon-input:focus {
@@ -1946,7 +1946,6 @@ select {
   color: var(--text-1);
   font-size: 15px;
   line-height: 1.55;
-  outline: none;
   resize: vertical;
   max-height: 120px;
   min-height: 44px;
@@ -2283,7 +2282,6 @@ select {
   flex: 1;
   background: transparent;
   border: none;
-  outline: none;
   font-size: 12px;
   color: var(--text-1);
 }
@@ -2342,7 +2340,6 @@ select {
   flex: 1;
   background: transparent;
   border: none;
-  outline: none;
   color: var(--text-1);
   font-size: 15px;
 }
@@ -3457,7 +3454,6 @@ a:focus-visible,
   padding: 11px 14px;
   color: var(--text-1);
   font-size: 14px;
-  outline: none;
 }
 .onboarding-input:focus {
   border-color: var(--primary);
@@ -3976,7 +3972,10 @@ a:focus-visible,
   color: var(--text-2);
   font-family: inherit;
   text-align: left;
-  transition: all 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
 }
 .ws-btn:hover {
   border-color: var(--border-2);
@@ -4194,7 +4193,6 @@ a:focus-visible,
   resize: none;
   font-family: inherit;
   line-height: 1.45;
-  outline: none;
   width: 100%;
   box-sizing: border-box;
 }
@@ -4374,4 +4372,32 @@ a:focus-visible,
 }
 .empty-state svg {
   opacity: 0.4;
+}
+
+/* ── Responsive breakpoints ─────────────────────────────── */
+@media (max-width: 1024px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .content {
+    padding: 16px;
+  }
+}
+@media (max-width: 768px) {
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-rows: 52px 1fr;
+  }
+  .nav-rail {
+    display: none;
+  }
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+  .content {
+    padding: 12px;
+  }
+  .tab-header {
+    flex-wrap: wrap;
+  }
 }

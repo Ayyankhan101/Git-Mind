@@ -58,7 +58,7 @@ html.lenis body {
 .lp-root {
   position: relative;
   width: 100%;
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--lp-canvas);
   color: var(--lp-text-secondary);
   font-family: var(--font-sans);
@@ -503,7 +503,7 @@ html.lenis body {
 .lp-hero {
   position: relative;
   z-index: 2;
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: flex-start;
