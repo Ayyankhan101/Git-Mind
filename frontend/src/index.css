@@ -4394,12 +4394,3 @@ a:focus-visible,
     flex-wrap: wrap;
   }
 }
-
-/* ── Landing page full-screen mode ─────────────────────── */
-.app.landing-active {
-  grid-template-columns: 1fr;
-}
-.app.landing-active .command-bar,
-.app.landing-active .nav-rail {
-  display: none;
-}

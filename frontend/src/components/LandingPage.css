@@ -68,7 +68,7 @@ html.lenis body {
 
 /* ── Animated Background Gradients ──────────────────────────── */
 .lp-bg {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
@@ -167,7 +167,7 @@ html.lenis body {
 
 /* ── 3D Chrome Orb ──────────────────────────────────────────── */
 .lp-chrome-orb {
-  position: fixed;
+  position: absolute;
   width: 320px;
   height: 320px;
   top: 50%;
@@ -281,7 +281,7 @@ html.lenis body {
 
 /* ── Spline 3D Scene (full page) ─────────────────────────────── */
 .lp-spline-fullpage {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: auto;
@@ -336,7 +336,7 @@ html.lenis body {
 
 /* ── Navigation ─────────────────────────────────────────────── */
 .lp-nav {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
