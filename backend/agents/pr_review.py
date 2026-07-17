@@ -2,17 +2,16 @@ import logging
 import re
 
 import httpx
-import orjson
+from langchain_groq import ChatGroq
 
 from llm_cache import get_cached, invoke_with_retry, set_cached
-from settings import get_llm
 
 logger = logging.getLogger(__name__)
 
 _MODEL = "llama-3.3-70b-versatile"
 _MAX_DIFF_CHARS = 14_000
 _CACHE_NAMESPACE = "llama-3.3-70b-versatile:pr_review"
-_LLM = get_llm(temperature_key="pr_review", json_mode=True)
+_LLM = ChatGroq(model=_MODEL, temperature=0.1)
 
 
 def _parse_pr_url(pr_url: str) -> tuple[str, str, str]:
@@ -78,39 +77,30 @@ def run_pr_review(pr_url: str, token: str | None = None) -> dict:
         f"Description: {pr['body'] or 'None provided'}\n"
         + ("\n⚠ Diff was truncated to first 14 000 chars.\n" if pr["diff_truncated"] else "")
         + f"\nDiff:\n{pr['diff']}\n\n"
-        "Return JSON with exactly these keys:\n"
-        '- "summary": 2-3 sentences — what this PR does and your overall impression\n'
-        '- "issues": list of objects, each with { "file": str, "line": int, '
-        '"severity": "CRITICAL"|"HIGH"|"MEDIUM"|"LOW", "title": str, '
-        '"explanation": str, "suggestion": str }. If no issues, return empty list []\n'
-        '- "verdict": exactly "APPROVE" | "REQUEST CHANGES" | "NEEDS DISCUSSION"\n'
-        '- "verdict_justification": one sentence explaining the verdict\n'
-        "Be specific — cite real file paths and line numbers from the diff. "
-        "Do not invent issues. Only flag things that matter. No markdown. Only valid JSON."
+        "Provide a structured review in **exactly** this format:\n\n"
+        "## Summary\n"
+        "[2-3 sentences: what this PR does and your overall impression]\n\n"
+        "## Issues\n"
+        "[Each issue on its own line: `path/to/file.ext:LINE — [SEVERITY] "
+        "Short title — Explanation and concrete suggestion`]\n"
+        "[SEVERITY options: CRITICAL (security/data-loss), HIGH (bug/crash), MEDIUM (logic/perf), LOW (style/naming)]\n"
+        "[If no issues: write exactly: No significant issues found.]\n\n"
+        "## Verdict\n"
+        "[✅ APPROVE | ⚠️ REQUEST CHANGES | 💬 NEEDS DISCUSSION]\n"
+        "[One sentence justification]\n\n"
+        "Rules: be specific — cite real file paths and line numbers from the diff. "
+        "Do not invent issues. Do not pad. Only flag things that matter."
     )
 
     cache_key = f"{pr['owner']}/{pr['repo']}#{pr['pr_num']}:{pr.get('head_sha', '')}"
     cached = get_cached(_CACHE_NAMESPACE, cache_key)
     if cached:
         logger.debug("PR review: cache hit for %s/%s#%s", pr["owner"], pr["repo"], pr["pr_num"])
-        review_data = orjson.loads(cached) if isinstance(cached, (str, bytes)) else cached
+        review = cached
     else:
-        raw = invoke_with_retry(_LLM, prompt).content.strip()
-        review_data = orjson.loads(raw)
-        set_cached(_CACHE_NAMESPACE, cache_key, orjson.dumps(review_data).decode())
+        review = invoke_with_retry(_LLM, prompt).content.strip()
+        set_cached(_CACHE_NAMESPACE, cache_key, review)
         logger.info("PR review complete for %s/%s#%s", pr["owner"], pr["repo"], pr["pr_num"])
-
-    # Backward-compat markdown string
-    issues_text = "\n".join(
-        f"{i['file']}:{i.get('line', '?')} — [{i['severity']}] {i['title']} — {i['explanation']}"
-        for i in review_data.get("issues", [])
-    )
-    review_md = (
-        f"## Summary\n{review_data.get('summary', '')}\n\n"
-        f"## Issues\n{issues_text or 'No significant issues found.'}\n\n"
-        f"## Verdict\n{review_data.get('verdict', '')}\n"
-        f"{review_data.get('verdict_justification', '')}"
-    )
 
     return {
         "pr_url": pr_url,
@@ -121,6 +111,5 @@ def run_pr_review(pr_url: str, token: str | None = None) -> dict:
         "additions": pr["additions"],
         "deletions": pr["deletions"],
         "changed_files": pr["changed_files"],
-        "review": review_md,
-        "review_data": review_data,
+        "review": review,
     }

@@ -1,25 +1,18 @@
-import {
-  vi,
-  describe,
-  it,
-  test,
-  expect,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-} from "vitest";
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import KeyboardHelp from "./KeyboardHelp";
 
 test("renders nothing when closed", () => {
-  const { container } = render(<KeyboardHelp open={false} onClose={vi.fn()} />);
+  const { container } = render(
+    <KeyboardHelp open={false} onClose={jest.fn()} />,
+  );
   expect(container.firstChild).toBeNull();
 });
 
 test("renders shortcuts when open", () => {
-  const { container } = render(<KeyboardHelp open={true} onClose={vi.fn()} />);
+  const { container } = render(
+    <KeyboardHelp open={true} onClose={jest.fn()} />,
+  );
   expect(container.querySelector(".kbhelp-title").textContent).toBe(
     "Keyboard shortcuts",
   );
@@ -30,14 +23,14 @@ test("renders shortcuts when open", () => {
 });
 
 test("calls onClose on Escape key", () => {
-  const onClose = vi.fn();
+  const onClose = jest.fn();
   render(<KeyboardHelp open={true} onClose={onClose} />);
   fireEvent.keyDown(window, { key: "Escape" });
   expect(onClose).toHaveBeenCalled();
 });
 
 test("does not call onClose on other keys", () => {
-  const onClose = vi.fn();
+  const onClose = jest.fn();
   render(<KeyboardHelp open={true} onClose={onClose} />);
   fireEvent.keyDown(window, { key: "a" });
   expect(onClose).not.toHaveBeenCalled();

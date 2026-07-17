@@ -86,9 +86,7 @@ function RepoCard({
           <>
             <span
               className="lang-dot"
-              style={{
-                background: LANG_COLOR[repo.language] || "var(--text-3)",
-              }}
+              style={{ background: LANG_COLOR[repo.language] || "#64748b" }}
             />
             <span>{repo.language}</span>
             <span>·</span>
@@ -451,7 +449,7 @@ export default function Sidebar({
                 <div
                   style={{
                     padding: "16px 14px",
-                    fontSize: 13,
+                    fontSize: 12,
                     color: "var(--text-3)",
                   }}
                 >
@@ -529,9 +527,7 @@ function RepoHoverPreview({ repo, anchorRect }) {
           <span>
             <span
               className="lang-dot"
-              style={{
-                background: LANG_COLOR[repo.language] || "var(--text-3)",
-              }}
+              style={{ background: LANG_COLOR[repo.language] || "#64748b" }}
             />
             {repo.language}
           </span>

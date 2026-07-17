@@ -17,7 +17,7 @@ function SeverityDot({ sev }) {
     sev === "critical"
       ? "var(--danger)"
       : sev === "high"
-        ? "var(--sev-high)"
+        ? "#f97316"
         : sev === "medium"
           ? "var(--warning)"
           : "var(--text-3)";
@@ -176,7 +176,10 @@ export default function OrgAuditModal({ repos, token, onClose }) {
     setError(null);
     setResult(null);
     try {
-      const data = await orgAudit(scanList.map((r) => r.url || r));
+      const data = await orgAudit(
+        scanList.map((r) => r.url || r),
+        token,
+      );
       setResult(data);
     } catch (err) {
       setError(err.message);
@@ -230,7 +233,6 @@ export default function OrgAuditModal({ repos, token, onClose }) {
             className="btn-icon"
             style={{ position: "absolute", top: 16, right: 16 }}
             onClick={onClose}
-            aria-label="Close"
           >
             <X size={14} strokeWidth={1.5} />
           </button>
@@ -418,7 +420,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                         style={{
                           fontSize: 11,
                           padding: "2px 6px",
-                          background: "var(--danger-bg)",
+                          background: "rgba(239,68,68,0.1)",
                           borderRadius: 4,
                           color: "var(--danger)",
                         }}

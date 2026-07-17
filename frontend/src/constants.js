@@ -1,3 +1,11 @@
+export const GRADE_COLOR = {
+  A: "#10b981",
+  B: "#34d399",
+  C: "#f59e0b",
+  D: "#f97316",
+  F: "#ef4444",
+};
+
 export const LANG_COLOR = {
   JavaScript: "#f7df1e",
   TypeScript: "#3178c6",
@@ -10,12 +18,4 @@ export const LANG_COLOR = {
   C: "#555555",
   "C#": "#178600",
   Shell: "#89e051",
-};
-
-export const GRADE_COLOR = {
-  A: "var(--success)",
-  B: "var(--grade-b)",
-  C: "var(--warning)",
-  D: "var(--sev-high)",
-  F: "var(--danger)",
 };

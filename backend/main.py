@@ -120,63 +120,58 @@ async def _run_monitoring_checks():
         logger.error("Failed to fetch monitored repos", error=str(exc))
         return
 
-    sem = asyncio.Semaphore(5)  # max 5 concurrent analyses
+    for repo in monitored:
+        try:
+            current_sha = await asyncio.to_thread(get_remote_sha, repo.repo_url)
+            if not current_sha or current_sha == repo.last_sha:
+                continue
 
-    async def _check_one(repo):
-        async with sem:
-            try:
-                current_sha = await asyncio.to_thread(get_remote_sha, repo.repo_url)
-                if not current_sha or current_sha == repo.last_sha:
-                    return
+            logger.info(
+                "Monitor: SHA changed, triggering analysis",
+                repo=repo.repo_url,
+                old=(repo.last_sha or "")[:8],
+                new=current_sha[:8],
+            )
 
-                logger.info(
-                    "Monitor: SHA changed, triggering analysis",
-                    repo=repo.repo_url,
-                    old=(repo.last_sha or "")[:8],
-                    new=current_sha[:8],
-                )
+            import uuid
 
-                import uuid
+            from routes.analyze import _run_analysis
 
-                from routes.analyze import _run_analysis
+            session_id = str(uuid.uuid4())
+            result = await _run_analysis(repo.repo_url, None, session_id)
 
-                session_id = str(uuid.uuid4())
-                result = await _run_analysis(repo.repo_url, None, session_id)
+            if result.get("error"):
+                logger.error("Monitor: analysis failed", repo=repo.repo_url, error=result["error"][:200])
+                session_id = None
+            else:
+                if repo.last_session_id and (repo.slack_webhook_url or repo.email_recipients):
+                    prev = await get_previous_analysis_db(repo.repo_url, exclude_session=session_id)
+                    curr_health = (result.get("health") or {}).get("score", 0)
+                    prev_health = (prev.get("health") or {}).get("score", 0) if prev else 0
+                    score_delta = curr_health - prev_health
 
-                if result.get("error"):
-                    logger.error("Monitor: analysis failed", repo=repo.repo_url, error=result["error"][:200])
-                    session_id = None
-                else:
-                    if repo.last_session_id and (repo.slack_webhook_url or repo.email_recipients):
-                        prev = await get_previous_analysis_db(repo.repo_url, exclude_session=session_id)
-                        curr_health = (result.get("health") or {}).get("score", 0)
-                        prev_health = (prev.get("health") or {}).get("score", 0) if prev else 0
-                        score_delta = curr_health - prev_health
+                    curr_sec = len(result.get("security_findings", []))
+                    prev_sec = len(prev.get("security_findings", [])) if prev else 0
+                    new_findings = curr_sec - prev_sec
 
-                        curr_sec = len(result.get("security_findings", []))
-                        prev_sec = len(prev.get("security_findings", [])) if prev else 0
-                        new_findings = curr_sec - prev_sec
+                    significant = score_delta < repo.score_delta_threshold or (
+                        repo.alert_on_new_findings and new_findings > 0
+                    )
 
-                        significant = score_delta < repo.score_delta_threshold or (
-                            repo.alert_on_new_findings and new_findings > 0
-                        )
+                    if significant:
+                        await _send_monitor_alert(repo, score_delta, new_findings, curr_health, session_id)
 
-                        if significant:
-                            await _send_monitor_alert(repo, score_delta, new_findings, curr_health, session_id)
+            async with async_session_factory() as session:
+                merged = await session.merge(repo)
+                merged.last_sha = current_sha
+                merged.last_session_id = session_id
+                merged.last_check_at = time.time()
+                await session.commit()
 
-                async with async_session_factory() as session:
-                    merged = await session.merge(repo)
-                    merged.last_sha = current_sha
-                    merged.last_session_id = session_id
-                    merged.last_check_at = time.time()
-                    await session.commit()
+            logger.info("Monitor: analysis complete", repo=repo.repo_url, session=session_id)
 
-                logger.info("Monitor: analysis complete", repo=repo.repo_url, session=session_id)
-
-            except Exception as exc:
-                logger.error("Monitor check failed", repo=repo.repo_url, error=str(exc)[:200])
-
-    await asyncio.gather(*[_check_one(repo) for repo in monitored], return_exceptions=True)
+        except Exception as exc:
+            logger.error("Monitor check failed", repo=repo.repo_url, error=str(exc)[:200])
 
 
 async def _send_monitor_alert(repo, score_delta, new_findings, curr_health, session_id):
@@ -242,6 +237,9 @@ async def lifespan(_app: FastAPI):
     except Exception as exc:
         logger.warning("Could not prune old collections", error=str(exc))
     logger.info("GitMind backend starting — GROQ_API_KEY present")
+    from orchestrator import reset_circuit_breaker
+
+    reset_circuit_breaker()
     global _periodic_prune_task, _monitoring_task
     _periodic_prune_task = asyncio.create_task(_periodic_prune_loop())
     _monitoring_task = asyncio.create_task(_monitoring_loop())
@@ -378,7 +376,10 @@ async def health():
         checks["redis"] = False
     _webhook_secret = os.getenv("GITHUB_APP_WEBHOOK_SECRET")
     checks["webhook_hmac"] = bool(_webhook_secret)
-    mandatory = {k: v for k, v in checks.items() if k not in ("redis",)}
+    from orchestrator import get_circuit_breaker_state
+
+    checks["circuit_breaker"] = get_circuit_breaker_state()
+    mandatory = {k: v for k, v in checks.items() if k not in ("redis", "circuit_breaker")}
     all_ok = all(mandatory.values())
     result = {"status": "ok" if all_ok else "degraded"}
     result["checks"] = checks

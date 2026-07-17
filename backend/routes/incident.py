@@ -1,43 +1,17 @@
 import asyncio
 
-import orjson
 import structlog
 from fastapi import APIRouter, Request
+from langchain_groq import ChatGroq
 
 from llm_cache import invoke_with_retry
 from models.requests import IncidentReportRequest
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit
 from services.session import _UUID_RE, get_session
-from settings import get_llm
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
-
-_LLM = get_llm(temperature_key="incident", json_mode=True)
-
-_INCIDENT_PROMPT = """\
-You are a security incident response manager. Generate a structured incident report.
-
-Repository: {repo_name}
-Incident: {title}
-Severity: {severity}
-File: {file}  Line: {line}
-Description: {description}
-Crisis Outcome: {outcome_str}
-
-Crisis Timeline:
-{timeline}
-
-Return a JSON object with these keys:
-- "summary": one paragraph — what happened, what was exposed, who was affected, outcome
-- "timeline": array of objects with "label" (T+0m, T+5m etc) and "event" (what happened)
-- "impact": object with "systems_at_risk", "exposure_window", "affected_users"
-- "stakeholder_statement": 3-sentence external statement (factual, calm, no admission of negligence)
-- "remediation": object with "immediate" (0-24h), "short_term" (1-7d), "long_term" (1-4w)
-- "lessons_learned": array of 2-3 bullet points
-
-Be specific and professional. Use actual vulnerability details. Only valid JSON."""
 
 
 @router.post("/incident-report")
@@ -69,28 +43,51 @@ async def incident_report_endpoint(req: IncidentReportRequest, request: Request)
         else "UNKNOWN"
     )
 
-    prompt = _INCIDENT_PROMPT.format(
-        repo_name=session.get("repo_name", "Unknown"),
-        title=finding.title or "Security Vulnerability",
-        severity=finding.severity or "unknown",
-        file=finding.file or "unknown",
-        line=finding.line_start or "?",
-        description=finding.description or finding.exploit_story or "",
-        outcome_str=outcome_str,
-        timeline=timeline,
-    )
+    prompt = f"""You are a security incident response manager. Generate a complete incident report.
 
-    def _generate() -> dict:
-        raw = invoke_with_retry(_LLM, prompt).content.strip()
-        parsed = orjson.loads(raw)
-        return {
-            "summary": str(parsed.get("summary", "")),
-            "timeline": parsed.get("timeline") or [],
-            "impact": parsed.get("impact") or {},
-            "stakeholder_statement": str(parsed.get("stakeholder_statement", "")),
-            "remediation": parsed.get("remediation") or {},
-            "lessons_learned": parsed.get("lessons_learned") or [],
-        }
+Repository: {session.get("repo_name", "Unknown")}
+Incident: {finding.title or "Security Vulnerability"}
+Severity: {finding.severity or "unknown"}
+File: {finding.file or "unknown"}  Line: {finding.line_start or "?"}
+Description: {finding.description or finding.exploit_story or ""}
+Crisis Outcome: {outcome_str}
+
+Crisis Timeline:
+{timeline}
+
+Generate a professional incident report with these exact sections:
+
+## INCIDENT SUMMARY
+One paragraph: what happened, what was exposed, who was affected, outcome.
+
+## TIMELINE
+Bullet points with timestamps in relative format (T+0m, T+5m, etc):
+- Discovery
+- Escalation
+- Crisis response
+- Resolution/Publication
+
+## IMPACT ASSESSMENT
+- Data/systems at risk
+- Estimated exposure window
+- Affected users/services
+
+## STAKEHOLDER COMMUNICATION
+Draft a 3-sentence external statement suitable for posting (factual, calm, no admission of negligence).
+
+## REMEDIATION CHECKLIST
+- [ ] Immediate actions (0-24h)
+- [ ] Short-term (1-7 days)
+- [ ] Long-term (1-4 weeks)
+
+## LESSONS LEARNED
+2-3 bullet points on what to improve.
+
+Be specific and professional. Use the actual vulnerability details."""
+
+    def _generate() -> str:
+        llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2)
+        return invoke_with_retry(llm, prompt).content.strip()
 
     try:
         report = await asyncio.to_thread(_generate)

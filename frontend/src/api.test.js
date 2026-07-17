@@ -1,18 +1,7 @@
-import {
-  vi,
-  describe,
-  it,
-  test,
-  expect,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-} from "vitest";
 import { fetchRepos, fetchSummary, loadSharedAnalysis, orgAudit } from "./api";
 
 function mockFetchOnce(status, body) {
-  global.fetch = vi.fn().mockResolvedValue({
+  global.fetch = jest.fn().mockResolvedValue({
     ok: status < 400,
     status,
     json: () => Promise.resolve(body),
@@ -20,16 +9,16 @@ function mockFetchOnce(status, body) {
 }
 
 function mockFetchError(message) {
-  global.fetch = vi.fn().mockRejectedValue(new Error(message));
+  global.fetch = jest.fn().mockRejectedValue(new Error(message));
 }
 
 beforeEach(() => {
-  vi.useFakeTimers();
+  jest.useFakeTimers();
 });
 
 afterEach(() => {
   delete global.fetch;
-  vi.useRealTimers();
+  jest.useRealTimers();
 });
 
 describe("error parsing", () => {
@@ -75,20 +64,17 @@ describe("fetchRepos", () => {
     await expect(fetchRepos("test-user")).resolves.toEqual(repos);
   });
 
-  test("passes Authorization header when tokenManager has a token", async () => {
-    const tokenManager = await import("./tokenManager");
-    await tokenManager.set("ghp_abc123");
+  test("passes X-GH-Token header when token is provided", async () => {
     mockFetchOnce(200, { repos: [] });
-    await fetchRepos("test-user");
+    await fetchRepos("test-user", "ghp_abc123");
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining("/repos/"),
       expect.objectContaining({
         headers: expect.objectContaining({
-          Authorization: "Bearer ghp_abc123",
+          "X-GH-Token": "ghp_abc123",
         }),
       }),
     );
-    await tokenManager.set("");
   });
 });
 

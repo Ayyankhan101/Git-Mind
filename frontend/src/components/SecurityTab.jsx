@@ -124,9 +124,9 @@ function FindingRow({
                 alignItems: "flex-start",
                 marginTop: 10,
                 padding: "8px 12px",
-                background: "var(--success-bg)",
+                background: "rgba(34,197,94,0.06)",
                 borderRadius: 6,
-                border: "1px solid var(--success-bg-strong)",
+                border: "1px solid rgba(34,197,94,0.18)",
               }}
             >
               <Wrench
@@ -250,6 +250,7 @@ function FindingRow({
               </button>
             )}
             {onPR &&
+              canCrisis &&
               !prUrl &&
               (showTokenInput ? (
                 <span
@@ -277,23 +278,12 @@ function FindingRow({
                       width: 210,
                     }}
                   />
-                  {prError && (
-                    <span
-                      style={{
-                        fontSize: 11,
-                        color: "var(--danger)",
-                        width: "100%",
-                      }}
-                    >
-                      {prError}
-                    </span>
-                  )}
                   <button
                     className="btn-text primary"
                     disabled={prLoading}
                     onClick={handleOpenPR}
                   >
-                    {prLoading ? "Creating PR…" : "Confirm"}
+                    {prLoading ? "Opening…" : "Confirm"}
                   </button>
                   <button
                     className="btn-text"

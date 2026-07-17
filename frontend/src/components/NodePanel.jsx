@@ -30,11 +30,7 @@ function ChatMessage({ msg }) {
             : isUser
               ? "var(--primary)"
               : "var(--surface-2)",
-          color: isErr
-            ? "var(--danger)"
-            : isUser
-              ? "var(--text-1)"
-              : "var(--text-1)",
+          color: isErr ? "var(--danger)" : isUser ? "#fff" : "var(--text-1)",
           borderRadius: isUser ? "12px 12px 3px 12px" : "12px 12px 12px 3px",
           padding: "8px 12px",
           fontSize: 13,
@@ -178,12 +174,7 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
           strokeWidth={1.5}
         />
         <span className="node-panel-title">{node}</span>
-        <button
-          className="btn-icon"
-          onClick={onClose}
-          title="Close (Esc)"
-          aria-label="Close"
-        >
+        <button className="btn-icon" onClick={onClose} title="Close (Esc)">
           <X size={14} strokeWidth={2} />
         </button>
       </div>
@@ -277,7 +268,6 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
             ref={inputRef}
             className="node-panel-input"
             value={input}
-            aria-label={`Ask about ${node}`}
             onChange={(e) => setInput(e.target.value)}
             onInput={(e) => {
               e.target.style.height = "auto";
@@ -305,7 +295,6 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
             className="node-send-btn"
             onClick={() => send()}
             disabled={!input.trim() || busy || !chatEnabled}
-            aria-label="Send message"
           >
             <Send size={13} />
           </button>

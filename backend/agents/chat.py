@@ -1,15 +1,14 @@
 import logging
 
+from langchain_groq import ChatGroq
+
 from chroma_utils import search_codebase
 from llm_cache import invoke_with_retry
-from settings import get_llm
 
 logger = logging.getLogger(__name__)
 
 _MODEL = "llama-3.3-70b-versatile"
-_LLM = get_llm(temperature_key="chat")
-
-_MAX_HISTORY_CHARS = 12_000
+_LLM = ChatGroq(model=_MODEL, temperature=0.2)
 
 _SYSTEM_TEMPLATE = """\
 You are a senior software engineer who has read every file in the '{repo_name}' codebase.
@@ -30,65 +29,17 @@ Previous conversation:
 """
 
 
-def _truncate_history(history: list[dict]) -> list[dict]:
-    """Keep as many recent messages as fit within a character budget."""
-    total = 0
-    kept: list[dict] = []
-    for msg in reversed(history):
-        total += len(msg.get("content", ""))
-        if total > _MAX_HISTORY_CHARS:
-            break
-        kept.append(msg)
-    kept.reverse()
-    return kept
-
-
-def _build_context(chunks: list[dict]) -> str:
-    """Format chunks into context string with file headers.
-
-    Allows multiple chunks per file (different code regions).
-    Deduplicates identical filepath+content pairs.
-    """
-    seen: set[str] = set()
-    parts: list[str] = []
-    for c in chunks:
-        key = f"{c['filepath']}:{c['content'][:200]}"
-        if key in seen:
-            continue
-        seen.add(key)
-        parts.append(f"--- {c['filepath']} ---\n{c['content']}")
-    return "\n\n".join(parts) or "No relevant code found."
-
-
 def _build_messages(
     question: str,
     collection_name: str,
     chat_history: list[dict],
     repo_name: str,
-) -> tuple[list[dict], list[dict]]:
-    """Build LLM messages and return (messages, chunks) for source tracking."""
-    chunks = search_codebase(
-        collection_name,
-        question,
-        n_results=8,
-        use_hybrid=True,
-        use_reranker=True,
-    )
-    context = _build_context(chunks)
-    history = "\n".join(f"{m['role'].upper()}: {m['content']}" for m in _truncate_history(chat_history)) or "None."
+) -> list[dict]:
+    chunks = search_codebase(collection_name, question, n_results=8)
+    context = "\n\n".join(f"--- {c['filepath']} ---\n{c['content']}" for c in chunks) or "No relevant code found."
+    history = "\n".join(f"{m['role'].upper()}: {m['content']}" for m in chat_history[-10:]) or "None."
     system = _SYSTEM_TEMPLATE.format(repo_name=repo_name, context=context, history=history)
-    return [{"role": "system", "content": system}, {"role": "user", "content": question}], chunks
-
-
-def _chunks_to_sources(chunks: list[dict]) -> list[dict]:
-    """Extract source references from search chunks."""
-    return [
-        {
-            "filepath": c["filepath"],
-            "score": round(c.get("rerank_score", c.get("rrf_score", c.get("bm25_score", 0))), 3),
-        }
-        for c in chunks
-    ]
+    return [{"role": "system", "content": system}, {"role": "user", "content": question}]
 
 
 def run_chat_agent(
@@ -96,13 +47,11 @@ def run_chat_agent(
     collection_name: str,
     chat_history: list[dict],
     repo_name: str,
-) -> tuple[str, list[dict]]:
-    """Returns (answer, sources)."""
-    messages, chunks = _build_messages(question, collection_name, chat_history, repo_name)
+) -> str:
+    messages = _build_messages(question, collection_name, chat_history, repo_name)
     answer = invoke_with_retry(_LLM, messages).content
-    sources = _chunks_to_sources(chunks)
     logger.debug("Chat agent answered question of length %d", len(question))
-    return answer, sources
+    return answer
 
 
 async def run_chat_agent_stream(
@@ -111,17 +60,11 @@ async def run_chat_agent_stream(
     chat_history: list[dict],
     repo_name: str,
 ):
-    """Async generator yielding (token, sources_or_none).
-
-    Final yield is (None, sources_list) to signal completion.
-    """
-    messages, chunks = _build_messages(question, collection_name, chat_history, repo_name)
-    sources = _chunks_to_sources(chunks)
+    """Async generator yielding text tokens for streaming chat responses."""
+    messages = _build_messages(question, collection_name, chat_history, repo_name)
     try:
         async for chunk in _LLM.astream(messages):
-            yield chunk.content, None
+            yield chunk.content
     except Exception as exc:
         logger.warning("astream failed (%s), falling back to invoke_with_retry", exc)
-        answer = invoke_with_retry(_LLM, messages).content
-        yield answer, None
-    yield None, sources
+        yield invoke_with_retry(_LLM, messages).content

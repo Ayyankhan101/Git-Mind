@@ -1,5 +1,12 @@
 import React, { useEffect, useRef } from "react";
-import { GRADE_COLOR } from "../constants";
+
+const GRADE_COLOR = {
+  A: "#10b981",
+  B: "#34d399",
+  C: "#f59e0b",
+  D: "#f97316",
+  F: "#ef4444",
+};
 
 const DIM_LABEL = {
   security: "Security",
@@ -25,9 +32,9 @@ function MiniBar({ value, color, delay = 0 }) {
   return (
     <div
       style={{
-        background: "var(--border)",
+        background: "rgba(255,255,255,0.06)",
         borderRadius: 4,
-        height: 6,
+        height: 8,
         width: "100%",
         overflow: "hidden",
       }}
@@ -46,9 +53,9 @@ function MiniBar({ value, color, delay = 0 }) {
   );
 }
 
-export default function HealthCard({ health, partial }) {
+export default function HealthCard({ health }) {
   if (!health) return null;
-  const gradeColor = GRADE_COLOR[health.grade] || "var(--text-3)";
+  const gradeColor = GRADE_COLOR[health.grade] || "#94a3b8";
 
   return (
     <div className="health-card">
@@ -60,33 +67,13 @@ export default function HealthCard({ health, partial }) {
         }}
       />
 
-      {partial && (
-        <span
-          style={{
-            position: "absolute",
-            top: 8,
-            right: 12,
-            fontSize: 9,
-            color: "var(--warning)",
-            fontWeight: 600,
-            letterSpacing: "0.05em",
-            textTransform: "uppercase",
-            zIndex: 1,
-          }}
-        >
-          live
-        </span>
-      )}
-
       <div className="health-card-inner">
         {/* Grade ring */}
         <div className="health-grade-ring">
           <svg
-            role="img"
-            aria-label={`Health grade: ${health.grade}`}
-            viewBox="0 0 80 80"
-            width="80"
-            height="80"
+            viewBox="0 0 96 96"
+            width="96"
+            height="96"
             className="health-ring-svg"
           >
             <defs>
@@ -96,23 +83,23 @@ export default function HealthCard({ health, partial }) {
               </linearGradient>
             </defs>
             <circle
-              cx="40"
-              cy="40"
-              r="34"
+              cx="48"
+              cy="48"
+              r="42"
               fill="none"
-              stroke="var(--border)"
+              stroke="rgba(255,255,255,0.06)"
               strokeWidth="4"
             />
             <circle
-              cx="40"
-              cy="40"
-              r="34"
+              cx="48"
+              cy="48"
+              r="42"
               fill="none"
               stroke="url(#health-ring-grad)"
               strokeWidth="4"
               strokeLinecap="round"
-              strokeDasharray={`${(health.score / 100) * 213.6} 213.6`}
-              transform="rotate(-90 40 40)"
+              strokeDasharray={`${(health.score / 100) * 263.9} 263.9`}
+              transform="rotate(-90 48 48)"
               className="health-ring-progress"
             />
           </svg>
@@ -134,11 +121,7 @@ export default function HealthCard({ health, partial }) {
                   className="health-bar-value"
                   style={{
                     color:
-                      val >= 80
-                        ? "var(--success)"
-                        : val >= 60
-                          ? "var(--warning)"
-                          : "var(--danger)",
+                      val >= 80 ? "#10b981" : val >= 60 ? "#f59e0b" : "#ef4444",
                   }}
                 >
                   {val}
@@ -147,11 +130,7 @@ export default function HealthCard({ health, partial }) {
               <MiniBar
                 value={val}
                 color={
-                  val >= 80
-                    ? "var(--success)"
-                    : val >= 60
-                      ? "var(--warning)"
-                      : "var(--danger)"
+                  val >= 80 ? "#10b981" : val >= 60 ? "#f59e0b" : "#ef4444"
                 }
                 delay={i * 80}
               />

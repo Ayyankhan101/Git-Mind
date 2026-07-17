@@ -1,15 +1,10 @@
-import * as tokenManager from "./tokenManager";
-
 // Derive backend base URL.
-//   1. VITE_API_BASE env var wins (set at build time).
-//   2. window.__ENV__.API_BASE — runtime config (injected in index.html).
-//   3. Cloud Shell preview: hostnames like "3000-cs-xxxx.cloudshell.dev" —
+//   1. REACT_APP_API_BASE env var wins (set at build time).
+//   2. Cloud Shell preview: hostnames like "3000-cs-xxxx.cloudshell.dev" —
 //      swap the leading port with 8002 so frontend and backend share host.
-//   4. Default to localhost:8002 for dev.
+//   3. Default to localhost:8002 for dev.
 function deriveHttpBase() {
-  if (import.meta.env.VITE_API_BASE) return import.meta.env.VITE_API_BASE;
-  if (typeof window !== "undefined" && window.__ENV__?.API_BASE)
-    return window.__ENV__.API_BASE;
+  if (process.env.REACT_APP_API_BASE) return process.env.REACT_APP_API_BASE;
   if (typeof window !== "undefined") {
     const { protocol, host, port, hostname } = window.location;
     if (/^\d+-/.test(host))
@@ -52,18 +47,8 @@ function _extractError(payload, fallback) {
 }
 
 async function _apiFetch(url, options = {}, timeoutMs = 30_000) {
-  const { timeoutError, token: overrideToken, ...fetchOpts } = options;
+  const { timeoutError, ...fetchOpts } = options;
   fetchOpts.signal = AbortSignal.timeout(timeoutMs);
-
-  // Auto-include auth header: explicit token overrides tokenManager
-  const token = overrideToken || tokenManager.get();
-  if (token) {
-    fetchOpts.headers = {
-      ...fetchOpts.headers,
-      Authorization: `Bearer ${token}`,
-    };
-  }
-
   let res;
   try {
     res = await fetch(url, fetchOpts);
@@ -87,14 +72,7 @@ async function _apiFetch(url, options = {}, timeoutMs = 30_000) {
   return data;
 }
 
-function _post(
-  url,
-  body,
-  timeoutMs,
-  timeoutError,
-  extraHeaders = {},
-  token = null,
-) {
+function _post(url, body, timeoutMs, timeoutError, extraHeaders = {}) {
   return _apiFetch(
     url,
     {
@@ -102,16 +80,18 @@ function _post(
       headers: { "Content-Type": "application/json", ...extraHeaders },
       body: JSON.stringify(body),
       timeoutError,
-      ...(token ? { token } : {}),
     },
     timeoutMs,
   );
 }
 
-export async function fetchRepos(username) {
+export async function fetchRepos(username, token = null) {
+  const headers = {};
+  if (token) headers["X-GH-Token"] = token;
   const data = await _apiFetch(
     `${BASE}/repos/${encodeURIComponent(username)}`,
     {
+      headers,
       timeoutError:
         "GitHub API request timed out — check your connection and try again.",
     },
@@ -129,76 +109,83 @@ export function fetchSummary(sessionId) {
   );
 }
 
-export function reviewPR(prUrl) {
+export function reviewPR(prUrl, token = null) {
   return _post(
     `${BASE}/pr-review`,
     { pr_url: prUrl },
     90_000,
     "PR review timed out — large diffs may take longer.",
+    token ? { "X-GH-Token": token } : {},
   );
 }
 
-export function createFixPR(sessionId, finding, token = null) {
+export function createFixPR(sessionId, finding, token) {
   return _post(
     `${BASE}/fix/pr`,
     { session_id: sessionId, finding },
     120_000,
     "Auto-PR timed out.",
-    {},
-    token,
+    token ? { "X-GH-Token": token } : {},
   );
 }
 
-export function prImpact(prUrl, sessionId) {
+export function prImpact(prUrl, sessionId, token = null) {
   return _post(
     `${BASE}/pr-impact`,
     { pr_url: prUrl, session_id: sessionId },
     120_000,
     "Impact analysis timed out — large repos may take longer.",
+    token ? { "X-GH-Token": token } : {},
   );
 }
 
-export function fetchOpenPRs(owner, repo) {
+export function fetchOpenPRs(owner, repo, token = null) {
+  const headers = {};
+  if (token) headers["X-GH-Token"] = token;
   return _apiFetch(
     `${BASE}/pr-list/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`,
-    {},
+    { headers },
     15_000,
   );
 }
 
-export function subscribeMonitor(repoUrl, opts = {}) {
+export function subscribeMonitor(repoUrl, opts = {}, token = null) {
   return _post(
     `${BASE}/monitor/subscribe`,
     { repo_url: repoUrl, ...opts },
     15_000,
     "Subscribe timed out.",
+    token ? { "X-GH-Token": token } : {},
   );
 }
 
-export function fetchMonitorStatus() {
-  return _apiFetch(`${BASE}/monitor/status`, {}, 15_000);
+export function fetchMonitorStatus(token = null) {
+  const headers = {};
+  if (token) headers["X-GH-Token"] = token;
+  return _apiFetch(`${BASE}/monitor/status`, { headers }, 15_000);
 }
 
-export function fetchAnalysisHistory(repoUrl, days = 0) {
-  const params = new URLSearchParams({
-    repo_url: repoUrl,
-    days: String(days),
-  });
-  return _apiFetch(`${BASE}/analysis/history?${params}`, {}, 15_000);
-}
-
-export function unsubscribeMonitor(monitorId) {
+export function unsubscribeMonitor(monitorId, token = null) {
+  const headers = {};
+  if (token) headers["X-GH-Token"] = token;
   return _apiFetch(
     `${BASE}/monitor/${monitorId}`,
     {
       method: "DELETE",
+      headers,
     },
     15_000,
   );
 }
 
-export function orgAudit(repos) {
-  return _post(`${BASE}/org-audit`, { repos }, 90_000, "Org audit timed out.");
+export function orgAudit(repos, token = null) {
+  return _post(
+    `${BASE}/org-audit`,
+    { repos },
+    90_000,
+    "Org audit timed out.",
+    token ? { "X-GH-Token": token } : {},
+  );
 }
 
 export function fetchIncidentReport(
@@ -239,23 +226,13 @@ export function loadSharedAnalysis(sessionId) {
 
 /**
  * POST /chat/stream — streaming chat via SSE. Calls onToken(token) for each chunk.
- * Calls onDone(sources) when stream completes.
  */
-export async function postChatStream(
-  sessionId,
-  question,
-  onToken,
-  signal,
-  onDone,
-) {
+export async function postChatStream(sessionId, question, onToken, signal) {
   const timeout = AbortSignal.timeout(90_000);
   const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
-  const token = tokenManager.get();
-  const headers = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
   const res = await fetch(`${BASE}/chat/stream`, {
     method: "POST",
-    headers,
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ session_id: sessionId, question }),
     signal: combined,
   });
@@ -281,7 +258,6 @@ export async function postChatStream(
       const data = JSON.parse(line.slice(6));
       if (data.error) throw new Error(data.error);
       if (data.token) onToken(data.token);
-      if (data.done && onDone) onDone(data.sources || []);
     }
   }
 }

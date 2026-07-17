@@ -1,22 +1,21 @@
+import json
 import logging
 import os
 import shutil
 import subprocess
 import tempfile
 import uuid
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 
-import orjson
+from langchain_groq import ChatGroq
 
-from llm_cache import get_cached, invoke_json_with_retry, set_cached
-from settings import get_llm
+from llm_cache import get_cached, invoke_with_retry, set_cached
 
 logger = logging.getLogger(__name__)
 
 _MODEL = "llama-3.3-70b-versatile"
-_LLM = get_llm(temperature_key="code_audit", json_mode=True)
+_LLM = ChatGroq(model=_MODEL, temperature=0.1).bind(response_format={"type": "json_object"})
 _CACHE_NS = "llama-3.3-70b-versatile:lang_audit:json"
 _MAX_FINDINGS = 40
 
@@ -200,30 +199,14 @@ _LANGUAGE_MAP: dict[str, AuditorDef] = {
 
 
 def run_code_audit(file_tree: list[str], file_contents: dict[str, str]) -> list[dict]:
-    # Pre-filter matching files per language
-    lang_tasks: list[tuple[str, AuditorDef, list[str]]] = []
+    results: list[dict] = []
     for lang, cfg in _LANGUAGE_MAP.items():
         matching = [f for f in file_tree if Path(f).suffix in cfg.extensions]
-        if matching:
-            lang_tasks.append((lang, cfg, matching))
-
-    if not lang_tasks:
-        return []
-
-    # Run all language audits in parallel (each linter runs in its own thread)
-    results: list[dict] = []
-    with ThreadPoolExecutor(max_workers=min(len(lang_tasks), 6)) as pool:
-        futures = {
-            pool.submit(_audit_language, lang, cfg, matching, file_contents): lang for lang, cfg, matching in lang_tasks
-        }
-        for future in as_completed(futures):
-            lang = futures[future]
-            try:
-                lang_result = future.result()
-                if lang_result and lang_result.get("findings"):
-                    results.append(lang_result)
-            except Exception as exc:
-                logger.warning("Language audit failed for %s: %s", lang, exc)
+        if not matching:
+            continue
+        lang_result = _audit_language(lang, cfg, matching, file_contents)
+        if lang_result and lang_result.get("findings"):
+            results.append(lang_result)
     return results
 
 
@@ -325,12 +308,12 @@ def _run_tool(tool: tuple[str, ...], matching: list[str], file_contents: dict[st
             )
         stdout = proc.stdout or ""
         if lang == "rust":
-            raw = orjson.loads(stdout)
+            raw = json.loads(stdout)
             return [r for r in raw if isinstance(r, dict) and "message" in r]
         if lang == "python":
-            data = orjson.loads(stdout)
+            data = json.loads(stdout)
             return data if isinstance(data, list) else data.get("results", data)
-        return orjson.loads(stdout)
+        return json.loads(stdout)
     except Exception as exc:
         logger.warning("Tool audit failed for %s: %s", lang, exc)
         return []
@@ -351,16 +334,16 @@ def _triage_with_llm(prompt_template: str, tool_results: list[dict], lang: str) 
         for r in tool_results[:_MAX_FINDINGS]
     ]
 
-    prompt = f"{prompt_template}\n\nTool findings:\n{orjson.dumps(truncated).decode()}"
+    prompt = f"{prompt_template}\n\nTool findings:\n{json.dumps(truncated, indent=2)}"
 
     cached = get_cached(_CACHE_NS, prompt)
     if cached:
-        return orjson.loads(cached).get("findings", [])
+        return json.loads(cached).get("findings", [])
 
     try:
-        parsed = invoke_json_with_retry(_LLM, prompt)
-        findings = parsed.get("findings", [])
-        set_cached(_CACHE_NS, prompt, orjson.dumps(parsed).decode())
+        raw = invoke_with_retry(_LLM, prompt).content
+        findings = json.loads(raw).get("findings", [])
+        set_cached(_CACHE_NS, prompt, raw)
     except Exception as exc:
         logger.error("LLM triage failed for %s: %s", lang, exc)
         return []
@@ -377,16 +360,16 @@ def _run_llm_fallback(
     if not sources:
         return []
 
-    prompt = f"{prompt_template}\n\nFiles:\n{orjson.dumps(sources).decode()}"
+    prompt = f"{prompt_template}\n\nFiles:\n{json.dumps(sources, indent=2)}"
 
     cached = get_cached(_CACHE_NS, prompt)
     if cached:
-        return orjson.loads(cached).get("findings", [])
+        return json.loads(cached).get("findings", [])
 
     try:
-        parsed = invoke_json_with_retry(_LLM, prompt)
-        findings = parsed.get("findings", [])
-        set_cached(_CACHE_NS, prompt, orjson.dumps(parsed).decode())
+        raw = invoke_with_retry(_LLM, prompt).content
+        findings = json.loads(raw).get("findings", [])
+        set_cached(_CACHE_NS, prompt, raw)
     except Exception as exc:
         logger.error("LLM fallback failed for %s: %s", lang, exc)
         return []

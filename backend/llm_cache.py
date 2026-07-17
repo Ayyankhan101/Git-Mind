@@ -1,4 +1,3 @@
-import contextlib
 import hashlib
 import logging
 import time
@@ -41,98 +40,13 @@ def _key(model: str, prompt: str) -> str:
     return hashlib.sha256(f"{model}::{prompt}".encode()).hexdigest()
 
 
-def invoke_with_retry(
-    llm,
-    prompt,
-    max_retries: int = 2,
-    base_delay: float = 2.0,
-    use_cache: bool = True,
-):
-    """Invoke an LLM with exponential-backoff retry on transient errors.
-
-    When *use_cache* is True (default), the cache is checked before calling the
-    LLM and a successful response is stored for 24 hours.  Caching is only
-    applied when *prompt* is a plain string or a serialisable list of dicts
-    (LangChain message format).
-    """
-    # ── Cache lookup ───────────────────────────────────────────────────────
-    model_name = getattr(llm, "model_name", getattr(llm, "model", "unknown"))
-    cache_key_payload = _serialize_prompt(prompt)
-    if use_cache:
-        cached = get_cached(model_name, cache_key_payload)
-        if cached is not None:
-            logger.debug("LLM cache hit — skipping API call")
-            # Return a simple object with a .content attribute so callers
-            # (which all access .content) work unchanged.
-            return _CachedResponse(cached)
-
-    # ── Invoke with retry ──────────────────────────────────────────────────
+def invoke_with_retry(llm, prompt, max_retries: int = 2, base_delay: float = 2.0):
+    """Invoke an LLM with exponential-backoff retry on transient errors."""
     last_exc: Exception | None = None
     for attempt in range(max_retries + 1):
         try:
-            result = llm.invoke(prompt)
-            if use_cache and hasattr(result, "content"):
-                with contextlib.suppress(Exception):
-                    set_cached(model_name, cache_key_payload, result.content)
-            return result
+            return llm.invoke(prompt)
         except Exception as exc:
-            last_exc = exc
-            if attempt < max_retries:
-                time.sleep(base_delay * (2**attempt))
-    raise last_exc  # type: ignore[misc]
-
-
-# ── Helpers ────────────────────────────────────────────────────────────────
-
-
-def _serialize_prompt(prompt) -> str:
-    """Best-effort serialisation of LangChain message lists for cache keys."""
-    if isinstance(prompt, str):
-        return prompt
-    if isinstance(prompt, list):
-        parts = []
-        for msg in prompt:
-            if hasattr(msg, "content"):
-                role = getattr(msg, "role", type(msg).__name__)
-                parts.append(f"{role}:{msg.content}")
-            elif isinstance(msg, dict):
-                parts.append(f"{msg.get('role', '?')}:{msg.get('content', '')}")
-            else:
-                parts.append(str(msg))
-        return "\n".join(parts)
-    return str(prompt)
-
-
-class _CachedResponse:
-    """Minimal wrapper so cached values can be accessed via .content."""
-
-    __slots__ = ("content",)
-
-    def __init__(self, content: str):
-        self.content = content
-
-
-def invoke_json_with_retry(
-    llm,
-    prompt,
-    max_retries: int = 2,
-    base_delay: float = 2.0,
-    use_cache: bool = True,
-):
-    """Invoke an LLM expecting JSON output, with retry on parse failure.
-
-    Calls invoke_with_retry normally. If the result fails to parse as JSON,
-    retries up to *max_retries* additional times (with cache bypass on retries).
-    Returns the parsed dict on success, raises on final failure.
-    """
-    import orjson as _orjson
-
-    last_exc: Exception | None = None
-    for attempt in range(max_retries + 1):
-        try:
-            resp = invoke_with_retry(llm, prompt, use_cache=use_cache and attempt == 0)
-            return _orjson.loads(resp.content)
-        except (_orjson.JSONDecodeError, Exception) as exc:
             last_exc = exc
             if attempt < max_retries:
                 time.sleep(base_delay * (2**attempt))

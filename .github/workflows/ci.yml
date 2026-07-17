@@ -78,15 +78,18 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "20"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
       - name: Run tests with coverage
-        run: CI=true npx vitest run --coverage
+        run: CI=true npx react-scripts test --coverage --watchAll=false --ci
       - name: Build
         run: npm run build
+        env:
+          NODE_OPTIONS: "--openssl-legacy-provider --max-old-space-size=4096"
+          CI: "true"
       - name: Upload coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4

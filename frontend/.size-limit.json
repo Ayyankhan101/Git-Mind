@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Main Bundle",
+    "path": "build/static/js/main.*.js",
+    "limit": "500 KB"
+  },
+  {
+    "name": "CSS",
+    "path": "build/static/css/*.css",
+    "limit": "100 KB"
+  },
+  {
+    "name": "Total First Load",
+    "path": "build/static/**/*.{js,css}",
+    "limit": "600 KB"
+  }
+]

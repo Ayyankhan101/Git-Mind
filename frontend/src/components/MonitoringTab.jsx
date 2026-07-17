@@ -9,16 +9,13 @@ import {
   AlertTriangle,
   Plus,
   X,
-  ChevronDown,
-  ChevronRight,
 } from "lucide-react";
 import {
   subscribeMonitor,
   fetchMonitorStatus,
   unsubscribeMonitor,
-  fetchAnalysisHistory,
 } from "../api";
-import TrendChart from "./TrendChart";
+import * as tokenManager from "../tokenManager";
 
 function relativeTime(ts) {
   if (!ts) return "never";
@@ -76,65 +73,23 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
   const [showForm, setShowForm] = useState(false);
   const [subUrl, setSubUrl] = useState("");
   const [subSlack, setSubSlack] = useState("");
-  const [subEmails, setSubEmails] = useState([]);
-  const [emailInput, setEmailInput] = useState("");
   const [subLoading, setSubLoading] = useState(false);
   const [subError, setSubError] = useState(null);
-  const [expandedRepo, setExpandedRepo] = useState(null);
-  const [trendData, setTrendData] = useState({});
-  const [trendDays, setTrendDays] = useState({});
+
+  const token = ghToken || tokenManager.get() || "";
 
   const fetchRepos = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetchMonitorStatus()
+    fetchMonitorStatus(token || null)
       .then((data) => setRepos(data.repos || []))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     fetchRepos();
   }, [fetchRepos]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchRepos();
-    }, 60_000);
-    return () => clearInterval(interval);
-  }, [fetchRepos]);
-
-  useEffect(() => {
-    if (!expandedRepo) return;
-    const days = trendDays[expandedRepo] ?? 30;
-    fetchAnalysisHistory(expandedRepo, days)
-      .then((d) =>
-        setTrendData((prev) => ({ ...prev, [expandedRepo]: d.history || [] })),
-      )
-      .catch(() => setTrendData((prev) => ({ ...prev, [expandedRepo]: [] })));
-  }, [expandedRepo, trendDays]);
-
-  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-  const addEmail = () => {
-    const val = emailInput.trim();
-    if (!val) return;
-    if (!isValidEmail(val)) {
-      setSubError("Invalid email address.");
-      return;
-    }
-    if (subEmails.includes(val)) {
-      setSubError("Email already added.");
-      return;
-    }
-    setSubEmails((prev) => [...prev, val]);
-    setEmailInput("");
-    setSubError(null);
-  };
-
-  const removeEmail = (email) => {
-    setSubEmails((prev) => prev.filter((e) => e !== email));
-  };
 
   const handleSubscribe = async () => {
     const url = subUrl.trim();
@@ -151,15 +106,12 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
     try {
       const opts = {};
       if (subSlack.trim()) opts.slack_webhook_url = subSlack.trim();
-      if (subEmails.length > 0) opts.email_recipients = subEmails.join(",");
-      const data = await subscribeMonitor(url, opts);
+      const data = await subscribeMonitor(url, opts, token || null);
       if (data.error) {
         setSubError(data.error);
       } else {
         setSubUrl("");
         setSubSlack("");
-        setSubEmails([]);
-        setEmailInput("");
         setShowForm(false);
         fetchRepos();
       }
@@ -171,9 +123,8 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
   };
 
   const handleUnsubscribe = async (monitorId) => {
-    if (!window.confirm("Stop monitoring this repository?")) return;
     try {
-      await unsubscribeMonitor(monitorId);
+      await unsubscribeMonitor(monitorId, token || null);
       setRepos((prev) => prev.filter((r) => r.id !== monitorId));
     } catch (err) {
       setError(err.message);
@@ -223,7 +174,6 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
             onClick={() => fetchRepos()}
             disabled={loading}
             title="Refresh"
-            aria-label="Refresh repos"
           >
             <RefreshCw size={13} className={loading ? "spin" : ""} />
           </button>
@@ -245,7 +195,6 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
             <input
               className="mon-input"
               placeholder="https://github.com/owner/repo"
-              aria-label="Repository URL"
               value={subUrl}
               onChange={(e) => setSubUrl(e.target.value)}
               disabled={subLoading}
@@ -264,7 +213,6 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
                 setSubError(null);
               }}
               disabled={subLoading}
-              aria-label="Close form"
             >
               <X size={13} />
             </button>
@@ -273,63 +221,10 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
             <input
               className="mon-input"
               placeholder="Slack webhook URL (optional)"
-              aria-label="Slack webhook URL"
               value={subSlack}
               onChange={(e) => setSubSlack(e.target.value)}
               disabled={subLoading}
             />
-          </div>
-          <div className="email-container">
-            <div className="email-label">Email recipients (optional)</div>
-            <div className="email-chips">
-              {subEmails.map((email) => (
-                <span key={email} className="email-chip">
-                  {email}
-                  <button
-                    onClick={() => removeEmail(email)}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      padding: 0,
-                      cursor: "pointer",
-                      color: "var(--primary)",
-                      display: "flex",
-                      alignItems: "center",
-                    }}
-                    disabled={subLoading}
-                    aria-label={`Remove ${email}`}
-                  >
-                    <X size={10} />
-                  </button>
-                </span>
-              ))}
-              <input
-                type="email"
-                placeholder={
-                  subEmails.length === 0 ? "Type email and press Enter" : ""
-                }
-                value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addEmail();
-                  }
-                }}
-                onBlur={addEmail}
-                disabled={subLoading}
-                style={{
-                  flex: 1,
-                  minWidth: 120,
-                  border: "none",
-                  background: "transparent",
-                  outline: "none",
-                  fontSize: 12,
-                  color: "var(--text-1)",
-                  padding: "2px 0",
-                }}
-              />
-            </div>
           </div>
           {subError && <div className="mon-error">{subError}</div>}
         </div>
@@ -381,103 +276,51 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
             const repoShort = repo.repo_url
               .replace("https://github.com/", "")
               .replace(/\.git$/, "");
-            const isExpanded = expandedRepo === repo.repo_url;
             return (
-              <div key={repo.id}>
-                <div className="mon-row">
-                  <div className="mon-row-main">
-                    <div className="mon-row-top">
-                      <button
-                        onClick={() =>
-                          setExpandedRepo(isExpanded ? null : repo.repo_url)
-                        }
-                        aria-label={isExpanded ? "Collapse" : "Expand"}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          padding: 0,
-                          cursor: "pointer",
-                          color: "var(--text-3)",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 4,
-                        }}
-                      >
-                        {isExpanded ? (
-                          <ChevronDown size={12} />
-                        ) : (
-                          <ChevronRight size={12} />
-                        )}
-                      </button>
+              <div key={repo.id} className="mon-row">
+                <div className="mon-row-main">
+                  <div className="mon-row-top">
+                    <a
+                      href={repo.repo_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mon-repo-name"
+                    >
+                      {repoShort}
+                      <ExternalLink size={11} style={{ opacity: 0.5 }} />
+                    </a>
+                    <StatusBadge last_sha={repo.last_sha} />
+                  </div>
+                  <div className="mon-row-meta">
+                    <span className="mon-meta-item">
+                      <Clock size={10} />
+                      Last check: {relativeTime(repo.last_check_at)}
+                    </span>
+                    {repo.slack_webhook_url && (
+                      <span className="mon-meta-item">
+                        <Bell size={10} />
+                        Slack alerts
+                      </span>
+                    )}
+                    {repo.last_session_id && (
                       <a
-                        href={repo.repo_url}
+                        href={`/?share=${repo.last_session_id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mon-repo-name"
+                        className="mon-meta-item mon-link"
                       >
-                        {repoShort}
-                        <ExternalLink size={11} style={{ opacity: 0.5 }} />
+                        View latest analysis →
                       </a>
-                      <StatusBadge last_sha={repo.last_sha} />
-                    </div>
-                    <div className="mon-row-meta">
-                      <span className="mon-meta-item">
-                        <Clock size={10} />
-                        Last check: {relativeTime(repo.last_check_at)}
-                      </span>
-                      {repo.slack_webhook_url && (
-                        <span className="mon-meta-item">
-                          <Bell size={10} />
-                          Slack alerts
-                        </span>
-                      )}
-                      {repo.email_recipients && (
-                        <span className="mon-meta-item">
-                          <Bell size={10} />
-                          Email alerts
-                        </span>
-                      )}
-                      {repo.last_session_id && (
-                        <a
-                          href={`/?share=${repo.last_session_id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mon-meta-item mon-link"
-                        >
-                          View latest analysis →
-                        </a>
-                      )}
-                    </div>
+                    )}
                   </div>
-                  <button
-                    className="btn-icon mon-unsub"
-                    onClick={() => handleUnsubscribe(repo.id)}
-                    title="Stop monitoring"
-                    aria-label="Stop monitoring"
-                  >
-                    <Trash2 size={13} />
-                  </button>
                 </div>
-                {isExpanded && (
-                  <div
-                    style={{
-                      padding: "12px 16px 16px",
-                      borderTop: "1px solid var(--border-2)",
-                      background: "var(--surface-1)",
-                    }}
-                  >
-                    <TrendChart
-                      data={trendData[repo.repo_url] || []}
-                      days={trendDays[repo.repo_url] ?? 30}
-                      onDaysChange={(d) =>
-                        setTrendDays((prev) => ({
-                          ...prev,
-                          [repo.repo_url]: d,
-                        }))
-                      }
-                    />
-                  </div>
-                )}
+                <button
+                  className="btn-icon mon-unsub"
+                  onClick={() => handleUnsubscribe(repo.id)}
+                  title="Stop monitoring"
+                >
+                  <Trash2 size={13} />
+                </button>
               </div>
             );
           })}

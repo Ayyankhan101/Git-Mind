@@ -5,10 +5,10 @@ Memory mode: OrderedDict (fallback).
 DB fallback: SQLAlchemy persist/load for analysis snapshots.
 """
 
+import json
 import re
 from collections import OrderedDict
 
-import orjson
 import structlog
 
 from services.cache import get_redis
@@ -30,7 +30,7 @@ def put_session(session_id: str, data: dict) -> None:
     r = get_redis()
     if r:
         try:
-            r.set(f"session:{session_id}", orjson.dumps(data, default=str), ex=_SESSION_TTL)
+            r.set(f"session:{session_id}", json.dumps(data, default=str), ex=_SESSION_TTL)
             return
         except Exception as exc:
             logger.warning("Redis session set failed, using memory", error=str(exc)[:80])
@@ -94,7 +94,7 @@ async def get_session(session_id: str) -> dict | None:
         try:
             raw = await r.get(f"session:{session_id}")
             if raw:
-                return orjson.loads(raw)
+                return json.loads(raw)
         except Exception as exc:
             logger.warning("Redis session get failed", error=str(exc)[:80])
 

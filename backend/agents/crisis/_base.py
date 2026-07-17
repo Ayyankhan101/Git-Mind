@@ -1,15 +1,16 @@
 import logging
 import time
 
+from langchain_groq import ChatGroq
+
 from llm_cache import invoke_with_retry
-from settings import get_llm
 
 logger = logging.getLogger(__name__)
 
 _MODEL = "llama-3.3-70b-versatile"
 
 _LEAK_TRIGGER_WORDS = ["breach", "leaked", "exposed", "customers affected", "data exposed"]
-_llm = get_llm(temperature_key="crisis")
+_llm = ChatGroq(model=_MODEL, temperature=0.7)
 
 
 def make_crisis_agent(name: str, system_prompt: str, leaks: bool = True):

@@ -29,15 +29,82 @@ function relativeTime(iso) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+const VERDICT_CLASS = {
+  APPROVE: "approve",
+  "REQUEST CHANGES": "changes",
+  "NEEDS DISCUSSION": "discuss",
+};
+
+function parseReview(text) {
+  const sections = { summary: "", issues: [], verdict: "", verdictLine: "" };
+  const lines = text.split("\n");
+  let current = null;
+  for (const line of lines) {
+    if (line.startsWith("## Summary")) {
+      current = "summary";
+      continue;
+    }
+    if (line.startsWith("## Issues")) {
+      current = "issues";
+      continue;
+    }
+    if (line.startsWith("## Verdict")) {
+      current = "verdict";
+      continue;
+    }
+    if (current === "summary")
+      sections.summary += (sections.summary ? "\n" : "") + line;
+    if (current === "issues") {
+      const t = line.trim();
+      if (!t) continue;
+      if (t === "No significant issues found.") {
+        sections.issues = [];
+        current = null;
+        continue;
+      }
+      const m = t.match(
+        /^(.+?):(\d+)\s*[—–-]+\s*\[([A-Z]+)\]\s*(.+?)\s*[—–-]+\s*(.+)$/,
+      );
+      if (m)
+        sections.issues.push({
+          file: m[1],
+          line: m[2],
+          severity: m[3],
+          title: m[4],
+          explanation: m[5],
+        });
+      else sections.issues.push({ raw: t });
+    }
+    if (current === "verdict")
+      sections.verdictLine += (sections.verdictLine ? "\n" : "") + line;
+  }
+  const vMatch = sections.verdictLine.match(
+    /APPROVE|REQUEST CHANGES|NEEDS DISCUSSION/,
+  );
+  sections.verdict = vMatch ? vMatch[0] : "";
+  return sections;
+}
+
 function IssueRow({ issue }) {
-  const sev = (issue.severity || "").toLowerCase();
-  const sevClass = sev;
+  const sev = issue.severity || "";
+  const sevClass = sev.toLowerCase();
+  if (issue.raw) {
+    return (
+      <div className={`row ${sevClass || "low"}`} style={{ cursor: "default" }}>
+        <div className="row-line">
+          <div className="row-main">
+            <span className="row-sub">{issue.raw}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className={`row ${sevClass || "low"}`} style={{ cursor: "default" }}>
       <div className="row-line">
         <span className="row-sev">
           <span className="glyph" />
-          {(issue.severity || "INFO").toUpperCase()}
+          {sev || "INFO"}
         </span>
         <div className="row-main">
           <span className="row-title">{issue.title}</span>
@@ -47,7 +114,7 @@ function IssueRow({ issue }) {
         </div>
         {issue.file && (
           <span className="row-path">
-            {issue.file}:{issue.line || "?"}
+            {issue.file}:{issue.line}
           </span>
         )}
       </div>
@@ -55,31 +122,25 @@ function IssueRow({ issue }) {
   );
 }
 
-const VERDICT_CLASS = {
-  APPROVE: "approve",
-  "REQUEST CHANGES": "changes",
-  "NEEDS DISCUSSION": "discuss",
-};
-
 const RISK_META = {
   low: {
     color: "var(--success)",
-    bg: "color-mix(in srgb, var(--success) 10%, transparent)",
+    bg: "rgba(34,197,94,0.10)",
     label: "Low Risk",
   },
   medium: {
     color: "var(--warning)",
-    bg: "color-mix(in srgb, var(--warning) 10%, transparent)",
+    bg: "rgba(234,179,8,0.10)",
     label: "Medium Risk",
   },
   high: {
     color: "var(--danger)",
-    bg: "color-mix(in srgb, var(--danger) 10%, transparent)",
+    bg: "rgba(239,68,68,0.10)",
     label: "High Risk",
   },
   critical: {
-    color: "var(--critical)",
-    bg: "color-mix(in srgb, var(--critical) 10%, transparent)",
+    color: "#a21caf",
+    bg: "rgba(162,28,175,0.10)",
     label: "Critical",
   },
 };
@@ -346,7 +407,7 @@ function ImpactPanel({ impact, loading, error }) {
               fontSize: 11,
               color: "var(--warning)",
               padding: "6px 10px",
-              background: "color-mix(in srgb, var(--warning) 8%, transparent)",
+              background: "rgba(234,179,8,0.08)",
               borderRadius: 6,
               marginBottom: 10,
             }}
@@ -466,7 +527,7 @@ function ImpactPanel({ impact, loading, error }) {
                 fontSize: 11,
                 color: "var(--danger)",
                 padding: "4px 9px",
-                background: "color-mix(in srgb, var(--danger) 8%, transparent)",
+                background: "rgba(239,68,68,0.08)",
                 borderRadius: 5,
               }}
             >
@@ -484,8 +545,7 @@ function ImpactPanel({ impact, loading, error }) {
                 fontSize: 11,
                 color: "var(--success)",
                 padding: "4px 9px",
-                background:
-                  "color-mix(in srgb, var(--success) 8%, transparent)",
+                background: "rgba(34,197,94,0.08)",
                 borderRadius: 5,
               }}
             >
@@ -502,8 +562,7 @@ function ImpactPanel({ impact, loading, error }) {
                 fontSize: 11,
                 color: "var(--warning)",
                 padding: "4px 9px",
-                background:
-                  "color-mix(in srgb, var(--warning) 8%, transparent)",
+                background: "rgba(234,179,8,0.08)",
                 borderRadius: 5,
               }}
             >
@@ -520,8 +579,7 @@ function ImpactPanel({ impact, loading, error }) {
                 fontSize: 11,
                 color: "var(--success)",
                 padding: "4px 9px",
-                background:
-                  "color-mix(in srgb, var(--success) 8%, transparent)",
+                background: "rgba(34,197,94,0.08)",
                 borderRadius: 5,
               }}
             >
@@ -578,8 +636,8 @@ function ImpactPanel({ impact, loading, error }) {
                           borderRadius: 4,
                           background:
                             v > 0
-                              ? "color-mix(in srgb, var(--success) 10%, transparent)"
-                              : "color-mix(in srgb, var(--danger) 10%, transparent)",
+                              ? "rgba(34,197,94,0.1)"
+                              : "rgba(239,68,68,0.1)",
                           color: v > 0 ? "var(--success)" : "var(--danger)",
                         }}
                       >
@@ -623,7 +681,7 @@ export default function PRReviewTab({
     const repo = m[2].replace(/\.git$/, "");
     setOpenPRs([]);
     setPrsLoading(true);
-    fetchOpenPRs(owner, repo)
+    fetchOpenPRs(owner, repo, token || null)
       .then((data) => setOpenPRs(data.prs || []))
       .catch(() => setOpenPRs([]))
       .finally(() => setPrsLoading(false));
@@ -639,20 +697,20 @@ export default function PRReviewTab({
       setImpactError(null);
 
       setLoading(true);
-      reviewPR(url)
+      reviewPR(url, token || undefined)
         .then((data) => setResult(data))
         .catch((err) => setError(err.message))
         .finally(() => setLoading(false));
 
       if (analyzed && sessionId) {
         setImpactLoading(true);
-        prImpact(url, sessionId)
+        prImpact(url, sessionId, token || null)
           .then((data) => setImpact(data))
           .catch((err) => setImpactError(err.message))
           .finally(() => setImpactLoading(false));
       }
     },
-    [analyzed, sessionId],
+    [token, analyzed, sessionId],
   ); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-fill + trigger review when a PR URL is pasted anywhere in the app
@@ -686,7 +744,7 @@ export default function PRReviewTab({
     setImpact(null);
     setImpactLoading(true);
     try {
-      const data = await prImpact(url, sessionId);
+      const data = await prImpact(url, sessionId, token || null);
       setImpact(data);
     } catch (err) {
       setImpactError(err.message);
@@ -695,7 +753,7 @@ export default function PRReviewTab({
     }
   };
 
-  const parsed = result?.review_data || null;
+  const parsed = result?.review ? parseReview(result.review) : null;
   const verdictClass = parsed?.verdict ? VERDICT_CLASS[parsed.verdict] : "";
 
   return (
@@ -1033,11 +1091,15 @@ export default function PRReviewTab({
                     )}
                     {parsed.verdict}
                   </div>
-                  {parsed.verdict_justification && (
-                    <div className="verdict-just">
-                      {parsed.verdict_justification}
-                    </div>
-                  )}
+                  {parsed.verdictLine &&
+                    parsed.verdictLine !== parsed.verdict && (
+                      <div className="verdict-just">
+                        {parsed.verdictLine
+                          .replace(parsed.verdict, "")
+                          .replace(/[—–:]/g, "")
+                          .trim()}
+                      </div>
+                    )}
                 </div>
               )}
             </div>

@@ -4,9 +4,10 @@ from collections import Counter
 from pathlib import Path
 
 import tiktoken
+from langchain_groq import ChatGroq
 
+from agents.graph_builder import build_architecture_graph
 from llm_cache import get_cached, invoke_with_retry, set_cached
-from settings import get_llm
 
 logger = logging.getLogger(__name__)
 
@@ -116,10 +117,20 @@ def run_architecture_agent(file_tree: list[str], file_contents: dict[str, str]) 
     return result
 
 
+def run_with_graph(file_tree: list[str], file_contents: dict[str, str]) -> dict:
+    """Run the architecture agent and return both the Mermaid diagram + rich JSON graph."""
+    mermaid = run_architecture_agent(file_tree, file_contents)
+    graph = build_architecture_graph(file_tree, file_contents)
+    return {
+        "architecture_diagram": mermaid,
+        "architecture_graph": graph,
+    }
+
+
 # ── Private helpers ────────────────────────────────────────────────────────────
 
 _ENC = tiktoken.get_encoding("cl100k_base")  # load once at import time
-_LLM = get_llm(temperature_key="analysis")
+_LLM = ChatGroq(model=_MODEL, temperature=0)
 
 
 def _build_prompt(file_tree: list[str], file_contents: dict[str, str], primary_lang: str = "Unknown") -> str:

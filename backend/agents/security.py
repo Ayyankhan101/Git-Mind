@@ -1,21 +1,20 @@
-import asyncio
+import json
 import logging
 import shutil
 import subprocess
 import uuid
 from pathlib import Path
 
-import orjson
-
-from llm_cache import get_cached, invoke_json_with_retry, set_cached  # noqa: E402
-from settings import get_llm  # noqa: E402
-
 _SEMGREP = shutil.which("semgrep") or "semgrep"  # fallback for type narrowing
+
+from langchain_groq import ChatGroq  # noqa: E402
+
+from llm_cache import get_cached, invoke_with_retry, set_cached  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
 _MODEL = "llama-3.3-70b-versatile"
-_LLM = get_llm(temperature_key="security", json_mode=True)
+_LLM = ChatGroq(model=_MODEL, temperature=0.1).bind(response_format={"type": "json_object"})
 _CACHE_NAMESPACE = "llama-3.3-70b-versatile:security:json"
 _MAX_FINDINGS = 40
 _MAX_MSG_CHARS = 300
@@ -43,7 +42,7 @@ Do NOT include any explanation outside the JSON object.\
 """
 
 
-async def run_security_agent(local_path: str) -> list[dict]:
+def run_security_agent(local_path: str) -> list[dict]:
     if not _SEMGREP:
         logger.warning("semgrep not found in PATH — returning synthetic finding")
         return _synthetic_finding()
@@ -52,7 +51,7 @@ async def run_security_agent(local_path: str) -> list[dict]:
         logger.warning("security agent called with empty local_path")
         return _synthetic_finding()
 
-    raw_results = await asyncio.to_thread(_run_semgrep, local_path)
+    raw_results = _run_semgrep(local_path)
     if not raw_results:
         logger.info("semgrep returned zero findings — repo is clean")
         return []
@@ -93,14 +92,14 @@ def _run_semgrep(local_path: str) -> list[dict]:
                 proc.stderr[:300],
             )
             return []
-        data = orjson.loads(proc.stdout or b'{"results":[]}')
+        data = json.loads(proc.stdout or '{"results":[]}')
         results = data.get("results", [])
         logger.info("semgrep returned %d raw findings", len(results))
         return results
     except subprocess.TimeoutExpired:
         logger.warning("semgrep timed out after 90 s")
         return []
-    except (orjson.JSONDecodeError, OSError) as exc:
+    except (json.JSONDecodeError, OSError) as exc:
         logger.error("semgrep execution error: %s", exc)
         return []
 
@@ -118,18 +117,18 @@ def _triage_with_llm(raw_results: list[dict]) -> list[dict]:
         for r in raw_results[:_MAX_FINDINGS]
     ]
 
-    prompt = f"{_TRIAGE_PROMPT}\n\nFindings:\n{orjson.dumps(truncated).decode()}"
+    prompt = f"{_TRIAGE_PROMPT}\n\nFindings:\n{json.dumps(truncated, indent=2)}"
     cached = get_cached(_CACHE_NAMESPACE, prompt)
 
     if cached:
         logger.debug("Security agent: cache hit")
-        findings = orjson.loads(cached).get("findings", [])
+        findings = json.loads(cached).get("findings", [])
     else:
         try:
-            parsed = invoke_json_with_retry(_LLM, prompt)
-            findings = parsed.get("findings", [])
-            set_cached(_CACHE_NAMESPACE, prompt, orjson.dumps(parsed).decode())
-        except Exception as exc:
+            raw = invoke_with_retry(_LLM, prompt).content
+            findings = json.loads(raw).get("findings", [])
+            set_cached(_CACHE_NAMESPACE, prompt, raw)
+        except (json.JSONDecodeError, Exception) as exc:
             logger.error(
                 "Security triage LLM failed: %s — dropping %d semgrep findings, using demo fallback",
                 exc,

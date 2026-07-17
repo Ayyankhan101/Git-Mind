@@ -1,6 +1,6 @@
 import asyncio
+import json
 
-import orjson
 import structlog
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
@@ -29,7 +29,7 @@ async def chat_endpoint(req: ChatRequest, request: Request):
     if not session.get("chroma_collection_name"):
         return {"error": "Knowledge base not ready — RAG setup may have failed."}
 
-    answer, sources = await asyncio.to_thread(
+    answer = await asyncio.to_thread(
         run_chat_agent,
         question=req.question,
         collection_name=session["chroma_collection_name"],
@@ -45,7 +45,7 @@ async def chat_endpoint(req: ChatRequest, request: Request):
     )
     session["chat_history"] = session["chat_history"][-50:]
 
-    return {"answer": answer, "sources": sources}
+    return {"answer": answer}
 
 
 @router.post("/chat/stream")
@@ -55,7 +55,7 @@ async def chat_stream_endpoint(req: ChatRequest, request: Request):
     if not _UUID_RE.match(req.session_id):
 
         async def _bad():
-            yield f"data: {orjson.dumps({'error': 'Invalid session ID'}).decode()}\n\n"
+            yield f"data: {json.dumps({'error': 'Invalid session ID'})}\n\n"
 
         return StreamingResponse(_bad(), media_type="text/event-stream")
 
@@ -67,26 +67,21 @@ async def chat_stream_endpoint(req: ChatRequest, request: Request):
 
     async def generate():
         if not session:
-            yield f"data: {orjson.dumps({'error': 'Session not found. Run /ws/analyze first.'}).decode()}\n\n"
+            yield f"data: {json.dumps({'error': 'Session not found. Run /ws/analyze first.'})}\n\n"
             return
         if not session.get("chroma_collection_name"):
-            msg = "Knowledge base not ready — RAG setup may have failed."
-            yield f"data: {orjson.dumps({'error': msg}).decode()}\n\n"
+            yield f"data: {json.dumps({'error': 'Knowledge base not ready — RAG setup may have failed.'})}\n\n"
             return
 
         full_answer = ""
-        sources = []
-        async for token, token_sources in run_chat_agent_stream(
+        async for token in run_chat_agent_stream(
             question=req.question,
             collection_name=session["chroma_collection_name"],
             chat_history=session["chat_history"],
             repo_name=session["repo_name"],
         ):
-            if token is not None:
-                full_answer += token
-                yield f"data: {orjson.dumps({'token': token}).decode()}\n\n"
-            if token_sources is not None:
-                sources = token_sources
+            full_answer += token
+            yield f"data: {json.dumps({'token': token})}\n\n"
 
         session["chat_history"].extend(
             [
@@ -95,7 +90,7 @@ async def chat_stream_endpoint(req: ChatRequest, request: Request):
             ]
         )
         session["chat_history"] = session["chat_history"][-50:]
-        yield f"data: {orjson.dumps({'done': True, 'sources': sources}).decode()}\n\n"
+        yield f"data: {json.dumps({'done': True})}\n\n"
 
     return StreamingResponse(
         generate(),

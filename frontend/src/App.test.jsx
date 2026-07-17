@@ -1,30 +1,19 @@
-import {
-  vi,
-  describe,
-  it,
-  test,
-  expect,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-} from "vitest";
 import { render, screen } from "@testing-library/react";
 import App from "./App";
 
-vi.mock("./api", () => ({
-  fetchRepos: vi.fn(),
-  loadSharedAnalysis: vi.fn().mockRejectedValue(new Error("no share")),
-  generateFix: vi.fn(),
+jest.mock("./api", () => ({
+  fetchRepos: jest.fn(),
+  loadSharedAnalysis: jest.fn().mockRejectedValue(new Error("no share")),
+  generateFix: jest.fn(),
   WS_BASE: "ws://localhost:8002",
   BASE: "http://localhost:8002",
-  isValidGhToken: vi.fn().mockReturnValue(true),
+  isValidGhToken: jest.fn().mockReturnValue(true),
 }));
 
 // mermaid is ESM-only and breaks Jest; mock it before the import chain pulls it in
-vi.mock("mermaid", () => ({
-  run: vi.fn(),
-  initialize: vi.fn(),
+jest.mock("mermaid", () => ({
+  run: jest.fn(),
+  initialize: jest.fn(),
   mermaidAPI: { getConfig: () => ({}) },
 }));
 

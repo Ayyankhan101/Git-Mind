@@ -143,9 +143,7 @@ function ContractList({ contracts }) {
                         ({v.visibility})
                       </span>
                       {v.is_constant && (
-                        <span style={{ color: "var(--warning)" }}>
-                          constant
-                        </span>
+                        <span style={{ color: "#f59e0b" }}>constant</span>
                       )}
                     </div>
                   ))}

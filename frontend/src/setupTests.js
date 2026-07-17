@@ -1,19 +1,6 @@
 import "@testing-library/jest-dom";
-import { vi } from "vitest";
-
-// Mock pdfmake (uses Node.js built-ins not available in jsdom)
-vi.mock("pdfmake/build/pdfmake", () => ({
-  default: {
-    vfs: {},
-    createPdf: vi.fn(() => ({ download: vi.fn() })),
-  },
-}));
-vi.mock("pdfmake/build/vfs_fonts", () => ({
-  default: { pdfMake: { vfs: {} } },
-}));
 
 // Mock crypto.randomUUID used in App.js for session IDs
-/* global globalThis */
 if (!globalThis.crypto?.randomUUID) {
   Object.defineProperty(globalThis, "crypto", {
     value: { randomUUID: () => "00000000-0000-0000-0000-000000000001" },
@@ -25,14 +12,14 @@ if (!globalThis.crypto?.randomUUID) {
 const store = {};
 Object.defineProperty(window, "sessionStorage", {
   value: {
-    getItem: vi.fn((key) => store[key] ?? null),
-    setItem: vi.fn((key, val) => {
+    getItem: jest.fn((key) => store[key] ?? null),
+    setItem: jest.fn((key, val) => {
       store[key] = String(val);
     }),
-    removeItem: vi.fn((key) => {
+    removeItem: jest.fn((key) => {
       delete store[key];
     }),
-    clear: vi.fn(() => {
+    clear: jest.fn(() => {
       Object.keys(store).forEach((k) => delete store[k]);
     }),
   },
@@ -42,14 +29,14 @@ Object.defineProperty(window, "sessionStorage", {
 // Mock localStorage
 Object.defineProperty(window, "localStorage", {
   value: {
-    getItem: vi.fn((key) => store[key] ?? null),
-    setItem: vi.fn((key, val) => {
+    getItem: jest.fn((key) => store[key] ?? null),
+    setItem: jest.fn((key, val) => {
       store[key] = String(val);
     }),
-    removeItem: vi.fn((key) => {
+    removeItem: jest.fn((key) => {
       delete store[key];
     }),
-    clear: vi.fn(() => {
+    clear: jest.fn(() => {
       Object.keys(store).forEach((k) => delete store[k]);
     }),
   },
@@ -62,7 +49,22 @@ Object.defineProperty(navigator, "userAgentData", {
   writable: true,
 });
 
-// AbortSignal.timeout polyfill for jsdom
+// Mock window.matchMedia - use plain function (jest.fn mockImplementation seems unreliable here)
+window.matchMedia = function (query) {
+  return {
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: function () {},
+    removeListener: function () {},
+    addEventListener: function () {},
+    removeEventListener: function () {},
+    dispatchEvent: function () {},
+  };
+};
+global.matchMedia = window.matchMedia;
+
+// CRA's jsdom doesn't have AbortSignal.timeout
 if (!AbortSignal.timeout) {
   AbortSignal.timeout = (ms) => {
     const ctrl = new AbortController();
@@ -71,95 +73,38 @@ if (!AbortSignal.timeout) {
   };
 }
 
-// Mock window.matchMedia for GSAP ScrollTrigger
-if (!window.matchMedia) {
-  window.matchMedia = (query) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  });
+// ResizeObserver polyfill
+class ResizeObserverMock {
+  constructor(callback) {
+    this._callback = callback;
+  }
+  observe() {}
+  unobserve() {}
+  disconnect() {}
 }
+if (!global.ResizeObserver) global.ResizeObserver = ResizeObserverMock;
 
-// Mock ResizeObserver for Lenis smooth scroll
-if (!window.ResizeObserver) {
-  window.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  };
-}
-
-// Mock IntersectionObserver for active nav indicator
-if (!window.IntersectionObserver) {
-  window.IntersectionObserver = class {
-    constructor() {}
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  };
-}
-
-// Mock scrollIntoView for refs (used by ChatTab, NodePanel, DiagramTab)
+// scrollIntoView polyfill
 if (!Element.prototype.scrollIntoView) {
-  Element.prototype.scrollIntoView = vi.fn();
+  Element.prototype.scrollIntoView = jest.fn();
 }
 
-// Mock document.elementFromPoint (used by DiagramTab click handler)
-if (!document.elementFromPoint) {
-  document.elementFromPoint = vi.fn(() => null);
+// IntersectionObserver polyfill
+class IntersectionObserverMock {
+  constructor(callback) {
+    this._callback = callback;
+  }
+  observe() {}
+  unobserve() {}
+  disconnect() {}
 }
+if (!global.IntersectionObserver)
+  global.IntersectionObserver = IntersectionObserverMock;
 
-// Mock fullscreen API (used by DiagramTab)
-if (!Element.prototype.requestFullscreen) {
-  Element.prototype.requestFullscreen = vi.fn();
-}
-if (!document.exitFullscreen) {
-  document.exitFullscreen = vi.fn();
-}
+// TextEncoder/TextDecoder polyfill for pdfmake
+const { TextEncoder, TextDecoder } = require("util");
+if (!global.TextEncoder) global.TextEncoder = TextEncoder;
+if (!global.TextDecoder) global.TextDecoder = TextDecoder;
 
-// Mock GSAP (used by LandingPage animations)
-vi.mock("gsap", () => ({
-  gsap: {
-    context: vi.fn(() => ({ revert: vi.fn() })),
-    registerPlugin: vi.fn(),
-    timeline: vi.fn(() => ({
-      from: vi.fn().mockReturnThis(),
-      to: vi.fn().mockReturnThis(),
-    })),
-    ticker: {
-      add: vi.fn(),
-      remove: vi.fn(),
-      lagSmoothing: vi.fn(),
-    },
-  },
-  ScrollTrigger: {
-    update: vi.fn(),
-    getAll: vi.fn(() => []),
-    register: vi.fn(),
-  },
-}));
-
-// Mock gsap/ScrollTrigger (used by LandingPage)
-vi.mock("gsap/ScrollTrigger", () => ({
-  ScrollTrigger: {
-    update: vi.fn(),
-    getAll: vi.fn(() => []),
-    register: vi.fn(),
-  },
-}));
-
-// Mock Lenis smooth scroll (used by LandingPage)
-vi.mock("lenis", () => {
-  return {
-    default: vi.fn().mockImplementation(function () {
-      this.on = vi.fn();
-      this.destroy = vi.fn();
-      this.raf = vi.fn();
-    }),
-  };
-});
+// GSAP and Lenis mocks are in __mocks__/ directories
+// (jest.mock() in setup files doesn't auto-hoist)

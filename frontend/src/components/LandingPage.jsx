@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ArrowRight,
   Zap,
@@ -102,9 +102,8 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
   const [activeSection, setActiveSection] = useState("");
 
   useEffect(() => {
-    reducedMotion.current = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
+    reducedMotion.current =
+      window.matchMedia("(prefers-reduced-motion: reduce)")?.matches ?? false;
   }, []);
 
   /* Lenis smooth scroll + GSAP ticker sync */

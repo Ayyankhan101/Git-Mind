@@ -5,21 +5,19 @@ import {
   AlertTriangle,
   Copy,
   Check as CheckIcon,
-  Download,
 } from "lucide-react";
 import { WS_BASE, fetchIncidentReport } from "../api";
-import { buildIncidentPdf, downloadPdf } from "../pdfBuilder";
 
 const ROLE_COLOR = {
-  CEO: "var(--warning)",
-  Legal: "var(--info)",
-  Engineering: "var(--success)",
-  Reporter: "var(--danger)",
+  CEO: "#fbbf24",
+  Legal: "#818cf8",
+  Engineering: "#34d399",
+  Reporter: "#f87171",
 };
 const WS_URL = `${WS_BASE}/ws/crisis`;
 const REPORTER_INTERVAL = 45;
 
-export default function CrisisChat({ finding, sessionId, repoName, onClose }) {
+export default function CrisisChat({ finding, sessionId, onClose }) {
   const [messages, setMessages] = useState([]);
   const [countdown, setCountdown] = useState(REPORTER_INTERVAL);
   const [resolved, setResolved] = useState(false);
@@ -86,7 +84,7 @@ export default function CrisisChat({ finding, sessionId, repoName, onClose }) {
           ...prev,
           {
             role: data.agent,
-            color: ROLE_COLOR[data.agent] || "var(--text-3)",
+            color: ROLE_COLOR[data.agent] || "#94a3b8",
             text: data.content,
           },
         ]);
@@ -174,7 +172,6 @@ export default function CrisisChat({ finding, sessionId, repoName, onClose }) {
             className="btn-icon"
             style={{ position: "absolute", top: 16, right: 16 }}
             onClick={onClose}
-            aria-label="Close crisis chat"
           >
             <X size={14} strokeWidth={1.5} />
           </button>
@@ -224,11 +221,11 @@ export default function CrisisChat({ finding, sessionId, repoName, onClose }) {
             <div
               style={{
                 padding: "12px 14px",
-                background: "var(--danger-bg)",
-                border: "1px solid var(--danger-bg-strong)",
+                background: "rgba(239,68,68,0.08)",
+                border: "1px solid rgba(239,68,68,0.2)",
                 borderRadius: 6,
                 fontSize: 12,
-                color: "var(--danger)",
+                color: "#fca5a5",
               }}
             >
               {error}
@@ -263,8 +260,8 @@ export default function CrisisChat({ finding, sessionId, repoName, onClose }) {
             <div
               style={{
                 padding: "16px",
-                background: "var(--success-bg)",
-                border: "1px solid var(--success-bg-strong)",
+                background: "rgba(34,197,94,0.08)",
+                border: "1px solid rgba(34,197,94,0.2)",
                 borderRadius: 6,
                 textAlign: "center",
               }}
@@ -289,8 +286,8 @@ export default function CrisisChat({ finding, sessionId, repoName, onClose }) {
             <div
               style={{
                 padding: "16px",
-                background: "var(--danger-bg)",
-                border: "1px solid var(--danger-bg-strong)",
+                background: "rgba(239,68,68,0.08)",
+                border: "1px solid rgba(239,68,68,0.2)",
                 borderRadius: 6,
                 textAlign: "center",
               }}
@@ -334,36 +331,6 @@ export default function CrisisChat({ finding, sessionId, repoName, onClose }) {
               >
                 <FileText size={11} strokeWidth={1.5} />
                 INCIDENT REPORT
-                <button
-                  onClick={() => {
-                    const docDef = buildIncidentPdf({
-                      report,
-                      finding,
-                      outcome: resolved ? "resolved" : "leaked",
-                      repoName,
-                    });
-                    downloadPdf(
-                      docDef,
-                      `incident-${repoName || "report"}-${Date.now()}.pdf`,
-                    );
-                  }}
-                  style={{
-                    marginLeft: "auto",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "var(--text-3)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 4,
-                    fontSize: 11,
-                    padding: "2px 6px",
-                    borderRadius: 4,
-                  }}
-                >
-                  <Download size={10} strokeWidth={1.5} />
-                  PDF
-                </button>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(report).then(() => {
@@ -413,10 +380,10 @@ export default function CrisisChat({ finding, sessionId, repoName, onClose }) {
               style={{
                 marginTop: 8,
                 padding: "8px 12px",
-                background: "var(--danger-bg)",
+                background: "rgba(239,68,68,0.08)",
                 borderRadius: 6,
                 fontSize: 12,
-                color: "var(--danger)",
+                color: "#fca5a5",
                 display: "flex",
                 alignItems: "center",
                 gap: 6,

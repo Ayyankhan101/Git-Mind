@@ -1,6 +1,14 @@
 import React, { useState, useMemo } from "react";
 import { Code, ExternalLink, Wrench } from "lucide-react";
-import { LANG_COLOR } from "../constants";
+
+const LANG_COLORS = {
+  python: "#3572A5",
+  javascript: "#f1e05a",
+  typescript: "#3178c6",
+  go: "#00ADD8",
+  rust: "#dea584",
+  java: "#b07219",
+};
 
 function FindingRow({ finding, onFix, fixLoading, fixResult }) {
   const [expanded, setExpanded] = useState(false);
@@ -35,7 +43,7 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
                   fontSize: 11,
                   fontWeight: 600,
                   color: "var(--text-3)",
-                  background: "var(--surface-2)",
+                  background: "rgba(255,255,255,0.05)",
                   border: "1px solid var(--border)",
                   borderRadius: 4,
                   padding: "1px 7px",
@@ -60,10 +68,8 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
                 marginTop: 8,
                 padding: "8px 12px",
                 borderRadius: 6,
-                background:
-                  "color-mix(in srgb, var(--success) 8%, transparent)",
-                border:
-                  "1px solid color-mix(in srgb, var(--success) 20%, transparent)",
+                background: "rgba(34,197,94,0.08)",
+                border: "1px solid rgba(34,197,94,0.2)",
                 fontSize: 12,
                 lineHeight: 1.5,
                 color: "var(--success)",
@@ -128,7 +134,7 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
 function LangSection({ langResult, onFix, fixLoading, fixResult }) {
   const { language, tool, findings, file_count } = langResult;
   const [langExpanded, setLangExpanded] = useState(true);
-  const color = LANG_COLOR[language] || "var(--text-3)";
+  const color = LANG_COLORS[language] || "#888";
 
   return (
     <div style={{ marginBottom: 16 }}>

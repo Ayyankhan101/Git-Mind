@@ -1,6 +1,5 @@
+import json
 from unittest.mock import MagicMock, patch
-
-import orjson
 
 
 class TestHealthAgent:
@@ -23,7 +22,7 @@ class TestArchitectureAgent:
     def test_api_doc_returns_diagram(self, mock_cache, mock_invoke):
         from agents.architecture import run_architecture_agent
 
-        mock_invoke.return_value = MagicMock(content=orjson.dumps({"diagram": "graph TD\n    A[test]\n"}).decode())
+        mock_invoke.return_value = MagicMock(content=json.dumps({"diagram": "graph TD\n    A[test]\n"}))
 
         result = run_architecture_agent(["src/main.py"], {"src/main.py": "print('hello')"})
         assert isinstance(result, str)
@@ -32,8 +31,8 @@ class TestArchitectureAgent:
 
 class TestSecurityAgent:
     @patch("agents.security.shutil.which", return_value=None)
-    async def test_security_returns_list(self, mock_which):
+    def test_security_returns_list(self, mock_which):
         from agents.security import run_security_agent
 
-        result = await run_security_agent("/tmp/repo")
+        result = run_security_agent("/tmp/repo")
         assert isinstance(result, list)

@@ -1,14 +1,3 @@
-import {
-  vi,
-  describe,
-  it,
-  test,
-  expect,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-} from "vitest";
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import CodeAuditTab from "./CodeAuditTab";
@@ -60,7 +49,7 @@ test("shows clean state when no findings", () => {
 });
 
 test("calls onFix when Generate Fix clicked", () => {
-  const onFix = vi.fn();
+  const onFix = jest.fn();
   render(
     <CodeAuditTab
       codeAudit={SAMPLE_AUDIT}

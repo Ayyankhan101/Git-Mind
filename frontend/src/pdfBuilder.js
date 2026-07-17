@@ -9,6 +9,7 @@ pdfMake.vfs = pdfFonts;
 const _pdfCache = new Map();
 const PDF_CACHE_MAX = 20;
 
+// eslint-disable-next-line no-unused-vars
 function _cacheKey(sessionId, type) {
   return `${sessionId || ""}:${type}`;
 }
@@ -338,6 +339,7 @@ function highlightCode(code, lang) {
   return result;
 }
 
+// eslint-disable-next-line no-unused-vars
 function codeBlockWithHighlight(code, lang) {
   const highlighted = highlightCode(code, lang);
   if (!highlighted.length) return { text: code || "", style: "code" };

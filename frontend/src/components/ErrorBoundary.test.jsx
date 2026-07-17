@@ -1,14 +1,3 @@
-import {
-  vi,
-  describe,
-  it,
-  test,
-  expect,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-} from "vitest";
 import { render, screen } from "@testing-library/react";
 import ErrorBoundary from "../components/ErrorBoundary";
 
@@ -28,7 +17,7 @@ const Buggy = () => {
 };
 
 test("catches error and shows fallback", () => {
-  vi.spyOn(console, "error").mockImplementation(() => {});
+  jest.spyOn(console, "error").mockImplementation(() => {});
   render(
     <ErrorBoundary>
       <Buggy />

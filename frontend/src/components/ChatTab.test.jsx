@@ -1,12 +1,11 @@
-import { vi, describe, it, expect, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import ChatTab from "./ChatTab";
 
-vi.mock("../api", () => ({
-  postChatStream: vi.fn(),
+jest.mock("../api", () => ({
+  postChatStream: jest.fn(),
 }));
 
-const { postChatStream } = await import("../api");
+const { postChatStream } = require("../api");
 
 const defaultProps = {
   sessionId: "sess-1",
@@ -15,7 +14,7 @@ const defaultProps = {
 };
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  jest.clearAllMocks();
 });
 
 describe("ChatTab disabled state", () => {
@@ -115,7 +114,7 @@ describe("ChatTab streaming", () => {
     fireEvent.change(textarea, { target: { value: "Hi" } });
     fireEvent.keyDown(textarea, { key: "Enter" });
     // After postChatStream resolves, the message should be rendered
-    const { waitFor } = await import("@testing-library/react");
+    const { waitFor } = require("@testing-library/react");
     await waitFor(() => {
       expect(screen.getByText("Hello world")).toBeInTheDocument();
     });
@@ -127,7 +126,7 @@ describe("ChatTab streaming", () => {
     const textarea = screen.getByPlaceholderText(/Ask anything.*Enter to send/);
     fireEvent.change(textarea, { target: { value: "error test" } });
     fireEvent.keyDown(textarea, { key: "Enter" });
-    const { waitFor } = await import("@testing-library/react");
+    const { waitFor } = require("@testing-library/react");
     await waitFor(() => {
       expect(screen.getByText("Error: Connection failed")).toBeInTheDocument();
     });

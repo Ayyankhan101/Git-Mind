@@ -1,18 +1,18 @@
+import json
 import logging
 import os
 import uuid
 
 import httpx
-import orjson
+from langchain_groq import ChatGroq
 
-from llm_cache import get_cached, invoke_json_with_retry, set_cached
-from settings import get_llm
+from llm_cache import get_cached, invoke_with_retry, set_cached
 
 logger = logging.getLogger(__name__)
 
 _SIDECAR_BASE = os.getenv("SIDECAR_URL", "http://127.0.0.1:8003")
 _MODEL = "llama-3.3-70b-versatile"
-_LLM = get_llm(temperature_key="security", json_mode=True)
+_LLM = ChatGroq(model=_MODEL, temperature=0.1).bind(response_format={"type": "json_object"})
 _CACHE_NS = "llama-3.3-70b-versatile:solidity:json"
 _MAX_FINDINGS = 40
 
@@ -80,18 +80,18 @@ def solidity_agent(state: dict) -> dict:
 
 
 def _triage_with_llm(contracts: list) -> list:
-    prompt = f"{_TRIAGE_PROMPT}\n\nContracts:\n{orjson.dumps(contracts).decode()}"
+    prompt = f"{_TRIAGE_PROMPT}\n\nContracts:\n{json.dumps(contracts, indent=2)}"
     cached = get_cached(_CACHE_NS, prompt)
 
     if cached:
         logger.debug("Solidity agent: cache hit")
-        findings = orjson.loads(cached).get("findings", [])
+        findings = json.loads(cached).get("findings", [])
     else:
         try:
-            parsed = invoke_json_with_retry(_LLM, prompt)
-            findings = parsed.get("findings", [])
-            set_cached(_CACHE_NS, prompt, orjson.dumps(parsed).decode())
-        except Exception as exc:
+            raw = invoke_with_retry(_LLM, prompt).content
+            findings = json.loads(raw).get("findings", [])
+            set_cached(_CACHE_NS, prompt, raw)
+        except (json.JSONDecodeError, Exception) as exc:
             logger.error("Solidity triage LLM failed: %s", exc)
             return _fallback_finding()["findings"]
 

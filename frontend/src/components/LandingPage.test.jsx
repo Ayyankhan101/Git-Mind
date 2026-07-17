@@ -1,29 +1,28 @@
-import { vi, describe, it, expect, beforeEach } from "vitest";
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import LandingPage from "./LandingPage";
 
 describe("LandingPage", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it("renders navigation links", () => {
-    render(<LandingPage onLoad={vi.fn()} onAnalyzeUrl={vi.fn()} />);
+    render(<LandingPage onLoad={jest.fn()} onAnalyzeUrl={jest.fn()} />);
     expect(screen.getByText("Features")).toBeInTheDocument();
     expect(screen.getByText("Capabilities")).toBeInTheDocument();
   });
 
   it("renders the input field for GitHub URL or username", () => {
-    render(<LandingPage onLoad={vi.fn()} onAnalyzeUrl={vi.fn()} />);
+    render(<LandingPage onLoad={jest.fn()} onAnalyzeUrl={jest.fn()} />);
     expect(
       screen.getByPlaceholderText("Paste a GitHub URL or enter a username"),
     ).toBeInTheDocument();
   });
 
   it("calls onLoad with username when plain text is submitted", () => {
-    const onLoad = vi.fn();
-    render(<LandingPage onLoad={onLoad} onAnalyzeUrl={vi.fn()} />);
+    const onLoad = jest.fn();
+    render(<LandingPage onLoad={onLoad} onAnalyzeUrl={jest.fn()} />);
     const input = screen.getByPlaceholderText(
       "Paste a GitHub URL or enter a username",
     );
@@ -33,8 +32,8 @@ describe("LandingPage", () => {
   });
 
   it("calls onAnalyzeUrl when GitHub URL is submitted", () => {
-    const onAnalyzeUrl = vi.fn();
-    render(<LandingPage onLoad={vi.fn()} onAnalyzeUrl={onAnalyzeUrl} />);
+    const onAnalyzeUrl = jest.fn();
+    render(<LandingPage onLoad={jest.fn()} onAnalyzeUrl={onAnalyzeUrl} />);
     const input = screen.getByPlaceholderText(
       "Paste a GitHub URL or enter a username",
     );
@@ -48,8 +47,8 @@ describe("LandingPage", () => {
   });
 
   it("calls onLoad when Get Started button is clicked", () => {
-    const onLoad = vi.fn();
-    render(<LandingPage onLoad={onLoad} onAnalyzeUrl={vi.fn()} />);
+    const onLoad = jest.fn();
+    render(<LandingPage onLoad={onLoad} onAnalyzeUrl={jest.fn()} />);
     // Find the button with aria-label containing "Get Started" or the hero CTA
     const buttons = screen.getAllByRole("button");
     const getStartedBtn = buttons.find(
@@ -64,7 +63,7 @@ describe("LandingPage", () => {
   });
 
   it("renders skip to content link for accessibility", () => {
-    render(<LandingPage onLoad={vi.fn()} onAnalyzeUrl={vi.fn()} />);
+    render(<LandingPage onLoad={jest.fn()} onAnalyzeUrl={jest.fn()} />);
     expect(screen.getByText("Skip to content")).toBeInTheDocument();
   });
 });

@@ -1,14 +1,13 @@
-import { vi, describe, it, expect, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import TrendChart from "./TrendChart";
 
 const baseProps = {
   data: [],
   days: 30,
-  onDaysChange: vi.fn(),
+  onDaysChange: jest.fn(),
 };
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => jest.clearAllMocks());
 
 describe("TrendChart empty states", () => {
   it("shows analyze message when no data", () => {
