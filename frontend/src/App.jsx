@@ -1008,6 +1008,7 @@ export default function App() {
             aria-current={activeTab === key ? "page" : undefined}
           >
             <Icon size={18} strokeWidth={1.5} />
+            <span className="nav-label">{label}</span>
             {count > 0 && (
               <span className={`nav-badge${alert ? " warn" : " info"}`}>
                 {count > 99 ? "99+" : count}
