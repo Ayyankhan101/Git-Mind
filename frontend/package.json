@@ -53,10 +53,6 @@
     ]
   },
   "jest": {
-    "testPathIgnorePatterns": [
-      "src/components/LandingPage\\.test\\.jsx",
-      "src/App\\.test\\.jsx"
-    ],
     "transformIgnorePatterns": [
       "node_modules/(?!(gsap|@gsap|lenis|@xyflow|mermaid|pdfmake|react-markdown|remark-gfm|react-syntax-highlighter|bail|is-plain-obj|trough|vfile|unist-util-stringify|micromark|decode-named-character-reference|character-entities|property-information|comma-separated-tokens|space-separated-tokens|rehype|mdast-util-from-markdown|devlop|dir-glob|strip-ansi|escape-string-regexp|find-up|locate-path|p-locate|path-exists|yocto-queue|react-markdown)/)"
     ],

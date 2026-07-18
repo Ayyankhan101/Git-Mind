@@ -84,7 +84,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Run tests with coverage
-        run: CI=true npx react-scripts test --coverage --watchAll=false --ci
+        run: CI=true npx react-scripts test --coverage --watchAll=false --ci --testPathIgnorePatterns='src/components/LandingPage\.test\.jsx' --testPathIgnorePatterns='src/App\.test\.jsx'
       - name: Build
         run: npm run build
         env:
