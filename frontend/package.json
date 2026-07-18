@@ -89,6 +89,6 @@
     "react-app-rewired": "^2.2.1",
     "serve": "^14.0.0",
     "size-limit": "^11.0.0",
-    "tailwindcss": "^4.3.0"
+    "tailwindcss": "^4.3.3"
   }
 }
