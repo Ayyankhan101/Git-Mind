@@ -3,7 +3,6 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { X, Cpu, Send, MessageSquare } from "lucide-react";
 import { postChatStream } from "../api";
-import MarkdownMessage from "./MarkdownMessage";
 
 const SUGGESTIONS = (node) => [
   `What files implement ${node}?`,
@@ -215,7 +214,9 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
           </span>
         ) : desc ? (
           <>
-            <MarkdownMessage content={desc} />
+            <div className="chat-markdown">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{desc}</ReactMarkdown>
+            </div>
             {!descDone && <span className="chat-cursor" />}
           </>
         ) : !enabled ? (
