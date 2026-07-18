@@ -4,7 +4,12 @@
 //      swap the leading port with 8002 so frontend and backend share host.
 //   3. Default to localhost:8002 for dev.
 function deriveHttpBase() {
+  // 1. CRA build-time env var
   if (process.env.REACT_APP_API_BASE) return process.env.REACT_APP_API_BASE;
+  // 2. Vite runtime injection (index.html sets window.__ENV__)
+  if (typeof window !== "undefined" && window.__ENV__?.API_BASE)
+    return window.__ENV__.API_BASE;
+  // 3. Cloud Shell preview: swap leading port with 8002
   if (typeof window !== "undefined") {
     const { protocol, host, port, hostname } = window.location;
     if (/^\d+-/.test(host))
