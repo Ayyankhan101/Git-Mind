@@ -3,6 +3,372 @@ import pdfFonts from "pdfmake/build/vfs_fonts";
 
 pdfMake.vfs = pdfFonts;
 
+// ── PDF Cache (Phase 3a) ─────────────────────────────────────────────────────
+// Keyed by `${session_id}:${report_type}` → docDefinition.
+// Avoids re-generating identical PDF definitions for repeated downloads.
+const _pdfCache = new Map();
+const PDF_CACHE_MAX = 20;
+
+// eslint-disable-next-line no-unused-vars
+function _cacheKey(sessionId, type) {
+  return `${sessionId || ""}:${type}`;
+}
+
+function cacheDocDef(key, docDef) {
+  if (_pdfCache.size >= PDF_CACHE_MAX) {
+    const first = _pdfCache.keys().next().value;
+    _pdfCache.delete(first);
+  }
+  _pdfCache.set(key, docDef);
+}
+
+function getCachedDocDef(key) {
+  return _pdfCache.get(key) || null;
+}
+
+// ── Syntax Highlighting (Phase 3b) ───────────────────────────────────────────
+const _KW = {
+  python: new Set([
+    "def",
+    "class",
+    "import",
+    "from",
+    "return",
+    "if",
+    "elif",
+    "else",
+    "for",
+    "while",
+    "try",
+    "except",
+    "finally",
+    "with",
+    "as",
+    "yield",
+    "raise",
+    "pass",
+    "break",
+    "continue",
+    "and",
+    "or",
+    "not",
+    "in",
+    "is",
+    "None",
+    "True",
+    "False",
+    "lambda",
+    "async",
+    "await",
+    "global",
+    "nonlocal",
+    "assert",
+    "del",
+    "print",
+  ]),
+  javascript: new Set([
+    "function",
+    "const",
+    "let",
+    "var",
+    "if",
+    "else",
+    "for",
+    "while",
+    "do",
+    "switch",
+    "case",
+    "break",
+    "continue",
+    "return",
+    "try",
+    "catch",
+    "finally",
+    "throw",
+    "new",
+    "delete",
+    "typeof",
+    "instanceof",
+    "in",
+    "of",
+    "class",
+    "extends",
+    "super",
+    "import",
+    "export",
+    "default",
+    "from",
+    "async",
+    "await",
+    "yield",
+    "true",
+    "false",
+    "null",
+    "undefined",
+    "this",
+    "self",
+  ]),
+  typescript: new Set([
+    "function",
+    "const",
+    "let",
+    "var",
+    "if",
+    "else",
+    "for",
+    "while",
+    "do",
+    "switch",
+    "case",
+    "break",
+    "continue",
+    "return",
+    "try",
+    "catch",
+    "finally",
+    "throw",
+    "new",
+    "delete",
+    "typeof",
+    "instanceof",
+    "in",
+    "of",
+    "class",
+    "extends",
+    "super",
+    "import",
+    "export",
+    "default",
+    "from",
+    "async",
+    "await",
+    "yield",
+    "type",
+    "interface",
+    "enum",
+    "namespace",
+    "declare",
+    "public",
+    "private",
+    "protected",
+    "readonly",
+    "abstract",
+    "implements",
+    "true",
+    "false",
+    "null",
+    "undefined",
+    "this",
+    "self",
+    "any",
+    "unknown",
+    "never",
+    "void",
+  ]),
+  go: new Set([
+    "func",
+    "package",
+    "import",
+    "return",
+    "if",
+    "else",
+    "for",
+    "range",
+    "switch",
+    "case",
+    "default",
+    "break",
+    "continue",
+    "go",
+    "select",
+    "chan",
+    "defer",
+    "map",
+    "struct",
+    "interface",
+    "type",
+    "var",
+    "const",
+    "nil",
+    "true",
+    "false",
+    "make",
+    "new",
+    "len",
+    "cap",
+    "append",
+  ]),
+  rust: new Set([
+    "fn",
+    "let",
+    "mut",
+    "const",
+    "struct",
+    "enum",
+    "impl",
+    "trait",
+    "pub",
+    "use",
+    "mod",
+    "crate",
+    "self",
+    "super",
+    "return",
+    "if",
+    "else",
+    "for",
+    "while",
+    "loop",
+    "match",
+    "break",
+    "continue",
+    "move",
+    "ref",
+    "async",
+    "await",
+    "where",
+    "type",
+    "as",
+    "in",
+    "true",
+    "false",
+    "Some",
+    "None",
+    "Ok",
+    "Err",
+    "Self",
+  ]),
+  java: new Set([
+    "public",
+    "private",
+    "protected",
+    "static",
+    "final",
+    "abstract",
+    "class",
+    "interface",
+    "extends",
+    "implements",
+    "new",
+    "return",
+    "if",
+    "else",
+    "for",
+    "while",
+    "do",
+    "switch",
+    "case",
+    "break",
+    "continue",
+    "try",
+    "catch",
+    "finally",
+    "throw",
+    "throws",
+    "void",
+    "int",
+    "long",
+    "double",
+    "float",
+    "boolean",
+    "char",
+    "byte",
+    "short",
+    "String",
+    "null",
+    "true",
+    "false",
+    "this",
+    "super",
+    "import",
+    "package",
+  ]),
+};
+
+const _STR_RE = /(["'`])(?:(?!\1|\\).|\\.)*\1/g;
+const _COMMENT_RE = /(\/\/.*$|#.*$|\/\*[\s\S]*?\*\/)/gm;
+const _NUM_RE = /\b\d+(\.\d+)?\b/g;
+
+function highlightCode(code, lang) {
+  if (!code) return [];
+  const keywords = _KW[lang] || _KW.javascript;
+  const lines = code.split("\n");
+  const result = [];
+
+  for (const line of lines) {
+    const tokens = [];
+    let remaining = line;
+
+    // Extract strings first, replace with placeholders
+    const strings = [];
+    remaining = remaining.replace(_STR_RE, (m) => {
+      const idx = strings.length;
+      strings.push(m);
+      return `\x00S${idx}\x00`;
+    });
+
+    // Extract comments
+    const comments = [];
+    remaining = remaining.replace(_COMMENT_RE, (m) => {
+      const idx = comments.length;
+      comments.push(m);
+      return `\x00C${idx}\x00`;
+    });
+
+    // Tokenize remaining
+    const parts = remaining.split(/(\s+|[{}()[\];,.:])/);
+    for (const part of parts) {
+      if (!part) continue;
+      if (part.startsWith("\x00S")) {
+        const idx = parseInt(part.slice(2, -1));
+        tokens.push({ text: strings[idx], color: "#16a34a" }); // green = string
+      } else if (part.startsWith("\x00C")) {
+        const idx = parseInt(part.slice(2, -1));
+        tokens.push({ text: comments[idx], color: "#6c7086", italics: true }); // gray = comment
+      } else if (keywords.has(part)) {
+        tokens.push({ text: part, color: "#6366f1", bold: true }); // indigo = keyword
+      } else if (_NUM_RE.test(part)) {
+        tokens.push({ text: part, color: "#ea580c" }); // orange = number
+      } else {
+        tokens.push({ text: part });
+      }
+    }
+
+    result.push(tokens);
+  }
+  return result;
+}
+
+// eslint-disable-next-line no-unused-vars
+function codeBlockWithHighlight(code, lang) {
+  const highlighted = highlightCode(code, lang);
+  if (!highlighted.length) return { text: code || "", style: "code" };
+
+  const stack = [];
+  for (let i = 0; i < highlighted.length; i++) {
+    const lineTokens = highlighted[i];
+    const lineText = lineTokens.map((t) => ({
+      text: t.text,
+      color: t.color,
+      bold: t.bold,
+      italics: t.italics,
+    }));
+    stack.push({ text: lineText, margin: [0, 0, 0, 0] });
+    if (i < highlighted.length - 1) {
+      stack.push({ text: "", margin: [0, 2, 0, 0] });
+    }
+  }
+
+  return {
+    stack,
+    margin: [8, 6, 8, 6],
+    background: "#f8f9fa",
+    border: [1, 1, 1, 1],
+    borderColor: "#dee2e6",
+    borderRadius: 2,
+  };
+}
+
 // ── Color palette ──────────────────────────────────────────────────────────────
 const C = {
   primary: "#6366f1",
@@ -709,17 +1075,6 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
     minute: "2-digit",
   });
 
-  // Parse the report into sections (## headings)
-  const sections = report
-    .split(/^## /m)
-    .filter(Boolean)
-    .map((block) => {
-      const lines = block.split("\n");
-      const title = lines[0].replace(/^#+ /, "").trim();
-      const body = lines.slice(1).join("\n").trim();
-      return { title, body };
-    });
-
   const content = [
     // Header
     {
@@ -786,48 +1141,214 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
     },
   ];
 
-  // Render sections
-  for (const section of sections) {
+  // Phase 3c: handle structured JSON report (new) or markdown string (legacy)
+  if (report && typeof report === "object" && report.summary) {
+    // ── Structured JSON report ────────────────────────────────────────────
+    const r = report;
+
+    // Summary
     content.push({
-      text: section.title,
+      text: "Incident Summary",
       fontSize: 14,
       bold: true,
       color: C.primary,
       margin: [0, 12, 0, 6],
     });
+    content.push({
+      text: r.summary,
+      fontSize: 10,
+      color: C.text2,
+      margin: [0, 0, 0, 10],
+    });
 
-    // Split body into lines and render bullet points
-    const lines = section.body.split("\n");
-    const bullets = [];
-    const paragraphs = [];
-
-    for (const line of lines) {
-      if (line.trim().startsWith("- ") || line.trim().startsWith("- [")) {
-        bullets.push(line.trim());
-      } else if (line.trim()) {
-        paragraphs.push(line.trim());
-      }
-    }
-
-    if (paragraphs.length) {
+    // Timeline
+    if (r.timeline?.length) {
       content.push({
-        text: paragraphs.join("\n\n"),
-        fontSize: 10,
-        color: C.text2,
-        margin: [0, 0, 0, 6],
+        text: "Timeline",
+        fontSize: 14,
+        bold: true,
+        color: C.primary,
+        margin: [0, 12, 0, 6],
+      });
+      content.push({
+        table: {
+          widths: [80, "*"],
+          headerRows: 1,
+          body: [
+            [
+              { text: "Time", style: "th" },
+              { text: "Event", style: "th" },
+            ],
+            ...r.timeline.map((t) => [
+              { text: t.label || "", style: "td", bold: true },
+              { text: t.event || "", style: "td" },
+            ]),
+          ],
+        },
+        layout: "lightTable",
+        margin: [0, 4, 0, 10],
       });
     }
 
-    if (bullets.length) {
+    // Impact
+    if (
+      r.impact &&
+      (r.impact.systems_at_risk ||
+        r.impact.exposure_window ||
+        r.impact.affected_users)
+    ) {
       content.push({
-        ul: bullets.map((b) => {
-          const text = b.replace(/^-\s*\[?\]?\s*/, "");
-          return { text, margin: [0, 2, 0, 2] };
-        }),
+        text: "Impact Assessment",
+        fontSize: 14,
+        bold: true,
+        color: C.primary,
+        margin: [0, 12, 0, 6],
+      });
+      const impactRows = [];
+      if (r.impact.systems_at_risk)
+        impactRows.push(["Systems at Risk", r.impact.systems_at_risk]);
+      if (r.impact.exposure_window)
+        impactRows.push(["Exposure Window", r.impact.exposure_window]);
+      if (r.impact.affected_users)
+        impactRows.push(["Affected Users", r.impact.affected_users]);
+      if (impactRows.length) {
+        content.push({
+          table: {
+            widths: [120, "*"],
+            body: impactRows.map(([k, v]) => [
+              { text: k, style: "metaLabel" },
+              { text: v, style: "metaValue" },
+            ]),
+          },
+          layout: "noBorders",
+          margin: [0, 4, 0, 10],
+        });
+      }
+    }
+
+    // Stakeholder Statement
+    if (r.stakeholder_statement) {
+      content.push({
+        text: "Stakeholder Communication",
+        fontSize: 14,
+        bold: true,
+        color: C.primary,
+        margin: [0, 12, 0, 6],
+      });
+      content.push({
+        text: r.stakeholder_statement,
+        fontSize: 10,
+        color: C.text2,
+        italics: true,
+        margin: [0, 0, 0, 10],
+      });
+    }
+
+    // Remediation
+    if (r.remediation) {
+      content.push({
+        text: "Remediation Checklist",
+        fontSize: 14,
+        bold: true,
+        color: C.primary,
+        margin: [0, 12, 0, 6],
+      });
+      for (const [phase, items] of Object.entries(r.remediation)) {
+        if (!items?.length) continue;
+        const label = phase
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase());
+        content.push({
+          text: label,
+          fontSize: 11,
+          bold: true,
+          color: C.text1,
+          margin: [0, 6, 0, 4],
+        });
+        content.push({
+          ul: items.map((item) => ({
+            text: String(item),
+            margin: [0, 2, 0, 2],
+          })),
+          margin: [0, 0, 0, 6],
+          fontSize: 10,
+          color: C.text2,
+        });
+      }
+    }
+
+    // Lessons Learned
+    if (r.lessons_learned?.length) {
+      content.push({
+        text: "Lessons Learned",
+        fontSize: 14,
+        bold: true,
+        color: C.primary,
+        margin: [0, 12, 0, 6],
+      });
+      content.push({
+        ul: r.lessons_learned.map((l) => ({
+          text: String(l),
+          margin: [0, 2, 0, 2],
+        })),
         margin: [0, 0, 0, 8],
         fontSize: 10,
         color: C.text2,
       });
+    }
+  } else {
+    // ── Legacy markdown report ─────────────────────────────────────────────
+    const sections = (typeof report === "string" ? report : "")
+      .split(/^## /m)
+      .filter(Boolean)
+      .map((block) => {
+        const lines = block.split("\n");
+        const title = lines[0].replace(/^#+ /, "").trim();
+        const body = lines.slice(1).join("\n").trim();
+        return { title, body };
+      });
+
+    for (const section of sections) {
+      content.push({
+        text: section.title,
+        fontSize: 14,
+        bold: true,
+        color: C.primary,
+        margin: [0, 12, 0, 6],
+      });
+
+      const lines = section.body.split("\n");
+      const bullets = [];
+      const paragraphs = [];
+
+      for (const line of lines) {
+        if (line.trim().startsWith("- ") || line.trim().startsWith("- [")) {
+          bullets.push(line.trim());
+        } else if (line.trim()) {
+          paragraphs.push(line.trim());
+        }
+      }
+
+      if (paragraphs.length) {
+        content.push({
+          text: paragraphs.join("\n\n"),
+          fontSize: 10,
+          color: C.text2,
+          margin: [0, 0, 0, 6],
+        });
+      }
+
+      if (bullets.length) {
+        content.push({
+          ul: bullets.map((b) => {
+            const text = b.replace(/^-\s*\[?\]?\s*/, "");
+            return { text, margin: [0, 2, 0, 2] };
+          }),
+          margin: [0, 0, 0, 8],
+          fontSize: 10,
+          color: C.text2,
+        });
+      }
     }
   }
 
@@ -1084,6 +1605,16 @@ export function buildSummaryPdf({
 
 // ── Download helper ────────────────────────────────────────────────────────────
 
-export function downloadPdf(docDef, filename) {
+export function downloadPdf(docDef, filename, cacheKey) {
+  // Phase 3a: cache doc definition for instant re-download
+  if (cacheKey) {
+    cacheDocDef(cacheKey, docDef);
+  }
   pdfMake.createPdf(docDef).download(filename || "gitmind-report.pdf");
+}
+
+// ── Retrieve cached PDF (for instant re-render) ────────────────────────────────
+
+export function getCachedPdf(cacheKey) {
+  return getCachedDocDef(cacheKey);
 }

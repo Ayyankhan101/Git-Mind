@@ -250,6 +250,7 @@ function FindingRow({
               </button>
             )}
             {onPR &&
+              canCrisis &&
               !prUrl &&
               (showTokenInput ? (
                 <span
@@ -277,23 +278,12 @@ function FindingRow({
                       width: 210,
                     }}
                   />
-                  {prError && (
-                    <span
-                      style={{
-                        fontSize: 11,
-                        color: "var(--danger)",
-                        width: "100%",
-                      }}
-                    >
-                      {prError}
-                    </span>
-                  )}
                   <button
                     className="btn-text primary"
                     disabled={prLoading}
                     onClick={handleOpenPR}
                   >
-                    {prLoading ? "Creating PR…" : "Confirm"}
+                    {prLoading ? "Opening…" : "Confirm"}
                   </button>
                   <button
                     className="btn-text"

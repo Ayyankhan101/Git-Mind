@@ -1,0 +1,292 @@
+import React from "react";
+import { Handle, Position } from "@xyflow/react";
+import {
+  Shield,
+  Cog,
+  Database,
+  Route,
+  LayoutDashboard,
+  Component,
+  Settings,
+  Wrench,
+  File,
+  Package,
+  ShieldCheck,
+  Server,
+  Globe,
+} from "lucide-react";
+
+const ICON_MAP = {
+  Shield,
+  Cog,
+  Database,
+  Route,
+  LayoutDashboard,
+  Component,
+  Settings,
+  Wrench,
+  File,
+  Package,
+  ShieldCheck,
+  Server,
+  Globe,
+};
+
+const LAYER_COLORS = {
+  frontend: {
+    border: "rgba(6,182,212,0.5)",
+    glow: "rgba(6,182,212,0.2)",
+    text: "#06b6d4",
+    bg: "rgba(6,182,212,0.08)",
+  },
+  api: {
+    border: "rgba(14,165,233,0.5)",
+    glow: "rgba(14,165,233,0.2)",
+    text: "#0ea5e9",
+    bg: "rgba(14,165,233,0.08)",
+  },
+  backend: {
+    border: "rgba(59,130,246,0.5)",
+    glow: "rgba(59,130,246,0.2)",
+    text: "#3b82f6",
+    bg: "rgba(59,130,246,0.08)",
+  },
+  database: {
+    border: "rgba(99,102,241,0.5)",
+    glow: "rgba(99,102,241,0.2)",
+    text: "#6366f1",
+    bg: "rgba(99,102,241,0.08)",
+  },
+  infrastructure: {
+    border: "rgba(100,116,139,0.5)",
+    glow: "rgba(100,116,139,0.2)",
+    text: "#94a3b8",
+    bg: "rgba(100,116,139,0.08)",
+  },
+  utilities: {
+    border: "rgba(20,184,166,0.5)",
+    glow: "rgba(20,184,166,0.2)",
+    text: "#14b8a6",
+    bg: "rgba(20,184,166,0.08)",
+  },
+};
+
+const TYPE_LABELS = {
+  ui: "UI",
+  component: "Component",
+  route: "API Route",
+  controller: "Controller",
+  service: "Service",
+  model: "Model",
+  middleware: "Middleware",
+  config: "Config",
+  db: "Database",
+  util: "Utility",
+  module: "Module",
+};
+
+const HTTP_METHOD_COLORS = {
+  GET: "#22c55e",
+  POST: "#3b82f6",
+  PUT: "#f97316",
+  PATCH: "#a855f7",
+  DELETE: "#ef4444",
+};
+
+function inferTypeLabel(data) {
+  if (data.type && data.type !== "module" && data.type !== "unknown")
+    return (TYPE_LABELS[data.type] || data.type).toUpperCase();
+
+  const label = (data.label || "").toLowerCase();
+  const path = (data.filePath || "").toLowerCase();
+  const fw = (data.framework || "").toLowerCase();
+  const allImports = (data.imports || []).join(" ").toLowerCase();
+
+  if (/api|route|endpoint/.test(label) || /\/api\//.test(path)) return "API";
+  if (/auth|login|signin|oauth|jwt/.test(label) || /auth/.test(path))
+    return "AUTH";
+  if (/cache|redis/.test(label)) return "CACHE";
+  if (/config|setting|env/.test(label) || /config/.test(path)) return "CONFIG";
+  if (/component|widget|ui$|^ui/.test(label)) return "COMPONENT";
+  if (/controller/.test(label)) return "CONTROLLER";
+  if (/database|db|sql|mongo|postgres|mysql/.test(label)) return "DATABASE";
+  if (/hook|use[A-Z]/.test(label)) return "HOOK";
+  if (/logger|log|monitor|trace/.test(label)) return "LOGGER";
+  if (/middleware/.test(label)) return "MIDDLEWARE";
+  if (/model|entity|schema/.test(label)) return "MODEL";
+  if (/page|screen|view/.test(label)) return "PAGE";
+  if (/real.?time|websocket|socket/.test(label)) return "REALTIME";
+  if (/router|route/.test(label)) return "ROUTER";
+  if (/service/.test(label)) return "SERVICE";
+  if (/storage|s3|blob|file/.test(label)) return "STORAGE";
+  if (/util|helper|function|lib/.test(label)) return "UTILITY";
+  if (/external|integration|webhook/.test(label)) return "EXTERNAL API";
+
+  if (
+    fw.includes("express") ||
+    allImports.includes("express") ||
+    fw.includes("fastify")
+  )
+    return "ROUTER";
+  if (
+    fw.includes("react") ||
+    fw.includes("vue") ||
+    fw.includes("svelte") ||
+    allImports.includes("react")
+  )
+    return "COMPONENT";
+  if (
+    allImports.includes("prisma") ||
+    allImports.includes("mongoose") ||
+    allImports.includes("typeorm")
+  )
+    return "MODEL";
+
+  if (data.endpoints && data.endpoints.length > 0) {
+    if (data.layer === "api") return "API";
+    if (data.layer === "backend") return "CONTROLLER";
+  }
+
+  if (data.layer === "frontend") return "COMPONENT";
+  if (data.layer === "backend") return "SERVICE";
+  if (data.layer === "api") return "API";
+  if (data.layer === "database") return "DATABASE";
+  if (data.layer === "utilities") return "UTILITY";
+  if (data.layer === "infrastructure") return "CONFIG";
+
+  return "MODULE";
+}
+
+export default function ArchNode({ data, selected }) {
+  const layer = data.layer || "config";
+  const colors = LAYER_COLORS[layer] || LAYER_COLORS.infrastructure;
+
+  const IconComp = ICON_MAP[data.icon] || File;
+  const typeLabel = inferTypeLabel(data);
+  const endpoints = data.endpoints || [];
+  const imports = data.imports || [];
+  const language = data.language || "";
+  const framework = data.framework || "";
+
+  const cardStyle = {
+    background: `linear-gradient(135deg, ${colors.bg}, rgba(18,18,35,0.88))`,
+    borderColor: colors.border.replace("0.5)", "0.65)"),
+    boxShadow: selected
+      ? `0 0 30px ${colors.glow}, 0 0 60px ${colors.glow}, inset 0 1px 0 rgba(255,255,255,0.06)`
+      : `0 6px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)`,
+  };
+
+  const handleCommon = {
+    background: colors.text,
+    border: `2px solid ${colors.border}`,
+    width: 10,
+    height: 10,
+  };
+
+  return (
+    <div
+      className="group rounded-xl border backdrop-blur-xl transition-all duration-300 select-none cursor-pointer overflow-hidden arch-node-card"
+      style={{
+        ...cardStyle,
+        animation: "nodeFadeIn 0.4s ease-out both",
+        animationDelay: `${(data.layerRank || 0) * 0.08}s`,
+      }}
+    >
+      <Handle type="target" position={Position.Top} style={handleCommon} />
+
+      <div
+        className="px-4 py-3 flex flex-col gap-2 pointer-events-none"
+        style={{ minWidth: 200, maxWidth: 300 }}
+      >
+        {/* Icon + Title row */}
+        <div className="flex items-center gap-2.5">
+          <div
+            className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+            style={{ background: colors.bg, color: colors.text }}
+          >
+            <IconComp size={18} strokeWidth={1.5} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h4
+                className="truncate"
+                style={{ fontSize: 17, fontWeight: 700, color: "#ffffff" }}
+              >
+                {data.label}
+              </h4>
+              <span
+                className="text-[12px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-widest shrink-0 leading-none"
+                style={{
+                  background: colors.border
+                    .replace("0.5)", "0.25)")
+                    .replace("0.65)", "0.3)"),
+                  color: "#ffffff",
+                  border: `1px solid ${colors.border.replace("0.5)", "0.35)").replace("0.65)", "0.4)")}`,
+                }}
+              >
+                {typeLabel}
+              </span>
+            </div>
+            {(language || framework) && (
+              <div className="text-[11px] text-slate-400 mt-0.5 truncate">
+                {language}
+                {framework ? ` · ${framework}` : ""}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Endpoint pills */}
+        {endpoints.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {endpoints.slice(0, 4).map((ep, i) => {
+              const methodColor = HTTP_METHOD_COLORS[ep.method] || "#64748b";
+              return (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono leading-none truncate max-w-full"
+                  style={{
+                    background: `${methodColor}15`,
+                    border: `1px solid ${methodColor}30`,
+                  }}
+                  title={`${ep.method} ${ep.path}`}
+                >
+                  <span style={{ color: methodColor, fontWeight: 700 }}>
+                    {ep.method}
+                  </span>
+                  <span className="text-slate-400 truncate">{ep.path}</span>
+                </span>
+              );
+            })}
+            {endpoints.length > 4 && (
+              <span className="text-[10px] text-slate-500 px-1">
+                +{endpoints.length - 4}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Imports / Export chips */}
+        <div className="flex items-center gap-2 text-[11px] text-slate-500">
+          {imports.length > 0 && (
+            <div className="flex items-center gap-1 truncate min-w-0">
+              <span className="shrink-0 opacity-60">in</span>
+              <span className="truncate">{imports.slice(0, 4).join(", ")}</span>
+              {imports.length > 4 && <span>+{imports.length - 4}</span>}
+            </div>
+          )}
+          {endpoints.length > 0 && (
+            <span
+              className="shrink-0 ml-auto text-[11px] font-mono"
+              style={{ color: colors.text, opacity: 0.6 }}
+            >
+              {endpoints.length > 1 ? `${endpoints.length} APIs` : "1 API"}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <Handle type="source" position={Position.Bottom} style={handleCommon} />
+    </div>
+  );
+}

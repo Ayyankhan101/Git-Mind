@@ -1,18 +1,5 @@
 import "@testing-library/jest-dom";
 
-// Mock pdfmake (uses Node.js built-ins not available in jsdom)
-jest.mock("pdfmake/build/pdfmake", () => ({
-  __esModule: true,
-  default: {
-    vfs: {},
-    createPdf: jest.fn(() => ({ download: jest.fn() })),
-  },
-}));
-jest.mock("pdfmake/build/vfs_fonts", () => ({
-  __esModule: true,
-  default: { pdfMake: { vfs: {} } },
-}));
-
 // Mock crypto.randomUUID used in App.js for session IDs
 if (!globalThis.crypto?.randomUUID) {
   Object.defineProperty(globalThis, "crypto", {
@@ -62,6 +49,21 @@ Object.defineProperty(navigator, "userAgentData", {
   writable: true,
 });
 
+// Mock window.matchMedia - use plain function (jest.fn mockImplementation seems unreliable here)
+window.matchMedia = function (query) {
+  return {
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: function () {},
+    removeListener: function () {},
+    addEventListener: function () {},
+    removeEventListener: function () {},
+    dispatchEvent: function () {},
+  };
+};
+global.matchMedia = window.matchMedia;
+
 // CRA's jsdom doesn't have AbortSignal.timeout
 if (!AbortSignal.timeout) {
   AbortSignal.timeout = (ms) => {
@@ -70,3 +72,39 @@ if (!AbortSignal.timeout) {
     return ctrl.signal;
   };
 }
+
+// ResizeObserver polyfill
+class ResizeObserverMock {
+  constructor(callback) {
+    this._callback = callback;
+  }
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+if (!global.ResizeObserver) global.ResizeObserver = ResizeObserverMock;
+
+// scrollIntoView polyfill
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = jest.fn();
+}
+
+// IntersectionObserver polyfill
+class IntersectionObserverMock {
+  constructor(callback) {
+    this._callback = callback;
+  }
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+if (!global.IntersectionObserver)
+  global.IntersectionObserver = IntersectionObserverMock;
+
+// TextEncoder/TextDecoder polyfill for pdfmake
+const { TextEncoder, TextDecoder } = require("util");
+if (!global.TextEncoder) global.TextEncoder = TextEncoder;
+if (!global.TextDecoder) global.TextDecoder = TextDecoder;
+
+// GSAP and Lenis mocks are in __mocks__/ directories
+// (jest.mock() in setup files doesn't auto-hoist)

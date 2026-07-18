@@ -681,7 +681,7 @@ export default function PRReviewTab({
     const repo = m[2].replace(/\.git$/, "");
     setOpenPRs([]);
     setPrsLoading(true);
-    fetchOpenPRs(owner, repo)
+    fetchOpenPRs(owner, repo, token || null)
       .then((data) => setOpenPRs(data.prs || []))
       .catch(() => setOpenPRs([]))
       .finally(() => setPrsLoading(false));
@@ -697,20 +697,20 @@ export default function PRReviewTab({
       setImpactError(null);
 
       setLoading(true);
-      reviewPR(url)
+      reviewPR(url, token || undefined)
         .then((data) => setResult(data))
         .catch((err) => setError(err.message))
         .finally(() => setLoading(false));
 
       if (analyzed && sessionId) {
         setImpactLoading(true);
-        prImpact(url, sessionId)
+        prImpact(url, sessionId, token || null)
           .then((data) => setImpact(data))
           .catch((err) => setImpactError(err.message))
           .finally(() => setImpactLoading(false));
       }
     },
-    [analyzed, sessionId],
+    [token, analyzed, sessionId],
   ); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-fill + trigger review when a PR URL is pasted anywhere in the app
@@ -744,7 +744,7 @@ export default function PRReviewTab({
     setImpact(null);
     setImpactLoading(true);
     try {
-      const data = await prImpact(url, sessionId);
+      const data = await prImpact(url, sessionId, token || null);
       setImpact(data);
     } catch (err) {
       setImpactError(err.message);

@@ -449,7 +449,7 @@ export default function Sidebar({
                 <div
                   style={{
                     padding: "16px 14px",
-                    fontSize: 13,
+                    fontSize: 12,
                     color: "var(--text-3)",
                   }}
                 >

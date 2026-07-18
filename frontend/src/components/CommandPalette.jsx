@@ -21,6 +21,34 @@ import {
 
 const NAV_ITEMS = [
   {
+    id: "workspace:insights",
+    label: "Insights Workspace",
+    sub: "Summary, Architecture, API Docs",
+    icon: BarChart3,
+    workspace: "insights",
+  },
+  {
+    id: "workspace:security",
+    label: "Security Hub",
+    sub: "Security, CVE, Solidity, Code Audit",
+    icon: ShieldAlert,
+    workspace: "security",
+  },
+  {
+    id: "workspace:git",
+    label: "Git Operations",
+    sub: "Git Audit, PR Review",
+    icon: GitBranch,
+    workspace: "git",
+  },
+  {
+    id: "workspace:collab",
+    label: "Collaboration Space",
+    sub: "Watch, Chat",
+    icon: MessageSquare,
+    workspace: "collab",
+  },
+  {
     id: "tab:summary",
     label: "Go to Summary",
     icon: BarChart3,
@@ -55,7 +83,7 @@ const ACTION_ITEMS = [
     id: "action:export",
     label: "Export report",
     icon: Download,
-    sub: "Download PDF",
+    sub: "Download Markdown",
   },
   {
     id: "action:kbhelp",
@@ -83,46 +111,6 @@ const ACTION_ITEMS = [
   },
 ];
 
-const THEME_ITEMS = [
-  {
-    id: "theme:obsidian",
-    label: "Obsidian theme",
-    sub: "Default dark",
-    theme: "obsidian",
-  },
-  {
-    id: "theme:daylight",
-    label: "Daylight theme",
-    sub: "Light mode",
-    theme: "daylight",
-  },
-  {
-    id: "theme:amber",
-    label: "Amber theme",
-    sub: "Warm paper",
-    theme: "amber",
-  },
-  {
-    id: "theme:verdant",
-    label: "Verdant theme",
-    sub: "Forest dark",
-    theme: "verdant",
-  },
-  {
-    id: "theme:glacier",
-    label: "Glacier theme",
-    sub: "Cool blue",
-    theme: "glacier",
-  },
-  {
-    id: "theme:aurora",
-    label: "Aurora theme",
-    sub: "Glass violet",
-    theme: "aurora",
-  },
-  { id: "theme:mist", label: "Mist theme", sub: "Light glass", theme: "mist" },
-];
-
 function matches(item, q) {
   if (!q) return true;
   const ql = q.toLowerCase();
@@ -138,7 +126,6 @@ export default function CommandPalette({
   onAction,
   repos,
   recents,
-  theme,
   density,
 }) {
   const [query, setQuery] = useState("");
@@ -182,9 +169,6 @@ export default function CommandPalette({
 
     const actFiltered = ACTION_ITEMS.filter((i) => matches(i, q));
     if (actFiltered.length) g.push({ label: "Actions", items: actFiltered });
-
-    const themeFiltered = THEME_ITEMS.filter((i) => matches(i, q));
-    if (themeFiltered.length) g.push({ label: "Themes", items: themeFiltered });
 
     if (repos.length) {
       const repoItems = repos

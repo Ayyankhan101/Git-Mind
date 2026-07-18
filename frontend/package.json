@@ -4,22 +4,32 @@
   "private": true,
   "dependencies": {
     "@sentry/react": "^10.59.0",
+    "@splinetool/react-spline": "^4.1.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^13.5.0",
+    "@xyflow/react": "^12.11.2",
+    "ajv": "^8.20.0",
+    "dagre": "^0.8.5",
+    "gsap": "^3.15.0",
+    "lenis": "^1.3.25",
     "lucide-react": "^1.16.0",
     "mermaid": "^11.14.0",
     "pdfmake": "^0.3.11",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "react-scripts": "5.0.1"
+    "react-scripts": "^5.0.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "NODE_OPTIONS=\"--openssl-legacy-provider --max-old-space-size=4096\" CI=true react-scripts build",
+    "start": "NODE_OPTIONS=\"--disable-warning=DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE --disable-warning=DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE\" react-app-rewired start",
+    "build": "NODE_OPTIONS=\"--openssl-legacy-provider --max-old-space-size=4096\" CI=true react-app-rewired build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "test:coverage": "react-scripts test --coverage --watchAll=false",
+    "eject": "react-scripts eject",
+    "prepare": "husky",
+    "size": "size-limit",
+    "size:why": "size-limit --why"
   },
   "eslintConfig": {
     "extends": [
@@ -39,9 +49,34 @@
       "last 1 safari version"
     ]
   },
+  "jest": {
+    "transformIgnorePatterns": [
+      "node_modules/(?!(gsap|@gsap|lenis|@xyflow|mermaid|pdfmake)/)"
+    ]
+  },
+  "size-limit": [
+    {
+      "name": "Main Bundle",
+      "path": "build/static/js/main.*.js",
+      "limit": "500 KB"
+    },
+    {
+      "name": "CSS",
+      "path": "build/static/css/*.css",
+      "limit": "100 KB"
+    }
+  ],
   "devDependencies": {
+    "@lhci/cli": "^0.14.0",
+    "@size-limit/preset-app": "^11.0.0",
+    "@tailwindcss/postcss": "^4.3.2",
+    "audit-ci": "^7.0.0",
     "autoprefixer": "^10.5.0",
+    "husky": "^9.1.7",
     "postcss": "^8.5.14",
+    "react-app-rewired": "^2.2.1",
+    "serve": "^14.0.0",
+    "size-limit": "^11.0.0",
     "tailwindcss": "^4.3.0"
   }
 }

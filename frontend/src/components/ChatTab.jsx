@@ -1,6 +1,30 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { postChatStream } from "../api";
 
+function SourceBadge({ source }) {
+  const path = source.filepath || "";
+  const parts = path.split("/");
+  const short = parts.length > 2 ? `…/${parts.slice(-2).join("/")}` : path;
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        fontSize: 10,
+        padding: "1px 6px",
+        borderRadius: 3,
+        background: "var(--surface-2)",
+        border: "1px solid var(--border)",
+        color: "var(--text-3)",
+        fontFamily: "var(--font-mono)",
+        whiteSpace: "nowrap",
+      }}
+      title={path}
+    >
+      {short}
+    </span>
+  );
+}
+
 function Message({ msg }) {
   if (msg.role === "assistant" && !msg.content) return null;
   const isUser = msg.role === "user";
@@ -12,6 +36,15 @@ function Message({ msg }) {
     >
       {msg.content}
       {msg.streaming && <span className="chat-cursor" />}
+      {msg.sources?.length > 0 && !msg.streaming && (
+        <div
+          style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6 }}
+        >
+          {msg.sources.map((s, i) => (
+            <SourceBadge key={i} source={s} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -57,11 +90,13 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
           );
         },
         controller.signal,
-      );
-      setMessages((prev) =>
-        prev.map((m, i) =>
-          i === prev.length - 1 ? { ...m, streaming: false } : m,
-        ),
+        (sources) => {
+          setMessages((prev) =>
+            prev.map((m, i) =>
+              i === prev.length - 1 ? { ...m, streaming: false, sources } : m,
+            ),
+          );
+        },
       );
     } catch (err) {
       if (err.name === "AbortError") return;

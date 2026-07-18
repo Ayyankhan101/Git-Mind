@@ -1,23 +1,19 @@
 mod models;
 mod parser;
 
-use axum::{Router, routing::post};
-use axum::response::Json;
-use axum::extract::TypedHeader;
 use axum::http::Method;
-use std::sync::OnceLock;
-use tower_http::cors::{CorsLayer, Any};
+use axum::response::Json;
+use axum::{routing::post, Router};
 use serde::Deserialize;
 use std::net::SocketAddr;
+use tower_http::cors::{Any, CorsLayer};
 
 #[derive(Deserialize)]
 struct ParseRequest {
     source: String,
 }
 
-async fn parse_handler(
-    Json(req): Json<ParseRequest>,
-) -> Json<models::ParseResponse> {
+async fn parse_handler(Json(req): Json<ParseRequest>) -> Json<models::ParseResponse> {
     let result = parser::parse_solidity(&req.source);
     Json(result)
 }
@@ -28,7 +24,7 @@ async fn health_handler() -> &'static str {
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::init();
+    tracing_subscriber::fmt::init();
 
     let cors = CorsLayer::new()
         .allow_origin(Any)

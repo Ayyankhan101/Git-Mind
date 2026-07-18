@@ -1,21 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   BarChart3,
   FileCode2,
   ShieldAlert,
   Zap,
   Activity,
-  Download,
+  ArrowUpRight,
 } from "lucide-react";
-import {
-  fetchSummary,
-  subscribeMonitor,
-  fetchMonitorStatus,
-  fetchAnalysisHistory,
-} from "../api";
-import { buildSummaryPdf, downloadPdf } from "../pdfBuilder";
+import gsap from "gsap";
+import { fetchSummary, subscribeMonitor, fetchMonitorStatus } from "../api";
+import * as tokenManager from "../tokenManager";
 import HealthCard from "./HealthCard";
-import TrendChart from "./TrendChart";
 
 const SEV_COLORS = {
   critical: "var(--sev-critical)",
@@ -53,7 +48,7 @@ function Sparkline({
     >
       <defs>
         <linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.22" />
+          <stop offset="0%" stopColor={color} stopOpacity="0.3" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
@@ -62,15 +57,16 @@ function Sparkline({
         d={path}
         fill="none"
         stroke={color}
-        strokeWidth="1.6"
+        strokeWidth="2"
         strokeLinejoin="round"
         strokeLinecap="round"
       />
       <circle
         cx={pts[pts.length - 1][0]}
         cy={pts[pts.length - 1][1]}
-        r="3"
+        r="3.5"
         fill={color}
+        style={{ filter: `drop-shadow(0 0 4px ${color})` }}
       />
     </svg>
   );
@@ -102,7 +98,14 @@ function Donut({ segments, size = 120, thickness = 14 }) {
         acc += s.value;
         const end = (acc / total) * TAU;
         const big = end - start > Math.PI ? 1 : 0;
-        return <path key={i} d={arc(start, end, big)} fill={s.color} />;
+        return (
+          <path
+            key={i}
+            d={arc(start, end, big)}
+            fill={s.color}
+            style={{ filter: `drop-shadow(0 0 4px ${s.color}66)` }}
+          />
+        );
       })}
       <text
         x={r}
@@ -130,6 +133,82 @@ function Donut({ segments, size = 120, thickness = 14 }) {
   );
 }
 
+// 3D floating geometric shapes
+function FloatingShapes() {
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const prefersReduced =
+      window.matchMedia("(prefers-reduced-motion: reduce)")?.matches ?? false;
+    if (prefersReduced || !containerRef.current) return;
+
+    const shapes = containerRef.current.querySelectorAll(".float-shape");
+    const ctx = gsap.context(() => {
+      shapes.forEach((shape, i) => {
+        gsap.to(shape, {
+          y: `${8 + i * 3}`,
+          rotationX: 360,
+          rotationY: 180 + i * 60,
+          duration: 12 + i * 4,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+          delay: i * 1.5,
+        });
+      });
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, []);
+
+  return (
+    <div className="float-shapes-container" ref={containerRef}>
+      <div
+        className="float-shape float-octahedron"
+        style={{ top: "10%", left: "5%" }}
+      >
+        <div className="float-shape-inner">
+          <div className="float-face float-face-1" />
+          <div className="float-face float-face-2" />
+          <div className="float-face float-face-3" />
+          <div className="float-face float-face-4" />
+        </div>
+      </div>
+      <div
+        className="float-shape float-cube"
+        style={{ top: "60%", right: "8%", left: "auto" }}
+      >
+        <div className="float-shape-inner">
+          <div className="float-face float-face-front" />
+          <div className="float-face float-face-back" />
+          <div className="float-face float-face-left" />
+          <div className="float-face float-face-right" />
+          <div className="float-face float-face-top" />
+          <div className="float-face float-face-bottom" />
+        </div>
+      </div>
+      <div
+        className="float-shape float-ring"
+        style={{ top: "30%", right: "15%", left: "auto" }}
+      >
+        <div className="float-shape-inner" />
+      </div>
+      <div
+        className="float-shape float-pyramid"
+        style={{ top: "70%", left: "15%" }}
+      >
+        <div className="float-shape-inner">
+          <div className="float-face float-pyr-base" />
+          <div className="float-face float-pyr-side-1" />
+          <div className="float-face float-pyr-side-2" />
+          <div className="float-face float-pyr-side-3" />
+          <div className="float-face float-pyr-side-4" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SummaryTab({
   sessionId,
   enabled,
@@ -148,8 +227,7 @@ export default function SummaryTab({
   const [watching, setWatching] = useState(false);
   const [watchLoading, setWatchLoading] = useState(false);
   const [watchError, setWatchError] = useState(null);
-  const [trendData, setTrendData] = useState(null);
-  const [trendDays, setTrendDays] = useState(0);
+  const statsRef = useRef(null);
 
   useEffect(() => {
     setData(null);
@@ -165,17 +243,11 @@ export default function SummaryTab({
       .finally(() => setLoading(false));
   }, [enabled, sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!repoUrl) return;
-    fetchAnalysisHistory(repoUrl, trendDays)
-      .then((d) => setTrendData(d.history || []))
-      .catch(() => setTrendData([]));
-  }, [repoUrl, trendDays]);
-
   // Check if repo is already being watched
   useEffect(() => {
     if (!repoUrl || !enabled) return;
-    fetchMonitorStatus()
+    const token = ghToken || tokenManager.get() || null;
+    fetchMonitorStatus(token)
       .then((res) => {
         const watched = (res.repos || []).some((r) => r.repo_url === repoUrl);
         setWatching(watched);
@@ -183,12 +255,32 @@ export default function SummaryTab({
       .catch(() => {});
   }, [repoUrl, enabled, ghToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // GSAP entrance for stat cards
+  useEffect(() => {
+    if (!statsRef.current) return;
+    const cards = statsRef.current.querySelectorAll(".stat");
+    gsap.fromTo(
+      cards,
+      { opacity: 0, y: 24, scale: 0.96 },
+      {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        duration: 0.5,
+        stagger: 0.1,
+        ease: "power3.out",
+        delay: 0.3,
+      },
+    );
+  }, [enabled]);
+
   const handleWatch = async () => {
     if (!repoUrl) return;
+    const token = ghToken || tokenManager.get() || null;
     setWatchLoading(true);
     setWatchError(null);
     try {
-      const data = await subscribeMonitor(repoUrl, {});
+      const data = await subscribeMonitor(repoUrl, {}, token);
       if (data.error) {
         setWatchError(data.error);
       } else {
@@ -289,72 +381,20 @@ export default function SummaryTab({
   );
 
   return (
-    <div className="summary">
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          marginBottom: 12,
-        }}
-      >
-        <h2 style={{ margin: 0 }}>Executive Summary</h2>
-        <button
-          onClick={() => {
-            const docDef = buildSummaryPdf({
-              repoName,
-              summary:
-                data?.summary ||
-                `Analysis of ${repoName} completed in ${elapsedSec}s.`,
-              stats: data?.stats || {
-                endpoints: apiDocs.length,
-                findings: findings.length,
-                scan_time: elapsedSec ? `${elapsedSec}s` : "N/A",
-              },
-              health,
-              elapsedSec,
-            });
-            downloadPdf(
-              docDef,
-              `summary-${repoName || "report"}-${Date.now()}.pdf`,
-            );
-          }}
-          style={{
-            background: "none",
-            border: "1px solid var(--border)",
-            cursor: "pointer",
-            color: "var(--text-3)",
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            fontSize: 11,
-            padding: "4px 8px",
-            borderRadius: 6,
-            marginLeft: "auto",
-          }}
-        >
-          <Download size={12} strokeWidth={1.5} />
-          Export PDF
-        </button>
+    <div className="summary summary--upgraded">
+      <FloatingShapes />
+
+      <div className="summary-header">
+        <h2>
+          <span className="summary-title-icon">
+            <BarChart3 size={24} strokeWidth={1.5} />
+          </span>
+          Executive Summary
+        </h2>
       </div>
+
       <HealthCard health={health} />
-      {repoUrl && (
-        <div
-          style={{
-            marginTop: 16,
-            padding: 16,
-            borderRadius: 8,
-            border: "1px solid var(--border-2)",
-            background: "var(--surface-1)",
-          }}
-        >
-          <TrendChart
-            data={trendData}
-            days={trendDays}
-            onDaysChange={setTrendDays}
-          />
-        </div>
-      )}
+
       {enabled && repoUrl && (
         <div className="summary-watch">
           {watching ? (
@@ -397,23 +437,20 @@ export default function SummaryTab({
           Failed to load summary: {error}
         </p>
       )}
-      {data?.summary && <p className="lead">{data.summary}</p>}
-      {!loading && !data && !error && (
-        <p className="lead" style={{ color: "var(--text-3)" }}>
-          Analysis of{" "}
-          <strong style={{ color: "var(--text-1)" }}>{repoName}</strong>{" "}
-          completed in {elapsedSec}s.
-          {findings.length > 0
-            ? ` Found ${findings.length} security ${findings.length === 1 ? "issue" : "issues"} and ${apiDocs.length} API endpoints.`
-            : ` No security issues found. Detected ${apiDocs.length} API endpoints.`}
-        </p>
-      )}
-
-      {/* Charts */}
-      {(findings.length > 0 || apiDocs.length > 0) && (
-        <div className="summary-charts">
-          {/* Severity distribution — bars ordered low → critical */}
-          <div className="chart-card">
+      {/* Two-column grid: graph/bar (left) + summary (right) */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "24px",
+          width: "100%",
+          alignItems: "start",
+        }}
+      >
+        {/* Left Card — Findings & Metrics (graph/bar) */}
+        <div className="summary-card">
+          {/* FINDINGS BY SEVERITY */}
+          {(findings.length > 0 || apiDocs.length > 0) && (
             <div className="chart-card-head">
               <div>
                 <div className="chart-title">FINDINGS BY SEVERITY</div>
@@ -434,18 +471,18 @@ export default function SummaryTab({
                 </div>
               </div>
             </div>
-            {sevSparkData.length >= 2 && (
-              <Sparkline
-                data={sevSparkData}
-                height={60}
-                color="var(--sev-high)"
-              />
-            )}
-          </div>
+          )}
+          {sevSparkData.length >= 2 && (
+            <Sparkline
+              data={sevSparkData}
+              height={60}
+              color="var(--sev-high)"
+            />
+          )}
 
-          {/* Donut card */}
+          {/* SECURITY BREAKDOWN donut */}
           {findings.length > 0 && (
-            <div className="chart-card">
+            <>
               <div className="chart-title" style={{ marginBottom: 14 }}>
                 SECURITY BREAKDOWN
               </div>
@@ -474,65 +511,89 @@ export default function SummaryTab({
                   )}
                 </div>
               </div>
+            </>
+          )}
+
+          {/* Stat grid */}
+          <div className="stat-grid" ref={statsRef}>
+            <div className="stat">
+              <div className="stat-icon-wrap">
+                <FileCode2 size={20} strokeWidth={1.5} />
+              </div>
+              <span className="stat-value">{apiDocs.length || 0}</span>
+              <span className="stat-label">ENDPOINTS</span>
+              <span className="stat-trend">
+                <ArrowUpRight size={12} /> detected
+              </span>
+            </div>
+            <div className="stat">
+              <div className="stat-icon-wrap stat-icon--warn">
+                <ShieldAlert size={20} strokeWidth={1.5} />
+              </div>
+              <span className="stat-value">{findings.length || 0}</span>
+              <span className="stat-label">FINDINGS</span>
+              <span className="stat-trend stat-trend--danger">
+                <ArrowUpRight size={12} /> security
+              </span>
+            </div>
+            <div className="stat">
+              <div className="stat-icon-wrap stat-icon--ok">
+                <Zap size={20} strokeWidth={1.5} />
+              </div>
+              <span className="stat-value">
+                {elapsedSec > 0 ? `${elapsedSec}s` : "—"}
+              </span>
+              <span className="stat-label">SCAN TIME</span>
+              <span className="stat-trend stat-trend--ok">
+                <ArrowUpRight size={12} /> fast
+              </span>
+            </div>
+          </div>
+
+          {/* Severity text breakdown */}
+          {findings.length > 0 && (
+            <div>
+              <div className="t-label" style={{ marginBottom: 12 }}>
+                SECURITY BREAKDOWN
+              </div>
+              <div className="sev-breakdown">
+                {[
+                  ["critical", nCritical],
+                  ["high", nHigh],
+                  ["medium", nMedium],
+                  ["low", nLow],
+                ].map(
+                  ([sev, count]) =>
+                    count > 0 && (
+                      <span key={sev}>
+                        <span
+                          className="sev-glyph"
+                          style={{ background: SEV_COLORS[sev] }}
+                        />
+                        {count} {sev.charAt(0).toUpperCase() + sev.slice(1)}
+                      </span>
+                    ),
+                )}
+              </div>
             </div>
           )}
         </div>
-      )}
 
-      {/* Stat grid */}
-      <div className="stat-grid">
-        <div className="stat">
-          <span className="stat-icon">
-            <FileCode2 size={16} strokeWidth={1.5} />
-          </span>
-          <span className="stat-value">{apiDocs.length || 0}</span>
-          <span className="stat-label">ENDPOINTS</span>
-        </div>
-        <div className="stat">
-          <span className="stat-icon">
-            <ShieldAlert size={16} strokeWidth={1.5} />
-          </span>
-          <span className="stat-value">{findings.length || 0}</span>
-          <span className="stat-label">FINDINGS</span>
-        </div>
-        <div className="stat">
-          <span className="stat-icon">
-            <Zap size={16} strokeWidth={1.5} />
-          </span>
-          <span className="stat-value">
-            {elapsedSec > 0 ? `${elapsedSec}s` : "—"}
-          </span>
-          <span className="stat-label">SCAN TIME</span>
+        {/* Right Card — Repository Description (summary text) */}
+        <div className="summary-card">
+          {data?.summary && <p className="lead">{data.summary}</p>}
+          {!loading && !data && !error && (
+            <p className="lead" style={{ color: "var(--text-3)" }}>
+              Analysis of{" "}
+              <strong style={{ color: "var(--text-1)" }}>{repoName}</strong>{" "}
+              completed in {elapsedSec}s.
+              {findings.length > 0
+                ? ` Found ${findings.length} security ${findings.length === 1 ? "issue" : "issues"} and ${apiDocs.length} API endpoints.`
+                : ` No security issues found. Detected ${apiDocs.length} API endpoints.`}
+            </p>
+          )}
         </div>
       </div>
-
-      {/* Severity breakdown */}
-      {findings.length > 0 && (
-        <div>
-          <div className="t-label" style={{ marginBottom: 12 }}>
-            SECURITY BREAKDOWN
-          </div>
-          <div className="sev-breakdown">
-            {[
-              ["critical", nCritical],
-              ["high", nHigh],
-              ["medium", nMedium],
-              ["low", nLow],
-            ].map(
-              ([sev, count]) =>
-                count > 0 && (
-                  <span key={sev}>
-                    <span
-                      className="sev-glyph"
-                      style={{ background: SEV_COLORS[sev] }}
-                    />
-                    {count} {sev.charAt(0).toUpperCase() + sev.slice(1)}
-                  </span>
-                ),
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import structlog
 from langgraph.graph import END, START, StateGraph
 
 from agents.api_doc import run_api_doc_agent
-from agents.architecture import run_architecture_agent
+from agents.architecture import run_with_graph
 from agents.cve_scanner import run_cve_scanner
 from agents.git_audit import run_git_audit
 from agents.language_audit import run_code_audit
@@ -99,9 +99,13 @@ def architecture_node(state: RepoState) -> dict:
     if _is_circuit_open():
         return {"architecture_diagram": None, "events": [_event("architecture", "skipped", "circuit breaker open")]}
     try:
-        diagram = run_architecture_agent(state["file_tree"], state["file_contents"])
+        result = run_with_graph(state["file_tree"], state["file_contents"])
         _record_circuit_success()
-        return {"architecture_diagram": diagram, "events": [_event("architecture", "done")]}
+        return {
+            "architecture_diagram": result["architecture_diagram"],
+            "architecture_graph": result["architecture_graph"],
+            "events": [_event("architecture", "done")],
+        }
     except Exception as exc:
         _record_circuit_failure()
         logger.error("architecture_node failed: %s", exc)

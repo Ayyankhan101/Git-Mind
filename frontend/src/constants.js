@@ -1,3 +1,11 @@
+export const GRADE_COLOR = {
+  A: "#10b981",
+  B: "#34d399",
+  C: "#f59e0b",
+  D: "#f97316",
+  F: "#ef4444",
+};
+
 export const LANG_COLOR = {
   JavaScript: "#f7df1e",
   TypeScript: "#3178c6",

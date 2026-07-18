@@ -1,12 +1,5 @@
 import { useState } from "react";
-
-const GRADE_COLORS = {
-  A: "#10b981",
-  B: "#34d399",
-  C: "#f59e0b",
-  D: "#f97316",
-  F: "#ef4444",
-};
+import { GRADE_COLOR } from "../constants";
 
 const DIM_KEYS = [
   "security",
@@ -23,11 +16,11 @@ const DIM_LABELS = {
   code_quality: "Code Quality",
 };
 const DIM_COLORS = {
-  security: "#ef4444",
-  documentation: "#8b5cf6",
-  api_coverage: "#3b82f6",
-  dependency_freshness: "#f59e0b",
-  code_quality: "#10b981",
+  security: "var(--danger)",
+  documentation: "var(--primary)",
+  api_coverage: "var(--info)",
+  dependency_freshness: "var(--warning)",
+  code_quality: "var(--success)",
 };
 
 function getGrade(score) {
@@ -168,6 +161,8 @@ export default function TrendChart({ data, days, onDaysChange }) {
       </div>
 
       <svg
+        role="img"
+        aria-label="Health score trend over time"
         viewBox={`0 0 ${width} ${height}`}
         style={{ width: "100%", height: "auto" }}
         onMouseLeave={() => setHoverIdx(null)}
@@ -261,7 +256,7 @@ export default function TrendChart({ data, days, onDaysChange }) {
               cx={xScale(i)}
               cy={yScale(score)}
               r={isHovered ? 5 : 3}
-              fill={GRADE_COLORS[grade]}
+              fill={GRADE_COLOR[grade]}
               stroke="var(--surface-1)"
               strokeWidth={1.5}
               style={{ cursor: "pointer" }}

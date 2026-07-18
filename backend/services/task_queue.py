@@ -1,10 +1,10 @@
 import asyncio
 import contextlib
-import json
 import os
 import time
 import uuid
 
+import orjson
 import structlog
 from prometheus_client import Counter
 
@@ -32,7 +32,7 @@ def _persist_task(task: dict) -> None:
         with contextlib.suppress(Exception):
             r.set(
                 f"task:{task['id']}",
-                json.dumps(task, default=str),
+                orjson.dumps(task, default=str),
                 ex=_TASK_TTL,
             )
 
@@ -127,7 +127,7 @@ def get_task(task_id: str) -> dict | None:
         try:
             raw = r.get(f"task:{task_id}")
             if raw:
-                return json.loads(raw)
+                return orjson.loads(raw)
         except Exception:
             pass
     return None
