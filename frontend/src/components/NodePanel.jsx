@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { X, Cpu, Send, MessageSquare } from "lucide-react";
 import { postChatStream } from "../api";
 
@@ -35,11 +37,18 @@ function ChatMessage({ msg }) {
           padding: "8px 12px",
           fontSize: 13,
           lineHeight: 1.55,
-          whiteSpace: "pre-wrap",
           wordBreak: "break-word",
         }}
       >
-        {msg.content}
+        {isUser || isErr ? (
+          <span style={{ whiteSpace: "pre-wrap" }}>{msg.content}</span>
+        ) : (
+          <div className="chat-markdown">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {msg.content}
+            </ReactMarkdown>
+          </div>
+        )}
         {msg.streaming && <span className="chat-cursor" />}
       </div>
     </div>
@@ -204,12 +213,12 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
             <span className="chat-cursor" />
           </span>
         ) : desc ? (
-          <span
-            style={{ fontSize: 13, lineHeight: 1.65, color: "var(--text-2)" }}
-          >
-            {desc}
+          <>
+            <div className="chat-markdown">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{desc}</ReactMarkdown>
+            </div>
             {!descDone && <span className="chat-cursor" />}
-          </span>
+          </>
         ) : !enabled ? (
           <span
             style={{

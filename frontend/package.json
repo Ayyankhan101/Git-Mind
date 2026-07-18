@@ -19,7 +19,10 @@
     "pdfmake": "^0.3.11",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "react-scripts": "^5.0.1"
+    "react-markdown": "^10.1.0",
+    "react-scripts": "^5.0.1",
+    "react-syntax-highlighter": "^16.1.1",
+    "remark-gfm": "^4.0.1"
   },
   "scripts": {
     "start": "NODE_OPTIONS=\"--disable-warning=DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE --disable-warning=DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE\" react-app-rewired start",
@@ -51,8 +54,17 @@
   },
   "jest": {
     "transformIgnorePatterns": [
-      "node_modules/(?!(gsap|@gsap|lenis|@xyflow|mermaid|pdfmake)/)"
-    ]
+      "node_modules/(?!(gsap|@gsap|lenis|@xyflow|mermaid|pdfmake|react-markdown|remark-gfm|react-syntax-highlighter|bail|is-plain-obj|trough|vfile|unist-util-stringify|micromark|decode-named-character-reference|character-entities|property-information|comma-separated-tokens|space-separated-tokens|rehype|mdast-util-from-markdown|devlop|dir-glob|strip-ansi|escape-string-regexp|find-up|locate-path|p-locate|path-exists|yocto-queue|react-markdown)/)"
+    ],
+    "moduleNameMapper": {
+      "^react-markdown$": "<rootDir>/src/__mocks__/react-markdown.js",
+      "^remark-gfm$": "<rootDir>/src/__mocks__/remark-gfm.js",
+      "^react-syntax-highlighter$": "<rootDir>/src/__mocks__/react-syntax-highlighter.js",
+      "^react-syntax-highlighter/dist/esm/styles/hljs$": "<rootDir>/src/__mocks__/react-syntax-highlighter-styles.js",
+      "^gsap$": "<rootDir>/src/__mocks__/gsap.js",
+      "^gsap/ScrollTrigger$": "<rootDir>/src/__mocks__/gsapScrollTrigger.js",
+      "^lenis$": "<rootDir>/src/__mocks__/lenis.js"
+    }
   },
   "size-limit": [
     {

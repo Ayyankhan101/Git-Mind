@@ -12,3 +12,6 @@ backend/gitmind.db
 .env
 graphify-out/
 graphify-out.zip
+
+# Rust sidecar build artifacts
+rust-sidecar/target/
