@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { postChatStream } from "../api";
 
 function SourceBadge({ source }) {
@@ -34,7 +36,15 @@ function Message({ msg }) {
       className={`chat-msg ${isUser ? "user" : "assistant"}`}
       style={isErr ? { color: "var(--danger)", fontStyle: "italic" } : {}}
     >
-      {msg.content}
+      {isUser || isErr ? (
+        msg.content
+      ) : (
+        <div className="chat-markdown">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {msg.content}
+          </ReactMarkdown>
+        </div>
+      )}
       {msg.streaming && <span className="chat-cursor" />}
       {msg.sources?.length > 0 && !msg.streaming && (
         <div

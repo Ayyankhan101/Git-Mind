@@ -1,72 +1,51 @@
-# Mission: Codebase Exploration — Git-Mind
+# Mission: Fix Chat Output Formatting
 
-## M1: Project Discovery | status: completed
+## M1: Install Markdown Dependencies | status: pending
 
-### T1.1: Identify project type and structure | agent:Worker
+### T1.1: Add npm packages | agent:Worker
 
-- [x] S1.1.1: Read README.md and top-level directory | size:S
-- [x] S1.1.2: Map all subdirectories (backend, frontend, rust-gitmind, rust-sidecar) | size:S
-- [x] S1.1.3: Identify build systems (Cargo.toml, package.json, pyproject.toml) | size:S
+- [ ] S1.1.1: Install react-markdown, remark-gfm, react-syntax-highlighter | size:S
+- [ ] S1.1.2: Verify packages installed without errors | size:S
 
-### T1.2: Detect technology stack | agent:Worker
+## M2: Create Markdown Chat Renderer Component | status: pending | depends:M1
 
-- [x] S1.2.1: Read frontend/package.json for JS dependencies | size:S
-- [x] S1.2.2: Read backend/requirements.txt for Python dependencies | size:S
-- [x] S1.2.3: Read rust-gitmind/Cargo.toml and rust-sidecar/Cargo.toml | size:S
-- [x] S1.2.4: Read Dockerfile and docker-compose.yml | size:S
+### T2.1: Build reusable MarkdownMessage component | agent:Worker
 
-## M2: Serialization Analysis | status: completed
+- [ ] S2.1.1: Create frontend/src/components/MarkdownMessage.jsx | size:M
+- [ ] S2.1.2: Configure react-markdown with remark-gfm for tables/lists/strikethrough | size:S
+- [ ] S2.1.3: Add syntax highlighting for code blocks with react-syntax-highlighter | size:S
+- [ ] S2.1.4: Style inline code, blockquotes, links within messages | size:S
 
-### T2.1: Backend serialization audit | agent:Worker
+## M3: Add Markdown CSS Styles | status: pending | depends:M1
 
-- [x] S2.1.1: Read backend/models/db.py (SQLAlchemy ORM + JSON columns) | size:S
-- [x] S2.1.2: Read backend/models/requests.py (Pydantic request models) | size:S
-- [x] S2.1.3: Read backend/state.py (LangGraph RepoState TypedDict) | size:S
-- [x] S2.1.4: Grep for orjson/json usage across backend | size:M
-- [x] S2.1.5: Read backend/services/session.py (Redis serialization) | size:S
-- [x] S2.1.6: Read backend/services/database.py (ORM-to-dict conversion) | size:S
-- [x] S2.1.7: Read backend/llm_cache.py (LLM response caching) | size:S
+### T3.1: Add CSS for markdown elements in chat | agent:Worker
 
-### T2.2: Rust serialization audit | agent:Worker
+- [ ] S3.1.1: Add styles for pre/code blocks (background, border, overflow, copy button) | size:M
+- [ ] S3.1.2: Add styles for ul/ol lists, blockquotes, tables, headings | size:S
+- [ ] S3.1.3: Add styles for links, strong, em inside chat messages | size:S
+- [ ] S3.1.4: Add visual container (background/border/padding) for assistant messages | size:S
 
-- [x] S2.2.1: Read rust-sidecar/src/models.rs (serde Serialize/Deserialize) | size:S
-- [x] S2.2.2: Read rust-sidecar/src/main.rs (Axum JSON handlers) | size:S
-- [x] S2.2.3: Read rust-gitmind/src/dep_parsers.rs (PyO3 PyDict construction) | size:S
-- [x] S2.2.4: Read rust-gitmind/src/file_scanner.rs (PyO3 PyDict construction) | size:S
-- [x] S2.2.5: Read rust-gitmind/src/blame.rs (PyO3 PyDict construction) | size:S
-- [x] S2.2.6: Read rust-gitmind/src/text_splitter.rs (tuple returns) | size:S
+## M4: Integrate into ChatTab | status: pending | depends:T2.1,T3.1
 
-### T2.3: Frontend serialization audit | agent:Worker
+### T4.1: Update ChatTab to render markdown | agent:Worker
 
-- [x] S2.3.1: Read frontend/src/api.js (HTTP/WS/SSE serialization) | size:S
-- [x] S2.3.2: Read frontend/src/appReducer.js (state + localStorage) | size:S
-- [x] S2.3.3: Read frontend/src/tokenManager.js (AES-GCM encryption) | size:S
-- [x] S2.3.4: Read frontend/src/App.jsx (WebSocket message parsing) | size:S
+- [ ] S4.1.1: Replace {msg.content} with MarkdownMessage in ChatTab.jsx Message component | size:S
+- [ ] S4.1.2: Fix or remove dead sources callback in postChatStream | size:S
+- [ ] S4.1.3: Verify streaming still works with markdown rendering | size:S
 
-### T2.4: Search for incomplete patterns | agent:Worker
+## M5: Integrate into NodePanel | status: pending | depends:T2.1,T3.1
 
-- [x] S2.4.1: Grep for TODO/FIXME/HACK in all .py files | size:S
-- [x] S2.4.2: Grep for TODO/FIXME/HACK in all .rs files | size:S
-- [x] S2.4.3: Grep for TODO/FIXME/HACK in all .js/.jsx files | size:S
+### T5.1: Update NodePanel to render markdown | agent:Worker
 
-## M3: Agent Pipeline Serialization | status: completed
+- [ ] S5.1.1: Replace {msg.content} with MarkdownMessage in NodePanel.jsx ChatMessage | size:S
+- [ ] S5.1.2: Replace {desc} with MarkdownMessage for auto-descriptions | size:S
+- [ ] S5.1.3: Remove whiteSpace: pre-wrap inline style (handled by markdown renderer) | size:S
 
-### T3.1: Read agent output serialization | agent:Worker
+## M6: Verification | status: pending | depends:M4,M5
 
-- [x] S3.1.1: Read backend/orchestrator.py (graph node return dicts) | size:S
-- [x] S3.1.2: Read backend/agents/health.py (compute_health return dict) | size:S
-- [x] S3.1.3: Read backend/agents/impact.py (orjson parsing of LLM output) | size:S
-- [x] S3.1.4: Read backend/routes/analyze.py (REST analysis flow) | size:S
-- [x] S3.1.5: Read backend/routes/analysis.py (summary + snapshot loading) | size:S
-- [x] S3.1.6: Read backend/routes/chat.py (SSE streaming serialization) | size:S
-- [x] S3.1.7: Read backend/routes/fix.py (fix generation + auto-PR) | size:S
-- [x] S3.1.8: Read backend/ws/analyze.py (WebSocket event serialization) | size:S
+### T6.1: Full system verification | agent:Reviewer
 
-## M4: Final Synthesis | status: completed
-
-### T4.1: Compile findings report | agent:Worker
-
-- [x] S4.1.1: Document full project structure overview | size:M
-- [x] S4.1.2: List all serialization-related files | size:M
-- [x] S4.1.3: Identify incomplete/missing serialization patterns | size:M
-- [x] S4.1.4: Document frontend framework and key libraries | size:S
+- [ ] S6.1.1: Build frontend without errors | size:S
+- [ ] S6.1.2: Run existing tests (ChatTab.test.jsx) and fix any failures | size:M
+- [ ] S6.1.3: LSP diagnostics clean on all modified files | size:S
+- [ ] S6.1.4: Manual verification: markdown renders correctly in both chat and node panel | size:S

@@ -57,6 +57,7 @@ export const initialState = {
   agentStatus: INITIAL_AGENT_STATUS,
   elapsedSec: 0,
   diagram: null,
+  archGraph: null,
   apiDocs: [],
   findings: [],
   cveFindings: [],
@@ -137,6 +138,7 @@ export function appReducer(state, action) {
         retryUrl: null,
         agentWarnings: [],
         diagram: null,
+        archGraph: null,
         apiDocs: [],
         findings: [],
         cveFindings: [],
@@ -167,6 +169,8 @@ export function appReducer(state, action) {
       return { ...state, elapsedSec: action.sec };
     case "SET_DIAGRAM":
       return { ...state, diagram: action.diagram };
+    case "SET_ARCH_GRAPH":
+      return { ...state, archGraph: action.graph };
     case "SET_API_DOCS":
       return { ...state, apiDocs: action.docs };
     case "SET_FINDINGS":
@@ -278,6 +282,7 @@ export function appReducer(state, action) {
       return {
         ...state,
         diagram: action.data.architecture_diagram || state.diagram,
+        archGraph: action.data.architecture_graph || state.archGraph,
         apiDocs: action.data.api_docs?.length
           ? action.data.api_docs
           : state.apiDocs,

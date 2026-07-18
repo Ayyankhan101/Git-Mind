@@ -216,6 +216,7 @@ export default function App() {
     agentStatus,
     elapsedSec,
     diagram,
+    archGraph,
     apiDocs,
     findings,
     cveFindings,
@@ -433,6 +434,8 @@ export default function App() {
           dispatch({ type: "SET_AGENT_STATUS", status: data.agent_status });
         if (data.architecture_diagram)
           dispatch({ type: "SET_DIAGRAM", diagram: data.architecture_diagram });
+        if (data.architecture_graph)
+          dispatch({ type: "SET_ARCH_GRAPH", graph: data.architecture_graph });
         if (data.api_docs?.length)
           dispatch({ type: "SET_API_DOCS", docs: data.api_docs });
         if (data.security_findings)
@@ -667,6 +670,7 @@ export default function App() {
     const docDef = buildAnalysisPdf({
       repoName,
       diagram,
+      archGraph,
       apiDocs,
       findings,
       cveFindings,
@@ -695,6 +699,7 @@ export default function App() {
     analyzed,
     repoName,
     diagram,
+    archGraph,
     apiDocs,
     findings,
     cveFindings,
@@ -1192,6 +1197,7 @@ export default function App() {
                 >
                   <DiagramTab
                     diagram={diagram}
+                    archGraph={archGraph}
                     isAnalyzing={isAnalyzing}
                     analyzed={analyzed}
                     theme={theme}
