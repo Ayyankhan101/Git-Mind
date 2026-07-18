@@ -76,18 +76,19 @@ qdrant:
 **HF Spaces constraint:** Only runs single container — set `QDRANT_URL` env var to external Qdrant instance (Qdrant Cloud free tier or self-hosted).
 
 **Files changed:**
-| File | Action |
-|------|--------|
-| `backend/qdrant_utils.py` | NEW — replacement for chroma_utils |
-| `backend/chroma_utils.py` | DELETE |
-| `backend/agents/rag_setup.py` | Import swap: `chroma_utils` → `qdrant_utils` |
-| `backend/agents/chat.py` | Import swap: `chroma_utils` → `qdrant_utils` |
-| `backend/routes/analysis.py` | Import swap: `chroma_utils` → `qdrant_utils` |
-| `backend/routes/fix.py` | Import swap: `chroma_utils` → `qdrant_utils` |
-| `backend/main.py` | Import swap: `chroma_utils` → `qdrant_utils` |
-| `backend/requirements.txt` | `chromadb==1.5.9` → `qdrant-client>=1.11.0`, add `fastembed>=0.3.0` |
-| `docker-compose.yml` | Add `qdrant` service, remove `gitmind_chroma` volume |
-| `backend/Dockerfile` | Replace ChromaDB ONNX pre-download with fastembed model |
+
+| File                          | Action                                                              |
+| ----------------------------- | ------------------------------------------------------------------- |
+| `backend/qdrant_utils.py`     | NEW — replacement for chroma_utils                                  |
+| `backend/chroma_utils.py`     | DELETE                                                              |
+| `backend/agents/rag_setup.py` | Import swap: `chroma_utils` → `qdrant_utils`                        |
+| `backend/agents/chat.py`      | Import swap: `chroma_utils` → `qdrant_utils`                        |
+| `backend/routes/analysis.py`  | Import swap: `chroma_utils` → `qdrant_utils`                        |
+| `backend/routes/fix.py`       | Import swap: `chroma_utils` → `qdrant_utils`                        |
+| `backend/main.py`             | Import swap: `chroma_utils` → `qdrant_utils`                        |
+| `backend/requirements.txt`    | `chromadb==1.5.9` → `qdrant-client>=1.11.0`, add `fastembed>=0.3.0` |
+| `docker-compose.yml`          | Add `qdrant` service, remove `gitmind_chroma` volume                |
+| `backend/Dockerfile`          | Replace ChromaDB ONNX pre-download with fastembed model             |
 
 ---
 
