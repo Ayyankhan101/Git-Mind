@@ -83,7 +83,7 @@
     "@size-limit/preset-app": "^11.0.0",
     "@tailwindcss/postcss": "^4.3.2",
     "audit-ci": "^7.0.0",
-    "autoprefixer": "^10.5.0",
+    "autoprefixer": "^10.5.4",
     "husky": "^9.1.7",
     "postcss": "^8.5.14",
     "react-app-rewired": "^2.2.1",
