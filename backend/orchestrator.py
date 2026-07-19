@@ -111,6 +111,7 @@ def architecture_node(state: RepoState) -> dict:
         logger.error("architecture_node failed: %s", exc)
         return {
             "architecture_diagram": "graph TD\n    A[Architecture Analysis Failed]",
+            "architecture_graph": {"nodes": [], "edges": []},
             "events": [_event("architecture", "error", str(exc)[:200])],
         }
 
