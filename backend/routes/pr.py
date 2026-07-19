@@ -10,7 +10,7 @@ from agents.pr_review import run_pr_review
 from models.requests import PRImpactRequest, PRReviewRequest
 from services.auth import get_gh_token
 from services.rate_limit_response import rate_limit_response
-from services.rate_limiter import check_rate_limit
+from services.rate_limiter import check_rate_limit, get_client_ip
 from services.session import _UUID_RE, get_session
 
 logger = structlog.get_logger(__name__)
@@ -36,7 +36,7 @@ async def pr_review_endpoint(req: PRReviewRequest, request: Request):
 
 @router.get("/pr-list/{owner}/{repo}")
 async def list_open_prs(owner: str, repo: str, request: Request):
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = get_client_ip(request)
     if not (await check_rate_limit("pr", f"{owner}/{repo}:{client_ip}"))[0]:
         return await rate_limit_response("pr", f"{owner}/{repo}:{client_ip}")
     token = get_gh_token(request)

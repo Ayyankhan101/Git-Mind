@@ -63,6 +63,8 @@ def run_cve_scanner(file_contents: dict[str, str]) -> list[dict]:
         logger.warning("CVE scanner: OSV.dev unreachable — %s", exc)
         return []
 
+    if len(deps) != len(batch):
+        logger.warning("OSV response length mismatch: %d deps vs %d results — results may be truncated", len(deps), len(batch))
     results = []
     for dep, result in zip(deps, batch, strict=False):
         vulns_raw = result.get("vulns", [])

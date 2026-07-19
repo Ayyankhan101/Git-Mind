@@ -5,7 +5,7 @@ from fastapi import APIRouter, Request
 from models.requests import WebhookNotifyRequest
 from services.auth import require_gh_token_or_service_key
 from services.rate_limit_response import rate_limit_response
-from services.rate_limiter import check_rate_limit
+from services.rate_limiter import check_rate_limit, get_client_ip
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -15,7 +15,7 @@ router = APIRouter()
 async def notify_webhook(req: WebhookNotifyRequest, request: Request):
     require_gh_token_or_service_key(request)
 
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = get_client_ip(request)
     if not (await check_rate_limit("webhook_notify", client_ip))[0]:
         return await rate_limit_response("webhook_notify", client_ip)
 
