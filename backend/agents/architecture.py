@@ -136,7 +136,7 @@ _LLM = ChatGroq(model=_MODEL, temperature=0)
 def _build_prompt(file_tree: list[str], file_contents: dict[str, str], primary_lang: str = "Unknown") -> str:
     budget = _TOKEN_BUDGET
     tree_str = "\n".join(file_tree[:_MAX_TREE_LINES])
-    budget -= len(_ENC.encode(tree_str))
+    budget -= len(_ENC.encode(tree_str, allowed_special="all"))
 
     # Priority files: those whose path contains domain keywords
     priority = [f for f in file_tree if any(kw in f.lower() for kw in _PRIORITY_KEYWORDS)][:_MAX_KEY_FILES]
@@ -147,7 +147,7 @@ def _build_prompt(file_tree: list[str], file_contents: dict[str, str], primary_l
             continue
         snippet = file_contents[fp][:_MAX_SNIPPET_LEN]
         block = f"\n\n=== {fp} ===\n{snippet}"
-        cost = len(_ENC.encode(block))
+        cost = len(_ENC.encode(block, allowed_special="all"))
         if budget - cost < 500:  # reserve 500 tokens for system prompt + output
             break
         key_content += block
