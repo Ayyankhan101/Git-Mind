@@ -275,13 +275,20 @@ async def unhandled_exception_handler(request, exc):
     )
 
 
-_CORS_ORIGINS = [
-    o.strip()
-    for o in os.getenv(
-        "CORS_ORIGINS",
-        "http://localhost,http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:8002",
-    ).split(",")
-]
+_CORS_ORIGINS_ENV = os.getenv("CORS_ORIGINS", "")
+if _CORS_ORIGINS_ENV == "*":
+    _CORS_ORIGINS = ["*"]
+    logger.warning("CORS_ORIGINS=* — allowing all origins. Set CORS_ORIGINS to specific origin for production.")
+elif _CORS_ORIGINS_ENV:
+    _CORS_ORIGINS = [o.strip() for o in _CORS_ORIGINS_ENV.split(",") if o.strip()]
+else:
+    _CORS_ORIGINS = [
+        "http://localhost",
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "http://localhost:8002",
+    ]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_CORS_ORIGINS,

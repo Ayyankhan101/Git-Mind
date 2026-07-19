@@ -16,6 +16,8 @@ from collections import defaultdict
 
 import structlog
 
+from fastapi import Request
+
 from services.cache import get_redis
 
 logger = structlog.get_logger(__name__)
@@ -132,6 +134,18 @@ def _mem_rate_check(endpoint: str, key: str) -> tuple[bool, int, int]:
         for k in stale:
             del _mem_data[k]
     return True, limit - len(hits), 0
+
+
+def get_client_ip(request: Request) -> str:
+    forwarded = request.headers.get("X-Forwarded-For", "")
+    if forwarded:
+        ip = forwarded.split(",")[0].strip()
+        if ip:
+            return ip
+    real_ip = request.headers.get("X-Real-IP", "")
+    if real_ip:
+        return real_ip.strip()
+    return request.client.host if request.client else "unknown"
 
 
 # ── Public API ───────────────────────────────────────────────────────────────

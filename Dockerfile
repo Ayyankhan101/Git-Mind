@@ -1,5 +1,14 @@
 # ============================================
-# Stage 1: Backend Builder
+# Stage 1: Rust native module builder
+# ============================================
+FROM rust:1.81-slim-bookworm AS rust-builder
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY rust-gitmind/ .
+RUN pip install maturin --break-system-packages && maturin build --release
+
+# ============================================
+# Stage 2: Backend Builder
 # ============================================
 FROM python:3.11-slim-bookworm AS backend-builder
 RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
@@ -24,15 +33,6 @@ print('ChromaDB ONNX model cached.') \
 COPY backend/ .
 COPY --from=rust-builder /app/target/wheels/gitmind_core*.whl /tmp/
 RUN pip install --no-cache-dir /tmp/gitmind_core*.whl
-
-# ============================================
-# Stage 1b: Rust native module builder
-# ============================================
-FROM rust:1.81-slim-bookworm AS rust-builder
-RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip && rm -rf /var/lib/apt/lists/*
-WORKDIR /app
-COPY rust-gitmind/ .
-RUN pip install maturin --break-system-packages && maturin build --release
 
 # ============================================
 # Stage 2: Frontend Builder

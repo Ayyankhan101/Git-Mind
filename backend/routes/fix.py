@@ -19,7 +19,7 @@ from chroma_utils import search_codebase
 from llm_cache import invoke_with_retry
 from models.requests import AutoPRRequest, FixRequest
 from services.rate_limit_response import rate_limit_response
-from services.rate_limiter import check_rate_limit
+from services.rate_limiter import check_rate_limit, get_client_ip
 from services.session import _UUID_RE, get_session
 
 logger = structlog.get_logger(__name__)
@@ -30,7 +30,7 @@ router = APIRouter()
 async def fix_endpoint(req: FixRequest, request: Request):
     if not _UUID_RE.match(req.session_id):
         return {"error": "Invalid session ID"}
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = get_client_ip(request)
     if not (await check_rate_limit("fix", client_ip))[0]:
         return await rate_limit_response("fix", client_ip)
 
@@ -100,7 +100,7 @@ def _apply_and_push_pr(
 
     try:
         # Use GIT_ASKPASS to avoid token in URLs/logs
-        _env = {}
+        _env = {"GIT_TERMINAL_PROMPT": "0"}
         if token:
             with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False) as _askpass_script:
                 _askpass_script.write(f"#!/bin/sh\nexec echo {shlex.quote(token)}\n")
@@ -177,11 +177,18 @@ def _apply_and_push_pr(
         "Accept": "application/vnd.github.v3+json",
         "User-Agent": "GitMind",
     }
+    repo_resp = _httpx.get(
+        f"https://api.github.com/repos/{owner}/{repo}",
+        headers=headers,
+        timeout=10.0,
+    )
+    repo_resp.raise_for_status()
+    default_branch = repo_resp.json().get("default_branch", "main")
     pr_data = {
         "title": f"fix: {finding.get('title', 'security vulnerability')}",
         "body": pr_body,
         "head": branch,
-        "base": "main",
+        "base": default_branch,
     }
     resp = _httpx.post(
         f"https://api.github.com/repos/{owner}/{repo}/pulls",
@@ -189,8 +196,8 @@ def _apply_and_push_pr(
         json=pr_data,
         timeout=15.0,
     )
-    if resp.status_code == 422:
-        pr_data["base"] = "master"
+    if resp.status_code == 422 and default_branch != "main":
+        pr_data["base"] = "main"
         resp = _httpx.post(
             f"https://api.github.com/repos/{owner}/{repo}/pulls",
             headers=headers,
@@ -206,7 +213,7 @@ def _apply_and_push_pr(
 async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
     if not _UUID_RE.match(req.session_id):
         return {"error": "Invalid session ID"}
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = get_client_ip(request)
     if not (await check_rate_limit("fix", client_ip))[0]:
         return await rate_limit_response("fix", client_ip)
 

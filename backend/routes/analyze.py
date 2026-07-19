@@ -13,7 +13,7 @@ from models.requests import AnalyzeRequest
 from orchestrator import graph
 from services.auth import get_service_key, hash_token
 from services.rate_limit_response import rate_limit_response
-from services.rate_limiter import check_rate_limit
+from services.rate_limiter import check_rate_limit, get_client_ip
 from services.session import initial_state, persist_analysis, put_session
 from services.sha_cache import find_cached_snapshot, get_remote_sha
 
@@ -146,7 +146,7 @@ async def analyze_endpoint(req: AnalyzeRequest, request: Request):
     if not _GH_URL_RE.match(repo_url):
         return {"error": "Invalid GitHub URL — must be https://github.com/{owner}/{repo}"}
 
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = get_client_ip(request)
     service_key = get_service_key(request)
     if not (await check_rate_limit("analyze_rest", client_ip, service_key=service_key))[0]:
         return await rate_limit_response("analyze_rest", client_ip)
