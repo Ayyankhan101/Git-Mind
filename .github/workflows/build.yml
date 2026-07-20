@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [feat/scroll-world-landing, develop, main]
+    branches: ['**']
   pull_request:
     branches: [develop, main]
 
