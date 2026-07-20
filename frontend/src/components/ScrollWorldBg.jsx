@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
 const SCENES = [
-  { id: 'code-repo', accent: '#00D4AA' },
-  { id: 'analysis', accent: '#7C3AED' },
-  { id: 'ai-agents', accent: '#00D4AA' },
-  { id: 'architecture', accent: '#7C3AED' },
-  { id: 'security', accent: '#00D4AA' },
-  { id: 'dependencies', accent: '#7C3AED' },
-  { id: 'report', accent: '#00D4AA' },
+  { id: "code-repo", accent: "#00D4AA" },
+  { id: "analysis", accent: "#7C3AED" },
+  { id: "ai-agents", accent: "#00D4AA" },
+  { id: "architecture", accent: "#7C3AED" },
+  { id: "security", accent: "#00D4AA" },
+  { id: "dependencies", accent: "#7C3AED" },
+  { id: "report", accent: "#00D4AA" },
 ];
 
 export default function ScrollWorldBg({ scenes = SCENES }) {
@@ -19,8 +19,8 @@ export default function ScrollWorldBg({ scenes = SCENES }) {
   useEffect(() => {
     const check = () => setMobile(window.innerWidth <= 860);
     check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, []);
 
   useEffect(() => {
@@ -29,40 +29,46 @@ export default function ScrollWorldBg({ scenes = SCENES }) {
     if (!imgs.length) return;
 
     imgs.forEach((img, i) => {
-      img.style.opacity = i === 0 ? '1' : '0';
-      img.style.zIndex = i === 0 ? '2' : '1';
+      img.style.opacity = i === 0 ? "1" : "0";
+      img.style.zIndex = i === 0 ? "2" : "1";
     });
 
     function update(y) {
       if (!mounted.current) return;
-      const docH = Math.max(document.documentElement.scrollHeight, window.innerHeight);
+      const docH = Math.max(
+        document.documentElement.scrollHeight,
+        window.innerHeight,
+      );
       const vh = window.innerHeight;
       const maxScroll = docH - vh;
       const progress = maxScroll > 0 ? Math.min(1, y / maxScroll) : 0;
       const N = scenes.length;
       const idx = Math.min(N - 1, Math.floor(progress * N));
-      const local = (progress * N) - idx;
+      const local = progress * N - idx;
 
       imgs.forEach((img, i) => {
         if (i === idx) {
           const zoom = 1 + local * 0.05;
-          img.style.opacity = '1';
+          img.style.opacity = "1";
           img.style.transform = `scale(${zoom.toFixed(3)}) translateZ(0)`;
-          img.style.zIndex = '2';
+          img.style.zIndex = "2";
         } else if (i === idx + 1) {
           img.style.opacity = String(Math.min(1, local));
           img.style.transform = `scale(${(1 + local * 0.05).toFixed(3)}) translateZ(0)`;
-          img.style.zIndex = '2';
+          img.style.zIndex = "2";
         } else if (i === idx - 1) {
           img.style.opacity = String(Math.max(0, 1 - local));
-          img.style.zIndex = '1';
+          img.style.zIndex = "1";
         } else {
-          img.style.opacity = '0';
-          img.style.zIndex = '0';
+          img.style.opacity = "0";
+          img.style.zIndex = "0";
         }
       });
 
-      document.documentElement.style.setProperty('--sw-accent', scenes[idx]?.accent || '#00D4AA');
+      document.documentElement.style.setProperty(
+        "--sw-accent",
+        scenes[idx]?.accent || "#00D4AA",
+      );
       ticking.current = false;
     }
 
@@ -80,18 +86,18 @@ export default function ScrollWorldBg({ scenes = SCENES }) {
     }
 
     update(window.scrollY);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onResize);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize);
 
     return () => {
       mounted.current = false;
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onResize);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
     };
   }, [scenes]);
 
   const imgUrl = (id) => {
-    const m = mobile ? '-m' : '';
+    const m = mobile ? "-m" : "";
     return `/assets/scroll-world/${id}${m}.jpg`;
   };
 
@@ -101,14 +107,18 @@ export default function ScrollWorldBg({ scenes = SCENES }) {
         {scenes.map((s, i) => (
           <img
             key={s.id}
-            ref={el => { imgsRef.current[i] = el; }}
+            ref={(el) => {
+              imgsRef.current[i] = el;
+            }}
             className="sw-still"
             src={imgUrl(s.id)}
-            onError={e => {
-              if (mobile) { e.target.src = `/assets/scroll-world/${s.id}.jpg`; }
+            onError={(e) => {
+              if (mobile) {
+                e.target.src = `/assets/scroll-world/${s.id}.jpg`;
+              }
             }}
             alt=""
-            loading={i < 2 ? 'eager' : 'lazy'}
+            loading={i < 2 ? "eager" : "lazy"}
             decoding="async"
           />
         ))}

@@ -104,7 +104,10 @@ export default function DiagramTab({
           data: {
             ...node.data,
             label: humanizeNodeLabel(
-              node.data.label || node.id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+              node.data.label ||
+                node.id
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (c) => c.toUpperCase()),
               node.data?.tier || tier,
             ),
             tier: node.data?.tier || tier,
@@ -146,7 +149,10 @@ export default function DiagramTab({
           data: {
             ...node.data,
             label: humanizeNodeLabel(
-              node.label || node.id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+              node.label ||
+                node.id
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (c) => c.toUpperCase()),
               node.data?.tier || tier,
             ),
             tier: node.data?.tier || tier,

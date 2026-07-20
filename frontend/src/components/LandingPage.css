@@ -285,7 +285,7 @@ html.lenis body {
   inset: 0;
   z-index: 0;
   overflow: hidden;
-  background: #0A0A14;
+  background: #0a0a14;
 }
 
 .sw-bg-stage {
@@ -310,8 +310,8 @@ html.lenis body {
   background: linear-gradient(
     180deg,
     transparent 0%,
-    color-mix(in srgb, #0A0A14 30%, transparent) 50%,
-    #0A0A14 100%
+    color-mix(in srgb, #0a0a14 30%, transparent) 50%,
+    #0a0a14 100%
   );
   pointer-events: none;
 }
