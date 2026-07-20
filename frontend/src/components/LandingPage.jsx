@@ -92,6 +92,7 @@ function splitLines(el) {
 
 export default function LandingPage({ onLoad, onAnalyzeUrl }) {
   const [inputVal, setInputVal] = useState("");
+  const [scrollY, setScrollY] = useState(0);
   const rootRef = useRef(null);
   const navRef = useRef(null);
   const heroContentRef = useRef(null);
@@ -118,6 +119,7 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
     });
 
     lenis.on("scroll", ScrollTrigger.update);
+    lenis.on("scroll", (e) => setScrollY(e.scroll));
     gsap.ticker.add((time) => lenis.raf(time * 1000));
     gsap.ticker.lagSmoothing(0);
 
@@ -444,7 +446,7 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
       </div>
 
       {/* Scroll-world background */}
-      <ScrollWorldBg />
+      <ScrollWorldBg scrollY={scrollY} />
 
       {/* Navigation */}
       <nav className="lp-nav" ref={navRef}>
