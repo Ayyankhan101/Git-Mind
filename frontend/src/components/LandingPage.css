@@ -302,6 +302,7 @@ html.lenis body {
   object-position: center 42%;
   will-change: opacity, transform;
   transition: opacity 0.15s ease-out;
+  filter: brightness(0.5) saturate(0.85);
 }
 
 .sw-bg-overlay {
@@ -309,7 +310,7 @@ html.lenis body {
   inset: 0;
   background: linear-gradient(
     180deg,
-    transparent 0%,
+    rgba(10, 10, 20, 0.4) 0%,
     color-mix(in srgb, #0a0a14 30%, transparent) 50%,
     #0a0a14 100%
   );

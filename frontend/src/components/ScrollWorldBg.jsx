@@ -10,7 +10,7 @@ const SCENES = [
   { id: "report", accent: "#00D4AA" },
 ];
 
-export default function ScrollWorldBg({ scenes = SCENES }) {
+export default function ScrollWorldBg({ scenes = SCENES, scrollY }) {
   const imgsRef = useRef([]);
   const ticking = useRef(false);
   const mounted = useRef(false);
@@ -23,6 +23,7 @@ export default function ScrollWorldBg({ scenes = SCENES }) {
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  /* Update scroll crossfade when scrollY prop changes (Lenis-driven) */
   useEffect(() => {
     mounted.current = true;
     const imgs = imgsRef.current;
@@ -32,69 +33,49 @@ export default function ScrollWorldBg({ scenes = SCENES }) {
       img.style.opacity = i === 0 ? "1" : "0";
       img.style.zIndex = i === 0 ? "2" : "1";
     });
-
-    function update(y) {
-      if (!mounted.current) return;
-      const docH = Math.max(
-        document.documentElement.scrollHeight,
-        window.innerHeight,
-      );
-      const vh = window.innerHeight;
-      const maxScroll = docH - vh;
-      const progress = maxScroll > 0 ? Math.min(1, y / maxScroll) : 0;
-      const N = scenes.length;
-      const idx = Math.min(N - 1, Math.floor(progress * N));
-      const local = progress * N - idx;
-
-      imgs.forEach((img, i) => {
-        if (i === idx) {
-          const zoom = 1 + local * 0.05;
-          img.style.opacity = "1";
-          img.style.transform = `scale(${zoom.toFixed(3)}) translateZ(0)`;
-          img.style.zIndex = "2";
-        } else if (i === idx + 1) {
-          img.style.opacity = String(Math.min(1, local));
-          img.style.transform = `scale(${(1 + local * 0.05).toFixed(3)}) translateZ(0)`;
-          img.style.zIndex = "2";
-        } else if (i === idx - 1) {
-          img.style.opacity = String(Math.max(0, 1 - local));
-          img.style.zIndex = "1";
-        } else {
-          img.style.opacity = "0";
-          img.style.zIndex = "0";
-        }
-      });
-
-      document.documentElement.style.setProperty(
-        "--sw-accent",
-        scenes[idx]?.accent || "#00D4AA",
-      );
-      ticking.current = false;
-    }
-
-    function onScroll() {
-      if (!ticking.current) {
-        ticking.current = true;
-        requestAnimationFrame(() => update(window.scrollY));
-      }
-    }
-
-    let resizeTimer;
-    function onResize() {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => update(window.scrollY), 100);
-    }
-
-    update(window.scrollY);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onResize);
-
-    return () => {
-      mounted.current = false;
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onResize);
-    };
   }, [scenes]);
+
+  useEffect(() => {
+    if (!mounted.current) return;
+    const imgs = imgsRef.current;
+    if (!imgs.length) return;
+
+    const y = scrollY ?? 0;
+    const docH = Math.max(
+      document.documentElement.scrollHeight,
+      window.innerHeight,
+    );
+    const vh = window.innerHeight;
+    const maxScroll = docH - vh;
+    const progress = maxScroll > 0 ? Math.min(1, y / maxScroll) : 0;
+    const N = scenes.length;
+    const idx = Math.min(N - 1, Math.floor(progress * N));
+    const local = progress * N - idx;
+
+    imgs.forEach((img, i) => {
+      if (i === idx) {
+        const zoom = 1 + local * 0.05;
+        img.style.opacity = "1";
+        img.style.transform = `scale(${zoom.toFixed(3)}) translateZ(0)`;
+        img.style.zIndex = "2";
+      } else if (i === idx + 1) {
+        img.style.opacity = String(Math.min(1, local));
+        img.style.transform = `scale(${(1 + local * 0.05).toFixed(3)}) translateZ(0)`;
+        img.style.zIndex = "2";
+      } else if (i === idx - 1) {
+        img.style.opacity = String(Math.max(0, 1 - local));
+        img.style.zIndex = "1";
+      } else {
+        img.style.opacity = "0";
+        img.style.zIndex = "0";
+      }
+    });
+
+    document.documentElement.style.setProperty(
+      "--sw-accent",
+      scenes[idx]?.accent || "#00D4AA",
+    );
+  }, [scenes, scrollY]);
 
   const imgUrl = (id) => {
     const m = mobile ? "-m" : "";
