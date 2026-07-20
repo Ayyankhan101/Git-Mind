@@ -12,7 +12,6 @@ const SCENES = [
 
 export default function ScrollWorldBg({ scenes = SCENES, scrollY }) {
   const imgsRef = useRef([]);
-  const ticking = useRef(false);
   const mounted = useRef(false);
   const [mobile, setMobile] = useState(false);
 
