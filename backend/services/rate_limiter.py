@@ -15,7 +15,6 @@ import time
 from collections import defaultdict
 
 import structlog
-
 from fastapi import Request
 
 from services.cache import get_redis

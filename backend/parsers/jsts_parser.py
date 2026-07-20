@@ -1,9 +1,10 @@
 import re
 
+
 def _humanize_label(name: str) -> str:
-    name = re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', name)
-    name = re.sub(r'(?<=[A-Z])(?=[A-Z][a-z])', ' ', name)
-    name = name.replace('_', ' ').replace('-', ' ')
+    name = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", name)
+    name = re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", " ", name)
+    name = name.replace("_", " ").replace("-", " ")
     words = name.split()
     result = []
     for w in words:
@@ -11,7 +12,8 @@ def _humanize_label(name: str) -> str:
             result.append(w)
         else:
             result.append(w[0].upper() + w[1:])
-    return ' '.join(result)
+    return " ".join(result)
+
 
 _IMPORT_PATTERNS = [
     re.compile(r'import\s+(?:\{[^}]*\}|\*\s+as\s+\w+|\w+(?:,\s*\w+)*)\s+from\s+[\'"]([^\'"]+)[\'"]'),

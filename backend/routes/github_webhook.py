@@ -150,6 +150,7 @@ async def github_webhook(request: Request):
     """Receive and process GitHub webhook events."""
     # Rate limit by IP to prevent abuse
     from services.rate_limiter import get_client_ip
+
     client_ip = get_client_ip(request)
     from services.rate_limit_response import rate_limit_response
     from services.rate_limiter import check_rate_limit
