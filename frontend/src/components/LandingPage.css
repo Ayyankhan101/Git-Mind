@@ -279,19 +279,41 @@ html.lenis body {
   }
 }
 
-/* ── Spline 3D Scene (full page) ─────────────────────────────── */
-.lp-spline-fullpage {
-  position: absolute;
+/* ── Scroll-world background ──────────────────────────────────── */
+.sw-bg-root {
+  position: fixed;
   inset: 0;
   z-index: 0;
-  pointer-events: auto;
+  overflow: hidden;
+  background: #0A0A14;
 }
 
-.lp-spline-fullpage iframe {
-  width: 150%;
-  height: 150%;
-  border: none;
-  transform: translate(-5%, -8%);
+.sw-bg-stage {
+  position: absolute;
+  inset: 0;
+}
+
+.sw-still {
+  position: absolute;
+  inset: -5%;
+  width: 110%;
+  height: 110%;
+  object-fit: cover;
+  object-position: center 42%;
+  will-change: opacity, transform;
+  transition: opacity 0.15s ease-out;
+}
+
+.sw-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, #0A0A14 30%, transparent) 50%,
+    #0A0A14 100%
+  );
+  pointer-events: none;
 }
 
 @keyframes lp-spline-in {
@@ -945,10 +967,6 @@ html.lenis body {
     opacity: 0.7;
   }
 
-  .lp-spline-fullpage {
-    opacity: 0.5;
-  }
-
   .lp-features-grid {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -968,10 +986,6 @@ html.lenis body {
     right: -10%;
     transform: none;
     opacity: 0.5;
-  }
-
-  .lp-spline-fullpage {
-    opacity: 0.3;
   }
 
   .lp-orb-1 {
@@ -1136,10 +1150,6 @@ html.lenis body {
   .lp-feature-card:hover,
   .lp-stat-item:hover {
     transform: none !important;
-  }
-
-  .lp-spline-fullpage {
-    opacity: 0.4;
   }
 
   .lp-hero-content {

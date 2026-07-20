@@ -15,6 +15,7 @@ import {
   Workflow,
   Gauge,
 } from "lucide-react";
+import ScrollWorldBg from "./ScrollWorldBg";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
@@ -349,10 +350,6 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
     return () => ctx.revert();
   }, []);
 
-  /* Spline load */
-  const splineUrl =
-    "https://my.spline.design/aidatamodelinteraction-eeyThmwWx2FAcM8oe2sM3RYs/";
-
   /* Magnetic hover for primary buttons (event delegation) */
   useEffect(() => {
     if (reducedMotion.current) return;
@@ -446,16 +443,8 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
         <div className="lp-gradient-orb lp-orb-3" />
       </div>
 
-      {/* 3D Spline Scene (full page) */}
-      <div className="lp-spline-fullpage" aria-hidden="true">
-        <iframe
-          src={splineUrl}
-          title="3D Spline Scene"
-          frameBorder="0"
-          allow="autoplay"
-          loading="lazy"
-        />
-      </div>
+      {/* Scroll-world background */}
+      <ScrollWorldBg />
 
       {/* Navigation */}
       <nav className="lp-nav" ref={navRef}>
