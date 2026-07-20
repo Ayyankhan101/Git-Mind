@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 
 const SCENES = [
   { id: 'code-repo', accent: '#00D4AA' },
-  { id: 'ai-agents', accent: '#7C3AED' },
-  { id: 'architecture', accent: '#00D4AA' },
-  { id: 'security', accent: '#7C3AED' },
+  { id: 'analysis', accent: '#7C3AED' },
+  { id: 'ai-agents', accent: '#00D4AA' },
+  { id: 'architecture', accent: '#7C3AED' },
+  { id: 'security', accent: '#00D4AA' },
+  { id: 'dependencies', accent: '#7C3AED' },
   { id: 'report', accent: '#00D4AA' },
 ];
 
