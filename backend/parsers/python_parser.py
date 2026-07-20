@@ -1,4 +1,18 @@
 import ast
+import re
+
+def _humanize_label(name: str) -> str:
+    name = re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', name)
+    name = re.sub(r'(?<=[A-Z])(?=[A-Z][a-z])', ' ', name)
+    name = name.replace('_', ' ').replace('-', ' ')
+    words = name.split()
+    result = []
+    for w in words:
+        if w.isupper() and len(w) > 1:
+            result.append(w)
+        else:
+            result.append(w[0].upper() + w[1:])
+    return ' '.join(result)
 
 _FASTAPI_DECORATORS = {
     "app.get",
@@ -223,7 +237,7 @@ def parse_python(file_path: str, source: str) -> dict | None:
     # Use filename as node name
     path = file_path.replace("\\", "/")
     stem = path.rsplit("/", 1)[-1].rsplit(".", 1)[0] if "/" in path else path.rsplit(".", 1)[0]
-    label = stem.replace("_", " ").replace("-", " ").title()
+    label = _humanize_label(stem)
 
     node_type, layer = _classify_node(stem, file_path, classes, endpoints)
 

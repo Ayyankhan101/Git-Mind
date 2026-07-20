@@ -185,9 +185,9 @@ def _sanitize_mermaid(diagram: str) -> str:
 
     def _clean_label(m: re.Match) -> str:
         content = m.group(1)
-        content = re.sub(r"\([^)]*\)", "", content)  # remove func-call parens
+        content = re.sub(r"\(\s*\)", "", content)  # remove empty parens only
         content = re.sub(r'[<>&"\'#%\\]', "", content)  # strip chars that break parser
-        content = content.replace("/", " ").replace("_", " ")
+        content = content.replace("_", " ")
         content = re.sub(r"\s+", " ", content).strip()
         return f"[{content or 'Node'}]"
 

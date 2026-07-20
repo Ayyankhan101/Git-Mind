@@ -183,7 +183,7 @@ export function parseMermaidToFlow(mermaidString) {
             id,
             type: "archNode",
             data: {
-              label: id,
+              label: id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
               category: "MODULE",
               tier: "config",
               color: "#64748b",
@@ -226,7 +226,7 @@ export function parseMermaidToFlow(mermaidString) {
             id,
             type: "archNode",
             data: {
-              label: id,
+              label: id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
               category: "MODULE",
               tier: "config",
               color: "#64748b",
