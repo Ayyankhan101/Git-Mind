@@ -315,7 +315,6 @@ html.lenis body {
   );
   pointer-events: none;
 }
-}
 
 @keyframes lp-spline-in {
   from {
