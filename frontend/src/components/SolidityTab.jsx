@@ -12,7 +12,19 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
 
   return (
     <>
-      <div className={`row ${sev}`} onClick={() => setExpanded((e) => !e)}>
+      <div
+        className={`row ${sev}`}
+        onClick={() => setExpanded((e) => !e)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setExpanded((prev) => !prev);
+          }
+        }}
+        tabIndex={0}
+        role="button"
+        aria-expanded={expanded}
+      >
         <div className="row-line">
           <span className="row-sev">
             <span className="glyph" />

@@ -178,6 +178,16 @@ function ThemeSwitcher({ theme, dispatch }) {
                 dispatch({ type: "SET_THEME", theme: t.id });
                 setOpen(false);
               }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  dispatch({ type: "SET_THEME", theme: t.id });
+                  setOpen(false);
+                }
+              }}
+              tabIndex={0}
+              role="option"
+              aria-selected={t.id === theme}
             >
               <div className="theme-opt-swatch">
                 <span style={{ background: t.colors[0] }} />

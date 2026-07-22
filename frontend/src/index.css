@@ -2818,6 +2818,35 @@ select {
   color: var(--text-3);
 }
 
+/* ── Source badge (chat) ─────────────────────────────────── */
+.source-badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+/* ── Chat suggestion buttons ─────────────────────────────── */
+.chat-suggestion {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.chat-suggestion:hover {
+  border-color: var(--primary);
+  color: var(--text-1);
+}
+
 /* ── Markdown in chat messages ──────────────────────────────── */
 .md-paragraph {
   margin: 0 0 8px 0;

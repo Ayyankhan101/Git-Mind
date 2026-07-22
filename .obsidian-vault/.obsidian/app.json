@@ -1,0 +1,12 @@
+{
+  "obsidianVersion": "1.8.0",
+  "baseFontSize": 16,
+  "showFrontmatter": false,
+  "showInlineTitle": true,
+  "newFileLocation": "current",
+  "alwaysUpdateLinks": true,
+  "attachmentFolderPath": "assets",
+  "communityThemeEnabled": false,
+  "cssTheme": "",
+  "enabledPlugins": ["graph"]
+}

@@ -8,20 +8,7 @@ function SourceBadge({ source }) {
   const parts = path.split("/");
   const short = parts.length > 2 ? `…/${parts.slice(-2).join("/")}` : path;
   return (
-    <span
-      style={{
-        display: "inline-block",
-        fontSize: 10,
-        padding: "1px 6px",
-        borderRadius: 3,
-        background: "var(--surface-2)",
-        border: "1px solid var(--border)",
-        color: "var(--text-3)",
-        fontFamily: "var(--font-mono)",
-        whiteSpace: "nowrap",
-      }}
-      title={path}
-    >
+    <span className="source-badge" title={path}>
       {short}
     </span>
   );
@@ -88,6 +75,7 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
     abortRef.current = controller;
     try {
       let full = "";
+      const lastIdx = /* will be set after setMessages */ null;
       await postChatStream(
         sessionId,
         text,
@@ -103,10 +91,20 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
         (sources) => {
           setMessages((prev) =>
             prev.map((m, i) =>
-              i === prev.length - 1 ? { ...m, streaming: false, sources } : m,
+              i === prev.length - 1
+                ? { ...m, streaming: false, sources }
+                : m,
             ),
           );
         },
+      );
+      // Stream finished — ensure streaming flag is cleared
+      setMessages((prev) =>
+        prev.map((m, i) =>
+          i === prev.length - 1 && m.streaming
+            ? { ...m, streaming: false }
+            : m,
+        ),
       );
     } catch (err) {
       if (err.name === "AbortError") return;
@@ -139,7 +137,7 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
 
   return (
     <div className="chat-wrap">
-      <div className="chat-messages">
+      <div className="chat-messages" aria-live="polite" aria-label="Chat messages">
         {messages.length === 0 && (
           <div
             style={{
@@ -179,27 +177,10 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
               ].map((q) => (
                 <button
                   key={q}
+                  className="chat-suggestion"
                   onClick={() => {
                     setInput(q);
                     textareaRef.current?.focus();
-                  }}
-                  style={{
-                    background: "var(--surface-2)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 8,
-                    padding: "6px 12px",
-                    fontSize: 12,
-                    color: "var(--text-2)",
-                    cursor: "pointer",
-                    transition: "border-color 0.15s, color 0.15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "var(--primary)";
-                    e.currentTarget.style.color = "var(--text-1)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "var(--border)";
-                    e.currentTarget.style.color = "var(--text-2)";
                   }}
                 >
                   {q}
@@ -227,6 +208,7 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
           onKeyDown={handleKeyDown}
           disabled={busy}
           placeholder="Ask anything about the repo — Enter to send"
+          aria-label="Chat message"
           rows={1}
         />
       </div>

@@ -68,7 +68,19 @@ function FindingRow({
 
   return (
     <>
-      <div className={`row ${sev}`} onClick={() => setExpanded((e) => !e)}>
+      <div
+        className={`row ${sev}`}
+        onClick={() => setExpanded((e) => !e)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setExpanded((prev) => !prev);
+          }
+        }}
+        tabIndex={0}
+        role="button"
+        aria-expanded={expanded}
+      >
         <div className="row-line">
           <span className="row-sev">
             <span className="glyph" />
@@ -93,7 +105,7 @@ function FindingRow({
             )}
           </div>
           {filePath && (
-            <span
+            <button
               className="row-path"
               onClick={(e) => {
                 e.stopPropagation();
@@ -103,7 +115,7 @@ function FindingRow({
             >
               {filePath}
               {fileLine ? `:${fileLine}` : ""}
-            </span>
+            </button>
           )}
         </div>
       </div>

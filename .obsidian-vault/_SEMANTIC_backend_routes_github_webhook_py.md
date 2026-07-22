@@ -1,0 +1,20 @@
+---
+title: "github webhook route module"
+tags: [gitmind, semantic, backend]
+semantic_id: backend_routes_github_webhook_py
+layer: backend
+community: ?
+---
+
+Source: [`backend/routes/github_webhook.py`](/home/ayyan/project/Git-Mind/backend/routes/github_webhook.py)
+
+# github webhook route module
+
+Layer: **backend**
+
+## Connections
+
+- [[_SEMANTIC_backend_routes_pr_py|backend_routes_pr_py]] (semantically_similar_to, INFERRED)
+
+---
+Part of [[Git-Mind Graph]]

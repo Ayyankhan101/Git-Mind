@@ -231,8 +231,9 @@ export function loadSharedAnalysis(sessionId) {
 
 /**
  * POST /chat/stream — streaming chat via SSE. Calls onToken(token) for each chunk.
+ * Calls onSources(sources) when source metadata arrives.
  */
-export async function postChatStream(sessionId, question, onToken, signal) {
+export async function postChatStream(sessionId, question, onToken, signal, onSources) {
   const timeout = AbortSignal.timeout(90_000);
   const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
   const res = await fetch(`${BASE}/chat/stream`, {
@@ -260,9 +261,16 @@ export async function postChatStream(sessionId, question, onToken, signal) {
     buffer = lines.pop();
     for (const line of lines) {
       if (!line.startsWith("data: ")) continue;
-      const data = JSON.parse(line.slice(6));
-      if (data.error) throw new Error(data.error);
-      if (data.token) onToken(data.token);
+      try {
+        const data = JSON.parse(line.slice(6));
+        if (data.error) throw new Error(data.error);
+        if (data.token) onToken(data.token);
+        if (data.sources && onSources) onSources(data.sources);
+      } catch (parseErr) {
+        if (parseErr.message && !parseErr.message.includes("JSON"))
+          throw parseErr;
+        // Skip malformed SSE lines
+      }
     }
   }
 }
