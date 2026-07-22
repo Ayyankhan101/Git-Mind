@@ -54,12 +54,16 @@ def knock(inp, outp):
         for y in (0, h - 1):
             i = y * w + x
             if not seen[i] and is_bg(x, y):
-                seen[i] = 1; bg[i] = 1; dq.append((x, y))
+                seen[i] = 1
+                bg[i] = 1
+                dq.append((x, y))
     for y in range(h):
         for x in (0, w - 1):
             i = y * w + x
             if not seen[i] and is_bg(x, y):
-                seen[i] = 1; bg[i] = 1; dq.append((x, y))
+                seen[i] = 1
+                bg[i] = 1
+                dq.append((x, y))
     while dq:
         x, y = dq.popleft()
         for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
@@ -68,7 +72,8 @@ def knock(inp, outp):
                 if not seen[i]:
                     seen[i] = 1
                     if is_bg(nx, ny):
-                        bg[i] = 1; dq.append((nx, ny))
+                        bg[i] = 1
+                        dq.append((nx, ny))
 
     alpha = Image.new("L", (w, h), 255)
     ap = alpha.load()
