@@ -75,7 +75,6 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
     abortRef.current = controller;
     try {
       let full = "";
-      const lastIdx = /* will be set after setMessages */ null;
       await postChatStream(
         sessionId,
         text,
