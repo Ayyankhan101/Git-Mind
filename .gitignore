@@ -13,5 +13,8 @@ backend/gitmind.db
 graphify-out/
 graphify-out.zip
 
+# Obsidian vault (tracked separately)
+.obsidian-vault/
+
 # Rust sidecar build artifacts
 rust-sidecar/target/

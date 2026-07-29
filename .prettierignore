@@ -1,0 +1,8 @@
+.obsidian-vault/
+node_modules/
+dist/
+build/
+.opencode/
+target/
+*.pyc
+__pycache__/

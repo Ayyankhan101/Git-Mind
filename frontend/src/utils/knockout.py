@@ -17,12 +17,13 @@ Then encode to webp with alpha, e.g.:
 
 No numpy/ImageMagick needed — pure PIL. Pairs with SKILL.md Step 3.
 """
+
 import os
 import sys
 from collections import deque
 from PIL import Image, ImageFilter
 
-TOL = float(os.environ.get("TOL", "34"))   # RGB Euclidean distance counted as background
+TOL = float(os.environ.get("TOL", "34"))  # RGB Euclidean distance counted as background
 
 
 def corner_color(im):
@@ -82,7 +83,7 @@ def knock(inp, outp):
         for x in range(w):
             if bg[base + x]:
                 ap[x, y] = 0
-    alpha = alpha.filter(ImageFilter.GaussianBlur(1.4))   # soften the threshold contour
+    alpha = alpha.filter(ImageFilter.GaussianBlur(1.4))  # soften the threshold contour
     out = im.convert("RGBA")
     out.putalpha(alpha)
     out.save(outp)
