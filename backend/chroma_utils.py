@@ -4,7 +4,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict, cast
 
 import chromadb
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -12,6 +12,14 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 logger = logging.getLogger(__name__)
 
 _COLLECTION_TTL = 60 * 60 * 24 * 7  # 7 days
+
+
+class SearchResult(TypedDict):
+    filepath: str
+    content: str
+    language: str
+    layer: str
+    score: float
 
 
 def _writable(path: Path) -> bool:
@@ -258,7 +266,7 @@ def search_codebase(
     n_results: int = 5,
     layer_filter: str | None = None,
     language_filter: str | None = None,
-) -> list[dict]:
+) -> list[SearchResult]:
     """Search with optional metadata filtering and enhanced scoring."""
     with _lock:
         collection = _collections.get(collection_name)
@@ -313,7 +321,7 @@ def search_codebase(
         return []
 
     # Rerank: boost chunks from same file, deduplicate by filepath
-    results = []
+    results: list[SearchResult] = []
     seen_files = set()
     for doc, meta, dist in zip(documents[0], metadatas[0], distances[0], strict=False):
         filepath = meta.get("filepath", "")
@@ -323,22 +331,24 @@ def search_codebase(
         seen_files.add(filepath)
 
         # Score: lower distance = better match, but also consider chunk size
-        chunk_size = meta.get("chunk_size", 0)
-        score = 1.0 / (1.0 + dist) * (1.0 + min(chunk_size / 1000, 0.5))
+        chunk_size_raw = meta.get("chunk_size", 0)
+        chunk_size = chunk_size_raw if isinstance(chunk_size_raw, (int, float)) else 0
+        numeric_dist = dist if isinstance(dist, (int, float)) else 1.0
+        score = 1.0 / (1.0 + numeric_dist) * (1.0 + min(chunk_size / 1000, 0.5))
 
         header = f"[File: {filepath} | Lang: {meta.get('language', '')} | Layer: {meta.get('layer', '')}]\n"
         results.append(
             {
                 "filepath": filepath,
                 "content": doc.replace(header, ""),
-                "language": meta.get("language", ""),
-                "layer": meta.get("layer", ""),
+                "language": str(meta.get("language", "")),
+                "layer": str(meta.get("layer", "")),
                 "score": score,
             }
         )
 
     # Sort by score descending
-    results.sort(key=lambda x: x["score"], reverse=True)
+    results.sort(key=lambda x: cast(float, x["score"]), reverse=True)
     return results[:n_results]
 
 
