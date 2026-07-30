@@ -4,8 +4,14 @@ const PROD_BACKEND = "https://ak001z-gitmind-backend.hf.space";
 function deriveHttpBase() {
   // 1. CRA build-time env var (set REACT_APP_API_BASE in Vercel dashboard)
   if (process.env.REACT_APP_API_BASE) {
-    console.log("[api.js] Using env REACT_APP_API_BASE:", process.env.REACT_APP_API_BASE);
-    return process.env.REACT_APP_API_BASE;
+    const envUrl = process.env.REACT_APP_API_BASE;
+    // Validate: must not be the HuggingFace website URL (hf.co/spaces/...)
+    if (envUrl.includes("huggingface.co/spaces/")) {
+      console.warn("[api.js] REACT_APP_API_BASE looks like HF website URL, using PROD_BACKEND instead");
+    } else {
+      console.log("[api.js] Using env REACT_APP_API_BASE:", envUrl);
+      return envUrl;
+    }
   }
   // 2. Vite runtime injection
   if (typeof window !== "undefined" && window.__ENV__?.API_BASE) {
