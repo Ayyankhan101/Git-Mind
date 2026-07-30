@@ -326,9 +326,11 @@ select {
 }
 .nav-rail:not(:hover) .nav-item {
   justify-content: center;
+  gap: 0;
 }
 .nav-rail:hover .nav-item {
   justify-content: flex-start;
+  gap: 10px;
 }
 .nav-item:hover {
   color: var(--text-1);
@@ -371,17 +373,19 @@ select {
 
 .nav-label {
   opacity: 0;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--text-2);
   transition: opacity 0.2s ease-in-out 0.1s;
   pointer-events: none;
+  white-space: nowrap;
 }
 .nav-rail:hover .nav-label {
   opacity: 1;
 }
 .nav-rail:not(:hover) .nav-label {
-  display: none;
+  opacity: 0.5;
+  font-size: 9px;
 }
 
 .nav-icon-text {
@@ -3056,21 +3060,41 @@ select {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 16px;
   padding: 100px 32px;
   text-align: center;
+  position: relative;
+}
+.empty::before {
+  content: "";
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+.empty > * {
+  position: relative;
+  z-index: 1;
 }
 .empty-icon {
-  color: var(--text-3);
+  color: var(--primary);
+  opacity: 0.5;
+  filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.3));
 }
 .empty-title {
   color: var(--text-2);
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 .empty-sub {
   color: var(--text-3);
-  font-size: 14px;
+  font-size: 13px;
+  max-width: 240px;
+  line-height: 1.5;
 }
 
 /* ── Skeleton pulse ───────────────────────────────────────── */
@@ -3578,6 +3602,9 @@ select {
 }
 .toast.danger {
   border-left-color: var(--danger);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    0 0 30px rgba(239, 68, 68, 0.12);
 }
 .toast.danger .toast-icon {
   color: var(--danger);
