@@ -1,26 +1,34 @@
-// Derive backend base URL.
-//   1. REACT_APP_API_BASE env var wins (set at build time).
-//   2. Vite runtime injection (index.html sets window.__ENV__)
-//   3. Cloud Shell preview: hostnames like "3000-cs-xxxx.cloudshell.dev" —
-//      swap the leading port with 8002 so frontend and backend share host.
-//   4. Default to localhost:8002 for dev.
+// Hardcoded backend URL for all non-localhost deployments
 const PROD_BACKEND = "https://ak001z-gitmind-backend.hf.space";
 
 function deriveHttpBase() {
-  // 1. CRA build-time env var
-  if (process.env.REACT_APP_API_BASE) return process.env.REACT_APP_API_BASE;
-  // 2. Vite runtime injection (index.html sets window.__ENV__)
-  if (typeof window !== "undefined" && window.__ENV__?.API_BASE)
+  // 1. CRA build-time env var (set REACT_APP_API_BASE in Vercel dashboard)
+  if (process.env.REACT_APP_API_BASE) {
+    console.log("[api.js] Using env REACT_APP_API_BASE:", process.env.REACT_APP_API_BASE);
+    return process.env.REACT_APP_API_BASE;
+  }
+  // 2. Vite runtime injection
+  if (typeof window !== "undefined" && window.__ENV__?.API_BASE) {
+    console.log("[api.js] Using window.__ENV__.API_BASE:", window.__ENV__.API_BASE);
     return window.__ENV__.API_BASE;
-  // 3. Cloud Shell preview: swap leading port with 8002
+  }
+  // 3. Cloud Shell preview
   if (typeof window !== "undefined") {
     const { protocol, host, hostname } = window.location;
-    if (/^\d+-/.test(host))
-      return `${protocol}//${host.replace(/^\d+-/, "8002-")}`;
-    // 4. Production deployment (Vercel/Netlify/etc) → use deployed backend
-    if (hostname !== "localhost" && hostname !== "127.0.0.1")
+    if (/^\d+-/.test(host)) {
+      const url = `${protocol}//${host.replace(/^\d+-/, "8002-")}`;
+      console.log("[api.js] Cloud Shell URL:", url);
+      return url;
+    }
+    // 4. Production deployment (Vercel/Netlify/etc)
+    if (hostname !== "localhost" && hostname !== "127.0.0.1") {
+      console.log("[api.js] Production URL:", PROD_BACKEND, "hostname:", hostname);
       return PROD_BACKEND;
+    }
   }
+  console.log("[api.js] Dev URL: http://localhost:8002");
+  return "http://localhost:8002";
+}
   return "http://localhost:8002";
 }
 
@@ -58,6 +66,7 @@ function _extractError(payload, fallback) {
 async function _apiFetch(url, options = {}, timeoutMs = 30_000) {
   const { timeoutError, ...fetchOpts } = options;
   fetchOpts.signal = AbortSignal.timeout(timeoutMs);
+  console.log("[api.js] Fetching:", url);
   let res;
   try {
     res = await fetch(url, fetchOpts);
