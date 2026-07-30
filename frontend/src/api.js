@@ -1,8 +1,11 @@
 // Derive backend base URL.
 //   1. REACT_APP_API_BASE env var wins (set at build time).
-//   2. Cloud Shell preview: hostnames like "3000-cs-xxxx.cloudshell.dev" —
+//   2. Vite runtime injection (index.html sets window.__ENV__)
+//   3. Cloud Shell preview: hostnames like "3000-cs-xxxx.cloudshell.dev" —
 //      swap the leading port with 8002 so frontend and backend share host.
-//   3. Default to localhost:8002 for dev.
+//   4. Default to localhost:8002 for dev.
+const PROD_BACKEND = "https://ak001z-gitmind-backend.hf.space";
+
 function deriveHttpBase() {
   // 1. CRA build-time env var
   if (process.env.REACT_APP_API_BASE) return process.env.REACT_APP_API_BASE;
@@ -11,11 +14,12 @@ function deriveHttpBase() {
     return window.__ENV__.API_BASE;
   // 3. Cloud Shell preview: swap leading port with 8002
   if (typeof window !== "undefined") {
-    const { protocol, host, port, hostname } = window.location;
+    const { protocol, host, hostname } = window.location;
     if (/^\d+-/.test(host))
       return `${protocol}//${host.replace(/^\d+-/, "8002-")}`;
-    if (!port || port === "80" || port === "443")
-      return `${protocol}//${hostname}`;
+    // 4. Production deployment (Vercel/Netlify/etc) → use deployed backend
+    if (hostname !== "localhost" && hostname !== "127.0.0.1")
+      return PROD_BACKEND;
   }
   return "http://localhost:8002";
 }
