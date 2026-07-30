@@ -4,6 +4,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
+from typing import Any
 
 import chromadb
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -72,10 +73,22 @@ def _register_collection(name: str) -> None:
 # ── Language detection for metadata ────────────────────────────────────────────
 
 _EXT_TO_LANG = {
-    ".py": "Python", ".js": "JavaScript", ".ts": "TypeScript",
-    ".jsx": "React", ".tsx": "React", ".rs": "Rust", ".go": "Go",
-    ".java": "Java", ".rb": "Ruby", ".php": "PHP", ".cs": "C#",
-    ".cpp": "C++", ".c": "C", ".h": "C", ".swift": "Swift", ".kt": "Kotlin",
+    ".py": "Python",
+    ".js": "JavaScript",
+    ".ts": "TypeScript",
+    ".jsx": "React",
+    ".tsx": "React",
+    ".rs": "Rust",
+    ".go": "Go",
+    ".java": "Java",
+    ".rb": "Ruby",
+    ".php": "PHP",
+    ".cs": "C#",
+    ".cpp": "C++",
+    ".c": "C",
+    ".h": "C",
+    ".swift": "Swift",
+    ".kt": "Kotlin",
 }
 
 
@@ -178,9 +191,16 @@ def embed_codebase(file_contents: dict[str, str], collection_name: str) -> str:
                 chunk_size=600,  # Smaller chunks for better precision
                 chunk_overlap=100,  # More overlap for context continuity
                 separators=[
-                    "\nclass ", "\ndef ", "\nasync def ",
-                    "\nexport ", "\nimport ", "\nconst ", "\nfunction ",
-                    "\n\n", "\n", " ",
+                    "\nclass ",
+                    "\ndef ",
+                    "\nasync def ",
+                    "\nexport ",
+                    "\nimport ",
+                    "\nconst ",
+                    "\nfunction ",
+                    "\n\n",
+                    "\n",
+                    " ",
                 ],
             )
 
@@ -270,7 +290,7 @@ def search_codebase(
     if language_filter:
         where_conditions.append({"language": language_filter})
 
-    where = None
+    where: dict[str, Any] | None = None
     if len(where_conditions) == 1:
         where = where_conditions[0]
     elif len(where_conditions) > 1:
@@ -295,7 +315,7 @@ def search_codebase(
     # Rerank: boost chunks from same file, deduplicate by filepath
     results = []
     seen_files = set()
-    for doc, meta, dist in zip(documents[0], metadatas[0], distances[0]):
+    for doc, meta, dist in zip(documents[0], metadatas[0], distances[0], strict=False):
         filepath = meta.get("filepath", "")
         # Deduplicate: keep only the best chunk per file
         if filepath in seen_files:
@@ -306,13 +326,16 @@ def search_codebase(
         chunk_size = meta.get("chunk_size", 0)
         score = 1.0 / (1.0 + dist) * (1.0 + min(chunk_size / 1000, 0.5))
 
-        results.append({
-            "filepath": filepath,
-            "content": doc.replace(f"[File: {filepath} | Lang: {meta.get('language', '')} | Layer: {meta.get('layer', '')}]\n", ""),
-            "language": meta.get("language", ""),
-            "layer": meta.get("layer", ""),
-            "score": score,
-        })
+        header = f"[File: {filepath} | Lang: {meta.get('language', '')} | Layer: {meta.get('layer', '')}]\n"
+        results.append(
+            {
+                "filepath": filepath,
+                "content": doc.replace(header, ""),
+                "language": meta.get("language", ""),
+                "layer": meta.get("layer", ""),
+                "score": score,
+            }
+        )
 
     # Sort by score descending
     results.sort(key=lambda x: x["score"], reverse=True)

@@ -1,13 +1,8 @@
-"""Redis client singleton — Redis-only mode.
-
-If REDIS_URL not set or Redis unreachable → crash in production.
-In development (ENVIRONMENT=development), allow fallback.
-"""
+"""Redis client singleton with graceful memory fallback."""
 
 import asyncio
 import contextlib
 import os
-import sys
 
 import structlog
 
@@ -64,9 +59,12 @@ async def init_redis() -> None:
 
     # All retries exhausted
     if _ENVIRONMENT == "production":
-        logger.critical("Redis unreachable after %d retries — crashing", _MAX_RETRIES)
-        sys.exit(1)
-    logger.warning("Redis unreachable — falling back to memory (dev mode)")
+        logger.warning(
+            "Redis unreachable after %d retries — production mode using memory fallback",
+            _MAX_RETRIES,
+        )
+    else:
+        logger.warning("Redis unreachable — falling back to memory (dev mode)")
     _redis = None
     _fallback = True
 

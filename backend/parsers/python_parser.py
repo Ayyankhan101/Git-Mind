@@ -181,7 +181,7 @@ def _build_smart_label(
     stem: str,
     file_path: str,
     classes: list[dict],
-    fns: list[dict],
+    _fns: list[dict],
     endpoints: list[dict],
 ) -> str:
     """Build a specific, descriptive label from file content instead of just filename."""

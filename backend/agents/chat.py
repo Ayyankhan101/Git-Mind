@@ -81,7 +81,14 @@ def _build_messages(
 
     history = "\n".join(f"{m['role'].upper()}: {m['content']}" for m in chat_history[-10:]) or "None."
     system = _SYSTEM_TEMPLATE.format(repo_name=repo_name, context=context, history=history)
-    sources = [{"filepath": c["filepath"], "language": c.get("language", ""), "layer": c.get("layer", "")} for c in chunks]
+    sources = [
+        {
+            "filepath": c["filepath"],
+            "language": c.get("language", ""),
+            "layer": c.get("layer", ""),
+        }
+        for c in chunks
+    ]
     return [{"role": "system", "content": system}, {"role": "user", "content": question}], sources
 
 

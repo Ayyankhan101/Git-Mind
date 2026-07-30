@@ -1,5 +1,20 @@
 import re
 
+
+def _humanize_label(name: str) -> str:
+    name = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", name)
+    name = re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", " ", name)
+    name = name.replace("_", " ").replace("-", " ")
+    words = name.split()
+    result = []
+    for w in words:
+        if w.isupper() and len(w) > 1:
+            result.append(w)
+        else:
+            result.append(w[0].upper() + w[1:])
+    return " ".join(result)
+
+
 _IMPORT_PATTERNS = [
     re.compile(r"^\s*import\s+(\S+)", re.MULTILINE),
     re.compile(r"^\s*use\s+(\S+)", re.MULTILINE),
@@ -61,10 +76,7 @@ def parse_fallback(file_path: str, source: str) -> dict | None:
     # Build smart label: prefer class name, then filename
     if classes:
         public_classes = [c for c in classes if not c.startswith("_")]
-        if public_classes:
-            label = _humanize_label(public_classes[0])
-        else:
-            label = _humanize_label(stem)
+        label = _humanize_label(public_classes[0]) if public_classes else _humanize_label(stem)
     else:
         label = _humanize_label(stem)
 
