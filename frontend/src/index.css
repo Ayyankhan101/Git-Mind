@@ -11,17 +11,17 @@
   --surface-2: rgba(10, 18, 12, 0.65);
   --surface-3: rgba(18, 28, 20, 0.6);
 
-  --border: rgba(34, 197, 94, 0.10);
+  --border: rgba(34, 197, 94, 0.1);
   --border-2: rgba(34, 197, 94, 0.18);
 
-  --primary: #22C55E;
+  --primary: #22c55e;
   --primary-dim: rgba(34, 197, 94, 0.12);
   --primary-glow: rgba(34, 197, 94, 0.25);
 
   --success: #10b981;
   --warning: #eab308;
   --danger: #ef4444;
-  --info: #22C55E;
+  --info: #22c55e;
 
   --sev-critical: #ef4444;
   --sev-high: #f97316;
@@ -32,7 +32,7 @@
   --text-2: rgba(255, 255, 255, 0.85);
   --text-3: rgba(255, 255, 255, 0.55);
 
-  --code: #4ADE80;
+  --code: #4ade80;
 
   /* Chrome tokens — cyber glass theme */
   --chrome-bg: rgba(5, 12, 8, 0.72);
@@ -267,7 +267,7 @@ select {
   font-family: "Press Start 2P", monospace;
   font-size: 13px;
   letter-spacing: 0.05em;
-  background: linear-gradient(135deg, #fff 20%, #c4b5fd 70%, #4ADE80 100%);
+  background: linear-gradient(135deg, #fff 20%, #c4b5fd 70%, #4ade80 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -841,11 +841,7 @@ select {
       rgba(103, 232, 249, 0.66),
       transparent 34%
     ),
-    radial-gradient(
-      circle at 66% 70%,
-      rgba(34, 197, 94, 0.76),
-      transparent 62%
-    );
+    radial-gradient(circle at 66% 70%, rgba(34, 197, 94, 0.76), transparent 62%);
   animation: orb-float-1 20s ease-in-out infinite;
 }
 .atmo-orb-2 {
@@ -864,11 +860,7 @@ select {
       rgba(147, 197, 253, 0.72),
       transparent 36%
     ),
-    radial-gradient(
-      circle at 70% 74%,
-      rgba(34, 197, 94, 0.78),
-      transparent 65%
-    );
+    radial-gradient(circle at 70% 74%, rgba(34, 197, 94, 0.78), transparent 65%);
   animation: orb-float-2 25s ease-in-out infinite;
 }
 .atmo-orb-3 {
@@ -911,11 +903,7 @@ select {
       rgba(103, 232, 249, 0.64),
       transparent 36%
     ),
-    radial-gradient(
-      circle at 73% 73%,
-      rgba(34, 197, 94, 0.78),
-      transparent 62%
-    );
+    radial-gradient(circle at 73% 73%, rgba(34, 197, 94, 0.78), transparent 62%);
   animation: orb-float-4 18s ease-in-out infinite;
 }
 
@@ -1268,11 +1256,7 @@ select {
       rgba(103, 232, 249, 0.56),
       transparent 35%
     ),
-    radial-gradient(
-      circle at 70% 75%,
-      rgba(34, 197, 94, 0.78),
-      transparent 64%
-    );
+    radial-gradient(circle at 70% 75%, rgba(34, 197, 94, 0.78), transparent 64%);
   filter: blur(0.5px) saturate(150%);
   box-shadow:
     inset -18px -24px 40px rgba(28, 17, 86, 0.52),
@@ -2840,7 +2824,9 @@ select {
   font-size: 12px;
   color: var(--text-2);
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
 }
 .chat-suggestion:hover {
   border-color: var(--primary);
@@ -3683,7 +3669,7 @@ select {
   --sev-critical: #ef4444;
   --sev-high: #fb923c;
   --sev-medium: #facc15;
-  --sev-low: #4ADE80;
+  --sev-low: #4ade80;
   --text-1: #faf6ee;
   --text-2: #d6cdb8;
   --text-3: #8c8270;
@@ -3733,7 +3719,7 @@ select {
   --sev-critical: #f87171;
   --sev-high: #fb923c;
   --sev-medium: #fbbf24;
-  --sev-low: #4ADE80;
+  --sev-low: #4ade80;
   --text-1: #f0f9ff;
   --text-2: #b8c7df;
   --text-3: #6e809e;
@@ -3760,7 +3746,7 @@ select {
   --sev-critical: #f43f5e;
   --sev-high: #fb923c;
   --sev-medium: #fbbf24;
-  --sev-low: #4ADE80;
+  --sev-low: #4ade80;
   --text-1: #fafafa;
   --text-2: #dedaf0;
   --text-3: #a9a3c2;
@@ -3811,7 +3797,7 @@ select {
   --surface-3: rgba(225, 232, 250, 0.65);
   --border: rgba(34, 211, 238, 0.16);
   --border-2: rgba(34, 211, 238, 0.34);
-  --primary: #22C55E;
+  --primary: #22c55e;
   --primary-dim: rgba(34, 211, 238, 0.1);
   --primary-glow: rgba(34, 211, 238, 0.3);
   --success: #16a34a;
@@ -5173,10 +5159,10 @@ textarea:focus-visible,
   --surface-3: rgba(25, 25, 42, 0.6);
   --border: rgba(255, 255, 255, 0.08);
   --border-2: rgba(255, 255, 255, 0.15);
-  --primary: #22C55E;
+  --primary: #22c55e;
   --primary-dim: rgba(34, 197, 94, 0.12);
   --primary-glow: rgba(34, 197, 94, 0.25);
-  --code: #4ADE80;
+  --code: #4ade80;
   --chrome-bg: rgba(5, 5, 16, 0.72);
   --chrome-blur: blur(28px) saturate(200%);
   --bloom-1: rgba(34, 197, 94, 0.32);
@@ -5186,11 +5172,7 @@ textarea:focus-visible,
 
 body {
   background:
-    radial-gradient(
-      circle at 58% 16%,
-      rgba(34, 197, 94, 0.3),
-      transparent 15%
-    ),
+    radial-gradient(circle at 58% 16%, rgba(34, 197, 94, 0.3), transparent 15%),
     radial-gradient(
       circle at 18% 54%,
       rgba(16, 185, 129, 0.2),
@@ -5445,7 +5427,7 @@ body::after {
 .cb-wordmark {
   font-size: 13px;
   min-width: 90px;
-  background: linear-gradient(135deg, #f4efff 20%, #22C55E 55%, #4ADE80 100%);
+  background: linear-gradient(135deg, #f4efff 20%, #22c55e 55%, #4ade80 100%);
   -webkit-background-clip: text;
   background-clip: text;
 }
@@ -5614,7 +5596,7 @@ body::after {
 .summary-header h2 {
   font-size: clamp(24px, 2.4vw, 34px);
   margin-bottom: 14px;
-  background: linear-gradient(135deg, #fff 0%, #22C55E 42%, #4ADE80 100%);
+  background: linear-gradient(135deg, #fff 0%, #22c55e 42%, #4ade80 100%);
   -webkit-background-clip: text;
   background-clip: text;
 }
@@ -5835,11 +5817,22 @@ body::after {
 
 /* Glitch animation */
 @keyframes cyber-glitch {
-  0%, 100% { transform: translate(0); }
-  20% { transform: translate(-2px, 2px); }
-  40% { transform: translate(-2px, -2px); }
-  60% { transform: translate(2px, 2px); }
-  80% { transform: translate(2px, -2px); }
+  0%,
+  100% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+  }
 }
 
 .cyber-glitch:hover {
@@ -5855,8 +5848,14 @@ body::after {
 
 /* Terminal cursor blink */
 @keyframes cyber-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 .cyber-cursor::after {
@@ -5894,8 +5893,15 @@ body::after {
 
 /* Pulsing data flow indicator */
 @keyframes cyber-pulse {
-  0%, 100% { opacity: 0.4; box-shadow: 0 0 4px var(--primary); }
-  50% { opacity: 1; box-shadow: 0 0 16px var(--primary); }
+  0%,
+  100% {
+    opacity: 0.4;
+    box-shadow: 0 0 4px var(--primary);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 16px var(--primary);
+  }
 }
 
 .cyber-pulse {
@@ -5916,7 +5922,9 @@ body::after {
   height: 8px;
   border-radius: 50%;
   background: var(--primary);
-  box-shadow: 0 0 6px var(--primary), 0 0 12px rgba(34, 197, 94, 0.3);
+  box-shadow:
+    0 0 6px var(--primary),
+    0 0 12px rgba(34, 197, 94, 0.3);
 }
 
 .cyber-status-offline {
@@ -5929,8 +5937,12 @@ body::after {
 
 /* Ticker / marquee for status bar */
 @keyframes cyber-scroll {
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
 }
 
 .cyber-ticker {
