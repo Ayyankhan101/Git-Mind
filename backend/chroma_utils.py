@@ -185,10 +185,7 @@ def search_codebase(collection_name: str, query: str, n_results: int = 5) -> lis
     metadatas = result.get("metadatas") or []
     if not documents or not metadatas:
         return []
-    return [
-        {"filepath": m["filepath"], "content": d}
-        for d, m in zip(documents[0], metadatas[0], strict=False)
-    ]
+    return [{"filepath": m["filepath"], "content": d} for d, m in zip(documents[0], metadatas[0], strict=False)]
 
 
 def delete_collection(name: str) -> None:
