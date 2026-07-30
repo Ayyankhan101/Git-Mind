@@ -106,7 +106,15 @@ async def get_session(session_id: str) -> dict | None:
             logger.debug("Session expired (in-memory)", session_id=session_id)
             return None
         return session
-    return None
+
+    # DB fallback
+    from services.database import get_analysis_db
+
+    restored = await get_analysis_db(session_id)
+    if restored:
+        put_session(session_id, restored)
+        logger.info("Session restored from database", session_id=session_id)
+    return restored
 
 
 def _session_to_snapshot(
