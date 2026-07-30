@@ -94,8 +94,7 @@ async def get_session(session_id: str) -> dict | None:
             if raw:
                 return json.loads(raw)
         except Exception as exc:
-            logger.warning("Redis session get failed", error=str(exc)[:80])
-        return None
+            logger.warning("Redis session get failed, falling back to memory", error=str(exc)[:80])
 
     # Dev fallback
     session = _sessions.get(session_id)
