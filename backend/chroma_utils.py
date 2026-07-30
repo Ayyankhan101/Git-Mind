@@ -324,7 +324,7 @@ def search_codebase(
     results: list[SearchResult] = []
     seen_files = set()
     for doc, meta, dist in zip(documents[0], metadatas[0], distances[0], strict=False):
-        filepath = meta.get("filepath", "")
+        filepath = str(meta.get("filepath", ""))
         # Deduplicate: keep only the best chunk per file
         if filepath in seen_files:
             continue
