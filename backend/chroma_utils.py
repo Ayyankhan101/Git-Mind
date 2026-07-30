@@ -130,7 +130,7 @@ def embed_codebase(file_contents: dict[str, str], collection_name: str) -> str:
             for i in range(0, len(docs), 100):
                 collection.add(
                     documents=docs[i : i + 100],
-                    metadatas=metas[i : i + 100],
+                    metadatas=metas[i : i + 100],  # type: ignore[arg-type]
                     ids=ids[i : i + 100],
                 )
 
@@ -181,9 +181,13 @@ def search_codebase(collection_name: str, query: str, n_results: int = 5) -> lis
         return []
     n = min(n_results, count)
     result = collection.query(query_texts=[query], n_results=n)
+    documents = result.get("documents") or []
+    metadatas = result.get("metadatas") or []
+    if not documents or not metadatas:
+        return []
     return [
         {"filepath": m["filepath"], "content": d}
-        for d, m in zip(result["documents"][0], result["metadatas"][0], strict=False)
+        for d, m in zip(documents[0], metadatas[0], strict=False)
     ]
 
 
