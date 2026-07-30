@@ -29,7 +29,7 @@ async def chat_endpoint(req: ChatRequest, request: Request):
     if not session.get("chroma_collection_name"):
         return {"error": "Knowledge base not ready — RAG setup may have failed."}
 
-    answer = await asyncio.to_thread(
+    answer, sources = await asyncio.to_thread(
         run_chat_agent,
         question=req.question,
         collection_name=session["chroma_collection_name"],
@@ -45,7 +45,7 @@ async def chat_endpoint(req: ChatRequest, request: Request):
     )
     session["chat_history"] = session["chat_history"][-50:]
 
-    return {"answer": answer}
+    return {"answer": answer, "sources": sources}
 
 
 @router.post("/chat/stream")
@@ -74,14 +74,17 @@ async def chat_stream_endpoint(req: ChatRequest, request: Request):
             return
 
         full_answer = ""
-        async for token in run_chat_agent_stream(
+        async for token, sources in run_chat_agent_stream(
             question=req.question,
             collection_name=session["chroma_collection_name"],
             chat_history=session["chat_history"],
             repo_name=session["repo_name"],
         ):
             full_answer += token
-            yield f"data: {json.dumps({'token': token})}\n\n"
+            if sources is not None:
+                yield f"data: {json.dumps({'token': token, 'sources': sources})}\n\n"
+            else:
+                yield f"data: {json.dumps({'token': token})}\n\n"
 
         session["chat_history"].extend(
             [

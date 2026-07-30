@@ -158,7 +158,7 @@ async def analyze_endpoint(req: AnalyzeRequest, request: Request):
     try:
         from services.task_queue import submit
 
-        task_id = submit(lambda: _run_analysis(repo_url, gh_token, session_id))
+        task_id = submit("run_analysis", {"repo_url": repo_url, "gh_token": gh_token, "session_id": session_id})
         return {"task_id": task_id, "session_id": session_id}
     except Exception as exc:
         logger.error("Failed to submit analysis task", error=str(exc))
