@@ -178,7 +178,7 @@ async def get_analysis(session_id: str, request: Request):
 
 
 @router.get("/analysis/previous")
-async def get_previous_analysis(repo_url: str, exclude_session: str | None = None, request: Request = None):
+async def get_previous_analysis(repo_url: str, exclude_session: str | None = None, request: Request = None):  # type: ignore[assignment]
     from services.auth import require_gh_token_or_service_key
     from services.database import get_previous_analysis_db
 
@@ -198,7 +198,7 @@ async def get_previous_analysis(repo_url: str, exclude_session: str | None = Non
 
 
 @router.get("/analysis/history")
-async def get_analysis_history(repo_url: str, days: int = 0, request: Request = None):  # noqa: B008
+async def get_analysis_history(repo_url: str, days: int = 0, request: Request = None):  # type: ignore[assignment]  # noqa: B008
     import time
 
     from services.database import get_analysis_history_db

@@ -41,7 +41,7 @@ async def list_repos(username: str, request: Request):
     for attempt in range(2):
         try:
             async with httpx.AsyncClient(timeout=_gh_timeout) as client:
-                resp = await client.get(url, params=params, headers=gh_headers)
+                resp = await client.get(url, params=params, headers=gh_headers)  # type: ignore[arg-type]
             break
         except httpx.TimeoutException as exc:
             last_exc = exc  # noqa: F841

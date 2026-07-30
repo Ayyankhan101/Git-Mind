@@ -156,11 +156,11 @@ async def _trigger_initial_check(repo_url: str, monitor_id: str):
 
         async with async_session_factory() as session:
             repo = await session.execute(select(MonitoredRepo).where(MonitoredRepo.id == monitor_id))
-            repo = repo.scalar_one_or_none()
+            repo = repo.scalar_one_or_none()  # type: ignore[assignment]
             if repo:
-                repo.last_sha = current_sha
-                repo.last_session_id = session_id
-                repo.last_check_at = _time.time()
+                repo.last_sha = current_sha  # type: ignore[attr-defined]
+                repo.last_session_id = session_id  # type: ignore[attr-defined]
+                repo.last_check_at = _time.time()  # type: ignore[attr-defined]
                 await session.commit()
 
         logger.info("Monitor initial check complete", repo=repo_url, session=session_id)

@@ -46,5 +46,5 @@ def get_llm(
     temp = temperature if temperature is not None else TEMPERATURES.get(temperature_key, 0.1)
     llm = ChatGroq(model=LLM_MODEL, temperature=temp)
     if json_mode:
-        llm = llm.bind(response_format={"type": "json_object"})
+        llm = llm.bind(response_format={"type": "json_object"})  # type: ignore[assignment]
     return llm

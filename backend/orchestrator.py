@@ -264,7 +264,7 @@ def build_graph() -> StateGraph:
         g.add_edge("scanner", node)
         g.add_edge(node, END)
 
-    return g.compile()
+    return g.compile()  # type: ignore[return-value]
 
 
 # Singleton — compiled once at import time, reused across all WebSocket sessions
