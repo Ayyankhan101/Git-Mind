@@ -104,6 +104,65 @@ def _detect_framework(source: str) -> str:
     return "JavaScript/TypeScript"
 
 
+def _build_smart_label_jsts(
+    stem: str,
+    file_path: str,
+    components: list[str],
+    endpoints: list[dict],
+) -> str:
+    """Build a specific, descriptive label from file content."""
+    parts = []
+
+    # 1. If there are React components, use the main component name
+    if components:
+        # Prefer named exports over default
+        named = [c for c in components if c and not c.startswith("_")]
+        if named:
+            parts.append(_humanize_label(named[0]))
+        else:
+            parts.append(_humanize_label(stem))
+    else:
+        parts.append(_humanize_label(stem))
+
+    # 2. Add context from parent directory
+    path_parts = file_path.replace("\\", "/").split("/")
+    if len(path_parts) >= 2:
+        parent = path_parts[-2].lower()
+        if parent and parent != stem.lower() and parent not in ("src", "lib", "app", ".", "components", "pages"):
+            parent_label = _humanize_label(parent)
+            if parent_label.lower() not in parts[0].lower():
+                parts[0] = f"{parent_label} {parts[0]}"
+
+    # 3. Add endpoint info for route files
+    if endpoints:
+        methods = set(e.get("method", "") for e in endpoints)
+        paths = set(e.get("path", "") for e in endpoints)
+        if paths:
+            common_path = _find_common_prefix(paths)
+            if common_path and common_path != "/":
+                parts.append(f"({common_path})")
+        elif methods:
+            parts.append(f"({', '.join(sorted(methods))})")
+
+    return " ".join(parts)
+
+
+def _find_common_prefix(paths: set[str]) -> str:
+    """Find the common prefix path among endpoint paths."""
+    if not paths:
+        return ""
+    sorted_paths = sorted(paths)
+    first = sorted_paths[0]
+    last = sorted_paths[-1]
+    i = 0
+    while i < len(first) and i < len(last) and first[i] == last[i]:
+        i += 1
+    prefix = first[:i]
+    if prefix and not prefix.endswith("/"):
+        prefix = prefix.rsplit("/", 1)[0]
+    return prefix if prefix else ""
+
+
 def parse_jsts(file_path: str, source: str) -> dict | None:
     if not source or not source.strip():
         return None
@@ -142,7 +201,7 @@ def parse_jsts(file_path: str, source: str) -> dict | None:
 
     path = file_path.replace("\\", "/")
     stem = path.rsplit("/", 1)[-1].rsplit(".", 1)[0] if "/" in path else path.rsplit(".", 1)[0]
-    label = _humanize_label(stem)
+    label = _build_smart_label_jsts(stem, file_path, components, endpoints)
 
     # Determine node type
     if components:
