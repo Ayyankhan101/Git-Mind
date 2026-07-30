@@ -23,7 +23,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install tooling
         run: |
-          pip install pre-commit ruff -r backend/requirements.txt --break-system-packages
+          pip install ruff mypy types-PyYAML types-requests -r backend/requirements.txt --break-system-packages
       - name: Install frontend deps
         working-directory: frontend
         run: npm ci --legacy-peer-deps
