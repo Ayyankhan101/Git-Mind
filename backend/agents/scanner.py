@@ -1,17 +1,27 @@
+import atexit
 import contextlib
 import logging
 import os
 import re
 import stat
 import tempfile
+import time
 from pathlib import Path
 
 import git
 
 logger = logging.getLogger(__name__)
 
-# Track active temp dirs for cleanup
-_active_temp_dirs: set[str] = set()
+# Track active temp dirs for cleanup  {path: creation_timestamp}
+_active_temp_dirs: dict[str, float] = {}
+
+
+def _cleanup_at_exit() -> None:
+    for path in list(_active_temp_dirs):
+        _cleanup_temp_dir(path)
+
+
+atexit.register(_cleanup_at_exit)
 
 _ALLOWED_EXTENSIONS = {
     ".py",
@@ -79,7 +89,7 @@ def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None =
         _env["GIT_TERMINAL_PROMPT"] = "0"
 
     dest = tempfile.mkdtemp(prefix="gitmind_")
-    _active_temp_dirs.add(dest)
+    _active_temp_dirs[dest] = time.time()
     logger.info("Cloning %s → %s (auth=%s, branch=%s)", repo_url, dest, bool(token), branch or "default")
 
     head_sha = None
@@ -173,7 +183,7 @@ def _cleanup_temp_dir(path: str) -> None:
     """Remove a temp directory and untrack it."""
     import shutil
 
-    _active_temp_dirs.discard(path)
+    _active_temp_dirs.pop(path, None)
     with contextlib.suppress(OSError):
         shutil.rmtree(path, ignore_errors=True)
         logger.debug("Cleaned up temp dir: %s", path)
@@ -181,18 +191,13 @@ def _cleanup_temp_dir(path: str) -> None:
 
 def prune_old_temp_dirs(max_age_seconds: int = 3600) -> int:
     """Remove temp dirs older than max_age_seconds. Returns count removed."""
-    import time
-
     now = time.time()
     removed = 0
-    for path in list(_active_temp_dirs):
-        try:
-            age = now - os.path.getmtime(path)
-            if age > max_age_seconds:
-                _cleanup_temp_dir(path)
-                removed += 1
-        except OSError:
-            _active_temp_dirs.discard(path)
+    for path, created_at in list(_active_temp_dirs.items()):
+        age = now - created_at
+        if age > max_age_seconds:
+            _cleanup_temp_dir(path)
+            removed += 1
     if removed:
         logger.debug("Pruned old temp dirs: %d", removed)
     return removed

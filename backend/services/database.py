@@ -28,6 +28,7 @@ async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
 async def init_db():
     import subprocess
 
+    is_sqlite = DATABASE_URL.startswith("sqlite")
     proc = subprocess.run(
         [sys.executable, "-m", "alembic", "upgrade", "head"],
         capture_output=True,
@@ -35,9 +36,13 @@ async def init_db():
         timeout=30,
     )
     if proc.returncode != 0:
-        logger.warning("Alembic failed (rc=%d), falling back to create_all: %s", proc.returncode, proc.stderr[:300])
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+        if is_sqlite:
+            logger.warning("Alembic failed (rc=%d), falling back to create_all: %s", proc.returncode, proc.stderr[:300])
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+        else:
+            logger.error("Alembic migration failed (rc=%d): %s", proc.returncode, proc.stderr[:500])
+            raise RuntimeError(f"Alembic migration failed: {proc.stderr[:500]}")
     if proc.stderr:
         logger.warning("Alembic stderr: %s", proc.stderr[:500])
 

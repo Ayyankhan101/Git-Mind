@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse
 from agents.chat import run_chat_agent
 from models.requests import ChatRequest
 from services.rate_limit_response import rate_limit_response
-from services.rate_limiter import check_rate_limit
+from services.rate_limiter import check_rate_limit, get_client_ip
 from services.session import _UUID_RE, get_session
 
 logger = structlog.get_logger(__name__)
@@ -19,7 +19,7 @@ router = APIRouter()
 async def chat_endpoint(req: ChatRequest, request: Request):
     if not _UUID_RE.match(req.session_id):
         return {"error": "Invalid session ID"}
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = get_client_ip(request)
     if not (await check_rate_limit("chat", client_ip))[0]:
         return await rate_limit_response("chat", client_ip)
 
@@ -29,7 +29,7 @@ async def chat_endpoint(req: ChatRequest, request: Request):
     if not session.get("chroma_collection_name"):
         return {"error": "Knowledge base not ready — RAG setup may have failed."}
 
-    answer = await asyncio.to_thread(
+    answer, sources = await asyncio.to_thread(
         run_chat_agent,
         question=req.question,
         collection_name=session["chroma_collection_name"],
@@ -45,7 +45,7 @@ async def chat_endpoint(req: ChatRequest, request: Request):
     )
     session["chat_history"] = session["chat_history"][-50:]
 
-    return {"answer": answer}
+    return {"answer": answer, "sources": sources}
 
 
 @router.post("/chat/stream")
@@ -59,7 +59,7 @@ async def chat_stream_endpoint(req: ChatRequest, request: Request):
 
         return StreamingResponse(_bad(), media_type="text/event-stream")
 
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = get_client_ip(request)
     if not (await check_rate_limit("chat", client_ip))[0]:
         return await rate_limit_response("chat", client_ip)
 
@@ -74,14 +74,17 @@ async def chat_stream_endpoint(req: ChatRequest, request: Request):
             return
 
         full_answer = ""
-        async for token in run_chat_agent_stream(
+        async for token, sources in run_chat_agent_stream(
             question=req.question,
             collection_name=session["chroma_collection_name"],
             chat_history=session["chat_history"],
             repo_name=session["repo_name"],
         ):
             full_answer += token
-            yield f"data: {json.dumps({'token': token})}\n\n"
+            if sources is not None:
+                yield f"data: {json.dumps({'token': token, 'sources': sources})}\n\n"
+            else:
+                yield f"data: {json.dumps({'token': token})}\n\n"
 
         session["chat_history"].extend(
             [

@@ -38,7 +38,6 @@ from routes.webhook import router as webhook_router  # noqa: E402
 from services.auth import AuthMiddleware  # noqa: E402
 from services.body_limit import BodyLimitMiddleware  # noqa: E402
 from services.correlation import CorrelationMiddleware  # noqa: E402
-from services.session import _sessions as sessions  # noqa: E402
 from services.telemetry import setup_logging, setup_metrics, setup_tracing  # noqa: E402
 from ws.analyze import handle_analyze  # noqa: E402
 from ws.crisis import handle_crisis  # noqa: E402
@@ -276,13 +275,22 @@ async def unhandled_exception_handler(request, exc):
     )
 
 
-_CORS_ORIGINS = [
-    o.strip()
-    for o in os.getenv(
-        "CORS_ORIGINS",
-        "http://localhost,http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:8002",
-    ).split(",")
-]
+_CORS_ORIGINS_ENV = os.getenv("CORS_ORIGINS", "")
+if _CORS_ORIGINS_ENV == "*":
+    _CORS_ORIGINS = ["*"]
+    logger.warning("CORS_ORIGINS=* — allowing all origins. Set CORS_ORIGINS to specific origin for production.")
+elif _CORS_ORIGINS_ENV:
+    _CORS_ORIGINS = [o.strip() for o in _CORS_ORIGINS_ENV.split(",") if o.strip()]
+else:
+    _CORS_ORIGINS = [
+        "http://localhost",
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "http://localhost:8002",
+        "https://ak001z-gitmind-frontend.vercel.app",
+        "https://git-mind.vercel.app",
+    ]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_CORS_ORIGINS,
@@ -383,7 +391,20 @@ async def health():
     all_ok = all(mandatory.values())
     result = {"status": "ok" if all_ok else "degraded"}
     result["checks"] = checks
-    result["sessions_active"] = len(sessions)
+    # Session count from Redis (or in-memory fallback)
+    try:
+        from services.cache import get_redis
+
+        r = get_redis()
+        if r:
+            count = await r.scard("sessions:active")
+            result["sessions_active"] = count
+        else:
+            from services.session import _sessions
+
+            result["sessions_active"] = len(_sessions)
+    except Exception:
+        result["sessions_active"] = 0
     if os.getenv("DEBUG"):
         import shutil
 

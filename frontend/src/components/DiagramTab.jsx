@@ -28,7 +28,7 @@ const nodeTypes = { archNode: ArchNode };
 const edgeTypes = { animatedEdge: AnimatedEdge };
 
 function humanizeNodeLabel(label, tier) {
-  if (/^Module\s+[A-Z]$/i.test(label)) {
+  if (/^Module\s+[A-Z]$/.test(label)) {
     const tierMap = {
       frontend: "Frontend Layer",
       api: "API Layer",
@@ -104,7 +104,10 @@ export default function DiagramTab({
           data: {
             ...node.data,
             label: humanizeNodeLabel(
-              node.data.label || node.id,
+              node.data.label ||
+                node.id
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (c) => c.toUpperCase()),
               node.data?.tier || tier,
             ),
             tier: node.data?.tier || tier,
@@ -146,7 +149,10 @@ export default function DiagramTab({
           data: {
             ...node.data,
             label: humanizeNodeLabel(
-              node.label || node.id,
+              node.label ||
+                node.id
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (c) => c.toUpperCase()),
               node.data?.tier || tier,
             ),
             tier: node.data?.tier || tier,

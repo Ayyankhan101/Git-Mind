@@ -1,20 +1,20 @@
-"""Sliding-window rate limiter.
+"""Sliding-window rate limiter — Redis-only mode.
 
 Redis mode: sorted sets per key, atomic Lua script.
-Memory mode: in-process dict (same as before, fallback).
+In dev mode (no Redis): in-process dict fallback.
 
 Exports:
-    rate_ok(endpoint, key, service_key=None) -> bool
-    check_rate_limit(endpoint, key) -> bool   (async wrapper)
-    get_rate_limit_info(endpoint, key) -> dict (headers for 429 response)
+    check_rate_limit(endpoint, key) -> (allowed, remaining, retry_after)
+    get_rate_limit_info(endpoint, key) -> dict
+    get_client_ip(request) -> str
 """
 
-import asyncio
 import os
 import time
 from collections import defaultdict
 
 import structlog
+from fastapi import Request
 
 from services.cache import get_redis
 
@@ -39,11 +39,10 @@ _RATE_WINDOWS: dict[str, tuple[int, int]] = {
     "task": (60, 30),
 }
 
-# ── In-memory fallback ───────────────────────────────────────────────────────
-_mem_data: dict[str, list[float]] = defaultdict(list)
-_mem_lock = asyncio.Lock()
-
 _SERVICE_KEY = os.getenv("GITMIND_SERVICE_KEY", "")
+
+# ── In-memory fallback (dev mode only) ────────────────────────────────────────
+_mem_data: dict[str, list[float]] = defaultdict(list)
 
 
 def _is_service_key(service_key: str | None) -> bool:
@@ -110,11 +109,13 @@ async def _redis_rate_check(endpoint: str, key: str) -> tuple[bool, int, int]:
         retry_after = int(result[2])
         return allowed, remaining, retry_after
     except Exception as exc:
-        logger.warning("Redis rate check failed, falling back", error=str(exc)[:80])
+        logger.warning("Redis rate check failed", error=str(exc)[:80])
+        # Dev fallback
         return _mem_rate_check(endpoint, key)
 
 
 def _mem_rate_check(endpoint: str, key: str) -> tuple[bool, int, int]:
+    """In-memory sliding window (dev fallback only)."""
     window, limit = _RATE_WINDOWS.get(endpoint, (60, 20))
     now = time.time()
     bucket = f"{endpoint}:{key}"
@@ -134,15 +135,19 @@ def _mem_rate_check(endpoint: str, key: str) -> tuple[bool, int, int]:
     return True, limit - len(hits), 0
 
 
+def get_client_ip(request: Request) -> str:
+    forwarded = request.headers.get("X-Forwarded-For", "")
+    if forwarded:
+        ip = forwarded.split(",")[0].strip()
+        if ip:
+            return ip
+    real_ip = request.headers.get("X-Real-IP", "")
+    if real_ip:
+        return real_ip.strip()
+    return request.client.host if request.client else "unknown"
+
+
 # ── Public API ───────────────────────────────────────────────────────────────
-
-
-def rate_ok(endpoint: str, key: str, service_key: str | None = None) -> bool:
-    """Sync rate check. For sync contexts — always uses in-memory fallback.
-    Prefer async check_rate_limit() for proper Redis-based distributed limiting."""
-    if _is_service_key(service_key):
-        return True
-    return _mem_rate_check(endpoint, key)[0]
 
 
 async def check_rate_limit(endpoint: str, key: str, service_key: str | None = None) -> tuple[bool, int, int]:

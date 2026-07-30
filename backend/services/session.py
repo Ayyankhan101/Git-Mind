@@ -1,12 +1,12 @@
-"""Session store.
+"""Session store — Redis-only mode.
 
-Redis mode: hashes with TTL.
-Memory mode: OrderedDict (fallback).
-DB fallback: SQLAlchemy persist/load for analysis snapshots.
+Stores session data as Redis hashes with TTL.
+In dev mode (no Redis), falls back to in-memory OrderedDict.
 """
 
 import json
 import re
+import time
 from collections import OrderedDict
 
 import structlog
@@ -17,23 +17,25 @@ logger = structlog.get_logger(__name__)
 
 _UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.IGNORECASE)
 
-_MAX_SESSIONS = 500
 _SESSION_TTL = 3600  # 1 hour
+
+# Dev fallback only (when Redis unavailable)
 _sessions: OrderedDict[str, dict] = OrderedDict()
 _session_timestamps: dict[str, float] = {}
+_MAX_SESSIONS = 500
 
 
 def put_session(session_id: str, data: dict) -> None:
-    """Store session data (Redis or memory)."""
-    import time
-
+    """Store session data to Redis (or memory in dev mode)."""
     r = get_redis()
     if r:
         try:
             r.set(f"session:{session_id}", json.dumps(data, default=str), ex=_SESSION_TTL)
             return
         except Exception as exc:
-            logger.warning("Redis session set failed, using memory", error=str(exc)[:80])
+            logger.warning("Redis session set failed", error=str(exc)[:80])
+
+    # Dev fallback
     _sessions[session_id] = data
     _session_timestamps[session_id] = time.time()
     _sessions.move_to_end(session_id)
@@ -45,8 +47,6 @@ def put_session(session_id: str, data: dict) -> None:
 
 def prune_expired_sessions() -> int:
     """Remove in-memory sessions that have exceeded TTL. Returns count removed."""
-    import time
-
     now = time.time()
     expired = [sid for sid, ts in list(_session_timestamps.items()) if now - ts > _SESSION_TTL]
     for sid in expired:
@@ -86,9 +86,7 @@ def initial_state(repo_url: str, gh_token: str | None = None) -> dict:
 
 
 async def get_session(session_id: str) -> dict | None:
-    """Load session from Redis, then memory, then DB."""
-    import time
-
+    """Load session from Redis (or memory in dev mode)."""
     r = get_redis()
     if r:
         try:
@@ -96,8 +94,9 @@ async def get_session(session_id: str) -> dict | None:
             if raw:
                 return json.loads(raw)
         except Exception as exc:
-            logger.warning("Redis session get failed", error=str(exc)[:80])
+            logger.warning("Redis session get failed, falling back to memory", error=str(exc)[:80])
 
+    # Dev fallback
     session = _sessions.get(session_id)
     if session:
         ts = _session_timestamps.get(session_id, 0)
@@ -105,9 +104,10 @@ async def get_session(session_id: str) -> dict | None:
             _sessions.pop(session_id, None)
             _session_timestamps.pop(session_id, None)
             logger.debug("Session expired (in-memory)", session_id=session_id)
-        else:
-            return session
+            return None
+        return session
 
+    # DB fallback
     from services.database import get_analysis_db
 
     restored = await get_analysis_db(session_id)
@@ -124,8 +124,6 @@ def _session_to_snapshot(
     sha: str | None,
     owner_hash: str | None = None,
 ) -> dict:
-    import time as _time
-
     return {
         "repo_name": final_state["repo_name"],
         "repo_url": repo_url,
@@ -141,7 +139,7 @@ def _session_to_snapshot(
         "head_sha": sha,
         "chat_history": final_state.get("chat_history", []),
         "owner_hash": owner_hash,
-        "saved_at": _time.time(),
+        "saved_at": time.time(),
     }
 
 

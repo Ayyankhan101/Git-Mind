@@ -6,8 +6,8 @@
 :root {
   --lp-canvas: #050510;
   --lp-emerald: #10b981;
-  --lp-cyan: #22d3ee;
-  --lp-violet: #7c3aed;
+  --lp-cyan: #22c55e;
+  --lp-violet: #10b981;
   --lp-glass-bg: rgba(5, 5, 16, 0.7);
   --lp-glass-border: rgba(255, 255, 255, 0.08);
   --lp-glass-border-bright: rgba(255, 255, 255, 0.25);
@@ -92,7 +92,7 @@ html.lenis body {
   left: -10%;
   background: radial-gradient(
     circle,
-    rgba(34, 211, 238, 0.4) 0%,
+    rgba(34, 197, 94, 0.4) 0%,
     transparent 70%
   );
   animation: lp-float-1 18s ease-in-out infinite alternate;
@@ -107,7 +107,7 @@ html.lenis body {
   right: -15%;
   background: radial-gradient(
     circle,
-    rgba(124, 58, 237, 0.35) 0%,
+    rgba(16, 185, 129, 0.35) 0%,
     transparent 70%
   );
   animation: lp-float-2 22s ease-in-out infinite alternate;
@@ -123,7 +123,7 @@ html.lenis body {
   transform: translate(-50%, -50%);
   background: radial-gradient(
     circle,
-    rgba(99, 102, 241, 0.3) 0%,
+    rgba(34, 211, 238, 0.3) 0%,
     transparent 70%
   );
   animation: lp-float-3 20s ease-in-out infinite alternate;
@@ -200,18 +200,18 @@ html.lenis body {
     ),
     radial-gradient(
       circle at 70% 75%,
-      rgba(34, 211, 238, 0.25) 0%,
+      rgba(34, 197, 94, 0.25) 0%,
       transparent 50%
     ),
     radial-gradient(
       circle at 50% 50%,
-      rgba(124, 58, 237, 0.2) 0%,
+      rgba(16, 185, 129, 0.2) 0%,
       transparent 60%
     ),
     linear-gradient(135deg, #1a1a2e 0%, #0a0a15 50%, #16162a 100%);
   box-shadow:
     0 0 80px 20px rgba(16, 185, 129, 0.12),
-    0 0 160px 60px rgba(124, 58, 237, 0.08),
+    0 0 160px 60px rgba(16, 185, 129, 0.08),
     inset 0 0 60px 20px rgba(0, 0, 0, 0.5),
     inset 0 -20px 40px rgba(0, 0, 0, 0.3);
   animation: lp-orb-rotate 30s linear infinite;
@@ -242,7 +242,7 @@ html.lenis body {
   border-radius: 50%;
   background: radial-gradient(
     ellipse,
-    rgba(34, 211, 238, 0.2) 0%,
+    rgba(34, 197, 94, 0.2) 0%,
     transparent 70%
   );
   filter: blur(12px);
@@ -279,19 +279,42 @@ html.lenis body {
   }
 }
 
-/* ── Spline 3D Scene (full page) ─────────────────────────────── */
-.lp-spline-fullpage {
-  position: absolute;
+/* ── Scroll-world background ──────────────────────────────────── */
+.sw-bg-root {
+  position: fixed;
   inset: 0;
   z-index: 0;
-  pointer-events: auto;
+  overflow: hidden;
+  background: #0a0a14;
 }
 
-.lp-spline-fullpage iframe {
-  width: 150%;
-  height: 150%;
-  border: none;
-  transform: translate(-5%, -8%);
+.sw-bg-stage {
+  position: absolute;
+  inset: 0;
+}
+
+.sw-still {
+  position: absolute;
+  inset: -5%;
+  width: 110%;
+  height: 110%;
+  object-fit: cover;
+  object-position: center 42%;
+  will-change: opacity, transform;
+  transition: opacity 0.15s ease-out;
+  filter: brightness(0.5) saturate(0.85);
+}
+
+.sw-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 10, 20, 0.4) 0%,
+    color-mix(in srgb, #0a0a14 30%, transparent) 50%,
+    #0a0a14 100%
+  );
+  pointer-events: none;
 }
 
 @keyframes lp-spline-in {
@@ -381,8 +404,8 @@ html.lenis body {
   background: linear-gradient(135deg, var(--lp-cyan) 0%, var(--lp-violet) 100%);
   color: white;
   box-shadow:
-    0 2px 10px rgba(34, 211, 238, 0.35),
-    0 0 20px rgba(124, 58, 237, 0.15);
+    0 2px 10px rgba(34, 197, 94, 0.35),
+    0 0 20px rgba(16, 185, 129, 0.15);
 }
 
 .lp-logo-mark-sm {
@@ -398,7 +421,7 @@ html.lenis body {
   font-weight: 400;
   letter-spacing: 0.05em;
   color: var(--lp-text-primary);
-  text-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+  text-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
 }
 
 .lp-nav-links {
@@ -467,7 +490,7 @@ html.lenis body {
   color: #050510;
   font-weight: 700;
   box-shadow:
-    0 2px 12px rgba(34, 211, 238, 0.3),
+    0 2px 12px rgba(34, 197, 94, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   will-change: transform;
   cursor: pointer;
@@ -476,15 +499,15 @@ html.lenis body {
 .lp-btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow:
-    0 4px 20px rgba(34, 211, 238, 0.45),
+    0 4px 20px rgba(34, 197, 94, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  background: linear-gradient(135deg, #67e8f9 0%, var(--lp-cyan) 100%);
+  background: linear-gradient(135deg, #4ade80 0%, var(--lp-cyan) 100%);
 }
 
 .lp-btn-primary:active:not(:disabled) {
   transform: translateY(0);
   box-shadow:
-    0 1px 8px rgba(34, 211, 238, 0.25),
+    0 1px 8px rgba(34, 197, 94, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
@@ -510,6 +533,20 @@ html.lenis body {
   padding: 120px 8% 80px;
   pointer-events: none;
 }
+.lp-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.02) 0px,
+    rgba(0, 0, 0, 0.02) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  z-index: 1;
+}
 
 .lp-hero-content {
   max-width: 620px;
@@ -530,8 +567,8 @@ html.lenis body {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--lp-cyan);
-  background: rgba(34, 211, 238, 0.08);
-  border: 1px solid rgba(34, 211, 238, 0.2);
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.2);
   border-radius: 100px;
   margin-bottom: 28px;
 }
@@ -553,8 +590,8 @@ html.lenis body {
     0 4px 0 #26c6da,
     0 5px 0 #00acc1,
     0 6px 8px rgba(0, 0, 0, 0.4),
-    0 0 30px rgba(34, 211, 238, 0.25),
-    0 0 60px rgba(124, 58, 237, 0.15);
+    0 0 30px rgba(34, 197, 94, 0.25),
+    0 0 60px rgba(16, 185, 129, 0.15);
   position: relative;
 }
 
@@ -627,7 +664,7 @@ html.lenis body {
 
 .lp-input-wrapper:focus-within {
   border-color: var(--lp-cyan);
-  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
 }
 
 .lp-input-icon {
@@ -665,7 +702,7 @@ html.lenis body {
   color: var(--lp-cyan);
   cursor: pointer;
   text-decoration: underline;
-  text-decoration-color: rgba(34, 211, 238, 0.3);
+  text-decoration-color: rgba(34, 197, 94, 0.3);
   text-underline-offset: 2px;
   transition: text-decoration-color 0.15s;
 }
@@ -758,7 +795,7 @@ html.lenis body {
   transform: translateY(-4px);
   box-shadow:
     0 12px 40px rgba(0, 0, 0, 0.4),
-    0 0 60px rgba(34, 211, 238, 0.06),
+    0 0 60px rgba(34, 197, 94, 0.06),
     0 24px 80px -12px rgba(0, 0, 0, 0.5);
 }
 
@@ -769,8 +806,8 @@ html.lenis body {
   align-items: center;
   justify-content: center;
   border-radius: 12px;
-  background: rgba(34, 211, 238, 0.08);
-  border: 1px solid rgba(34, 211, 238, 0.15);
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.15);
   color: var(--lp-cyan);
   margin-bottom: 20px;
 }
@@ -834,8 +871,8 @@ html.lenis body {
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: rgba(124, 58, 237, 0.08);
-  border: 1px solid rgba(124, 58, 237, 0.15);
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.15);
   color: var(--lp-violet);
   margin-bottom: 16px;
 }
@@ -882,7 +919,7 @@ html.lenis body {
   padding: 60px 40px;
   text-align: center;
   background: rgba(5, 5, 16, 0.75);
-  border-color: rgba(34, 211, 238, 0.15);
+  border-color: rgba(34, 197, 94, 0.15);
 }
 
 .lp-cta-title {
@@ -905,7 +942,7 @@ html.lenis body {
   position: relative;
   z-index: 2;
   padding: 24px;
-  border-top: 1px solid rgba(34, 211, 238, 0.08);
+  border-top: 1px solid rgba(34, 197, 94, 0.08);
 }
 
 .lp-footer-inner {
@@ -945,10 +982,6 @@ html.lenis body {
     opacity: 0.7;
   }
 
-  .lp-spline-fullpage {
-    opacity: 0.5;
-  }
-
   .lp-features-grid {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -968,10 +1001,6 @@ html.lenis body {
     right: -10%;
     transform: none;
     opacity: 0.5;
-  }
-
-  .lp-spline-fullpage {
-    opacity: 0.3;
   }
 
   .lp-orb-1 {
@@ -1136,10 +1165,6 @@ html.lenis body {
   .lp-feature-card:hover,
   .lp-stat-item:hover {
     transform: none !important;
-  }
-
-  .lp-spline-fullpage {
-    opacity: 0.4;
   }
 
   .lp-hero-content {

@@ -15,6 +15,7 @@ import {
   Workflow,
   Gauge,
 } from "lucide-react";
+import ScrollWorldBg from "./ScrollWorldBg";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
@@ -91,6 +92,7 @@ function splitLines(el) {
 
 export default function LandingPage({ onLoad, onAnalyzeUrl }) {
   const [inputVal, setInputVal] = useState("");
+  const [scrollY, setScrollY] = useState(0);
   const rootRef = useRef(null);
   const navRef = useRef(null);
   const heroContentRef = useRef(null);
@@ -117,6 +119,7 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
     });
 
     lenis.on("scroll", ScrollTrigger.update);
+    lenis.on("scroll", (e) => setScrollY(e.scroll));
     gsap.ticker.add((time) => lenis.raf(time * 1000));
     gsap.ticker.lagSmoothing(0);
 
@@ -349,10 +352,6 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
     return () => ctx.revert();
   }, []);
 
-  /* Spline load */
-  const splineUrl =
-    "https://my.spline.design/aidatamodelinteraction-eeyThmwWx2FAcM8oe2sM3RYs/";
-
   /* Magnetic hover for primary buttons (event delegation) */
   useEffect(() => {
     if (reducedMotion.current) return;
@@ -446,16 +445,8 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
         <div className="lp-gradient-orb lp-orb-3" />
       </div>
 
-      {/* 3D Spline Scene (full page) */}
-      <div className="lp-spline-fullpage" aria-hidden="true">
-        <iframe
-          src={splineUrl}
-          title="3D Spline Scene"
-          frameBorder="0"
-          allow="autoplay"
-          loading="lazy"
-        />
-      </div>
+      {/* Scroll-world background */}
+      <ScrollWorldBg scrollY={scrollY} />
 
       {/* Navigation */}
       <nav className="lp-nav" ref={navRef}>

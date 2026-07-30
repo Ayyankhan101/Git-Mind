@@ -132,7 +132,7 @@ function WorkspaceSwitcher({ currentUser, loadedUsers, onSwitch }) {
         />
       </button>
       {open && loadedUsers.length > 1 && (
-        <div className="ws-pop">
+        <div className="ws-pop" role="listbox" aria-label="Switch workspace">
           {loadedUsers.map((u) => (
             <div
               key={u}
@@ -141,6 +141,16 @@ function WorkspaceSwitcher({ currentUser, loadedUsers, onSwitch }) {
                 setOpen(false);
                 if (u !== currentUser) onSwitch(u);
               }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setOpen(false);
+                  if (u !== currentUser) onSwitch(u);
+                }
+              }}
+              tabIndex={0}
+              role="option"
+              aria-selected={u === currentUser}
             >
               <span
                 className="ws-mark"
@@ -266,9 +276,10 @@ export default function Sidebar({
         {/* Saved views toggle */}
         {repos.length > 0 && (
           <div style={{ borderBottom: "1px solid var(--border)" }}>
-            <div
+            <button
               className="sb-section-header"
               onClick={() => setShowSavedViews((o) => !o)}
+              aria-expanded={showSavedViews}
             >
               <span
                 className="t-label"
@@ -290,7 +301,7 @@ export default function Sidebar({
                   transform: showSavedViews ? "none" : "rotate(-90deg)",
                 }}
               />
-            </div>
+            </button>
             {showSavedViews && (
               <div style={{ paddingBottom: 4 }}>
                 {SAVED_VIEWS.filter(
@@ -309,6 +320,17 @@ export default function Sidebar({
                         setFilter("");
                         setFocusedIdx(-1);
                       }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setSavedView(v.id);
+                          setFilter("");
+                          setFocusedIdx(-1);
+                        }
+                      }}
+                      tabIndex={0}
+                      role="option"
+                      aria-selected={savedView === v.id}
                     >
                       <Filter size={12} strokeWidth={1.5} />
                       <span className="label">{v.label}</span>
@@ -326,21 +348,31 @@ export default function Sidebar({
           <div
             className={`sb-section${historySectionOpen ? "" : " collapsed"}`}
           >
-            <div
+            <button
               className="sb-section-header"
               onClick={() => setHistorySectionOpen((o) => !o)}
+              aria-expanded={historySectionOpen}
             >
               <span className="t-label" style={{ fontSize: 11 }}>
                 RECENT
               </span>
               <ChevronDown size={12} strokeWidth={1.5} className="chevron" />
-            </div>
+            </button>
             <div className="sb-section-body">
               {history.map((h) => (
                 <div
                   key={h.url}
                   className={`repo-card${selectedUrl === h.url ? " selected" : ""}`}
                   onClick={() => onHistorySelect(h.url)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onHistorySelect(h.url);
+                    }
+                  }}
+                  tabIndex={0}
+                  role="option"
+                  aria-selected={selectedUrl === h.url}
                   style={{ cursor: "pointer" }}
                 >
                   <div className="repo-card-top">
@@ -373,9 +405,10 @@ export default function Sidebar({
         {/* Repo list */}
         {(loading || repos.length > 0) && (
           <div className={`sb-section${repoSectionOpen ? "" : " collapsed"}`}>
-            <div
+            <button
               className="sb-section-header"
               onClick={() => setRepoSectionOpen((o) => !o)}
+              aria-expanded={repoSectionOpen}
             >
               <span className="t-label" style={{ fontSize: 11 }}>
                 REPOSITORIES
@@ -384,7 +417,7 @@ export default function Sidebar({
                   : ""}
               </span>
               <ChevronDown size={12} strokeWidth={1.5} className="chevron" />
-            </div>
+            </button>
             <div className="sb-section-body">
               {repos.length > 4 && (
                 <div className="sb-filter">

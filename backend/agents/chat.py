@@ -34,12 +34,14 @@ def _build_messages(
     collection_name: str,
     chat_history: list[dict],
     repo_name: str,
-) -> list[dict]:
+) -> tuple[list[dict], list[dict]]:
+    """Build messages and return (messages, sources) where sources are chunk dicts."""
     chunks = search_codebase(collection_name, question, n_results=8)
     context = "\n\n".join(f"--- {c['filepath']} ---\n{c['content']}" for c in chunks) or "No relevant code found."
     history = "\n".join(f"{m['role'].upper()}: {m['content']}" for m in chat_history[-10:]) or "None."
     system = _SYSTEM_TEMPLATE.format(repo_name=repo_name, context=context, history=history)
-    return [{"role": "system", "content": system}, {"role": "user", "content": question}]
+    sources = [{"filepath": c["filepath"]} for c in chunks]
+    return [{"role": "system", "content": system}, {"role": "user", "content": question}], sources
 
 
 def run_chat_agent(
@@ -47,11 +49,12 @@ def run_chat_agent(
     collection_name: str,
     chat_history: list[dict],
     repo_name: str,
-) -> str:
-    messages = _build_messages(question, collection_name, chat_history, repo_name)
+) -> tuple[str, list[dict]]:
+    """Run chat agent. Returns (answer, sources)."""
+    messages, sources = _build_messages(question, collection_name, chat_history, repo_name)
     answer = invoke_with_retry(_LLM, messages).content
     logger.debug("Chat agent answered question of length %d", len(question))
-    return answer
+    return answer, sources
 
 
 async def run_chat_agent_stream(
@@ -60,11 +63,24 @@ async def run_chat_agent_stream(
     chat_history: list[dict],
     repo_name: str,
 ):
-    """Async generator yielding text tokens for streaming chat responses."""
-    messages = _build_messages(question, collection_name, chat_history, repo_name)
+    """Async generator yielding (token, sources) tuples for streaming chat.
+
+    On the first yield, sources is a list of dicts with 'filepath' keys.
+    On subsequent yields, sources is None.
+    """
+    messages, sources = _build_messages(question, collection_name, chat_history, repo_name)
+    yielded_sources = False
     try:
         async for chunk in _LLM.astream(messages):
-            yield chunk.content
+            if not yielded_sources:
+                yield chunk.content, sources
+                yielded_sources = True
+            else:
+                yield chunk.content, None
     except Exception as exc:
         logger.warning("astream failed (%s), falling back to invoke_with_retry", exc)
-        yield invoke_with_retry(_LLM, messages).content
+        result = invoke_with_retry(_LLM, messages).content
+        if not yielded_sources:
+            yield result, sources
+        else:
+            yield result, None

@@ -67,7 +67,7 @@ try:
     col = client.create_collection("smoketest", get_or_create=True)
     col.add(documents=["hello world"], ids=["t1"])
     result = col.query(query_texts=["hello"], n_results=1)
-    check("ChromaDB in-memory create + query", "hello world" in result["documents"][0])
+    check("ChromaDB in-memory create + query", "hello world" in result["documents"][0])  # type: ignore[index]
     client.delete_collection("smoketest")
 except Exception as exc:
     check("ChromaDB in-memory create + query", False, str(exc))
@@ -101,7 +101,7 @@ if api_key and not _skip_live_checks:
 
         llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0, max_tokens=5)
         resp = llm.invoke("Reply with the single word: OK")
-        check("Groq API reachable", len(resp.content) > 0, resp.content)
+        check("Groq API reachable", len(resp.content) > 0, resp.content)  # type: ignore[arg-type]
     except Exception as exc:
         check("Groq API reachable", False, str(exc))
 else:

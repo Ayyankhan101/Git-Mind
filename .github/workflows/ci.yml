@@ -23,12 +23,21 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install tooling
         run: |
-          pip install pre-commit ruff -r backend/requirements.txt --break-system-packages
+          pip install ruff mypy types-PyYAML types-requests -r backend/requirements.txt --break-system-packages
       - name: Install frontend deps
         working-directory: frontend
         run: npm ci --legacy-peer-deps
-      - name: Run pre-commit
-        run: pre-commit run --all-files --show-diff-on-failure
+      - name: Run linting
+        run: |
+          echo "=== Ruff check ==="
+          ruff check backend/
+          echo "=== Ruff format check ==="
+          ruff format --check backend/
+          echo "=== MyPy ==="
+          mypy backend/ --ignore-missing-imports
+          echo "=== Prettier check ==="
+          cd frontend && npx prettier --check "src/**/*.{js,jsx,ts,tsx,css,json}" && cd ..
+          echo "=== All checks passed ==="
 
   backend-tests:
     runs-on: ubuntu-latest
@@ -58,6 +67,7 @@ jobs:
           GROQ_API_KEY: gsk_test_placeholder
           GITHUB_TOKEN: gsk_test_placeholder
           DATABASE_URL: "sqlite+aiosqlite:///:memory:"
+          ENVIRONMENT: "development"
           DEBUG: "1"
         run: python -m pytest tests/ -v --tb=short
       - name: Smoke test
@@ -66,6 +76,7 @@ jobs:
           GROQ_API_KEY: gsk_test_placeholder
           GITHUB_TOKEN: gsk_test_placeholder
           DATABASE_URL: "sqlite+aiosqlite:///:memory:"
+          ENVIRONMENT: "development"
           DEBUG: "1"
         run: python smoke_test.py
 

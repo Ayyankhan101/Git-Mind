@@ -175,7 +175,7 @@ async def handle_analyze(ws: WebSocket) -> None:
 
     await ws.send_json({"agent_status": {"scanner": "running"}})
 
-    astream = graph.astream(init, stream_mode="updates")
+    astream = graph.astream(init, stream_mode="updates")  # type: ignore[attr-defined]
     try:
         async for chunk in astream:
             if _dead.is_set():
