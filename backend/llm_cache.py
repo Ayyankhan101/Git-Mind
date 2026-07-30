@@ -1,3 +1,10 @@
+"""LLM response cache — Redis primary, diskcache fallback.
+
+Flow: Redis → diskcache → miss.
+On hit: backfill Redis from diskcache.
+"""
+
+import contextlib
 import hashlib
 import logging
 import time
@@ -5,9 +12,14 @@ from pathlib import Path
 
 import diskcache
 
+from services.cache import get_redis
+
 logger = logging.getLogger(__name__)
 
-# Prefer the project-local cache dir; fall back to /tmp if it's not writable (e.g. owned by root)
+_REDIS_TTL = 86_400  # 24 hours
+
+# ── Diskcache setup (fallback) ───────────────────────────────────────────────
+
 _PREFERRED_DIR = Path(__file__).parent / ".llm_cache"
 try:
     _PREFERRED_DIR.mkdir(exist_ok=True)
@@ -25,19 +37,56 @@ except OSError:
 _cache = diskcache.Cache(str(_CACHE_DIR), size_limit=2_000_000_000)  # 2 GB max
 
 
+def _key(model: str, prompt: str) -> str:
+    return hashlib.sha256(f"{model}::{prompt}".encode()).hexdigest()
+
+
+def _redis_key(key: str) -> str:
+    return f"llmcache:{key}"
+
+
 def get_cached(model: str, prompt: str) -> str | None:
-    value = _cache.get(_key(model, prompt))
+    """Check Redis first, then diskcache."""
+    k = _key(model, prompt)
+
+    # Redis check
+    r = get_redis()
+    if r:
+        try:
+            val = r.get(_redis_key(k))
+            if val is not None:
+                logger.debug("LLM cache hit (Redis) model=%s", model)
+                return val
+        except Exception as exc:
+            logger.debug("Redis LLM cache read failed: %s", exc)
+
+    # Diskcache check
+    value = _cache.get(k)
     if value is not None:
-        logger.debug("LLM cache hit  model=%s", model)
-    return value
+        logger.debug("LLM cache hit (diskcache) model=%s", model)
+        # Backfill Redis
+        if r:
+            with contextlib.suppress(Exception):
+                r.set(_redis_key(k), value, ex=_REDIS_TTL)
+        return value
+
+    return None
 
 
 def set_cached(model: str, prompt: str, response: str, ttl: int = 86_400) -> None:
-    _cache.set(_key(model, prompt), response, expire=ttl)
+    """Write to Redis and diskcache."""
+    k = _key(model, prompt)
 
+    # Write to diskcache
+    _cache.set(k, response, expire=ttl)
 
-def _key(model: str, prompt: str) -> str:
-    return hashlib.sha256(f"{model}::{prompt}".encode()).hexdigest()
+    # Write to Redis
+    r = get_redis()
+    if r:
+        try:
+            r.set(_redis_key(k), response, ex=min(ttl, _REDIS_TTL))
+        except Exception as exc:
+            logger.debug("Redis LLM cache write failed: %s", exc)
 
 
 def invoke_with_retry(llm, prompt, max_retries: int = 2, base_delay: float = 2.0):
