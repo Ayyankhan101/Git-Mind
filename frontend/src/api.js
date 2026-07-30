@@ -233,7 +233,13 @@ export function loadSharedAnalysis(sessionId) {
  * POST /chat/stream — streaming chat via SSE. Calls onToken(token) for each chunk.
  * Calls onSources(sources) when source metadata arrives.
  */
-export async function postChatStream(sessionId, question, onToken, signal, onSources) {
+export async function postChatStream(
+  sessionId,
+  question,
+  onToken,
+  signal,
+  onSources,
+) {
   const timeout = AbortSignal.timeout(90_000);
   const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
   const res = await fetch(`${BASE}/chat/stream`, {

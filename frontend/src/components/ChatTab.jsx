@@ -90,9 +90,7 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
         (sources) => {
           setMessages((prev) =>
             prev.map((m, i) =>
-              i === prev.length - 1
-                ? { ...m, streaming: false, sources }
-                : m,
+              i === prev.length - 1 ? { ...m, streaming: false, sources } : m,
             ),
           );
         },
@@ -100,9 +98,7 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
       // Stream finished — ensure streaming flag is cleared
       setMessages((prev) =>
         prev.map((m, i) =>
-          i === prev.length - 1 && m.streaming
-            ? { ...m, streaming: false }
-            : m,
+          i === prev.length - 1 && m.streaming ? { ...m, streaming: false } : m,
         ),
       );
     } catch (err) {
@@ -136,7 +132,11 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
 
   return (
     <div className="chat-wrap">
-      <div className="chat-messages" aria-live="polite" aria-label="Chat messages">
+      <div
+        className="chat-messages"
+        aria-live="polite"
+        aria-label="Chat messages"
+      >
         {messages.length === 0 && (
           <div
             style={{
