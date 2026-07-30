@@ -15,6 +15,42 @@ logger = structlog.get_logger(__name__)
 router = APIRouter()
 
 
+def _build_graph_context(session: dict) -> str:
+    """Build a summary of the architecture graph for the chat agent."""
+    graph = session.get("architecture_graph")
+    if not graph or not graph.get("nodes"):
+        return ""
+
+    lines = ["Repository Architecture:"]
+    for node in graph["nodes"]:
+        label = node.get("label", "Unknown")
+        node_type = node.get("type", "module")
+        layer = node.get("layer", "backend")
+        file_path = node.get("file_path", "")
+        endpoints = node.get("endpoints", [])
+
+        line = f"- {label} [{node_type}] ({layer})"
+        if file_path:
+            line += f" in {file_path}"
+        if endpoints:
+            methods = set(e.get("method", "") for e in endpoints)
+            paths = set(e.get("path", "") for e in endpoints)
+            line += f" — endpoints: {', '.join(sorted(methods))} {', '.join(sorted(paths))}"
+        lines.append(line)
+
+    # Add edges summary
+    edges = graph.get("edges", [])
+    if edges:
+        lines.append("\nRelationships:")
+        for edge in edges[:15]:  # Limit to avoid context bloat
+            source = edge.get("source", "")
+            target = edge.get("target", "")
+            relationship = edge.get("relationship", "imports")
+            lines.append(f"- {source} → {target} ({relationship})")
+
+    return "\n".join(lines)
+
+
 @router.post("/chat")
 async def chat_endpoint(req: ChatRequest, request: Request):
     if not _UUID_RE.match(req.session_id):
@@ -29,12 +65,15 @@ async def chat_endpoint(req: ChatRequest, request: Request):
     if not session.get("chroma_collection_name"):
         return {"error": "Knowledge base not ready — RAG setup may have failed."}
 
+    graph_context = _build_graph_context(session)
+
     answer, sources = await asyncio.to_thread(
         run_chat_agent,
         question=req.question,
         collection_name=session["chroma_collection_name"],
         chat_history=session["chat_history"],
         repo_name=session["repo_name"],
+        graph_context=graph_context,
     )
 
     session["chat_history"].extend(
@@ -73,12 +112,14 @@ async def chat_stream_endpoint(req: ChatRequest, request: Request):
             yield f"data: {json.dumps({'error': 'Knowledge base not ready — RAG setup may have failed.'})}\n\n"
             return
 
+        graph_context = _build_graph_context(session)
         full_answer = ""
         async for token, sources in run_chat_agent_stream(
             question=req.question,
             collection_name=session["chroma_collection_name"],
             chat_history=session["chat_history"],
             repo_name=session["repo_name"],
+            graph_context=graph_context,
         ):
             full_answer += token
             if sources is not None:

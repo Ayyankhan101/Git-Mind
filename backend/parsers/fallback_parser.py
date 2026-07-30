@@ -1,5 +1,20 @@
 import re
 
+
+def _humanize_label(name: str) -> str:
+    name = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", name)
+    name = re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", " ", name)
+    name = name.replace("_", " ").replace("-", " ")
+    words = name.split()
+    result = []
+    for w in words:
+        if w.isupper() and len(w) > 1:
+            result.append(w)
+        else:
+            result.append(w[0].upper() + w[1:])
+    return " ".join(result)
+
+
 _IMPORT_PATTERNS = [
     re.compile(r"^\s*import\s+(\S+)", re.MULTILINE),
     re.compile(r"^\s*use\s+(\S+)", re.MULTILINE),
@@ -52,9 +67,27 @@ def parse_fallback(file_path: str, source: str) -> dict | None:
 
     exports = [m.group(1) for m in _FN_PATTERN.finditer(source)]
 
+    # Extract classes for smarter labeling
+    classes = [m.group(1) for m in _CLASS_PATTERN.finditer(source)]
+
     path = file_path.replace("\\", "/")
     stem = path.rsplit("/", 1)[-1].rsplit(".", 1)[0] if "/" in path else path.rsplit(".", 1)[0]
-    label = stem.replace("_", " ").replace("-", " ").title()
+
+    # Build smart label: prefer class name, then filename
+    if classes:
+        public_classes = [c for c in classes if not c.startswith("_")]
+        label = _humanize_label(public_classes[0]) if public_classes else _humanize_label(stem)
+    else:
+        label = _humanize_label(stem)
+
+    # Add parent directory context
+    path_parts = path.split("/")
+    if len(path_parts) >= 2:
+        parent = path_parts[-2].lower()
+        if parent and parent != stem.lower() and parent not in ("src", "lib", "app", "."):
+            parent_label = _humanize_label(parent)
+            if parent_label.lower() not in label.lower():
+                label = f"{parent_label} {label}"
 
     node_type = "module"
     lower = stem.lower()

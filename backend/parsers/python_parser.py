@@ -177,6 +177,71 @@ def _classify_node(name: str, file_path: str, classes: list[dict], endpoints: li
     return "module", "backend"
 
 
+def _build_smart_label(
+    stem: str,
+    file_path: str,
+    classes: list[dict],
+    _fns: list[dict],
+    endpoints: list[dict],
+) -> str:
+    """Build a specific, descriptive label from file content instead of just filename."""
+    parts = []
+
+    # 1. If there are classes, use the main class name (not filename)
+    if classes:
+        # Prefer classes that aren't private and aren't just base classes
+        public_classes = [c for c in classes if not c["name"].startswith("_")]
+        if public_classes:
+            main_class = public_classes[0]["name"]
+            parts.append(_humanize_label(main_class))
+        else:
+            parts.append(_humanize_label(stem))
+    else:
+        parts.append(_humanize_label(stem))
+
+    # 2. Add context from parent directory if it adds specificity
+    path_parts = file_path.replace("\\", "/").split("/")
+    if len(path_parts) >= 2:
+        parent = path_parts[-2].lower()
+        # Only add parent if it's not the same as the stem
+        if parent and parent != stem.lower() and parent not in ("src", "lib", "app", "."):
+            parent_label = _humanize_label(parent)
+            # Avoid duplication (e.g., "Auth Auth Middleware" → "Auth Middleware")
+            if parent_label.lower() not in parts[0].lower():
+                parts[0] = f"{parent_label} {parts[0]}"
+
+    # 3. Add endpoint info for route files
+    if endpoints:
+        methods = set(e.get("method", "") for e in endpoints)
+        paths = set(e.get("path", "") for e in endpoints)
+        if paths:
+            # Show the common prefix path
+            common_path = _find_common_prefix(paths)
+            if common_path and common_path != "/":
+                parts.append(f"({common_path})")
+        elif methods:
+            parts.append(f"({', '.join(sorted(methods))})")
+
+    return " ".join(parts)
+
+
+def _find_common_prefix(paths: set[str]) -> str:
+    """Find the common prefix path among endpoint paths."""
+    if not paths:
+        return ""
+    sorted_paths = sorted(paths)
+    first = sorted_paths[0]
+    last = sorted_paths[-1]
+    i = 0
+    while i < len(first) and i < len(last) and first[i] == last[i]:
+        i += 1
+    prefix = first[:i]
+    # Trim to last / boundary
+    if prefix and not prefix.endswith("/"):
+        prefix = prefix.rsplit("/", 1)[0]
+    return prefix if prefix else ""
+
+
 _TYPE_LAYERS = {
     "ui": "frontend",
     "component": "frontend",
@@ -236,10 +301,10 @@ def parse_python(file_path: str, source: str) -> dict | None:
     endpoints = _extract_endpoints(tree, source)
     framework = _detect_framework(classes, fns)
 
-    # Use filename as node name
+    # Build smart label from file content (class names, endpoints, context)
     path = file_path.replace("\\", "/")
     stem = path.rsplit("/", 1)[-1].rsplit(".", 1)[0] if "/" in path else path.rsplit(".", 1)[0]
-    label = _humanize_label(stem)
+    label = _build_smart_label(stem, file_path, classes, fns, endpoints)
 
     node_type, layer = _classify_node(stem, file_path, classes, endpoints)
 

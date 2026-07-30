@@ -4,6 +4,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
+from typing import Any, TypedDict, cast
 
 import chromadb
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -11,6 +12,14 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 logger = logging.getLogger(__name__)
 
 _COLLECTION_TTL = 60 * 60 * 24 * 7  # 7 days
+
+
+class SearchResult(TypedDict):
+    filepath: str
+    content: str
+    language: str
+    layer: str
+    score: float
 
 
 def _writable(path: Path) -> bool:
@@ -69,12 +78,86 @@ def _register_collection(name: str) -> None:
         _save_registry(reg)
 
 
+# ── Language detection for metadata ────────────────────────────────────────────
+
+_EXT_TO_LANG = {
+    ".py": "Python",
+    ".js": "JavaScript",
+    ".ts": "TypeScript",
+    ".jsx": "React",
+    ".tsx": "React",
+    ".rs": "Rust",
+    ".go": "Go",
+    ".java": "Java",
+    ".rb": "Ruby",
+    ".php": "PHP",
+    ".cs": "C#",
+    ".cpp": "C++",
+    ".c": "C",
+    ".h": "C",
+    ".swift": "Swift",
+    ".kt": "Kotlin",
+}
+
+
+def _detect_language(filepath: str) -> str:
+    ext = "." + filepath.rsplit(".", 1)[-1].lower() if "." in filepath else ""
+    return _EXT_TO_LANG.get(ext, "Unknown")
+
+
+def _layer_from_path(filepath: str) -> str:
+    lower = filepath.lower()
+    if any(k in lower for k in ("frontend", "ui", "components", "pages", "views")):
+        return "frontend"
+    if any(k in lower for k in ("routes", "api", "endpoints")):
+        return "api"
+    if any(k in lower for k in ("models", "schemas", "entities")):
+        return "models"
+    if any(k in lower for k in ("services", "utils", "helpers")):
+        return "services"
+    if any(k in lower for k in ("tests", "test", "spec")):
+        return "tests"
+    return "backend"
+
+
+# ── Enhanced chunking with context ─────────────────────────────────────────────
+
+
+def _chunk_file_with_context(
+    filepath: str,
+    content: str,
+    splitter: RecursiveCharacterTextSplitter,
+) -> list[tuple[str, dict]]:
+    """Chunk a file and return (chunk_text, metadata) tuples."""
+    language = _detect_language(filepath)
+    layer = _layer_from_path(filepath)
+    filename = filepath.rsplit("/", 1)[-1] if "/" in filepath else filepath
+
+    chunks = []
+    for i, chunk in enumerate(splitter.split_text(content)):
+        # Prepend file context to each chunk for better retrieval
+        context_header = f"[File: {filepath} | Lang: {language} | Layer: {layer}]\n"
+        enriched_chunk = context_header + chunk
+
+        metadata = {
+            "filepath": filepath,
+            "chunk_index": i,
+            "language": language,
+            "layer": layer,
+            "filename": filename,
+            "chunk_size": len(chunk),
+        }
+        chunks.append((enriched_chunk, metadata))
+
+    return chunks
+
+
 # ── Public API ─────────────────────────────────────────────────────────────────
 
 
 def embed_codebase(file_contents: dict[str, str], collection_name: str) -> str:
     """
-    Embed file_contents into a ChromaDB collection.
+    Embed file_contents into a ChromaDB collection with enhanced metadata.
 
     Thread-safe: concurrent calls for the same collection_name block until the
     first caller finishes (instead of racing to embed twice or returning early
@@ -111,30 +194,53 @@ def embed_codebase(file_contents: dict[str, str], collection_name: str) -> str:
                 collection.count(),
             )
         else:
+            # Enhanced splitter: better separators for code
             splitter = RecursiveCharacterTextSplitter(
-                chunk_size=800,
-                chunk_overlap=80,
-                separators=["\nclass ", "\ndef ", "\n\n", "\n", " "],
+                chunk_size=600,  # Smaller chunks for better precision
+                chunk_overlap=100,  # More overlap for context continuity
+                separators=[
+                    "\nclass ",
+                    "\ndef ",
+                    "\nasync def ",
+                    "\nexport ",
+                    "\nimport ",
+                    "\nconst ",
+                    "\nfunction ",
+                    "\n\n",
+                    "\n",
+                    " ",
+                ],
             )
 
-            docs: list[str] = []
-            metas: list[dict] = []
-            ids: list[str] = []
+            all_chunks: list[str] = []
+            all_metas: list[dict] = []
+            all_ids: list[str] = []
 
             for fp, content in file_contents.items():
-                for i, chunk in enumerate(splitter.split_text(content)):
-                    docs.append(chunk)
-                    metas.append({"filepath": fp, "chunk_index": i})
-                    ids.append(f"{fp}::{i}")
+                enriched_chunks = _chunk_file_with_context(fp, content, splitter)
+                for chunk_text, meta in enriched_chunks:
+                    all_chunks.append(chunk_text)
+                    all_metas.append(meta)
+                    all_ids.append(f"{fp}::{meta['chunk_index']}")
 
-            for i in range(0, len(docs), 100):
+            # Batch insert with metadata
+            for i in range(0, len(all_chunks), 100):
+                batch_docs = all_chunks[i : i + 100]
+                batch_metas = all_metas[i : i + 100]
+                batch_ids = all_ids[i : i + 100]
+
                 collection.add(
-                    documents=docs[i : i + 100],
-                    metadatas=metas[i : i + 100],  # type: ignore[arg-type]
-                    ids=ids[i : i + 100],
+                    documents=batch_docs,
+                    metadatas=batch_metas,  # type: ignore[arg-type]
+                    ids=batch_ids,
                 )
 
-            logger.info("Embedded %d chunks into '%s'", len(docs), collection_name)
+            logger.info(
+                "Embedded %d chunks from %d files into '%s'",
+                len(all_chunks),
+                len(file_contents),
+                collection_name,
+            )
 
         with _lock:
             _collections[collection_name] = collection
@@ -154,10 +260,16 @@ def embed_codebase(file_contents: dict[str, str], collection_name: str) -> str:
     return collection_name
 
 
-def search_codebase(collection_name: str, query: str, n_results: int = 5) -> list[dict]:
+def search_codebase(
+    collection_name: str,
+    query: str,
+    n_results: int = 5,
+    layer_filter: str | None = None,
+    language_filter: str | None = None,
+) -> list[SearchResult]:
+    """Search with optional metadata filtering and enhanced scoring."""
     with _lock:
         collection = _collections.get(collection_name)
-        # If embedding is in progress, grab the event to wait on
         event = _embed_events.get(collection_name) if collection is None else None
 
     if event is not None:
@@ -167,7 +279,6 @@ def search_codebase(collection_name: str, query: str, n_results: int = 5) -> lis
             collection = _collections.get(collection_name)
 
     if collection is None:
-        # Try loading from ChromaDB persistence (e.g. after server restart)
         try:
             collection = _client.get_collection(collection_name)
             with _lock:
@@ -179,13 +290,66 @@ def search_codebase(collection_name: str, query: str, n_results: int = 5) -> lis
     count = collection.count()
     if count == 0:
         return []
-    n = min(n_results, count)
-    result = collection.query(query_texts=[query], n_results=n)
+
+    # Build where filter for metadata
+    where_conditions = []
+    if layer_filter:
+        where_conditions.append({"layer": layer_filter})
+    if language_filter:
+        where_conditions.append({"language": language_filter})
+
+    where: dict[str, Any] | None = None
+    if len(where_conditions) == 1:
+        where = where_conditions[0]
+    elif len(where_conditions) > 1:
+        where = {"$and": where_conditions}
+
+    # Retrieve more candidates for reranking
+    n = min(max(n_results * 2, 10), count)
+    result = collection.query(
+        query_texts=[query],
+        n_results=n,
+        where=where,
+        include=["documents", "metadatas", "distances"],
+    )
+
     documents = result.get("documents") or []
     metadatas = result.get("metadatas") or []
+    distances = result.get("distances") or []
+
     if not documents or not metadatas:
         return []
-    return [{"filepath": m["filepath"], "content": d} for d, m in zip(documents[0], metadatas[0], strict=False)]
+
+    # Rerank: boost chunks from same file, deduplicate by filepath
+    results: list[SearchResult] = []
+    seen_files = set()
+    for doc, meta, dist in zip(documents[0], metadatas[0], distances[0], strict=False):
+        filepath = str(meta.get("filepath", ""))
+        # Deduplicate: keep only the best chunk per file
+        if filepath in seen_files:
+            continue
+        seen_files.add(filepath)
+
+        # Score: lower distance = better match, but also consider chunk size
+        chunk_size_raw = meta.get("chunk_size", 0)
+        chunk_size = chunk_size_raw if isinstance(chunk_size_raw, (int, float)) else 0
+        numeric_dist = dist if isinstance(dist, (int, float)) else 1.0
+        score = 1.0 / (1.0 + numeric_dist) * (1.0 + min(chunk_size / 1000, 0.5))
+
+        header = f"[File: {filepath} | Lang: {meta.get('language', '')} | Layer: {meta.get('layer', '')}]\n"
+        results.append(
+            {
+                "filepath": filepath,
+                "content": doc.replace(header, ""),
+                "language": str(meta.get("language", "")),
+                "layer": str(meta.get("layer", "")),
+                "score": score,
+            }
+        )
+
+    # Sort by score descending
+    results.sort(key=lambda x: cast(float, x["score"]), reverse=True)
+    return results[:n_results]
 
 
 def delete_collection(name: str) -> None:
