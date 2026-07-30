@@ -29,8 +29,6 @@ function deriveHttpBase() {
   console.log("[api.js] Dev URL: http://localhost:8002");
   return "http://localhost:8002";
 }
-  return "http://localhost:8002";
-}
 
 export const BASE = deriveHttpBase();
 export const WS_BASE = BASE.replace(/^http/, "ws");
