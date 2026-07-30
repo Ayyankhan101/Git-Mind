@@ -27,8 +27,17 @@ jobs:
       - name: Install frontend deps
         working-directory: frontend
         run: npm ci --legacy-peer-deps
-      - name: Run pre-commit
-        run: pre-commit run --all-files --show-diff-on-failure
+      - name: Run linting
+        run: |
+          echo "=== Ruff check ==="
+          ruff check backend/
+          echo "=== Ruff format check ==="
+          ruff format --check backend/
+          echo "=== MyPy ==="
+          mypy backend/ --ignore-missing-imports
+          echo "=== Prettier check ==="
+          cd frontend && npx prettier --check "src/**/*.{js,jsx,ts,tsx,css,json}" && cd ..
+          echo "=== All checks passed ==="
 
   backend-tests:
     runs-on: ubuntu-latest

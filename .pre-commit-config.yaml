@@ -20,7 +20,6 @@ repos:
     rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
-        args: [--check]
         types_or: [javascript, jsx, ts, tsx, json, css, markdown, yaml]
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
