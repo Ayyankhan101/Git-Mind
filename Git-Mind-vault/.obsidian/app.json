@@ -1,0 +1,15 @@
+{
+  "cssSnippets": [
+    "vault-colors"
+  ],
+  "obsidianVersion": "1.8.0",
+  "showFrontmatter": false,
+  "showInlineTitle": true,
+  "newFileLocation": "current",
+  "alwaysUpdateLinks": true,
+  "attachmentFolderPath": "assets",
+  "communityThemeEnabled": false,
+  "enabledPlugins": [
+    "graph"
+  ]
+}

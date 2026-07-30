@@ -1,0 +1,162 @@
+/* ========================================
+   Git-Mind Vault Color Coding
+   ======================================== */
+
+/* --- File Explorer Coloring --- */
+
+/* Notes folder: Teal */
+.nav-file-title[data-path*="Git-Mind/Notes"] .nav-file-title-content {
+  color: #0d9488 !important;
+}
+.nav-file-title[data-path*="Git-Mind/Notes"] .nav-file-title-content:hover {
+  background-color: rgba(13, 148, 136, 0.1);
+}
+
+/* Tasks folder: Amber */
+.nav-file-title[data-path*="Git-Mind/Tasks"] .nav-file-title-content {
+  color: #d97706 !important;
+}
+.nav-file-title[data-path*="Git-Mind/Tasks"] .nav-file-title-content:hover {
+  background-color: rgba(217, 119, 6, 0.1);
+}
+
+/* Changelog folder: Green */
+.nav-file-title[data-path*="Git-Mind/Changelog"] .nav-file-title-content {
+  color: #16a34a !important;
+}
+.nav-file-title[data-path*="Git-Mind/Changelog"] .nav-file-title-content:hover {
+  background-color: rgba(22, 163, 74, 0.1);
+}
+
+/* Index.md: Purple */
+.nav-file-title[data-path*="Git-Mind/Index.md"] .nav-file-title-content {
+  color: #7c3aed !important;
+  font-weight: 600;
+}
+.nav-file-title[data-path*="Git-Mind/Index.md"] .nav-file-title-content:hover {
+  background-color: rgba(124, 58, 237, 0.1);
+}
+
+/* --- Dataview Inline Field Colors --- */
+
+/* Status field colors */
+.dataview.inline-field-key[data-key="status"] ~ .dataview.inline-field {
+  border-left: 3px solid #0d9488;
+  padding-left: 6px;
+}
+
+/* --- Tag Colors (Obsidian tags) --- */
+.tag[href="#architecture"] {
+  background-color: rgba(13, 148, 136, 0.15) !important;
+  color: #0d9488 !important;
+  border: 1px solid rgba(13, 148, 136, 0.3);
+}
+
+.tag[href="#tech-stack"] {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+  color: #3b82f6 !important;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.tag[href="#development"] {
+  background-color: rgba(168, 85, 247, 0.15) !important;
+  color: #a855f7 !important;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.tag[href="#tasks"] {
+  background-color: rgba(217, 119, 6, 0.15) !important;
+  color: #d97706 !important;
+  border: 1px solid rgba(217, 119, 6, 0.3);
+}
+
+.tag[href="#changelog"] {
+  background-color: rgba(22, 163, 74, 0.15) !important;
+  color: #16a34a !important;
+  border: 1px solid rgba(22, 163, 74, 0.3);
+}
+
+/* --- Heading Colors --- */
+h1 {
+  border-bottom: 2px solid #0d9488;
+  padding-bottom: 4px;
+}
+
+h2 {
+  color: #334155;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 2px;
+}
+
+/* --- Callout-style Boxes --- */
+.callout[data-callout="note"] {
+  border-left: 4px solid #3b82f6;
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.callout[data-callout="tip"] {
+  border-left: 4px solid #0d9488;
+  background-color: rgba(13, 148, 136, 0.05);
+}
+
+.callout[data-callout="warning"] {
+  border-left: 4px solid #d97706;
+  background-color: rgba(217, 119, 6, 0.05);
+}
+
+.callout[data-callout="danger"] {
+  border-left: 4px solid #dc2626;
+  background-color: rgba(220, 38, 38, 0.05);
+}
+
+/* --- Remote Graph Group Colors --- */
+
+/* _SEMANTIC_* files: Cyan (code analysis) */
+.nav-file-title[data-path*="_SEMANTIC_"] .nav-file-title-content {
+  color: #06b6d4 !important;
+}
+.nav-file-title[data-path*="_SEMANTIC_"] .nav-file-title-content:hover {
+  background-color: rgba(6, 182, 212, 0.1);
+}
+
+/* _COMMUNITY_* files: Amber (dependencies) */
+.nav-file-title[data-path*="_COMMUNITY_"] .nav-file-title-content {
+  color: #f59e0b !important;
+}
+.nav-file-title[data-path*="_COMMUNITY_"] .nav-file-title-content:hover {
+  background-color: rgba(245, 158, 11, 0.1);
+}
+
+/* _EDGE_* files: Pink (relationships) */
+.nav-file-title[data-path*="_EDGE_"] .nav-file-title-content {
+  color: #ec4899 !important;
+}
+.nav-file-title[data-path*="_EDGE_"] .nav-file-title-content:hover {
+  background-color: rgba(236, 72, 153, 0.1);
+}
+
+/* _HYPEREDGE_* files: Violet (clusters/patterns) */
+.nav-file-title[data-path*="_HYPEREDGE_"] .nav-file-title-content {
+  color: #8b5cf6 !important;
+}
+.nav-file-title[data-path*="_HYPEREDGE_"] .nav-file-title-content:hover {
+  background-color: rgba(139, 92, 246, 0.1);
+}
+
+/* Graph view node colors */
+/* These match the file explorer colors for consistency */
+.graph-view.color-fill-fill {
+  fill: #0d9488;
+}
+.graph-view.color-fill-unresolved {
+  fill: #6b7280;
+}
+
+/* --- Cyber Theme Overrides --- */
+/* Update Index.md color to match cyber green theme */
+.nav-file-title[data-path*="Index.md"] .nav-file-title-content {
+  color: #22C55E !important;
+}
+.nav-file-title[data-path*="Index.md"] .nav-file-title-content:hover {
+  background-color: rgba(34, 197, 94, 0.1);
+}
