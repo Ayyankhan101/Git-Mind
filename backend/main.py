@@ -38,7 +38,6 @@ from routes.webhook import router as webhook_router  # noqa: E402
 from services.auth import AuthMiddleware  # noqa: E402
 from services.body_limit import BodyLimitMiddleware  # noqa: E402
 from services.correlation import CorrelationMiddleware  # noqa: E402
-from services.session import prune_expired_sessions  # noqa: E402
 from services.telemetry import setup_logging, setup_metrics, setup_tracing  # noqa: E402
 from ws.analyze import handle_analyze  # noqa: E402
 from ws.crisis import handle_crisis  # noqa: E402
