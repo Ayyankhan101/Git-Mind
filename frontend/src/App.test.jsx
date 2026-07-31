@@ -1,6 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import App from "./App";
 
+jest.mock("./components/LandingPage", () => {
+  return function MockLandingPage() {
+    return <div>GitMind</div>;
+  };
+});
+
 jest.mock("./api", () => ({
   fetchRepos: jest.fn(),
   loadSharedAnalysis: jest.fn().mockRejectedValue(new Error("no share")),

@@ -30,26 +30,9 @@ import {
   Activity,
 } from "lucide-react";
 
-import { buildAnalysisPdf, downloadPdf } from "./pdfBuilder";
-
 import Sidebar from "./components/Sidebar";
-import DocsTab from "./components/DocsTab";
-import SecurityTab from "./components/SecurityTab";
-import ChatTab from "./components/ChatTab";
-import SummaryTab from "./components/SummaryTab";
-import CveTab from "./components/CveTab";
-import PRReviewTab from "./components/PRReviewTab";
-import CrisisChat from "./components/CrisisChat";
 import LandingPage from "./components/LandingPage";
-import KeyboardHelp from "./components/KeyboardHelp";
-import FilePreviewDrawer from "./components/FilePreviewDrawer";
 import ErrorBoundary from "./components/ErrorBoundary";
-import GitAuditTab from "./components/GitAuditTab";
-import SolidityTab from "./components/SolidityTab";
-import CodeAuditTab from "./components/CodeAuditTab";
-import MonitoringTab from "./components/MonitoringTab";
-import OrgAuditModal from "./components/OrgAuditModal";
-import CommandPalette from "./components/CommandPalette";
 import ToastSystem from "./components/ToastSystem";
 import {
   WS_BASE,
@@ -63,6 +46,21 @@ import { appReducer, initialState } from "./appReducer";
 import * as tokenManager from "./tokenManager";
 
 const DiagramTab = lazy(() => import("./components/DiagramTab"));
+const DocsTab = lazy(() => import("./components/DocsTab"));
+const SecurityTab = lazy(() => import("./components/SecurityTab"));
+const ChatTab = lazy(() => import("./components/ChatTab"));
+const SummaryTab = lazy(() => import("./components/SummaryTab"));
+const CveTab = lazy(() => import("./components/CveTab"));
+const PRReviewTab = lazy(() => import("./components/PRReviewTab"));
+const CrisisChat = lazy(() => import("./components/CrisisChat"));
+const KeyboardHelp = lazy(() => import("./components/KeyboardHelp"));
+const FilePreviewDrawer = lazy(() => import("./components/FilePreviewDrawer"));
+const GitAuditTab = lazy(() => import("./components/GitAuditTab"));
+const SolidityTab = lazy(() => import("./components/SolidityTab"));
+const CodeAuditTab = lazy(() => import("./components/CodeAuditTab"));
+const MonitoringTab = lazy(() => import("./components/MonitoringTab"));
+const OrgAuditModal = lazy(() => import("./components/OrgAuditModal"));
+const CommandPalette = lazy(() => import("./components/CommandPalette"));
 
 const IS_MAC = /Mac/i.test(
   navigator.userAgentData?.platform ?? navigator.platform,
@@ -675,36 +673,45 @@ export default function App() {
   );
 
   // ── Export ────────────────────────────────────────────────
-  const handleExport = useCallback(() => {
+  const handleExport = useCallback(async () => {
     if (!analyzed) return;
-    const docDef = buildAnalysisPdf({
-      repoName,
-      diagram,
-      archGraph,
-      apiDocs,
-      findings,
-      cveFindings,
-      gitAudit,
-      solidityAudit,
-      codeAudit,
-      health,
-      elapsedSec,
-    });
-    downloadPdf(docDef, `gitmind-${repoName}-${Date.now()}.pdf`);
-    addToast({
-      kind: "success",
-      title: "Report exported",
-      sub: `${repoName}.pdf`,
-    });
-    dispatch({
-      type: "ADD_RECENT",
-      cmd: {
-        id: "action:export",
-        label: "Export report",
-        sub: "Action",
-        icon: "download",
-      },
-    });
+    try {
+      const { buildAnalysisPdf, downloadPdf } = await import("./pdfBuilder");
+      const docDef = buildAnalysisPdf({
+        repoName,
+        diagram,
+        archGraph,
+        apiDocs,
+        findings,
+        cveFindings,
+        gitAudit,
+        solidityAudit,
+        codeAudit,
+        health,
+        elapsedSec,
+      });
+      downloadPdf(docDef, `gitmind-${repoName}-${Date.now()}.pdf`);
+      addToast({
+        kind: "success",
+        title: "Report exported",
+        sub: `${repoName}.pdf`,
+      });
+      dispatch({
+        type: "ADD_RECENT",
+        cmd: {
+          id: "action:export",
+          label: "Export report",
+          sub: "Action",
+          icon: "download",
+        },
+      });
+    } catch (err) {
+      addToast({
+        kind: "danger",
+        title: "Export failed",
+        sub: err.message || "Could not generate report.",
+      });
+    }
   }, [
     analyzed,
     repoName,
@@ -1186,25 +1193,25 @@ export default function App() {
             />
           ) : (
             <ErrorBoundary key={activeTab}>
-              {activeTab === "summary" && (
-                <SummaryTab
-                  sessionId={SESSION_ID}
-                  enabled={analyzed}
-                  repoName={repoName}
-                  findings={findings}
-                  apiDocs={apiDocs}
-                  elapsedSec={elapsedSec}
-                  isAnalyzing={isAnalyzing}
-                  health={health}
-                  healthPartial={state.healthPartial}
-                  repoUrl={selectedRepoUrl}
-                  ghToken={ghToken}
-                />
-              )}
-              {activeTab === "diagram" && (
-                <Suspense
-                  fallback={<div className="tab-loading">Loading diagram…</div>}
-                >
+              <Suspense
+                fallback={<div className="tab-loading">Loading tab…</div>}
+              >
+                {activeTab === "summary" && (
+                  <SummaryTab
+                    sessionId={SESSION_ID}
+                    enabled={analyzed}
+                    repoName={repoName}
+                    findings={findings}
+                    apiDocs={apiDocs}
+                    elapsedSec={elapsedSec}
+                    isAnalyzing={isAnalyzing}
+                    health={health}
+                    healthPartial={state.healthPartial}
+                    repoUrl={selectedRepoUrl}
+                    ghToken={ghToken}
+                  />
+                )}
+                {activeTab === "diagram" && (
                   <DiagramTab
                     diagram={diagram}
                     archGraph={archGraph}
@@ -1215,93 +1222,93 @@ export default function App() {
                     enabled={analyzed}
                     repoName={repoName}
                   />
-                </Suspense>
-              )}
-              {activeTab === "docs" && (
-                <DocsTab
-                  docs={apiDocs}
-                  isAnalyzing={isAnalyzing}
-                  analyzed={analyzed}
-                  onPickFile={(p) =>
-                    dispatch({ type: "SET_FILE_PREVIEW", preview: p })
-                  }
-                />
-              )}
-              {activeTab === "security" && (
-                <SecurityTab
-                  findings={findings}
-                  isAnalyzing={isAnalyzing}
-                  analyzed={analyzed}
-                  onCrisis={(f) =>
-                    dispatch({ type: "SET_CRISIS_FINDING", finding: f })
-                  }
-                  onFix={handleFix}
-                  fixLoading={fixLoading}
-                  fixResult={fixResult}
-                  onPickFile={(p) =>
-                    dispatch({ type: "SET_FILE_PREVIEW", preview: p })
-                  }
-                  sessionId={SESSION_ID}
-                />
-              )}
-              {activeTab === "cve" && (
-                <CveTab
-                  findings={cveFindings}
-                  isAnalyzing={isAnalyzing}
-                  analyzed={analyzed}
-                />
-              )}
-              {activeTab === "git" && (
-                <GitAuditTab
-                  audit={gitAudit}
-                  isAnalyzing={isAnalyzing}
-                  analyzed={analyzed}
-                />
-              )}
-              {activeTab === "solidity" && (
-                <SolidityTab
-                  solAudit={solidityAudit}
-                  onFix={handleFix}
-                  fixLoading={fixLoading}
-                  fixResult={fixResult}
-                />
-              )}
-              {activeTab === "code_audit" && (
-                <CodeAuditTab
-                  codeAudit={codeAudit}
-                  isAnalyzing={isAnalyzing}
-                  analyzed={analyzed}
-                  onFix={handleFix}
-                  fixLoading={fixLoading}
-                  fixResult={fixResult}
-                />
-              )}
-              {activeTab === "pr" && (
-                <PRReviewTab
-                  prAutoUrl={prAutoUrl}
-                  onAutoUrlUsed={() =>
-                    dispatch({ type: "SET_PR_AUTO_URL", url: null })
-                  }
-                  sessionId={SESSION_ID}
-                  analyzed={analyzed}
-                  repoUrl={selectedRepoUrl}
-                />
-              )}
-              {activeTab === "monitor" && (
-                <MonitoringTab
-                  ghToken={ghToken}
-                  repoUrl={selectedRepoUrl}
-                  analyzed={analyzed}
-                />
-              )}
-              {activeTab === "chat" && (
-                <ChatTab
-                  key={repoName}
-                  sessionId={SESSION_ID}
-                  enabled={analyzed}
-                  repoName={repoName}
-                />
-              )}
+                )}
+                {activeTab === "docs" && (
+                  <DocsTab
+                    docs={apiDocs}
+                    isAnalyzing={isAnalyzing}
+                    analyzed={analyzed}
+                    onPickFile={(p) =>
+                      dispatch({ type: "SET_FILE_PREVIEW", preview: p })
+                    }
+                  />
+                )}
+                {activeTab === "security" && (
+                  <SecurityTab
+                    findings={findings}
+                    isAnalyzing={isAnalyzing}
+                    analyzed={analyzed}
+                    onCrisis={(f) =>
+                      dispatch({ type: "SET_CRISIS_FINDING", finding: f })
+                    }
+                    onFix={handleFix}
+                    fixLoading={fixLoading}
+                    fixResult={fixResult}
+                    onPickFile={(p) =>
+                      dispatch({ type: "SET_FILE_PREVIEW", preview: p })
+                    }
+                    sessionId={SESSION_ID}
+                  />
+                )}
+                {activeTab === "cve" && (
+                  <CveTab
+                    findings={cveFindings}
+                    isAnalyzing={isAnalyzing}
+                    analyzed={analyzed}
+                  />
+                )}
+                {activeTab === "git" && (
+                  <GitAuditTab
+                    audit={gitAudit}
+                    isAnalyzing={isAnalyzing}
+                    analyzed={analyzed}
+                  />
+                )}
+                {activeTab === "solidity" && (
+                  <SolidityTab
+                    solAudit={solidityAudit}
+                    onFix={handleFix}
+                    fixLoading={fixLoading}
+                    fixResult={fixResult}
+                  />
+                )}
+                {activeTab === "code_audit" && (
+                  <CodeAuditTab
+                    codeAudit={codeAudit}
+                    isAnalyzing={isAnalyzing}
+                    analyzed={analyzed}
+                    onFix={handleFix}
+                    fixLoading={fixLoading}
+                    fixResult={fixResult}
+                  />
+                )}
+                {activeTab === "pr" && (
+                  <PRReviewTab
+                    prAutoUrl={prAutoUrl}
+                    onAutoUrlUsed={() =>
+                      dispatch({ type: "SET_PR_AUTO_URL", url: null })
+                    }
+                    sessionId={SESSION_ID}
+                    analyzed={analyzed}
+                    repoUrl={selectedRepoUrl}
+                  />
+                )}
+                {activeTab === "monitor" && (
+                  <MonitoringTab
+                    ghToken={ghToken}
+                    repoUrl={selectedRepoUrl}
+                    analyzed={analyzed}
+                  />
+                )}
+                {activeTab === "chat" && (
+                  <ChatTab
+                    key={repoName}
+                    sessionId={SESSION_ID}
+                    enabled={analyzed}
+                    repoName={repoName}
+                  />
+                )}
+              </Suspense>
             </ErrorBoundary>
           )}
         </div>
@@ -1350,43 +1357,47 @@ export default function App() {
       </div>
 
       {/* ── Overlays ────────────────────────────────────────────── */}
-      {showOrgAudit && (
-        <OrgAuditModal
+      <Suspense fallback={null}>
+        {showOrgAudit && (
+          <OrgAuditModal
+            repos={repos}
+            token={ghToken || null}
+            onClose={() =>
+              dispatch({ type: "SET_SHOW_ORG_AUDIT", show: false })
+            }
+          />
+        )}
+        {crisisFinding && (
+          <CrisisChat
+            finding={crisisFinding}
+            sessionId={SESSION_ID}
+            repoName={repoName}
+            onClose={() =>
+              dispatch({ type: "SET_CRISIS_FINDING", finding: null })
+            }
+          />
+        )}
+        <KeyboardHelp
+          open={showKbHelp}
+          onClose={() => dispatch({ type: "SET_SHOW_KB_HELP", show: false })}
+        />
+        <FilePreviewDrawer
+          path={filePreview?.path}
+          line={filePreview?.line}
+          repoUrl={selectedRepoUrl}
+          ghToken={ghToken}
+          onClose={() => dispatch({ type: "SET_FILE_PREVIEW", preview: null })}
+        />
+        <CommandPalette
+          open={showPalette}
+          onClose={() => dispatch({ type: "SET_SHOW_PALETTE", show: false })}
+          onAction={handlePaletteAction}
           repos={repos}
-          token={ghToken || null}
-          onClose={() => dispatch({ type: "SET_SHOW_ORG_AUDIT", show: false })}
+          recents={recents}
+          theme={theme}
+          density={density}
         />
-      )}
-      {crisisFinding && (
-        <CrisisChat
-          finding={crisisFinding}
-          sessionId={SESSION_ID}
-          repoName={repoName}
-          onClose={() =>
-            dispatch({ type: "SET_CRISIS_FINDING", finding: null })
-          }
-        />
-      )}
-      <KeyboardHelp
-        open={showKbHelp}
-        onClose={() => dispatch({ type: "SET_SHOW_KB_HELP", show: false })}
-      />
-      <FilePreviewDrawer
-        path={filePreview?.path}
-        line={filePreview?.line}
-        repoUrl={selectedRepoUrl}
-        ghToken={ghToken}
-        onClose={() => dispatch({ type: "SET_FILE_PREVIEW", preview: null })}
-      />
-      <CommandPalette
-        open={showPalette}
-        onClose={() => dispatch({ type: "SET_SHOW_PALETTE", show: false })}
-        onAction={handlePaletteAction}
-        repos={repos}
-        recents={recents}
-        theme={theme}
-        density={density}
-      />
+      </Suspense>
       <ToastSystem toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
