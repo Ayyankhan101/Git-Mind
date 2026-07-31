@@ -253,6 +253,17 @@ export default function App() {
 
   // ── Refs ──────────────────────────────────────────────────
   const wsRef = useRef(null);
+
+  // ── Restore theme & density from localStorage on mount ────
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("gm-theme") || "obsidian";
+    const savedDensity = localStorage.getItem("gm-density") || "comfortable";
+    const root = document.documentElement;
+    if (savedTheme === "obsidian") root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme", savedTheme);
+    if (savedDensity === "comfortable") root.removeAttribute("data-density");
+    else root.setAttribute("data-density", savedDensity);
+  }, []);
   const timerRef = useRef(null);
   const timeoutRef = useRef(null);
   const startRef = useRef(null);
