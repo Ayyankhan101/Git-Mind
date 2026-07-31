@@ -280,12 +280,16 @@ export default function DiagramTab({
             boxShadow: "0 0 32px rgba(168,85,247,0.2)",
           }}
         >
-          <GitBranch size={24} style={{ color: "#a855f7" }} strokeWidth={1.5} />
+          <GitBranch
+            size={24}
+            style={{ color: "var(--primary)" }}
+            strokeWidth={1.5}
+          />
         </div>
-        <div style={{ fontSize: 16, fontWeight: 600, color: "#ffffff" }}>
+        <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-1)" }}>
           Architecture not available
         </div>
-        <div style={{ fontSize: 12, color: "#94a3b8" }}>
+        <div style={{ fontSize: 12, color: "var(--text-3)" }}>
           Analyze a repository to generate the system diagram
         </div>
       </div>
@@ -355,16 +359,16 @@ export default function DiagramTab({
                 width: 150,
                 height: 100,
                 display: "block",
-                background: "rgba(15, 23, 42, 0.85)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
                 borderRadius: 12,
               }}
               nodeColor={(n) => {
-                if (n.data?.tier === "frontend") return "#06b6d4";
-                if (n.data?.tier === "backend") return "#a855f7";
-                return "#475569";
+                if (n.data?.tier === "frontend") return "var(--info)";
+                if (n.data?.tier === "backend") return "var(--primary)";
+                return "var(--text-3)";
               }}
-              maskColor="rgba(5, 5, 10, 0.7)"
+              maskColor="var(--surface-2)"
             />
             <Background color="rgba(255,255,255,0.02)" gap={24} size={1} />
           </ReactFlow>
@@ -392,10 +396,10 @@ export default function DiagramTab({
             alignItems: "center",
             gap: 12,
             padding: "12px 8px",
-            background: "rgba(5,5,20,0.6)",
+            background: "var(--surface)",
             backdropFilter: "blur(24px)",
             WebkitBackdropFilter: "blur(24px)",
-            border: "1px solid rgba(255,255,255,0.1)",
+            border: "1px solid var(--border)",
             borderRadius: 12,
             zIndex: 30,
             boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.5)",
@@ -406,7 +410,7 @@ export default function DiagramTab({
               fontSize: 10,
               fontFamily: "monospace",
               fontWeight: 700,
-              color: "#d1d5db",
+              color: "var(--text-2)",
               userSelect: "none",
             }}
           >
@@ -417,7 +421,7 @@ export default function DiagramTab({
             style={{
               width: 20,
               height: 1,
-              background: "rgba(255,255,255,0.1)",
+              background: "var(--border)",
             }}
           />
 
@@ -432,7 +436,7 @@ export default function DiagramTab({
               borderRadius: 8,
               border: "none",
               background: "transparent",
-              color: "#94a3b8",
+              color: "var(--text-3)",
               cursor: "pointer",
             }}
             title="Zoom In"
@@ -451,7 +455,7 @@ export default function DiagramTab({
               borderRadius: 8,
               border: "none",
               background: "transparent",
-              color: "#94a3b8",
+              color: "var(--text-3)",
               cursor: "pointer",
             }}
             title="Zoom Out"
@@ -478,7 +482,7 @@ export default function DiagramTab({
               borderRadius: 8,
               border: "none",
               background: "transparent",
-              color: "#94a3b8",
+              color: "var(--text-3)",
               cursor: "pointer",
             }}
             title="Recenter View"
@@ -497,7 +501,7 @@ export default function DiagramTab({
               borderRadius: 8,
               border: "none",
               background: "transparent",
-              color: "#94a3b8",
+              color: "var(--text-3)",
               cursor: "pointer",
             }}
             title="Fullscreen Mode"
@@ -516,13 +520,13 @@ export default function DiagramTab({
               borderRadius: 8,
               border: "none",
               background: "transparent",
-              color: "#94a3b8",
+              color: "var(--text-3)",
               cursor: "pointer",
             }}
             title="Copy Diagram Content"
           >
             {copied ? (
-              <Check size={14} style={{ color: "#34d399" }} />
+              <Check size={14} style={{ color: "var(--success)" }} />
             ) : (
               <Copy size={14} />
             )}

@@ -32,7 +32,11 @@ function ChatMessage({ msg }) {
             : isUser
               ? "var(--primary)"
               : "var(--surface-2)",
-          color: isErr ? "var(--danger)" : isUser ? "#fff" : "var(--text-1)",
+          color: isErr
+            ? "var(--danger)"
+            : isUser
+              ? "var(--text-1)"
+              : "var(--text-1)",
           borderRadius: isUser ? "12px 12px 3px 12px" : "12px 12px 12px 3px",
           padding: "8px 12px",
           fontSize: 13,
@@ -193,7 +197,7 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
         {ragUnavail ? (
           <span
             style={{
-              color: "var(--warning, #f59e0b)",
+              color: "var(--warning)",
               fontSize: 12,
               lineHeight: 1.55,
             }}

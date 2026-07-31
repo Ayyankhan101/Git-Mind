@@ -17,7 +17,7 @@ function SeverityDot({ sev }) {
     sev === "critical"
       ? "var(--danger)"
       : sev === "high"
-        ? "#f97316"
+        ? "var(--sev-high)"
         : sev === "medium"
           ? "var(--warning)"
           : "var(--text-3)";

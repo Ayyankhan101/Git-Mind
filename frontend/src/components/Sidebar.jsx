@@ -86,7 +86,9 @@ function RepoCard({
           <>
             <span
               className="lang-dot"
-              style={{ background: LANG_COLOR[repo.language] || "#64748b" }}
+              style={{
+                background: LANG_COLOR[repo.language] || "var(--text-3)",
+              }}
             />
             <span>{repo.language}</span>
             <span>·</span>
@@ -560,7 +562,9 @@ function RepoHoverPreview({ repo, anchorRect }) {
           <span>
             <span
               className="lang-dot"
-              style={{ background: LANG_COLOR[repo.language] || "#64748b" }}
+              style={{
+                background: LANG_COLOR[repo.language] || "var(--text-3)",
+              }}
             />
             {repo.language}
           </span>
