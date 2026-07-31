@@ -3,6 +3,7 @@ import logging
 import tempfile
 import threading
 import time
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, TypedDict, cast
 
@@ -26,7 +27,7 @@ class SearchResult(TypedDict):
     score: float
 
 
-def _strip_context_header(content: str, filepath: str, meta: dict) -> str:
+def _strip_context_header(content: str, filepath: str, meta: Mapping[str, Any]) -> str:
     header = f"[File: {filepath} | Lang: {meta.get('language', '')} | Layer: {meta.get('layer', '')}]\n"
     return content.replace(header, "")
 
