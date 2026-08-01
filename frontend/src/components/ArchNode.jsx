@@ -86,11 +86,11 @@ const TYPE_LABELS = {
 };
 
 const HTTP_METHOD_COLORS = {
-  GET: "#22c55e",
-  POST: "#3b82f6",
-  PUT: "#f97316",
-  PATCH: "#a855f7",
-  DELETE: "#ef4444",
+  GET: "var(--success)",
+  POST: "var(--info)",
+  PUT: "var(--warning)",
+  PATCH: "var(--sev-high)",
+  DELETE: "var(--danger)",
 };
 
 function inferTypeLabel(data) {
@@ -244,7 +244,8 @@ export default function ArchNode({ data, selected }) {
         {endpoints.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {endpoints.slice(0, 4).map((ep, i) => {
-              const methodColor = HTTP_METHOD_COLORS[ep.method] || "#64748b";
+              const methodColor =
+                HTTP_METHOD_COLORS[ep.method] || "var(--text-3)";
               return (
                 <span
                   key={i}
