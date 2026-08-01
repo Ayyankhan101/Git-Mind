@@ -5184,7 +5184,7 @@ textarea:focus-visible,
   background: var(--primary);
   border: none;
   border-radius: 7px;
-  color: #fff;
+  color: var(--text-on-primary);
   width: 30px;
   height: 30px;
   display: flex;
