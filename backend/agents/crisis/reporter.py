@@ -3,16 +3,14 @@ import logging
 import os
 import time
 
-from langchain_groq import ChatGroq
-
 from llm_cache import invoke_with_retry
+from settings import LLM_MODEL, get_llm
 
 logger = logging.getLogger(__name__)
 
 INTERVAL_SEC = int(os.getenv("REPORTER_INTERVAL_SEC", "45"))
-_MODEL = "llama-3.3-70b-versatile"
 
-_llm = ChatGroq(model=_MODEL, temperature=0.5)
+_llm = get_llm(temperature_key="reporter")
 
 REPORTER_PROMPT = """You are a senior reporter at a major tech publication. A source has tipped you
 off about a possible security incident at a company. You have partial information.

@@ -28,6 +28,9 @@ const nodeTypes = { archNode: ArchNode };
 const edgeTypes = { animatedEdge: AnimatedEdge };
 
 function humanizeNodeLabel(label, tier) {
+  if (!label) return label;
+
+  // Module X → tier name
   if (/^Module\s+[A-Z]$/.test(label)) {
     const tierMap = {
       frontend: "Frontend Layer",
@@ -38,6 +41,31 @@ function humanizeNodeLabel(label, tier) {
     };
     return tierMap[tier] || "Infrastructure Layer";
   }
+
+  // Single letter IDs (A, B, C) → infer from tier
+  if (/^[A-Z]$/.test(label)) {
+    const tierMap = {
+      frontend: "Frontend",
+      api: "API Gateway",
+      backend: "Backend Service",
+      database: "Database",
+      config: "Config",
+    };
+    return tierMap[tier] || "Module";
+  }
+
+  // ALL CAPS labels → title case
+  if (/^[A-Z]{2,}$/.test(label)) {
+    return label.charAt(0) + label.slice(1).toLowerCase();
+  }
+
+  // Underscore labels → title case
+  if (label.includes("_")) {
+    return label
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
   return label;
 }
 

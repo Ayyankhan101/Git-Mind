@@ -99,7 +99,9 @@ if api_key and not _skip_live_checks:
     try:
         from langchain_groq import ChatGroq
 
-        llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0, max_tokens=5)
+        from settings import LLM_MODEL
+
+        llm = ChatGroq(model=LLM_MODEL, temperature=0, max_tokens=5)
         resp = llm.invoke("Reply with the single word: OK")
         check("Groq API reachable", len(resp.content) > 0, resp.content)  # type: ignore[arg-type]
     except Exception as exc:

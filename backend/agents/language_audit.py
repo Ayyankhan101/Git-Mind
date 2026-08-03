@@ -8,15 +8,13 @@ import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
-from langchain_groq import ChatGroq
-
 from llm_cache import get_cached, invoke_with_retry, set_cached
+from settings import LLM_MODEL, get_llm
 
 logger = logging.getLogger(__name__)
 
-_MODEL = "llama-3.3-70b-versatile"
-_LLM = ChatGroq(model=_MODEL, temperature=0.1).bind(response_format={"type": "json_object"})
-_CACHE_NS = "llama-3.3-70b-versatile:lang_audit:json"
+_LLM = get_llm(temperature_key="code_audit", json_mode=True)
+_CACHE_NS = f"{LLM_MODEL}:lang_audit:json"
 _MAX_FINDINGS = 40
 
 

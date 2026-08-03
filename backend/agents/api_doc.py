@@ -2,17 +2,16 @@ import json
 import logging
 
 from gitmind_core import scan_route_files
-from langchain_groq import ChatGroq
 
 from llm_cache import get_cached, invoke_with_retry, set_cached
+from settings import LLM_MODEL, get_llm
 
 logger = logging.getLogger(__name__)
 
-_MODEL = "llama-3.3-70b-versatile"
 _MAX_FILES = 10
 _MAX_FILE_CHARS = 6_000
-_CACHE_NAMESPACE = "llama-3.3-70b-versatile:api_doc:json"
-_LLM = ChatGroq(model=_MODEL, temperature=0).bind(response_format={"type": "json_object"})
+_CACHE_NAMESPACE = f"{LLM_MODEL}:api_doc:json"
+_LLM = get_llm(temperature=0, json_mode=True)
 
 _PROMPT = """\
 You are a senior API documentation engineer. Extract every HTTP API endpoint from the code below.

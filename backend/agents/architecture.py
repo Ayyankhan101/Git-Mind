@@ -4,14 +4,13 @@ from collections import Counter
 from pathlib import Path
 
 import tiktoken
-from langchain_groq import ChatGroq
 
 from agents.graph_builder import build_architecture_graph
 from llm_cache import get_cached, invoke_with_retry, set_cached
+from settings import LLM_MODEL, get_llm
 
 logger = logging.getLogger(__name__)
 
-_MODEL = "llama-3.3-70b-versatile"
 _TOKEN_BUDGET = 24_000  # llama-3.3-70b supports 128K ctx — use more headroom
 _MAX_TREE_LINES = 200
 _MAX_KEY_FILES = 14
@@ -49,6 +48,7 @@ Analyze the codebase below and produce a Mermaid flowchart diagram.
 STRICT RULES — any violation breaks the frontend renderer:
 - Output ONLY valid Mermaid syntax. No explanation. No markdown fences.
 - First line must be exactly: graph TD
+- Node IDs must be descriptive camelCase names (e.g. frontend, backend, database) — NOT single letters like A, B, C
 - Node labels: only letters, numbers, and spaces inside square brackets [Like This]
 - NO parentheses inside labels — they crash the parser
 - NO quotes inside labels
@@ -57,9 +57,9 @@ STRICT RULES — any violation breaks the frontend renderer:
 
 CORRECT EXAMPLE:
 graph TD
-    A[React Frontend] -->|HTTP| B[FastAPI Backend]
-    B -->|query| C[ChromaDB]
-    B -->|LLM| D[OpenAI]\
+    frontend[React Frontend] -->|HTTP| backend[FastAPI Backend]
+    backend -->|query| database[ChromaDB]
+    backend -->|LLM| llm[OpenAI]\
 """
 
 
@@ -100,7 +100,7 @@ def run_architecture_agent(file_tree: list[str], file_contents: dict[str, str]) 
     primary_lang = _detect_primary_language(file_tree)
     prompt = _build_prompt(file_tree, file_contents, primary_lang)
 
-    cached = get_cached(_MODEL, prompt)
+    cached = get_cached(f"{LLM_MODEL}:arch", prompt)
     if cached:
         logger.debug("Architecture agent: cache hit")
         return cached
@@ -113,7 +113,7 @@ def run_architecture_agent(file_tree: list[str], file_contents: dict[str, str]) 
         logger.warning("Architecture agent: unexpected LLM output — using fallback diagram")
         result = "graph TD\n    A[Analysis Incomplete]"
 
-    set_cached(_MODEL, prompt, result)
+    set_cached(f"{LLM_MODEL}:arch", prompt, result)
     return result
 
 
@@ -130,7 +130,7 @@ def run_with_graph(file_tree: list[str], file_contents: dict[str, str]) -> dict:
 # ── Private helpers ────────────────────────────────────────────────────────────
 
 _ENC = tiktoken.get_encoding("cl100k_base")  # load once at import time
-_LLM = ChatGroq(model=_MODEL, temperature=0)
+_LLM = get_llm(temperature=0)
 
 
 def _build_prompt(file_tree: list[str], file_contents: dict[str, str], primary_lang: str = "Unknown") -> str:

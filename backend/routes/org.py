@@ -8,6 +8,7 @@ from fastapi import APIRouter, Request
 
 from agents.cve_scanner import run_cve_scanner
 from models.requests import OrgAuditRequest
+from routes._errors import error_response
 from services.auth import get_gh_token
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
@@ -33,9 +34,9 @@ _REPO_URL_RE = re.compile(r"^https://github\.com/([A-Za-z0-9_.\-]+)/([A-Za-z0-9_
 @router.post("/org-audit")
 async def org_audit_endpoint(req: OrgAuditRequest, request: Request):
     if not req.repos:
-        return {"error": "repos list is empty"}
+        return error_response("repos list is empty", 400)
     if len(req.repos) > 20:
-        return {"error": "Maximum 20 repos per org audit"}
+        return error_response("Maximum 20 repos per org audit", 400)
 
     client_ip = get_client_ip(request)
     if not (await check_rate_limit("org_audit", client_ip))[0]:
