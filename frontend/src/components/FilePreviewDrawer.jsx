@@ -106,7 +106,7 @@ export default function FilePreviewDrawer({
   return (
     <>
       <div className="drawer-backdrop" onClick={onClose} />
-      <div className="drawer">
+      <div className="drawer" role="dialog" aria-modal="true" aria-label="File preview">
         <div className="drawer-header">
           <span className="drawer-icon">
             <FileText size={14} strokeWidth={1.5} />
@@ -138,11 +138,12 @@ export default function FilePreviewDrawer({
           <button
             className="btn-icon"
             title="Copy path"
+            aria-label="Copy file path"
             onClick={() => navigator.clipboard.writeText(path).catch(() => {})}
           >
             <Copy size={13} strokeWidth={1.5} />
           </button>
-          <button className="btn-icon" onClick={onClose}>
+          <button className="btn-icon" onClick={onClose} aria-label="Close file preview">
             <X size={13} strokeWidth={1.5} />
           </button>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   Package,
@@ -192,6 +192,15 @@ export default function OrgAuditModal({ repos, token, onClose }) {
   const shared = result?.shared_cves || [];
   const repoRes = result?.repos || [];
 
+  // Escape key handler
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
     <div
       className="crisis-backdrop"
@@ -199,7 +208,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="crisis-panel" style={{ maxWidth: 680 }}>
+      <div className="crisis-panel" style={{ maxWidth: 680 }} role="dialog" aria-modal="true" aria-label="Org-wide CVE audit">
         {/* Header */}
         <div
           className="crisis-header"
@@ -233,6 +242,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
             className="btn-icon"
             style={{ position: "absolute", top: 16, right: 16 }}
             onClick={onClose}
+            aria-label="Close"
           >
             <X size={14} strokeWidth={1.5} />
           </button>
