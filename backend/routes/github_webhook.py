@@ -161,15 +161,18 @@ async def github_webhook(request: Request):
 
     secret = os.getenv("GITHUB_APP_WEBHOOK_SECRET")
 
+    # Reject webhooks when no secret is configured — prevents unauthenticated abuse
+    if not secret:
+        logger.error("GitHub webhook: GITHUB_APP_WEBHOOK_SECRET not set — rejecting")
+        return JSONResponse(status_code=503, content={"error": "Webhook secret not configured"})
+
     # Read raw body for HMAC verification
     body = await request.body()
 
-    # Verify signature if secret is configured
-    if secret:
-        signature = request.headers.get("x-hub-signature-256", "")
-        if not verify_hmac_signature(body, signature, secret):
-            logger.warning("GitHub webhook: invalid HMAC signature")
-            return JSONResponse(status_code=401, content={"error": "Invalid signature"})
+    signature = request.headers.get("x-hub-signature-256", "")
+    if not verify_hmac_signature(body, signature, secret):
+        logger.warning("GitHub webhook: invalid HMAC signature")
+        return JSONResponse(status_code=401, content={"error": "Invalid signature"})
 
     # Parse payload
     try:

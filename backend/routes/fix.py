@@ -134,9 +134,16 @@ def _apply_and_push_pr(
             capture_output=True,
         )
 
-        # Reject patches that reference parent directories or absolute paths
-        if ".." in patch or re.search(r"^---\s+/\S|^@@\s+.*@@.*\n---\s+/\S", patch, re.MULTILINE):
-            raise ValueError("Patch content references parent directory or absolute path — rejected")
+        # Validate patch paths — reject traversal and absolute paths
+        _patch_paths = re.findall(r"^---\s+(?:a/)?(\S+)", patch, re.MULTILINE)
+        _patch_paths += re.findall(r"^\+\+\+\s+(?:b/)?(\S+)", patch, re.MULTILINE)
+        for _pp in _patch_paths:
+            if ".." in _pp or _pp.startswith("/") or os.path.isabs(_pp):
+                raise ValueError(f"Patch references unsafe path: {_pp}")
+            # Resolve against dest and ensure it stays within
+            _resolved = os.path.normpath(os.path.join(dest, _pp))
+            if not _resolved.startswith(os.path.normpath(dest)):
+                raise ValueError(f"Patch path escapes target directory: {_pp}")
         proc = subprocess.run(
             ["patch", "-p1", "--forward", "--reject", f"--directory={dest}"],
             input=patch,

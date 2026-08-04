@@ -27,16 +27,18 @@ _MAX_SESSIONS = 500
 
 def put_session(session_id: str, data: dict) -> None:
     """Store session data to Redis (or memory in dev mode)."""
+    # Strip sensitive fields before persistence
+    safe = {k: v for k, v in data.items() if k != "gh_token"}
     r = get_redis()
     if r:
         try:
-            r.set(f"session:{session_id}", json.dumps(data, default=str), ex=_SESSION_TTL)
+            r.set(f"session:{session_id}", json.dumps(safe, default=str), ex=_SESSION_TTL)
             return
         except Exception as exc:
             logger.warning("Redis session set failed", error=str(exc)[:80])
 
     # Dev fallback
-    _sessions[session_id] = data
+    _sessions[session_id] = safe
     _session_timestamps[session_id] = time.time()
     _sessions.move_to_end(session_id)
     while len(_sessions) > _MAX_SESSIONS:
@@ -140,6 +142,7 @@ def _session_to_snapshot(
         "chat_history": final_state.get("chat_history", []),
         "owner_hash": owner_hash,
         "saved_at": time.time(),
+        # NOTE: gh_token intentionally excluded — never persist secrets
     }
 
 
