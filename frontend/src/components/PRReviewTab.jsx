@@ -18,8 +18,9 @@ import {
 } from "lucide-react";
 import { reviewPR, prImpact, fetchOpenPRs } from "../api";
 import * as tokenManager from "../tokenManager";
+import OpenPRsList from "./OpenPRsList";
 
-function relativeTime(iso) {
+export function relativeTime(iso) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
   if (m < 2) return "just now";
@@ -777,158 +778,14 @@ export default function PRReviewTab({
       </div>
 
       {/* Open PR picker — shown when repo is loaded */}
-      {(prsLoading || openPRs.length > 0) && (
-        <div style={{ marginBottom: 20 }}>
-          <div
-            style={{
-              fontSize: 11,
-              color: "var(--text-3)",
-              marginBottom: 8,
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              letterSpacing: ".05em",
-            }}
-          >
-            <GitPullRequest size={11} strokeWidth={1.5} />
-            OPEN PULL REQUESTS {!prsLoading && `(${openPRs.length})`}
-          </div>
-          {prsLoading ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {[0, 1].map((i) => (
-                <div
-                  key={i}
-                  className="sk-row"
-                  style={{ borderRadius: 8, padding: "10px 14px", margin: 0 }}
-                >
-                  <div className="sk-row-line">
-                    <span className="sk" style={{ height: 12, width: 34 }} />
-                    <span className="sk" style={{ height: 12, width: "55%" }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {openPRs.map((pr) => {
-                const active = prUrl === pr.url;
-                return (
-                  <button
-                    key={pr.number}
-                    onClick={() => runAnalysis(pr.url)}
-                    disabled={loading || impactLoading}
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 10,
-                      width: "100%",
-                      padding: "10px 14px",
-                      borderRadius: 8,
-                      textAlign: "left",
-                      cursor: "pointer",
-                      background: active
-                        ? "var(--primary)10"
-                        : "var(--surface-2)",
-                      border: `1px solid ${active ? "var(--primary)" : "var(--border)"}`,
-                      transition: "border-color .15s, background .15s",
-                    }}
-                  >
-                    {/* PR number */}
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontFamily: "var(--font-mono)",
-                        color: active ? "var(--primary)" : "var(--text-3)",
-                        flexShrink: 0,
-                        paddingTop: 1,
-                      }}
-                    >
-                      #{pr.number}
-                    </span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      {/* Title */}
-                      <div
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 500,
-                          color: "var(--text-1)",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          marginBottom: 4,
-                        }}
-                      >
-                        {pr.draft && (
-                          <span
-                            style={{
-                              fontSize: 11,
-                              padding: "1px 5px",
-                              borderRadius: 3,
-                              background: "var(--surface)",
-                              border: "1px solid var(--border)",
-                              color: "var(--text-3)",
-                              marginRight: 6,
-                            }}
-                          >
-                            DRAFT
-                          </span>
-                        )}
-                        {pr.title}
-                      </div>
-                      {/* Meta row */}
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 11,
-                            color: "var(--text-3)",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 3,
-                          }}
-                        >
-                          <GitBranch size={10} strokeWidth={1.5} />
-                          {pr.head_ref} → {pr.base_ref}
-                        </span>
-                        <span style={{ fontSize: 11, color: "var(--text-3)" }}>
-                          @{pr.user}
-                        </span>
-                        <span style={{ fontSize: 11, color: "var(--text-3)" }}>
-                          {relativeTime(pr.updated_at)}
-                        </span>
-                        {pr.labels?.map((l) => (
-                          <span
-                            key={l}
-                            style={{
-                              fontSize: 11,
-                              padding: "1px 6px",
-                              borderRadius: 3,
-                              background: "var(--surface)",
-                              border: "1px solid var(--border)",
-                              color: "var(--text-3)",
-                            }}
-                          >
-                            {l}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    {active && (loading || impactLoading) && (
-                      <span className="spinner" style={{ flexShrink: 0 }} />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
+      <OpenPRsList
+        openPRs={openPRs}
+        prsLoading={prsLoading}
+        prUrl={prUrl}
+        loading={loading}
+        impactLoading={impactLoading}
+        onSelect={runAnalysis}
+      />
 
       {/* Manual input — always available as fallback */}
       <div

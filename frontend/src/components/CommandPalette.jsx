@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import {
   Search,
   BarChart3,
@@ -132,6 +133,7 @@ export default function CommandPalette({
   const [cursor, setCursor] = useState(0);
   const inputRef = useRef(null);
   const listRef = useRef(null);
+  const trapRef = useFocusTrap(open);
 
   useEffect(() => {
     if (open) {
@@ -220,7 +222,7 @@ export default function CommandPalette({
   let itemIdx = 0;
   return (
     <div className="palette-backdrop" onMouseDown={onClose}>
-      <div className="palette" onMouseDown={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Command palette">
+      <div className="palette" onMouseDown={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Command palette" ref={trapRef}>
         <div className="palette-input-row">
           <Search size={15} strokeWidth={1.5} />
           <input

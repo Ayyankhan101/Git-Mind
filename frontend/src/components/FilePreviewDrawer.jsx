@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { FileText, ExternalLink, Copy, X } from "lucide-react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 const LANG_EXT = {
   py: "Python",
@@ -27,6 +28,7 @@ export default function FilePreviewDrawer({
   const [fetchLoading, setFetchLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
   const [lang, setLang] = useState("");
+  const trapRef = useFocusTrap(!!path);
 
   useEffect(() => {
     if (!path) return;
@@ -106,7 +108,7 @@ export default function FilePreviewDrawer({
   return (
     <>
       <div className="drawer-backdrop" onClick={onClose} />
-      <div className="drawer" role="dialog" aria-modal="true" aria-label="File preview">
+      <div className="drawer" role="dialog" aria-modal="true" aria-label="File preview" ref={trapRef}>
         <div className="drawer-header">
           <span className="drawer-icon">
             <FileText size={14} strokeWidth={1.5} />

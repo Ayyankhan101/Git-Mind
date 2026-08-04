@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import {
   X,
   FileText,
@@ -30,6 +31,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
   const [reportCopied, setReportCopied] = useState(false);
   const bottomRef = useRef(null);
   const wsRef = useRef(null);
+  const trapRef = useFocusTrap(true);
 
   useEffect(() => {
     if (!finding || !sessionId) return;
@@ -161,7 +163,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="crisis-panel" role="dialog" aria-modal="true" aria-label="Crisis simulation">
+      <div className="crisis-panel" role="dialog" aria-modal="true" aria-label="Crisis simulation" ref={trapRef}>
         {/* Header */}
         <div className="crisis-header">
           <div className="crisis-tag">

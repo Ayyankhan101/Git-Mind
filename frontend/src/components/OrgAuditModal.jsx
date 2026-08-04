@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import {
   X,
   Package,
@@ -166,6 +167,7 @@ function RepoRow({ repo }) {
 export default function OrgAuditModal({ repos, token, onClose }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const trapRef = useFocusTrap(true);
   const [error, setError] = useState(null);
 
   const scanList = repos.slice(0, MAX_ORG_REPOS);
@@ -208,7 +210,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="crisis-panel" style={{ maxWidth: 680 }} role="dialog" aria-modal="true" aria-label="Org-wide CVE audit">
+      <div className="crisis-panel" style={{ maxWidth: 680 }} role="dialog" aria-modal="true" aria-label="Org-wide CVE audit" ref={trapRef}>
         {/* Header */}
         <div
           className="crisis-header"
