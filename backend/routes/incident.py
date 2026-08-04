@@ -2,13 +2,14 @@ import asyncio
 
 import structlog
 from fastapi import APIRouter, Request
-from langchain_groq import ChatGroq
 
 from llm_cache import invoke_with_retry
 from models.requests import IncidentReportRequest
+from routes._errors import error_response
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
 from services.session import _UUID_RE, get_session
+from settings import get_llm
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -17,14 +18,14 @@ router = APIRouter()
 @router.post("/incident-report")
 async def incident_report_endpoint(req: IncidentReportRequest, request: Request):
     if not _UUID_RE.match(req.session_id):
-        return {"error": "Invalid session ID"}
+        return error_response("Invalid session ID", 400)
     client_ip = get_client_ip(request)
     if not (await check_rate_limit("summary", client_ip))[0]:
         return await rate_limit_response("summary", client_ip)
 
     session = await get_session(req.session_id)
     if not session:
-        return {"error": "Session not found"}
+        return error_response("Session not found", 404)
 
     finding = req.finding
     outcome = req.outcome
@@ -86,7 +87,7 @@ Draft a 3-sentence external statement suitable for posting (factual, calm, no ad
 Be specific and professional. Use the actual vulnerability details."""
 
     def _generate() -> str:
-        llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2)
+        llm = get_llm(temperature_key="incident")
         return invoke_with_retry(llm, prompt).content.strip()
 
     try:
@@ -100,4 +101,4 @@ Be specific and professional. Use the actual vulnerability details."""
         }
     except Exception as exc:
         logger.error("Incident report failed", error=str(exc))
-        return {"error": "Incident report generation failed"}
+        return error_response("Incident report generation failed", 500)

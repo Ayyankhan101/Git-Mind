@@ -7,15 +7,13 @@ from pathlib import Path
 
 _SEMGREP = shutil.which("semgrep") or "semgrep"  # fallback for type narrowing
 
-from langchain_groq import ChatGroq  # noqa: E402
-
 from llm_cache import get_cached, invoke_with_retry, set_cached  # noqa: E402
+from settings import LLM_MODEL, get_llm  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
-_MODEL = "llama-3.3-70b-versatile"
-_LLM = ChatGroq(model=_MODEL, temperature=0.1).bind(response_format={"type": "json_object"})
-_CACHE_NAMESPACE = "llama-3.3-70b-versatile:security:json"
+_LLM = get_llm(temperature_key="security", json_mode=True)
+_CACHE_NAMESPACE = f"{LLM_MODEL}:security:json"
 _MAX_FINDINGS = 40
 _MAX_MSG_CHARS = 300
 _VALID_SEVERITIES = frozenset({"low", "medium", "high", "critical"})

@@ -1,3 +1,11 @@
+const timelineInstance = {
+  from: jest.fn().mockReturnThis(),
+  to: jest.fn().mockReturnThis(),
+  fromTo: jest.fn().mockReturnThis(),
+  set: jest.fn().mockReturnThis(),
+  add: jest.fn().mockReturnThis(),
+};
+
 module.exports = {
   gsap: {
     registerPlugin: jest.fn(),
@@ -5,8 +13,10 @@ module.exports = {
     to: jest.fn(),
     from: jest.fn(),
     set: jest.fn(),
-    timeline: jest.fn(function () {
-      return this;
+    timeline: jest.fn(() => timelineInstance),
+    context: jest.fn((cb) => {
+      if (typeof cb === "function") cb();
+      return { revert: jest.fn() };
     }),
     ticker: {
       add: jest.fn(),

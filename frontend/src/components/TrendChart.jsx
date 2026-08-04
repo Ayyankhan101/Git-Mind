@@ -137,7 +137,7 @@ export default function TrendChart({ data, days, onDaysChange }) {
                 cursor: "pointer",
                 fontWeight: days === d ? 600 : 400,
                 background: days === d ? "var(--primary)" : "var(--surface-2)",
-                color: days === d ? "#fff" : "var(--text-3)",
+                color: days === d ? "var(--text-1)" : "var(--text-3)",
               }}
             >
               {d === 0 ? "All" : `${d}d`}

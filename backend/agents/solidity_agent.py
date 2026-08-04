@@ -4,16 +4,15 @@ import os
 import uuid
 
 import httpx
-from langchain_groq import ChatGroq
 
 from llm_cache import get_cached, invoke_with_retry, set_cached
+from settings import LLM_MODEL, get_llm
 
 logger = logging.getLogger(__name__)
 
 _SIDECAR_BASE = os.getenv("SIDECAR_URL", "http://127.0.0.1:8003")
-_MODEL = "llama-3.3-70b-versatile"
-_LLM = ChatGroq(model=_MODEL, temperature=0.1).bind(response_format={"type": "json_object"})
-_CACHE_NS = "llama-3.3-70b-versatile:solidity:json"
+_LLM = get_llm(temperature_key="security", json_mode=True)
+_CACHE_NS = f"{LLM_MODEL}:solidity:json"
 _MAX_FINDINGS = 40
 
 _TRIAGE_PROMPT = """\

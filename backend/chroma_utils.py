@@ -3,11 +3,16 @@ import logging
 import tempfile
 import threading
 import time
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, TypedDict, cast
 
 import chromadb
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+from services.bm25_index import bm25_search
+from services.bm25_index import invalidate as invalidate_bm25
+from services.reranker import rerank
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +25,15 @@ class SearchResult(TypedDict):
     language: str
     layer: str
     score: float
+
+
+def _strip_context_header(content: str, filepath: str, meta: Mapping[str, Any]) -> str:
+    header = f"[File: {filepath} | Lang: {meta.get('language', '')} | Layer: {meta.get('layer', '')}]\n"
+    return content.replace(header, "")
+
+
+def _candidate_key(filepath: str, content: str) -> str:
+    return f"{filepath}::{hash(content)}"
 
 
 def _writable(path: Path) -> bool:
@@ -304,7 +318,7 @@ def search_codebase(
     elif len(where_conditions) > 1:
         where = {"$and": where_conditions}
 
-    # Retrieve more candidates for reranking
+    # Retrieve more candidates for hybrid reranking
     n = min(max(n_results * 2, 10), count)
     result = collection.query(
         query_texts=[query],
@@ -320,30 +334,90 @@ def search_codebase(
     if not documents or not metadatas:
         return []
 
-    # Rerank: boost chunks from same file, deduplicate by filepath
-    results: list[SearchResult] = []
-    seen_files = set()
-    for doc, meta, dist in zip(documents[0], metadatas[0], distances[0], strict=False):
+    vector_candidates: list[dict[str, Any]] = []
+    for rank, (doc, meta, dist) in enumerate(
+        zip(documents[0], metadatas[0], distances[0], strict=False),
+        start=1,
+    ):
         filepath = str(meta.get("filepath", ""))
-        # Deduplicate: keep only the best chunk per file
-        if filepath in seen_files:
-            continue
-        seen_files.add(filepath)
-
-        # Score: lower distance = better match, but also consider chunk size
         chunk_size_raw = meta.get("chunk_size", 0)
         chunk_size = chunk_size_raw if isinstance(chunk_size_raw, (int, float)) else 0
         numeric_dist = dist if isinstance(dist, (int, float)) else 1.0
-        score = 1.0 / (1.0 + numeric_dist) * (1.0 + min(chunk_size / 1000, 0.5))
+        vector_score = 1.0 / (1.0 + numeric_dist) * (1.0 + min(chunk_size / 1000, 0.5))
+        vector_candidates.append(
+            {
+                "filepath": filepath,
+                "content": _strip_context_header(doc, filepath, meta),
+                "language": str(meta.get("language", "")),
+                "layer": str(meta.get("layer", "")),
+                "score": vector_score,
+                "vector_rank": rank,
+            }
+        )
 
-        header = f"[File: {filepath} | Lang: {meta.get('language', '')} | Layer: {meta.get('layer', '')}]\n"
+    bm25_candidates: list[dict[str, Any]] = []
+    try:
+        raw_bm25 = bm25_search(collection, query, n_results=n)
+        for rank, item in enumerate(raw_bm25, start=1):
+            filepath = str(item.get("filepath", ""))
+            content = str(item.get("content", ""))
+            bm25_candidates.append(
+                {
+                    "filepath": filepath,
+                    "content": content,
+                    "language": _detect_language(filepath),
+                    "layer": _layer_from_path(filepath),
+                    "bm25_score": float(item.get("bm25_score", 0.0)),
+                    "bm25_rank": rank,
+                }
+            )
+    except Exception as exc:
+        logger.debug("BM25 search unavailable: %s", str(exc)[:120])
+
+    # Reciprocal rank fusion: combine vector + BM25 candidates
+    fused: dict[str, dict[str, Any]] = {}
+    for candidate in vector_candidates:
+        key = _candidate_key(candidate["filepath"], candidate["content"])
+        fused[key] = {**candidate, "hybrid_score": 1.0 / (60 + candidate["vector_rank"])}
+    for candidate in bm25_candidates:
+        key = _candidate_key(candidate["filepath"], candidate["content"])
+        existing = fused.get(key, candidate)
+        existing["hybrid_score"] = existing.get("hybrid_score", 0.0) + 1.0 / (60 + candidate["bm25_rank"])
+        existing.setdefault("filepath", candidate["filepath"])
+        existing.setdefault("content", candidate["content"])
+        existing.setdefault("language", candidate["language"])
+        existing.setdefault("layer", candidate["layer"])
+        fused[key] = existing
+
+    ranked_candidates = sorted(
+        fused.values(),
+        key=lambda x: float(x.get("hybrid_score", x.get("score", 0.0))),
+        reverse=True,
+    )
+
+    # Optional cross-encoder rerank on top hybrid candidates
+    reranked = rerank(query, ranked_candidates, top_k=max(n_results * 2, 8))
+
+    # Final dedupe: keep best chunk per file
+    results: list[SearchResult] = []
+    seen_files = set()
+    for candidate in reranked:
+        filepath = str(candidate.get("filepath", ""))
+        if filepath in seen_files:
+            continue
+        seen_files.add(filepath)
         results.append(
             {
                 "filepath": filepath,
-                "content": doc.replace(header, ""),
-                "language": str(meta.get("language", "")),
-                "layer": str(meta.get("layer", "")),
-                "score": score,
+                "content": str(candidate.get("content", "")),
+                "language": str(candidate.get("language", "")),
+                "layer": str(candidate.get("layer", "")),
+                "score": float(
+                    candidate.get(
+                        "rerank_score",
+                        candidate.get("hybrid_score", candidate.get("score", 0.0)),
+                    )
+                ),
             }
         )
 
@@ -359,6 +433,7 @@ def delete_collection(name: str) -> None:
         reg = _load_registry()
         reg.pop(name, None)
         _save_registry(reg)
+    invalidate_bm25(name)
     try:
         _client.delete_collection(name)
         logger.info("Deleted collection '%s'", name)
@@ -377,6 +452,7 @@ def prune_old_collections(max_age_seconds: int = _COLLECTION_TTL) -> int:
     for name in to_delete:
         try:
             _client.delete_collection(name)
+            invalidate_bm25(name)
             with _lock:
                 _collections.pop(name, None)
                 reg = _load_registry()

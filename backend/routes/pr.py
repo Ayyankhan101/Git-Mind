@@ -8,6 +8,7 @@ from fastapi import APIRouter, Request
 
 from agents.pr_review import run_pr_review
 from models.requests import PRImpactRequest, PRReviewRequest
+from routes._errors import error_response
 from services.auth import get_gh_token
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
@@ -28,10 +29,10 @@ async def pr_review_endpoint(req: PRReviewRequest, request: Request):
         result = await asyncio.to_thread(run_pr_review, req.pr_url, token)
         return result
     except ValueError:
-        return {"error": "Invalid PR URL or insufficient GitHub permissions"}
+        return error_response("Invalid PR URL or insufficient GitHub permissions", 400)
     except Exception as exc:
         logger.error("PR review failed", error=str(exc))
-        return {"error": "PR review failed — check the URL and try again"}
+        return error_response("PR review failed — check the URL and try again", 500)
 
 
 @router.get("/pr-list/{owner}/{repo}")
@@ -51,7 +52,7 @@ async def list_open_prs(owner: str, repo: str, request: Request):
                 headers=gh_headers,
             )
         if resp.is_error:
-            return {"prs": []}
+            return error_response(f"GitHub API error {resp.status_code}", 502)
         prs = [
             {
                 "number": pr["number"],
@@ -68,26 +69,26 @@ async def list_open_prs(owner: str, repo: str, request: Request):
         ]
         return {"prs": prs}
     except Exception:
-        return {"prs": []}
+        return error_response("Failed to list PRs", 500)
 
 
 @router.post("/pr-impact")
 async def pr_impact_endpoint(req: PRImpactRequest, request: Request):
     m = _PR_URL_RE.match(req.pr_url.strip())
     if not m:
-        return {"error": "Invalid GitHub PR URL (expected https://github.com/owner/repo/pull/123)"}
+        return error_response("Invalid GitHub PR URL (expected https://github.com/owner/repo/pull/123)", 400)
 
     owner, repo_name, pr_num = m.group(1), m.group(2), m.group(3)
     repo_url = f"https://github.com/{owner}/{repo_name}"
 
     if not _UUID_RE.match(req.session_id):
-        return {"error": "Invalid session ID"}
+        return error_response("Invalid session ID", 400)
     if not (await check_rate_limit("pr_impact", req.pr_url))[0]:
         return await rate_limit_response("pr_impact", req.pr_url)
 
     base_session = await get_session(req.session_id)
     if not base_session:
-        return {"error": "Session not found — analyze the base repo first"}
+        return error_response("Session not found — analyze the base repo first", 404)
 
     token = get_gh_token(request)
     gh_headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}
@@ -101,12 +102,12 @@ async def pr_impact_endpoint(req: PRImpactRequest, request: Request):
                 headers=gh_headers,
             )
     except Exception:
-        return {"error": "GitHub API error — check PR URL and try again"}
+        return error_response("GitHub API error — check PR URL and try again", 502)
 
     if pr_resp.status_code == 404:
-        return {"error": f"PR #{pr_num} not found — may be private or closed"}
+        return error_response(f"PR #{pr_num} not found — may be private or closed", 404)
     if pr_resp.is_error:
-        return {"error": f"GitHub API error {pr_resp.status_code}"}
+        return error_response(f"GitHub API error {pr_resp.status_code}", 502)
 
     pr_data = pr_resp.json()
     head_ref = pr_data.get("head", {}).get("ref")
@@ -118,7 +119,7 @@ async def pr_impact_endpoint(req: PRImpactRequest, request: Request):
     base_branch = pr_data.get("base", {}).get("ref", "main")
 
     if not head_ref:
-        return {"error": "Could not determine PR head branch from GitHub API"}
+        return error_response("Could not determine PR head branch from GitHub API", 502)
 
     pr_diff = ""
     try:

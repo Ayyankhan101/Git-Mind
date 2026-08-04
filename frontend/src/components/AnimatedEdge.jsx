@@ -68,7 +68,7 @@ export default function AnimatedEdge({
           markerHeight="6"
           orient="auto"
         >
-          <path d="M 0 0 L 10 5 L 0 10 z" fill="#06b6d4" />
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--info)" />
         </marker>
       </defs>
 
@@ -98,7 +98,7 @@ export default function AnimatedEdge({
       <path d={edgePath} fill="none" stroke="none">
         <circle
           r={kind === "animated" ? 4 : 0}
-          fill="#06b6d4"
+          fill="var(--info)"
           opacity={kind === "animated" ? opacity : 0}
           style={{ transition: "opacity 0.25s ease" }}
         >

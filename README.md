@@ -10,7 +10,7 @@
   <a href="https://github.com/Ayyankhan101/Git-Mind/blob/main/backend/tests/"><img src="https://img.shields.io/badge/backend-106%20tests-brightgreen" alt="Backend Tests"></a>
   <a href="https://github.com/Ayyankhan101/Git-Mind/blob/main/frontend/src/"><img src="https://img.shields.io/badge/frontend-70%20tests-brightgreen" alt="Frontend Tests"></a>
   <a href="https://github.com/Ayyankhan101/Git-Mind/blob/master/LICENSE" target="_blank">
-    <img alt="License: MIT" src="https://img.shields.io/github/license/Ayyankhan101/Git-Mind" />
+    <img alt="License: Apache 2.0" src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" />
   </a>
   <a href="https://huggingface.co/spaces/Ak001z/gitmind-backend"><img src="https://img.shields.io/badge/Backend-Hugging%20Face-orange" alt="HF Spaces"></a>
   <a href="https://gitmind-peach.vercel.app"><img src="https://img.shields.io/badge/Frontend-Vercel-blue" alt="Vercel"></a>
@@ -592,4 +592,4 @@ GitHub: [@Ayyankhan101](https://github.com/Ayyankhan101)
 ## License
 
 Copyright © 2026 [Ayyan Khan](https://github.com/Ayyankhan101).
-This project is [MIT](https://github.com/Ayyankhan101/Git-Mind/blob/master/LICENSE) licensed.
+This project is [Apache 2.0](https://github.com/Ayyankhan101/Git-Mind/blob/master/LICENSE) licensed.

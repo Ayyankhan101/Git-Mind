@@ -12,15 +12,16 @@ import uuid
 import httpx as _httpx
 import structlog
 from fastapi import APIRouter, Request
-from langchain_groq import ChatGroq
 
 from agents.scanner import _GITHUB_URL_RE
 from chroma_utils import search_codebase
 from llm_cache import invoke_with_retry
 from models.requests import AutoPRRequest, FixRequest
+from routes._errors import error_response
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
 from services.session import _UUID_RE, get_session
+from settings import get_llm
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
@@ -29,14 +30,14 @@ router = APIRouter()
 @router.post("/fix")
 async def fix_endpoint(req: FixRequest, request: Request):
     if not _UUID_RE.match(req.session_id):
-        return {"error": "Invalid session ID"}
+        return error_response("Invalid session ID", 400)
     client_ip = get_client_ip(request)
     if not (await check_rate_limit("fix", client_ip))[0]:
         return await rate_limit_response("fix", client_ip)
 
     session = await get_session(req.session_id)
     if not session:
-        return {"error": "Session not found. Run /ws/analyze first."}
+        return error_response("Session not found. Run /ws/analyze first.", 404)
 
     finding = req.finding
     collection = session.get("chroma_collection_name")
@@ -80,7 +81,7 @@ async def fix_endpoint(req: FixRequest, request: Request):
     )
 
     def _generate() -> str:
-        llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
+        llm = get_llm(temperature_key="fix")
         return invoke_with_retry(llm, prompt).content.strip()
 
     fix = await asyncio.to_thread(_generate)
@@ -219,7 +220,7 @@ def _apply_and_push_pr(
 @router.post("/fix/pr")
 async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
     if not _UUID_RE.match(req.session_id):
-        return {"error": "Invalid session ID"}
+        return error_response("Invalid session ID", 400)
     client_ip = get_client_ip(request)
     if not (await check_rate_limit("fix", client_ip))[0]:
         return await rate_limit_response("fix", client_ip)
@@ -230,11 +231,11 @@ async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
 
     session = await get_session(req.session_id)
     if not session:
-        return {"error": "Session not found. Run /ws/analyze first."}
+        return error_response("Session not found. Run /ws/analyze first.", 404)
 
     repo_url = session.get("repo_url", "")
     if not _GITHUB_URL_RE.match(repo_url):
-        return {"error": "Auto-PR requires a valid GitHub repo URL (https://github.com/owner/repo)"}
+        return error_response("Auto-PR requires a valid GitHub repo URL (https://github.com/owner/repo)", 400)
 
     finding = req.finding
     collection = session.get("chroma_collection_name")
@@ -266,7 +267,7 @@ async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
     )
 
     def _gen_patch() -> str:
-        llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
+        llm = get_llm(temperature_key="fix")
         return invoke_with_retry(llm, prompt).content.strip()
 
     try:
@@ -276,4 +277,4 @@ async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
         return result
     except Exception as exc:
         logger.error("Auto-PR failed", error=str(exc))
-        return {"error": "Auto-PR failed — check token permissions and repo access"}
+        return error_response("Auto-PR failed — check token permissions and repo access", 500)

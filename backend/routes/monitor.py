@@ -7,6 +7,7 @@ import structlog
 from fastapi import APIRouter, Request
 
 from models.requests import MonitorSubscribeRequest
+from routes._errors import error_response
 from services.auth import hash_token, require_gh_token
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
@@ -26,7 +27,7 @@ async def subscribe_repo(req: MonitorSubscribeRequest, request: Request):
 
     repo_url = req.repo_url.strip()
     if not _GH_URL_RE.match(repo_url):
-        return {"error": "Invalid GitHub URL — must be https://github.com/{owner}/{repo}"}
+        return error_response("Invalid GitHub URL — must be https://github.com/{owner}/{repo}", 400)
 
     from sqlalchemy import select
 
@@ -36,7 +37,7 @@ async def subscribe_repo(req: MonitorSubscribeRequest, request: Request):
     async with async_session_factory() as session:
         existing = await session.execute(select(MonitoredRepo).where(MonitoredRepo.repo_url == repo_url))
         if existing.scalar_one_or_none():
-            return {"error": "Repo already monitored — unsubscribe first"}
+            return error_response("Repo already monitored — unsubscribe first", 409)
 
         monitor_id = str(uuid.uuid4())
         owner_hash = hash_token(token)
@@ -119,7 +120,7 @@ async def unsubscribe_repo(monitor_id: str, request: Request):
         await session.commit()
 
     if result.rowcount == 0:
-        return {"error": "Monitor not found or not owned by you"}
+        return error_response("Monitor not found or not owned by you", 404)
 
     logger.info("Repo unsubscribed from monitoring", monitor_id=monitor_id)
     return {"ok": True}

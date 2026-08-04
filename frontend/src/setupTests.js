@@ -101,6 +101,12 @@ class IntersectionObserverMock {
 if (!global.IntersectionObserver)
   global.IntersectionObserver = IntersectionObserverMock;
 
+if (!window.open) {
+  window.open = jest.fn();
+} else {
+  jest.spyOn(window, "open").mockImplementation(() => null);
+}
+
 // TextEncoder/TextDecoder polyfill for pdfmake
 const { TextEncoder, TextDecoder } = require("util");
 if (!global.TextEncoder) global.TextEncoder = TextEncoder;

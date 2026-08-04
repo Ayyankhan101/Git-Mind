@@ -5,6 +5,7 @@ import httpx
 import structlog
 from fastapi import APIRouter, Request
 
+from routes._errors import error_response
 from services.auth import get_gh_token
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
@@ -18,7 +19,7 @@ _USERNAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9\-]{0,38}$")
 @router.get("/repos/{username}")
 async def list_repos(username: str, request: Request):
     if not _USERNAME_RE.match(username):
-        return {"error": "Invalid GitHub username"}
+        return error_response("Invalid GitHub username", 400)
 
     token = get_gh_token(request)
     client_ip = get_client_ip(request)
@@ -47,16 +48,16 @@ async def list_repos(username: str, request: Request):
             last_exc = exc  # noqa: F841
             await asyncio.sleep(0.5 * (attempt + 1))
         except httpx.RequestError:
-            return {"error": "GitHub API unreachable — try again later"}
+            return error_response("GitHub API unreachable — try again later", 502)
     if resp is None:
-        return {"error": "GitHub API timed out — try again in a moment"}
+        return error_response("GitHub API timed out — try again in a moment", 504)
 
     if resp.status_code == 401:
-        return {"error": "GitHub token is invalid or expired"}
+        return error_response("GitHub token is invalid or expired", 401)
     if resp.status_code == 404:
-        return {"error": f"GitHub user '{username}' not found"}
+        return error_response(f"GitHub user '{username}' not found", 404)
     if resp.is_error:
-        return {"error": f"GitHub API error {resp.status_code}"}
+        return error_response(f"GitHub API error {resp.status_code}", 502)
 
     repos = [
         {

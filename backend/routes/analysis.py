@@ -3,19 +3,20 @@ import re
 
 import structlog
 from fastapi import APIRouter, Request
-from langchain_groq import ChatGroq
 
 from chroma_utils import search_codebase
 from llm_cache import invoke_with_retry
 from models.requests import SummaryRequest
+from routes._errors import error_response
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
 from services.session import _UUID_RE, get_session
+from settings import get_llm
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
 
-_LLM = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1)
+_LLM = get_llm(temperature_key="analysis")
 
 _GH_URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+/?$")
 
@@ -107,14 +108,14 @@ def _build_summary_audit_context(session: dict) -> tuple[str, dict]:
 @router.post("/summary")
 async def summary_endpoint(req: SummaryRequest, request: Request):
     if not _UUID_RE.match(req.session_id):
-        return {"error": "Invalid session ID"}
+        return error_response("Invalid session ID", 400)
     client_ip = get_client_ip(request)
     if not (await check_rate_limit("summary", client_ip))[0]:
         return await rate_limit_response("summary", client_ip)
 
     session = await get_session(req.session_id)
     if not session:
-        return {"error": "Session not found. Run /ws/analyze first."}
+        return error_response("Session not found. Run /ws/analyze first.", 404)
 
     collection = session.get("chroma_collection_name")
     chunks = (
@@ -160,7 +161,7 @@ async def summary_endpoint(req: SummaryRequest, request: Request):
 @router.get("/analysis/{session_id}")
 async def get_analysis(session_id: str, request: Request):
     if not _UUID_RE.match(session_id):
-        return {"error": "Invalid session ID"}
+        return error_response("Invalid session ID", 400)
 
     client_ip = get_client_ip(request)
     if not (await check_rate_limit("analysis_get", client_ip))[0]:
@@ -170,11 +171,11 @@ async def get_analysis(session_id: str, request: Request):
 
     snap = await get_analysis_db(session_id)
     if snap is None:
-        return {"error": "Analysis not found or has expired"}
+        return error_response("Analysis not found or has expired", 404)
     try:
         return snap
     except Exception:
-        return {"error": "Analysis file corrupted"}
+        return error_response("Analysis file corrupted", 500)
 
 
 @router.get("/analysis/previous")
@@ -189,11 +190,11 @@ async def get_previous_analysis(repo_url: str, exclude_session: str | None = Non
             return await rate_limit_response("analysis_previous", client_ip)
 
     if not _GH_URL_RE.match(repo_url.strip()):
-        return {"error": "Invalid GitHub repo URL — must be https://github.com/{owner}/{repo}"}
+        return error_response("Invalid GitHub repo URL — must be https://github.com/{owner}/{repo}", 400)
 
     snap = await get_previous_analysis_db(repo_url, exclude_session)
     if snap is None:
-        return {"error": "No previous analysis found"}
+        return error_response("No previous analysis found", 404)
     return snap
 
 
@@ -208,7 +209,7 @@ async def get_analysis_history(repo_url: str, days: int = 0, request: Request = 
         return await rate_limit_response("analysis_history", client_ip)
 
     if not _GH_URL_RE.match(repo_url.strip()):
-        return {"error": "Invalid GitHub repo URL — must be https://github.com/{owner}/{repo}"}
+        return error_response("Invalid GitHub repo URL — must be https://github.com/{owner}/{repo}", 400)
 
     since = None
     if days > 0:

@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from "react";
 
 const GRADE_COLOR = {
-  A: "#10b981",
-  B: "#34d399",
-  C: "#f59e0b",
-  D: "#f97316",
-  F: "#ef4444",
+  A: "var(--success)",
+  B: "var(--success)",
+  C: "var(--warning)",
+  D: "var(--warning)",
+  F: "var(--danger)",
 };
 
 const DIM_LABEL = {
@@ -55,7 +55,7 @@ function MiniBar({ value, color, delay = 0 }) {
 
 export default function HealthCard({ health }) {
   if (!health) return null;
-  const gradeColor = GRADE_COLOR[health.grade] || "#94a3b8";
+  const gradeColor = GRADE_COLOR[health.grade] || "var(--text-3)";
 
   return (
     <div className="health-card">
@@ -121,7 +121,11 @@ export default function HealthCard({ health }) {
                   className="health-bar-value"
                   style={{
                     color:
-                      val >= 80 ? "#10b981" : val >= 60 ? "#f59e0b" : "#ef4444",
+                      val >= 80
+                        ? "var(--success)"
+                        : val >= 60
+                          ? "var(--warning)"
+                          : "var(--danger)",
                   }}
                 >
                   {val}
@@ -130,7 +134,11 @@ export default function HealthCard({ health }) {
               <MiniBar
                 value={val}
                 color={
-                  val >= 80 ? "#10b981" : val >= 60 ? "#f59e0b" : "#ef4444"
+                  val >= 80
+                    ? "var(--success)"
+                    : val >= 60
+                      ? "var(--warning)"
+                      : "var(--danger)"
                 }
                 delay={i * 80}
               />

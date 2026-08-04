@@ -1,14 +1,12 @@
 import logging
 
-from langchain_groq import ChatGroq
-
 from chroma_utils import search_codebase
 from llm_cache import invoke_with_retry
+from settings import get_llm
 
 logger = logging.getLogger(__name__)
 
-_MODEL = "llama-3.3-70b-versatile"
-_LLM = ChatGroq(model=_MODEL, temperature=0.2)
+_LLM = get_llm(temperature_key="chat")
 
 _SYSTEM_TEMPLATE = """\
 You are a senior software engineer who has read every file in the '{repo_name}' codebase.

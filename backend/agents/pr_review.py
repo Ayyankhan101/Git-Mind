@@ -2,16 +2,15 @@ import logging
 import re
 
 import httpx
-from langchain_groq import ChatGroq
 
 from llm_cache import get_cached, invoke_with_retry, set_cached
+from settings import LLM_MODEL, get_llm
 
 logger = logging.getLogger(__name__)
 
-_MODEL = "llama-3.3-70b-versatile"
 _MAX_DIFF_CHARS = 14_000
-_CACHE_NAMESPACE = "llama-3.3-70b-versatile:pr_review"
-_LLM = ChatGroq(model=_MODEL, temperature=0.1)
+_CACHE_NAMESPACE = f"{LLM_MODEL}:pr_review"
+_LLM = get_llm(temperature_key="pr_review")
 
 
 def _parse_pr_url(pr_url: str) -> tuple[str, str, str]:

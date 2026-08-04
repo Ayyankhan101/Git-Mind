@@ -34,40 +34,40 @@ const ICON_MAP = {
 
 const LAYER_COLORS = {
   frontend: {
-    border: "rgba(6,182,212,0.5)",
-    glow: "rgba(6,182,212,0.2)",
-    text: "#06b6d4",
-    bg: "rgba(6,182,212,0.08)",
+    border: "var(--info)",
+    glow: "var(--bloom-3)",
+    text: "var(--info)",
+    bg: "var(--primary-dim)",
   },
   api: {
-    border: "rgba(14,165,233,0.5)",
-    glow: "rgba(14,165,233,0.2)",
-    text: "#0ea5e9",
-    bg: "rgba(14,165,233,0.08)",
+    border: "var(--info)",
+    glow: "var(--bloom-3)",
+    text: "var(--info)",
+    bg: "var(--primary-dim)",
   },
   backend: {
-    border: "rgba(59,130,246,0.5)",
-    glow: "rgba(59,130,246,0.2)",
-    text: "#3b82f6",
-    bg: "rgba(59,130,246,0.08)",
+    border: "var(--primary)",
+    glow: "var(--primary-glow)",
+    text: "var(--primary)",
+    bg: "var(--primary-dim)",
   },
   database: {
-    border: "rgba(99,102,241,0.5)",
-    glow: "rgba(99,102,241,0.2)",
-    text: "#6366f1",
-    bg: "rgba(99,102,241,0.08)",
+    border: "var(--primary)",
+    glow: "var(--primary-glow)",
+    text: "var(--primary)",
+    bg: "var(--primary-dim)",
   },
   infrastructure: {
-    border: "rgba(100,116,139,0.5)",
-    glow: "rgba(100,116,139,0.2)",
-    text: "#94a3b8",
-    bg: "rgba(100,116,139,0.08)",
+    border: "var(--text-3)",
+    glow: "var(--bloom-3)",
+    text: "var(--text-3)",
+    bg: "var(--surface-3)",
   },
   utilities: {
-    border: "rgba(20,184,166,0.5)",
-    glow: "rgba(20,184,166,0.2)",
-    text: "#14b8a6",
-    bg: "rgba(20,184,166,0.08)",
+    border: "var(--success)",
+    glow: "var(--bloom-2)",
+    text: "var(--success)",
+    bg: "var(--primary-dim)",
   },
 };
 
@@ -86,11 +86,11 @@ const TYPE_LABELS = {
 };
 
 const HTTP_METHOD_COLORS = {
-  GET: "#22c55e",
-  POST: "#3b82f6",
-  PUT: "#f97316",
-  PATCH: "#a855f7",
-  DELETE: "#ef4444",
+  GET: "var(--success)",
+  POST: "var(--info)",
+  PUT: "var(--warning)",
+  PATCH: "var(--sev-high)",
+  DELETE: "var(--danger)",
 };
 
 function inferTypeLabel(data) {
@@ -210,7 +210,11 @@ export default function ArchNode({ data, selected }) {
             <div className="flex items-center gap-2">
               <h4
                 className="truncate"
-                style={{ fontSize: 17, fontWeight: 700, color: "#ffffff" }}
+                style={{
+                  fontSize: 17,
+                  fontWeight: 700,
+                  color: "var(--text-1)",
+                }}
               >
                 {data.label}
               </h4>
@@ -220,7 +224,7 @@ export default function ArchNode({ data, selected }) {
                   background: colors.border
                     .replace("0.5)", "0.25)")
                     .replace("0.65)", "0.3)"),
-                  color: "#ffffff",
+                  color: "var(--text-1)",
                   border: `1px solid ${colors.border.replace("0.5)", "0.35)").replace("0.65)", "0.4)")}`,
                 }}
               >
@@ -240,7 +244,8 @@ export default function ArchNode({ data, selected }) {
         {endpoints.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {endpoints.slice(0, 4).map((ep, i) => {
-              const methodColor = HTTP_METHOD_COLORS[ep.method] || "#64748b";
+              const methodColor =
+                HTTP_METHOD_COLORS[ep.method] || "var(--text-3)";
               return (
                 <span
                   key={i}
