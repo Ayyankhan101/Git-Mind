@@ -1,10 +1,10 @@
 import json
-import logging
+import structlog
 
 from llm_cache import get_cached, invoke_with_retry, set_cached
 from settings import LLM_MODEL, get_llm
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _CACHE_NAMESPACE = f"{LLM_MODEL}:merge_prediction"
 _MAX_DIFF_CHARS = 10_000

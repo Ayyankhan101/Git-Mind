@@ -1,10 +1,10 @@
-import logging
+import structlog
 
 from parsers.fallback_parser import parse_fallback
 from parsers.jsts_parser import parse_jsts
 from parsers.python_parser import parse_python
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 EXT_TO_PARSER = {
     ".py": parse_python,

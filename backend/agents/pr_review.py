@@ -1,4 +1,4 @@
-import logging
+import structlog
 import re
 
 import httpx
@@ -6,7 +6,7 @@ import httpx
 from llm_cache import get_cached, invoke_with_retry, set_cached
 from settings import LLM_MODEL, get_llm
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _MAX_DIFF_CHARS = 14_000
 _CACHE_NAMESPACE = f"{LLM_MODEL}:pr_review"

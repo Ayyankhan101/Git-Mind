@@ -1,4 +1,4 @@
-import logging
+import structlog
 import shutil
 import subprocess
 from datetime import UTC, datetime
@@ -6,7 +6,7 @@ from pathlib import Path
 
 _GIT = shutil.which("git") or "git"
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def enrich_findings_with_blame(findings: list[dict], local_path: str) -> list[dict]:

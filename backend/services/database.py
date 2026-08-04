@@ -1,4 +1,4 @@
-import logging
+import structlog
 import os
 import sys
 
@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from models.db import Base
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:////tmp/gitmind.db")
 

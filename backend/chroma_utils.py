@@ -1,5 +1,5 @@
 import json
-import logging
+import structlog
 import tempfile
 import threading
 import time
@@ -14,7 +14,7 @@ from services.bm25_index import bm25_search
 from services.bm25_index import invalidate as invalidate_bm25
 from services.reranker import rerank
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _COLLECTION_TTL = 60 * 60 * 24 * 7  # 7 days
 

@@ -23,8 +23,9 @@ _USERNAME_RE = re.compile(r"^[A-Za-z0-9_.\-]+$")
 
 @router.post("/pr-review")
 async def pr_review_endpoint(req: PRReviewRequest, request: Request):
-    if not (await check_rate_limit("pr", req.pr_url))[0]:
-        return await rate_limit_response("pr", req.pr_url)
+    client_ip = get_client_ip(request)
+    if not (await check_rate_limit("pr", f"{req.pr_url}:{client_ip}"))[0]:
+        return await rate_limit_response("pr", f"{req.pr_url}:{client_ip}")
     token = get_gh_token(request)
     try:
         result = await asyncio.to_thread(run_pr_review, req.pr_url, token)

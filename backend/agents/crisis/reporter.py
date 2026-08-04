@@ -1,12 +1,12 @@
 import asyncio
-import logging
+import structlog
 import os
 import time
 
 from llm_cache import invoke_with_retry
 from settings import LLM_MODEL, get_llm
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 INTERVAL_SEC = int(os.getenv("REPORTER_INTERVAL_SEC", "45"))
 

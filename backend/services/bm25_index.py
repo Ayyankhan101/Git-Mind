@@ -13,7 +13,7 @@ and cached in memory for the lifetime of the process.
 from __future__ import annotations
 
 import contextlib
-import logging
+import structlog
 import re
 import sqlite3
 import threading
@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import chromadb
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # ── Tokeniser ──────────────────────────────────────────────────────────────
 

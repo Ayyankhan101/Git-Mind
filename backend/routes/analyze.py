@@ -61,22 +61,25 @@ async def _run_analysis(repo_url: str, gh_token: str | None, session_id: str) ->
 
     astream = graph.astream(init, stream_mode="updates")  # type: ignore[attr-defined]
     try:
-        async for chunk in astream:
-            for _node, update in chunk.items():
-                for key in (
-                    "architecture_diagram",
-                    "api_docs",
-                    "security_findings",
-                    "cve_findings",
-                    "chroma_collection_name",
-                    "git_audit",
-                ):
-                    if key in update:
-                        final_state[key] = update[key]
-                if "repo_name" in update:
-                    final_state["repo_name"] = update["repo_name"]
-                if "local_path" in update and update["local_path"]:
-                    final_state["local_path"] = update["local_path"]
+        async def _stream_with_timeout():
+            async for chunk in astream:
+                for _node, update in chunk.items():
+                    for key in (
+                        "architecture_diagram",
+                        "api_docs",
+                        "security_findings",
+                        "cve_findings",
+                        "chroma_collection_name",
+                        "git_audit",
+                    ):
+                        if key in update:
+                            final_state[key] = update[key]
+                    if "repo_name" in update:
+                        final_state["repo_name"] = update["repo_name"]
+                    if "local_path" in update and update["local_path"]:
+                        final_state["local_path"] = update["local_path"]
+
+        await asyncio.wait_for(_stream_with_timeout(), timeout=600)  # 10 min timeout
     except Exception as exc:
         logger.error("REST analysis pipeline error", session=session_id, error=str(exc))
         return {"session_id": session_id, "cached": False, "error": str(exc)[:500]}

@@ -3,6 +3,7 @@ import contextlib
 import json
 import os
 import shutil
+import time
 import uuid
 
 import structlog
@@ -187,8 +188,13 @@ async def handle_analyze(ws: WebSocket) -> None:
     await ws.send_json({"agent_status": {"scanner": "running"}})
 
     astream = graph.astream(init, stream_mode="updates")  # type: ignore[attr-defined]
+    _stream_deadline = time.time() + 600  # 10 min hard timeout
     try:
         async for chunk in astream:
+            if time.time() > _stream_deadline:
+                logger.warning("Analysis stream timed out", session=session_id)
+                await ws.send_json({"error": "Analysis timed out after 10 minutes"})
+                break
             if _dead.is_set():
                 logger.info("Heartbeat failed, closing connection", session=session_id)
                 break

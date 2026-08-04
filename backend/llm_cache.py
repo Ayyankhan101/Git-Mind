@@ -6,7 +6,7 @@ On hit: backfill Redis from diskcache.
 
 import contextlib
 import hashlib
-import logging
+import structlog
 import time
 from pathlib import Path
 
@@ -14,7 +14,7 @@ import diskcache
 
 from services.cache import get_redis
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _REDIS_TTL = 86_400  # 24 hours
 

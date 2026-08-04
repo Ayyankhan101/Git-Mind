@@ -1,10 +1,10 @@
-import logging
+import structlog
 import time
 
 from llm_cache import invoke_with_retry
 from settings import get_llm
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _LEAK_TRIGGER_WORDS = ["breach", "leaked", "exposed", "customers affected", "data exposed"]
 _llm = get_llm(temperature_key="crisis")

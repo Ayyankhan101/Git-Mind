@@ -1,5 +1,5 @@
 import json
-import logging
+import structlog
 import shutil
 import subprocess
 import uuid
@@ -10,7 +10,7 @@ _SEMGREP = shutil.which("semgrep") or "semgrep"  # fallback for type narrowing
 from llm_cache import get_cached, invoke_with_retry, set_cached  # noqa: E402
 from settings import LLM_MODEL, get_llm  # noqa: E402
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _LLM = get_llm(temperature_key="security", json_mode=True)
 _CACHE_NAMESPACE = f"{LLM_MODEL}:security:json"
