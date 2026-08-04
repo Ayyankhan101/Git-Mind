@@ -1,8 +1,9 @@
-import structlog
 import shutil
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
+
+import structlog
 
 _GIT = shutil.which("git") or "git"
 

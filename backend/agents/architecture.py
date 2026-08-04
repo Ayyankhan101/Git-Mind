@@ -1,8 +1,8 @@
-import structlog
 import re
 from collections import Counter
 from pathlib import Path
 
+import structlog
 import tiktoken
 
 from agents.graph_builder import build_architecture_graph

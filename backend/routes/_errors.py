@@ -2,7 +2,6 @@
 
 import uuid
 
-import structlog
 from fastapi.responses import JSONResponse
 
 

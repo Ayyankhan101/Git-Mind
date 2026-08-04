@@ -40,9 +40,9 @@ def test_large_payload_rejected(client):
 
 
 def test_no_content_length_allows(client):
-    """Requests without Content-Length header are allowed through."""
+    """POST requests without Content-Length are rejected (411) to prevent chunked encoding bypass."""
     req = client.build_request("POST", "/small", content=b"x" * 2048)
     req.headers.pop("content-length", None)
     response = client.send(req)
-    # Without Content-Length, middleware can't reject — passes through
-    assert response.status_code == 200
+    # Without Content-Length on POST, middleware rejects with 411
+    assert response.status_code == 411

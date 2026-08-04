@@ -1,6 +1,5 @@
 import atexit
 import contextlib
-import structlog
 import os
 import re
 import stat
@@ -9,6 +8,7 @@ import time
 from pathlib import Path
 
 import git
+import structlog
 
 logger = structlog.get_logger(__name__)
 

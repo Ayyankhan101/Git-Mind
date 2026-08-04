@@ -6,11 +6,11 @@ On hit: backfill Redis from diskcache.
 
 import contextlib
 import hashlib
-import structlog
 import time
 from pathlib import Path
 
 import diskcache
+import structlog
 
 from services.cache import get_redis
 

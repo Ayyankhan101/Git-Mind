@@ -1,7 +1,7 @@
-import structlog
 import re
 
 import httpx
+import structlog
 from gitmind_core import scan_secrets, scan_sensitive_files
 
 logger = structlog.get_logger(__name__)

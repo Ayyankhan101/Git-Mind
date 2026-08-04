@@ -1,5 +1,4 @@
 import json
-import structlog
 import os
 import shutil
 import subprocess
@@ -7,6 +6,8 @@ import tempfile
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
+
+import structlog
 
 from llm_cache import get_cached, invoke_with_retry, set_cached
 from settings import LLM_MODEL, get_llm

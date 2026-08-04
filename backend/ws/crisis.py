@@ -1,7 +1,6 @@
 import asyncio
 import contextlib
 import os
-import time
 
 import structlog
 from fastapi import WebSocket, WebSocketDisconnect

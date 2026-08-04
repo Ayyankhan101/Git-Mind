@@ -1,6 +1,5 @@
-import structlog
-
 import httpx
+import structlog
 from gitmind_core import parse_dependencies
 
 logger = structlog.get_logger(__name__)

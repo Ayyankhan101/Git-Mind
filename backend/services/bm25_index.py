@@ -13,11 +13,12 @@ and cached in memory for the lifetime of the process.
 from __future__ import annotations
 
 import contextlib
-import structlog
 import re
 import sqlite3
 import threading
 from typing import TYPE_CHECKING
+
+import structlog
 
 if TYPE_CHECKING:
     import chromadb

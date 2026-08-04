@@ -1,5 +1,4 @@
 import json
-import structlog
 import tempfile
 import threading
 import time
@@ -8,6 +7,7 @@ from pathlib import Path
 from typing import Any, TypedDict, cast
 
 import chromadb
+import structlog
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from services.bm25_index import bm25_search

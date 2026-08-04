@@ -1,5 +1,6 @@
-import structlog
 import time
+
+import structlog
 
 from llm_cache import invoke_with_retry
 from settings import get_llm

@@ -1,3 +1,6 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
+
 class TestHealthEndpoint:
     def test_returns_ok_structure(self, client):
         resp = client.get("/health")
@@ -26,7 +29,7 @@ class TestHealthEndpoint:
 class TestRoutesWithoutSession:
     def test_summary_needs_session(self, client):
         resp = client.post("/summary", json={"session_id": "00000000-0000-0000-0000-000000000001"})
-        assert resp.status_code == 200
+        assert resp.status_code == 404
         assert resp.json().get("error") == "Session not found. Run /ws/analyze first."
 
     def test_chat_needs_session(self, client):
@@ -37,7 +40,7 @@ class TestRoutesWithoutSession:
                 "question": "Hello",
             },
         )
-        assert resp.status_code == 200
+        assert resp.status_code == 404
         assert resp.json().get("error") == "Session not found. Run /ws/analyze first."
 
     def test_fix_needs_session(self, client):
@@ -48,7 +51,7 @@ class TestRoutesWithoutSession:
                 "finding": {"rule": "test"},
             },
         )
-        assert resp.status_code == 200
+        assert resp.status_code == 404
         assert resp.json().get("error") == "Session not found. Run /ws/analyze first."
 
     def test_incident_needs_session(self, client):
@@ -59,12 +62,12 @@ class TestRoutesWithoutSession:
                 "finding": {"title": "bug"},
             },
         )
-        assert resp.status_code == 200
-        assert resp.json().get("error") == "Session not found"
+        assert resp.status_code == 404
+        assert "Session not found" in resp.json().get("error", "")
 
     def test_analysis_not_found(self, client):
         resp = client.get("/analysis/00000000-0000-0000-0000-000000000001")
-        assert resp.status_code == 200
+        assert resp.status_code == 404
         assert resp.json().get("error") == "Analysis not found or has expired"
 
 
@@ -111,13 +114,25 @@ class TestRepos:
         resp = client.get("/repos/")  # empty username
         assert resp.status_code == 404
 
-    def test_valid_username_format(self, client):
+    @patch("httpx.AsyncClient.get", new_callable=AsyncMock)
+    def test_valid_username_format(self, mock_get, client):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.is_error = False
+        mock_resp.json.return_value = []
+        mock_get.return_value = mock_resp
         resp = client.get("/repos/test-user")
         assert resp.status_code == 200
 
 
 class TestPRList:
-    def test_invalid_repo_returns_empty(self, client):
+    @patch("httpx.AsyncClient.get", new_callable=AsyncMock)
+    def test_invalid_repo_returns_empty(self, mock_get, client):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.is_error = False
+        mock_resp.json.return_value = []
+        mock_get.return_value = mock_resp
         resp = client.get("/pr-list/unknown-owner/unknown-repo")
         assert resp.status_code == 200
         assert resp.json() == {"prs": []}

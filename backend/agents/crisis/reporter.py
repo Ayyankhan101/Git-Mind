@@ -1,10 +1,11 @@
 import asyncio
-import structlog
 import os
 import time
 
+import structlog
+
 from llm_cache import invoke_with_retry
-from settings import LLM_MODEL, get_llm
+from settings import get_llm
 
 logger = structlog.get_logger(__name__)
 

@@ -11,7 +11,7 @@ class TestAnalyzeEndpoint:
     @patch("routes.analyze.check_rate_limit", return_value=(True, 30, 0))
     def test_analyze_invalid_url(self, _mock_rate):
         response = client.post("/analyze", json={"repo_url": "not-a-url"})
-        assert response.status_code == 200
+        assert response.status_code == 400
         assert "error" in response.json()
 
     def test_analyze_missing_url(self):
@@ -33,7 +33,7 @@ class TestAnalyzeEndpoint:
     @patch("routes.analyze.check_rate_limit", return_value=(True, 30, 0))
     def test_analyze_github_only(self, _mock_rate):
         response = client.post("/analyze", json={"repo_url": "https://gitlab.com/user/repo"})
-        assert response.status_code == 200
+        assert response.status_code == 400
         assert "error" in response.json()
 
 
@@ -46,7 +46,7 @@ class TestWebhookEndpoint:
                 "message": "test",
             },
         )
-        assert response.status_code == 200
+        assert response.status_code == 400
         assert "error" in response.json()
 
     def test_webhook_missing_fields(self):
@@ -61,14 +61,14 @@ class TestWebhookEndpoint:
                 "message": "hi",
             },
         )
-        assert response.status_code == 200
+        assert response.status_code == 400
         assert "error" in response.json()
 
 
 class TestMonitorEndpoint:
     def test_monitor_subscribe_invalid_url(self):
         response = client.post("/monitor/subscribe", json={"repo_url": "not-a-url"})
-        assert response.status_code == 200
+        assert response.status_code == 400
         assert "error" in response.json()
 
     def test_monitor_subscribe_missing_fields(self):
@@ -98,5 +98,5 @@ class TestMonitorEndpoint:
         mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
 
         response = client.delete("/monitor/nonexistent-id")
-        assert response.status_code == 200
+        assert response.status_code == 404
         assert "error" in response.json()

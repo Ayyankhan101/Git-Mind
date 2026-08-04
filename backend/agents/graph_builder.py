@@ -1,4 +1,5 @@
 import json
+
 import structlog
 
 from agents.graph_analyzer import build_graph

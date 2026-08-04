@@ -1,7 +1,8 @@
 import hashlib
-import structlog
 import re
 import time
+
+import structlog
 
 from chroma_utils import embed_codebase
 

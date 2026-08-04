@@ -1,6 +1,6 @@
 import json
-import structlog
 
+import structlog
 from gitmind_core import scan_route_files
 
 from llm_cache import get_cached, invoke_with_retry, set_cached

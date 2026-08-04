@@ -1,9 +1,10 @@
 import json
-import structlog
 import shutil
 import subprocess
 import uuid
 from pathlib import Path
+
+import structlog
 
 _SEMGREP = shutil.which("semgrep") or "semgrep"  # fallback for type narrowing
 
