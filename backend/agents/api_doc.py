@@ -1,12 +1,12 @@
 import json
-import logging
+import structlog
 
 from gitmind_core import scan_route_files
 
 from llm_cache import get_cached, invoke_with_retry, set_cached
 from settings import LLM_MODEL, get_llm
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _MAX_FILES = 10
 _MAX_FILE_CHARS = 6_000

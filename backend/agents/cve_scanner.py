@@ -1,9 +1,9 @@
-import logging
+import structlog
 
 import httpx
 from gitmind_core import parse_dependencies
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _OSV_BATCH_URL = "https://api.osv.dev/v1/querybatch"
 _SEV_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3}

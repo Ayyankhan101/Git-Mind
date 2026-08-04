@@ -1,10 +1,10 @@
-import logging
+import structlog
 import re
 
 import httpx
 from gitmind_core import scan_secrets, scan_sensitive_files
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _OWNER_REPO_RE = re.compile(r"github\.com/([^/]+)/([^/]+?)(?:\.git)?/?$")
 

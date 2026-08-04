@@ -26,6 +26,8 @@ async def subscribe_repo(req: MonitorSubscribeRequest, request: Request):
         return await rate_limit_response("monitor", client_ip)
 
     repo_url = req.repo_url.strip()
+    # Normalize: remove trailing slash for consistent duplicate detection
+    repo_url = repo_url.rstrip("/")
     if not _GH_URL_RE.match(repo_url):
         return error_response("Invalid GitHub URL — must be https://github.com/{owner}/{repo}", 400)
 

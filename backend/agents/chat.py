@@ -1,10 +1,10 @@
-import logging
+import structlog
 
 from chroma_utils import search_codebase
 from llm_cache import invoke_with_retry
 from settings import get_llm
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _LLM = get_llm(temperature_key="chat")
 

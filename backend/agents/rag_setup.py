@@ -1,11 +1,11 @@
 import hashlib
-import logging
+import structlog
 import re
 import time
 
 from chroma_utils import embed_codebase
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _UNSAFE_CHARS = re.compile(r"[^a-zA-Z0-9_]")
 _MAX_ATTEMPTS = 3

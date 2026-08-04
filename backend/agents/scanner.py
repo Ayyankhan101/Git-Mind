@@ -1,6 +1,6 @@
 import atexit
 import contextlib
-import logging
+import structlog
 import os
 import re
 import stat
@@ -10,7 +10,7 @@ from pathlib import Path
 
 import git
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # Track active temp dirs for cleanup  {path: creation_timestamp}
 _active_temp_dirs: dict[str, float] = {}

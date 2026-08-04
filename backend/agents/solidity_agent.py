@@ -1,5 +1,5 @@
 import json
-import logging
+import structlog
 import os
 import uuid
 
@@ -8,7 +8,7 @@ import httpx
 from llm_cache import get_cached, invoke_with_retry, set_cached
 from settings import LLM_MODEL, get_llm
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _SIDECAR_BASE = os.getenv("SIDECAR_URL", "http://127.0.0.1:8003")
 _LLM = get_llm(temperature_key="security", json_mode=True)

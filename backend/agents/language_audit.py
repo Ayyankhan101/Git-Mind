@@ -1,5 +1,5 @@
 import json
-import logging
+import structlog
 import os
 import shutil
 import subprocess
@@ -11,7 +11,7 @@ from pathlib import Path
 from llm_cache import get_cached, invoke_with_retry, set_cached
 from settings import LLM_MODEL, get_llm
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _LLM = get_llm(temperature_key="code_audit", json_mode=True)
 _CACHE_NS = f"{LLM_MODEL}:lang_audit:json"

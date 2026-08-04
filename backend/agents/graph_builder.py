@@ -1,10 +1,10 @@
 import json
-import logging
+import structlog
 
 from agents.graph_analyzer import build_graph
 from parsers.router import parse_files
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def build_architecture_graph(_file_tree: list[str], file_contents: dict[str, str]) -> dict:

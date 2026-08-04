@@ -13,11 +13,11 @@ Environment variables:
 
 from __future__ import annotations
 
-import logging
+import structlog
 import os
 from hashlib import sha256
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _MODEL_NAME = os.environ.get("RERANKER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
 _reranker = None  # lazy singleton

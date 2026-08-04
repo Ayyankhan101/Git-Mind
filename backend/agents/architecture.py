@@ -1,4 +1,4 @@
-import logging
+import structlog
 import re
 from collections import Counter
 from pathlib import Path
@@ -9,7 +9,7 @@ from agents.graph_builder import build_architecture_graph
 from llm_cache import get_cached, invoke_with_retry, set_cached
 from settings import LLM_MODEL, get_llm
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _TOKEN_BUDGET = 24_000  # llama-3.3-70b supports 128K ctx — use more headroom
 _MAX_TREE_LINES = 200
