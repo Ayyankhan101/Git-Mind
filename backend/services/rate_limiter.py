@@ -36,6 +36,7 @@ _RATE_WINDOWS: dict[str, tuple[int, int]] = {
     "analysis_get": (60, 30),
     "analysis_previous": (60, 20),
     "monitor": (60, 10),
+    "analysis_history": (60, 20),
     "task": (60, 30),
 }
 

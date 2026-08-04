@@ -76,11 +76,21 @@ async def handle_analyze(ws: WebSocket) -> None:
         return
 
     _ws_auth_secret = os.environ.get("WS_AUTH_SECRET")
-    if _ws_auth_secret:
+    if not _ws_auth_secret:
+        logger.warning("WS_AUTH_SECRET not set — WebSocket auth disabled. Set WS_AUTH_SECRET in production.")
+    else:
         import hmac
+        import time
 
-        if not hmac.compare_digest(payload.get("ws_auth_secret", ""), _ws_auth_secret):
+        client_secret = payload.get("ws_auth_secret", "")
+        client_ts = payload.get("ws_auth_ts", 0)
+        # Reject if secret missing or timestamp older than 5 minutes (replay protection)
+        if not client_secret or not hmac.compare_digest(client_secret, _ws_auth_secret):
             await ws.send_json({"error": "WebSocket auth secret mismatch"})
+            await ws.close(code=1008)
+            return
+        if isinstance(client_ts, (int, float)) and abs(time.time() - client_ts) > 300:
+            await ws.send_json({"error": "WebSocket auth token expired"})
             await ws.close(code=1008)
             return
 
@@ -95,7 +105,8 @@ async def handle_analyze(ws: WebSocket) -> None:
         return
 
     client_ip = getattr(ws.client, "host", "unknown")
-    if not (await check_rate_limit("analyze", client_ip))[0]:
+    rate_key = f"{client_ip}:{owner_hash}" if owner_hash else client_ip
+    if not (await check_rate_limit("analyze", rate_key))[0]:
         await ws.send_json({"error": "Rate limit exceeded", "retry_after": 60})
         await ws.close()
         return
