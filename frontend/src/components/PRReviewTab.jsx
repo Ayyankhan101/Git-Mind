@@ -14,7 +14,6 @@ import {
   AlertCircle,
   GitMerge,
   XCircle,
-  GitBranch,
 } from "lucide-react";
 import { reviewPR, prImpact, fetchOpenPRs } from "../api";
 import * as tokenManager from "../tokenManager";
