@@ -3448,12 +3448,18 @@ select {
 .sb-section.collapsed .sb-section-body {
   display: none;
 }
+.sb-section-body {
+  padding-top: 4px;
+}
+.saved-views-body {
+  padding-bottom: 4px;
+}
 
 .sb-filter {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 4px 12px 8px;
+  margin: 4px 10px 8px;
   padding: 7px 10px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -3774,6 +3780,39 @@ select {
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-medium: rgba(255, 255, 255, 0.12);
   --text-on-primary: #1a1612;
+
+  --chrome-bg: rgba(26, 22, 18, 0.58);
+  --chrome-blur: blur(30px) saturate(190%);
+  --bloom-1: rgba(245, 158, 11, 0.32);
+  --bloom-2: rgba(251, 191, 36, 0.22);
+  --bloom-3: rgba(248, 113, 113, 0.18);
+  --crystal-highlight: rgba(254, 243, 199, 0.48);
+  --crystal-edge: rgba(252, 211, 77, 0.38);
+  --crystal-shadow: rgba(20, 12, 4, 0.58);
+}
+[data-theme="amber"] .row-expand {
+  background: rgba(42, 34, 24, 0.45);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+}
+[data-theme="amber"] .row:hover,
+[data-theme="amber"] .endpoint:hover,
+[data-theme="amber"] .repo-card:hover {
+  background: rgba(245, 158, 11, 0.07);
+}
+[data-theme="amber"] .diff {
+  background: rgba(20, 16, 10, 0.65);
+}
+[data-theme="amber"] .pr-meta,
+[data-theme="amber"] .stat {
+  background: rgba(42, 34, 24, 0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+[data-theme="amber"] .crisis-panel {
+  background: rgba(42, 24, 10, 0.78);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
 }
 
 /* VERDANT — deep forest dark */
@@ -3805,6 +3844,39 @@ select {
   --border-subtle: rgba(255, 255, 255, 0.06);
   --border-medium: rgba(255, 255, 255, 0.1);
   --text-on-primary: #0a100d;
+
+  --chrome-bg: rgba(10, 16, 13, 0.58);
+  --chrome-blur: blur(30px) saturate(190%);
+  --bloom-1: rgba(16, 185, 129, 0.32);
+  --bloom-2: rgba(52, 211, 153, 0.22);
+  --bloom-3: rgba(94, 234, 212, 0.18);
+  --crystal-highlight: rgba(209, 250, 229, 0.48);
+  --crystal-edge: rgba(110, 231, 183, 0.38);
+  --crystal-shadow: rgba(4, 12, 8, 0.58);
+}
+[data-theme="verdant"] .row-expand {
+  background: rgba(20, 34, 28, 0.45);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+}
+[data-theme="verdant"] .row:hover,
+[data-theme="verdant"] .endpoint:hover,
+[data-theme="verdant"] .repo-card:hover {
+  background: rgba(16, 185, 129, 0.07);
+}
+[data-theme="verdant"] .diff {
+  background: rgba(8, 16, 12, 0.65);
+}
+[data-theme="verdant"] .pr-meta,
+[data-theme="verdant"] .stat {
+  background: rgba(20, 34, 28, 0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+[data-theme="verdant"] .crisis-panel {
+  background: rgba(20, 12, 16, 0.78);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
 }
 
 /* GLACIER — cool blue dark (Nord-ish) */
@@ -3836,6 +3908,39 @@ select {
   --border-subtle: rgba(255, 255, 255, 0.06);
   --border-medium: rgba(255, 255, 255, 0.1);
   --text-on-primary: #0b1220;
+
+  --chrome-bg: rgba(11, 18, 32, 0.58);
+  --chrome-blur: blur(30px) saturate(190%);
+  --bloom-1: rgba(56, 189, 248, 0.32);
+  --bloom-2: rgba(96, 165, 250, 0.22);
+  --bloom-3: rgba(125, 211, 252, 0.18);
+  --crystal-highlight: rgba(224, 242, 254, 0.48);
+  --crystal-edge: rgba(125, 211, 252, 0.38);
+  --crystal-shadow: rgba(4, 8, 18, 0.58);
+}
+[data-theme="glacier"] .row-expand {
+  background: rgba(26, 37, 64, 0.45);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+}
+[data-theme="glacier"] .row:hover,
+[data-theme="glacier"] .endpoint:hover,
+[data-theme="glacier"] .repo-card:hover {
+  background: rgba(56, 189, 248, 0.07);
+}
+[data-theme="glacier"] .diff {
+  background: rgba(11, 18, 32, 0.65);
+}
+[data-theme="glacier"] .pr-meta,
+[data-theme="glacier"] .stat {
+  background: rgba(26, 37, 64, 0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+[data-theme="glacier"] .crisis-panel {
+  background: rgba(16, 24, 42, 0.78);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -4247,7 +4352,9 @@ textarea:focus-visible,
 [role="button"]:focus-visible,
 .repo-card:focus-visible,
 .tab:focus-visible,
-.row:focus-visible {
+.row:focus-visible,
+.saved-view:focus-visible,
+.ws-opt:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
   border-radius: 4px;

@@ -305,7 +305,7 @@ export default function Sidebar({
               />
             </button>
             {showSavedViews && (
-              <div style={{ paddingBottom: 4 }}>
+              <div className="saved-views-body">
                 {SAVED_VIEWS.filter(
                   (v) => v.id === "all" || repos.some((r) => v.filter(r)),
                 ).map((v) => {
