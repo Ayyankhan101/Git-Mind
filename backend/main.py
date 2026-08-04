@@ -276,11 +276,17 @@ async def unhandled_exception_handler(request, exc):
 
 
 _CORS_ORIGINS_ENV = os.getenv("CORS_ORIGINS", "")
+_ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
 if _CORS_ORIGINS_ENV == "*":
     _CORS_ORIGINS = ["*"]
     logger.warning("CORS_ORIGINS=* — allowing all origins. Set CORS_ORIGINS to specific origin for production.")
 elif _CORS_ORIGINS_ENV:
     _CORS_ORIGINS = [o.strip() for o in _CORS_ORIGINS_ENV.split(",") if o.strip()]
+elif _ENVIRONMENT == "production":
+    _CORS_ORIGINS = [
+        "https://ak001z-gitmind-frontend.vercel.app",
+        "https://git-mind.vercel.app",
+    ]
 else:
     _CORS_ORIGINS = [
         "http://localhost",

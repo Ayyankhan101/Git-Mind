@@ -64,30 +64,54 @@ function _extractError(payload, fallback) {
   return String(payload);
 }
 
-async function _apiFetch(url, options = {}, timeoutMs = 30_000) {
+async function _apiFetch(url, options = {}, timeoutMs = 30_000, retries = 2) {
   const { timeoutError, ...fetchOpts } = options;
-  fetchOpts.signal = AbortSignal.timeout(timeoutMs);
-  let res;
-  try {
-    res = await fetch(url, fetchOpts);
-  } catch (err) {
-    if (err.name === "TimeoutError")
-      throw new Error(timeoutError || "Request timed out.");
-    throw new Error(
-      "Cannot reach the backend. Make sure it is running on port 8002.",
-    );
-  }
-  if (!res.ok) {
-    let msg = `Server error ${res.status}`;
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    if (attempt > 0) {
+      // Exponential backoff: 500ms, 1500ms
+      await new Promise((r) => setTimeout(r, 500 * Math.pow(3, attempt - 1)));
+    }
+    fetchOpts.signal = AbortSignal.timeout(timeoutMs);
+    let res;
     try {
-      const j = await res.json();
-      msg = _extractError(j, msg);
-    } catch {}
-    throw new Error(msg);
+      res = await fetch(url, fetchOpts);
+    } catch (err) {
+      lastErr = err;
+      if (err.name === "TimeoutError")
+        throw new Error(timeoutError || "Request timed out.");
+      // Retry on network errors (TypeError = fetch failed)
+      if (err instanceof TypeError && attempt < retries) continue;
+      throw new Error(
+        "Cannot reach the backend. Make sure it is running on port 8002.",
+      );
+    }
+    if (!res.ok) {
+      // Don't retry client errors (4xx) or 501/505
+      if (res.status >= 400 && res.status < 500) {
+        let msg = `Server error ${res.status}`;
+        try {
+          const j = await res.json();
+          msg = _extractError(j, msg);
+        } catch {}
+        throw new Error(msg);
+      }
+      // Retry on 502/503/504 (server temporarily unavailable)
+      if ((res.status === 502 || res.status === 503 || res.status === 504) && attempt < retries) {
+        continue;
+      }
+      let msg = `Server error ${res.status}`;
+      try {
+        const j = await res.json();
+        msg = _extractError(j, msg);
+      } catch {}
+      throw new Error(msg);
+    }
+    const data = await res.json();
+    if (data.error) throw new Error(_extractError(data.error, "Request failed"));
+    return data;
   }
-  const data = await res.json();
-  if (data.error) throw new Error(_extractError(data.error, "Request failed"));
-  return data;
+  throw lastErr || new Error("Request failed after retries");
 }
 
 function _post(url, body, timeoutMs, timeoutError, extraHeaders = {}) {

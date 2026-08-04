@@ -18,6 +18,7 @@ logger = structlog.get_logger(__name__)
 router = APIRouter()
 
 _PR_URL_RE = re.compile(r"^https://github\.com/([A-Za-z0-9_.\-]+)/([A-Za-z0-9_.\-]+)/pull/(\d+)/?$")
+_USERNAME_RE = re.compile(r"^[A-Za-z0-9_.\-]+$")
 
 
 @router.post("/pr-review")
@@ -37,6 +38,8 @@ async def pr_review_endpoint(req: PRReviewRequest, request: Request):
 
 @router.get("/pr-list/{owner}/{repo}")
 async def list_open_prs(owner: str, repo: str, request: Request):
+    if not _USERNAME_RE.match(owner) or not _USERNAME_RE.match(repo):
+        return error_response("Invalid owner or repo name", 400)
     client_ip = get_client_ip(request)
     if not (await check_rate_limit("pr", f"{owner}/{repo}:{client_ip}"))[0]:
         return await rate_limit_response("pr", f"{owner}/{repo}:{client_ip}")

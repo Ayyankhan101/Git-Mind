@@ -19,17 +19,34 @@ class BodyLimitMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         content_length = request.headers.get("content-length")
-        if content_length and content_length.isdigit():
-            size = int(content_length)
-            if size > self.max_bytes:
-                logger.warning(
-                    "Request body too large",
-                    path=request.url.path,
-                    size=size,
-                    limit=self.max_bytes,
-                )
+        if not content_length or not content_length.isdigit():
+            # Reject requests without Content-Length to prevent chunked encoding bypass
+            transfer_encoding = request.headers.get("transfer-encoding", "")
+            if "chunked" in transfer_encoding:
+                logger.warning("Request missing Content-Length with chunked encoding", path=request.url.path)
                 return JSONResponse(
                     status_code=413,
-                    content={"error": f"Request body too large — max {self.max_bytes} bytes"},
+                    content={"error": "Chunked encoding without Content-Length not allowed"},
                 )
+            # Allow requests with no body (GET, DELETE, etc.)
+            if request.method not in ("POST", "PUT", "PATCH"):
+                return await call_next(request)
+            # For POST/PUT/PATCH without Content-Length, reject
+            logger.warning("Request missing Content-Length header", path=request.url.path)
+            return JSONResponse(
+                status_code=411,
+                content={"error": "Content-Length header required"},
+            )
+        size = int(content_length)
+        if size > self.max_bytes:
+            logger.warning(
+                "Request body too large",
+                path=request.url.path,
+                size=size,
+                limit=self.max_bytes,
+            )
+            return JSONResponse(
+                status_code=413,
+                content={"error": f"Request body too large — max {self.max_bytes} bytes"},
+            )
         return await call_next(request)
