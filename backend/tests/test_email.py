@@ -25,13 +25,17 @@ async def test_returns_false_when_smtp_not_configured():
 @pytest.mark.asyncio
 @patch("services.email.aiosmtplib.send", new_callable=AsyncMock, return_value=True)
 async def test_sends_email_when_smtp_configured(mock_send):
-    with patch.dict(os.environ, {
-        "SMTP_HOST": "smtp.example.com",
-        "SMTP_PORT": "587",
-        "SMTP_USER": "user",
-        "SMTP_PASSWORD": "pass",
-        "SMTP_FROM": "alert@example.com",
-    }, clear=False):
+    with patch.dict(
+        os.environ,
+        {
+            "SMTP_HOST": "smtp.example.com",
+            "SMTP_PORT": "587",
+            "SMTP_USER": "user",
+            "SMTP_PASSWORD": "pass",
+            "SMTP_FROM": "alert@example.com",
+        },
+        clear=False,
+    ):
         result = await send_alert_email(
             recipients=["dev@example.com"],
             repo_name="my-app",
@@ -47,13 +51,17 @@ async def test_sends_email_when_smtp_configured(mock_send):
 @pytest.mark.asyncio
 @patch("services.email.aiosmtplib.send", new_callable=AsyncMock, side_effect=Exception("SMTP error"))
 async def test_returns_false_on_send_failure(mock_send):
-    with patch.dict(os.environ, {
-        "SMTP_HOST": "smtp.example.com",
-        "SMTP_PORT": "587",
-        "SMTP_USER": "user",
-        "SMTP_PASSWORD": "pass",
-        "SMTP_FROM": "alert@example.com",
-    }, clear=False):
+    with patch.dict(
+        os.environ,
+        {
+            "SMTP_HOST": "smtp.example.com",
+            "SMTP_PORT": "587",
+            "SMTP_USER": "user",
+            "SMTP_PASSWORD": "pass",
+            "SMTP_FROM": "alert@example.com",
+        },
+        clear=False,
+    ):
         result = await send_alert_email(
             recipients=["dev@example.com"],
             repo_name="my-app",
@@ -68,13 +76,17 @@ async def test_returns_false_on_send_failure(mock_send):
 @pytest.mark.asyncio
 @patch("services.email.aiosmtplib.send", new_callable=AsyncMock, return_value=True)
 async def test_no_findings_row_when_zero(mock_send):
-    with patch.dict(os.environ, {
-        "SMTP_HOST": "smtp.example.com",
-        "SMTP_PORT": "587",
-        "SMTP_USER": "user",
-        "SMTP_PASSWORD": "pass",
-        "SMTP_FROM": "alert@example.com",
-    }, clear=False):
+    with patch.dict(
+        os.environ,
+        {
+            "SMTP_HOST": "smtp.example.com",
+            "SMTP_PORT": "587",
+            "SMTP_USER": "user",
+            "SMTP_PASSWORD": "pass",
+            "SMTP_FROM": "alert@example.com",
+        },
+        clear=False,
+    ):
         result = await send_alert_email(
             recipients=["dev@example.com"],
             repo_name="my-app",

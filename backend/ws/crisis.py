@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import os
+import time
 
 import structlog
 from fastapi import WebSocket, WebSocketDisconnect
@@ -27,7 +28,6 @@ async def handle_crisis(ws: WebSocket) -> None:
         logger.warning("WS_AUTH_SECRET not set — WebSocket auth disabled. Set WS_AUTH_SECRET in production.")
     else:
         import hmac
-        import time
 
         client_secret = payload.get("ws_auth_secret", "")
         client_ts = payload.get("ws_auth_ts", 0)

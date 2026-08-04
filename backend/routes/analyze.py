@@ -61,6 +61,7 @@ async def _run_analysis(repo_url: str, gh_token: str | None, session_id: str) ->
 
     astream = graph.astream(init, stream_mode="updates")  # type: ignore[attr-defined]
     try:
+
         async def _stream_with_timeout():
             async for chunk in astream:
                 for _node, update in chunk.items():
