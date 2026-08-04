@@ -93,105 +93,111 @@ export default function DiagramTab({
   });
 
   useEffect(() => {
-    // Determine input type: rich JSON graph vs Mermaid string
-    const hasGraph = archGraph && archGraph.nodes && archGraph.nodes.length > 0;
-    const hasMermaid =
-      diagram && typeof diagram === "string" && diagram.startsWith("graph");
+    try {
+      // Determine input type: rich JSON graph vs Mermaid string
+      const hasGraph = archGraph && archGraph.nodes && archGraph.nodes.length > 0;
+      const hasMermaid =
+        diagram && typeof diagram === "string" && diagram.startsWith("graph");
 
-    if (hasGraph) {
-      const { nodes: parsedNodes, edges: parsedEdges } =
-        parseGraphJsonToFlow(archGraph);
-      const sorted = sortByLayer(parsedNodes);
-      const laid = applyLayerLayout(sorted, parsedEdges);
+      if (hasGraph) {
+        const { nodes: parsedNodes, edges: parsedEdges } =
+          parseGraphJsonToFlow(archGraph);
+        const sorted = sortByLayer(parsedNodes);
+        const laid = applyLayerLayout(sorted, parsedEdges);
 
-      // Map raw nodes into custom styled archNode components
-      const customizedNodes = laid.map((node) => {
-        const lowerLabel = (node.data.label || "").toLowerCase();
-        let tier = "config";
-        let category = "Module";
+        // Map raw nodes into custom styled archNode components
+        const customizedNodes = laid.map((node) => {
+          const lowerLabel = (node.data.label || "").toLowerCase();
+          let tier = "config";
+          let category = "Module";
 
-        if (
-          lowerLabel.includes("frontend") ||
-          lowerLabel.includes("ui") ||
-          lowerLabel.includes("view")
-        ) {
-          tier = "frontend";
-          category = "UI Layer";
-        } else if (
-          lowerLabel.includes("backend") ||
-          lowerLabel.includes("api") ||
-          lowerLabel.includes("server")
-        ) {
-          tier = "backend";
-          category = "Backend Services";
-        }
+          if (
+            lowerLabel.includes("frontend") ||
+            lowerLabel.includes("ui") ||
+            lowerLabel.includes("view")
+          ) {
+            tier = "frontend";
+            category = "UI Layer";
+          } else if (
+            lowerLabel.includes("backend") ||
+            lowerLabel.includes("api") ||
+            lowerLabel.includes("server")
+          ) {
+            tier = "backend";
+            category = "Backend Services";
+          }
 
-        return {
-          ...node,
-          type: "archNode",
-          data: {
-            ...node.data,
-            label: humanizeNodeLabel(
-              node.data.label ||
-                node.id
-                  .replace(/_/g, " ")
-                  .replace(/\b\w/g, (c) => c.toUpperCase()),
-              node.data?.tier || tier,
-            ),
-            tier: node.data?.tier || tier,
-            category: node.data?.category || category,
-          },
-        };
-      });
+          return {
+            ...node,
+            type: "archNode",
+            data: {
+              ...node.data,
+              label: humanizeNodeLabel(
+                node.data.label ||
+                  node.id
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (c) => c.toUpperCase()),
+                node.data?.tier || tier,
+              ),
+              tier: node.data?.tier || tier,
+              category: node.data?.category || category,
+            },
+          };
+        });
 
-      setNodes(customizedNodes);
-      setEdges(parsedEdges);
-    } else if (hasMermaid) {
-      const { nodes: parsedNodes, edges: parsedEdges } =
-        parseMermaidToFlow(diagram);
+        setNodes(customizedNodes);
+        setEdges(parsedEdges);
+      } else if (hasMermaid) {
+        const { nodes: parsedNodes, edges: parsedEdges } =
+          parseMermaidToFlow(diagram);
 
-      const customizedNodes = parsedNodes.map((node) => {
-        const lowerLabel = (node.label || "").toLowerCase();
-        let tier = "config";
-        let category = "Module";
+        const customizedNodes = parsedNodes.map((node) => {
+          const lowerLabel = (node.label || "").toLowerCase();
+          let tier = "config";
+          let category = "Module";
 
-        if (
-          lowerLabel.includes("frontend") ||
-          lowerLabel.includes("ui") ||
-          lowerLabel.includes("view")
-        ) {
-          tier = "frontend";
-          category = "UI Layer";
-        } else if (
-          lowerLabel.includes("backend") ||
-          lowerLabel.includes("api") ||
-          lowerLabel.includes("server")
-        ) {
-          tier = "backend";
-          category = "Backend Services";
-        }
+          if (
+            lowerLabel.includes("frontend") ||
+            lowerLabel.includes("ui") ||
+            lowerLabel.includes("view")
+          ) {
+            tier = "frontend";
+            category = "UI Layer";
+          } else if (
+            lowerLabel.includes("backend") ||
+            lowerLabel.includes("api") ||
+            lowerLabel.includes("server")
+          ) {
+            tier = "backend";
+            category = "Backend Services";
+          }
 
-        return {
-          ...node,
-          type: "archNode",
-          data: {
-            ...node.data,
-            label: humanizeNodeLabel(
-              node.label ||
-                node.id
-                  .replace(/_/g, " ")
-                  .replace(/\b\w/g, (c) => c.toUpperCase()),
-              node.data?.tier || tier,
-            ),
-            tier: node.data?.tier || tier,
-            category: node.data?.category || category,
-          },
-        };
-      });
+          return {
+            ...node,
+            type: "archNode",
+            data: {
+              ...node.data,
+              label: humanizeNodeLabel(
+                node.label ||
+                  node.id
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (c) => c.toUpperCase()),
+                node.data?.tier || tier,
+              ),
+              tier: node.data?.tier || tier,
+              category: node.data?.category || category,
+            },
+          };
+        });
 
-      setNodes(customizedNodes);
-      setEdges(parsedEdges);
-    } else {
+        setNodes(customizedNodes);
+        setEdges(parsedEdges);
+      } else {
+        setNodes([]);
+        setEdges([]);
+      }
+    } catch (err) {
+      console.error("[DiagramTab] Failed to parse diagram:", err);
       setNodes([]);
       setEdges([]);
     }

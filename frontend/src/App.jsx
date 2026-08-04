@@ -1368,6 +1368,7 @@ export default function App() {
       </div>
 
       {/* ── Overlays ────────────────────────────────────────────── */}
+      <ErrorBoundary>
       <Suspense fallback={null}>
         {showOrgAudit && (
           <OrgAuditModal
@@ -1409,6 +1410,7 @@ export default function App() {
           density={density}
         />
       </Suspense>
+      </ErrorBoundary>
       <ToastSystem toasts={toasts} onDismiss={dismissToast} />
     </div>
   );

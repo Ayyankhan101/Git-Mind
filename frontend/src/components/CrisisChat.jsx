@@ -113,6 +113,15 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Escape key handler
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   useEffect(() => {
     if (resolved || leaked || error) return;
     const id = setInterval(
@@ -152,7 +161,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="crisis-panel">
+      <div className="crisis-panel" role="dialog" aria-modal="true" aria-label="Crisis simulation">
         {/* Header */}
         <div className="crisis-header">
           <div className="crisis-tag">
@@ -172,6 +181,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
             className="btn-icon"
             style={{ position: "absolute", top: 16, right: 16 }}
             onClick={onClose}
+            aria-label="Close crisis simulation"
           >
             <X size={14} strokeWidth={1.5} />
           </button>
@@ -216,7 +226,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
         </div>
 
         {/* Messages */}
-        <div className="crisis-body">
+        <div className="crisis-body" aria-live="polite">
           {error && (
             <div
               style={{
