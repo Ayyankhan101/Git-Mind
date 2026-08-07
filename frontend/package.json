@@ -89,7 +89,7 @@
     "postcss": "^8.5.14",
     "react-app-rewired": "^2.2.1",
     "serve": "^14.0.0",
-    "size-limit": "^11.0.0",
+    "size-limit": "^13.0.2",
     "tailwindcss": "^4.3.3"
   }
 }
