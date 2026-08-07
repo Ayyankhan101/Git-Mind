@@ -260,6 +260,8 @@ export default function CommandPalette({
                     className={`palette-item${isActive ? " active" : ""}`}
                     onMouseEnter={() => setCursor(idx)}
                     onClick={() => onAction(item)}
+                    role="option"
+                    aria-selected={isActive}
                   >
                     <span className="icon-slot">
                       {IconComp && <IconComp size={14} strokeWidth={1.5} />}

@@ -25,7 +25,7 @@ export default function ToastSystem({ toasts, onDismiss }) {
               </div>
               {t.sub && <div className="toast-sub">{t.sub}</div>}
             </div>
-            <button className="btn-icon" onClick={() => onDismiss(t.id)}>
+            <button className="btn-icon" onClick={() => onDismiss(t.id)} aria-label="Dismiss notification">
               <X size={12} strokeWidth={1.5} />
             </button>
           </div>

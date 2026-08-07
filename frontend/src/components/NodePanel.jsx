@@ -187,7 +187,7 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
           strokeWidth={1.5}
         />
         <span className="node-panel-title">{node}</span>
-        <button className="btn-icon" onClick={onClose} title="Close (Esc)">
+        <button className="btn-icon" onClick={onClose} title="Close (Esc)" aria-label="Close panel">
           <X size={14} strokeWidth={2} />
         </button>
       </div>

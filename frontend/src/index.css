@@ -1,18 +1,15 @@
-@import "tailwindcss";
-
 /* ──────────────────────────────────────────────────────────────
    GitMind · Cyber Green  (v4 — hacker terminal theme)
    ────────────────────────────────────────────────────────────── */
 
 :root {
-  /* Base surfaces — true blacks with green undertone */
   --bg: #050510;
-  --surface: rgba(5, 12, 8, 0.72);
-  --surface-2: rgba(10, 18, 12, 0.65);
-  --surface-3: rgba(18, 28, 20, 0.6);
+  --surface: rgba(5, 5, 20, 0.72);
+  --surface-2: rgba(15, 15, 30, 0.65);
+  --surface-3: rgba(25, 25, 42, 0.6);
 
-  --border: rgba(34, 197, 94, 0.1);
-  --border-2: rgba(34, 197, 94, 0.18);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-2: rgba(255, 255, 255, 0.15);
 
   --primary: #22c55e;
   --primary-dim: rgba(34, 197, 94, 0.12);
@@ -34,12 +31,11 @@
 
   --code: #4ade80;
 
-  /* Chrome tokens — cyber glass theme */
-  --chrome-bg: rgba(5, 12, 8, 0.72);
+  --chrome-bg: rgba(5, 5, 16, 0.72);
   --chrome-blur: blur(28px) saturate(200%);
-  --bloom-1: rgba(34, 197, 94, 0.25);
-  --bloom-2: rgba(16, 185, 129, 0.18);
-  --bloom-3: rgba(34, 197, 94, 0.12);
+  --bloom-1: rgba(34, 197, 94, 0.32);
+  --bloom-2: rgba(16, 185, 129, 0.24);
+  --bloom-3: rgba(34, 211, 238, 0.18);
 
   --font-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -47,8 +43,7 @@
   --crystal-edge: rgba(34, 197, 94, 0.34);
   --crystal-shadow: rgba(2, 12, 6, 0.56);
 
-  /* Semantic surfaces for light/dark adaptability */
-  --surface-overlay: rgba(5, 12, 8, 0.85);
+  --surface-overlay: rgba(5, 5, 20, 0.85);
   --surface-hover: rgba(34, 197, 94, 0.06);
   --surface-active: rgba(34, 197, 94, 0.12);
   --border-subtle: rgba(255, 255, 255, 0.08);
@@ -1125,7 +1120,7 @@ select {
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: color 0.15s, background 0.15s, border-color 0.15s, box-shadow 0.15s;
   white-space: nowrap;
 }
 .btn:disabled {
@@ -5055,7 +5050,7 @@ textarea:focus-visible,
   color: var(--text-2);
   font-family: inherit;
   text-align: left;
-  transition: all 0.15s;
+  transition: border-color 0.15s, color 0.15s;
 }
 .ws-btn:hover {
   border-color: rgba(255, 255, 255, 0.15);
@@ -5579,27 +5574,6 @@ textarea:focus-visible,
   }
 }
 
-/* ────────────────────────────────────────────────────────────
-   Crystal Aurora dashboard treatment
-   ──────────────────────────────────────────────────────────── */
-:root {
-  --bg: #050510;
-  --surface: rgba(5, 5, 20, 0.72);
-  --surface-2: rgba(15, 15, 30, 0.65);
-  --surface-3: rgba(25, 25, 42, 0.6);
-  --border: rgba(255, 255, 255, 0.08);
-  --border-2: rgba(255, 255, 255, 0.15);
-  --primary: #22c55e;
-  --primary-dim: rgba(34, 197, 94, 0.12);
-  --primary-glow: rgba(34, 197, 94, 0.25);
-  --code: #4ade80;
-  --chrome-bg: rgba(5, 5, 16, 0.72);
-  --chrome-blur: blur(28px) saturate(200%);
-  --bloom-1: rgba(34, 197, 94, 0.32);
-  --bloom-2: rgba(16, 185, 129, 0.24);
-  --bloom-3: rgba(34, 211, 238, 0.18);
-}
-
 body {
   background:
     radial-gradient(circle at 58% 16%, rgba(34, 197, 94, 0.3), transparent 15%),
@@ -5862,68 +5836,6 @@ body::after {
   background-clip: text;
 }
 
-.cb-input {
-  width: min(260px, 24vw);
-  min-height: 36px;
-  padding: 7px 14px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.085);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.13),
-    0 12px 28px rgba(9, 8, 28, 0.2);
-}
-
-.btn-ghost,
-.btn-icon,
-.summary-watch-btn,
-.ws-btn,
-.sb-filter {
-  background: rgba(255, 255, 255, 0.085);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-
-.nav-rail {
-  padding: 10px 8px 12px;
-  box-shadow:
-    1px 0 0 rgba(255, 255, 255, 0.08) inset,
-    16px 0 46px rgba(5, 5, 20, 0.24);
-}
-
-.nav-item.active {
-  color: var(--primary);
-  background: linear-gradient(
-    135deg,
-    rgba(34, 197, 94, 0.25),
-    rgba(34, 211, 238, 0.1)
-  );
-  border: 1px solid rgba(34, 197, 94, 0.25);
-}
-
-.nav-item.active svg,
-.tab.active svg,
-.summary-title-icon svg {
-  color: var(--primary);
-}
-
-.nav-divider {
-  width: 38px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.cb-input {
-  width: min(260px, 24vw);
-  min-height: 36px;
-  padding: 7px 14px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.085);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.13),
-    0 12px 28px rgba(9, 8, 28, 0.2);
-}
-
 .cb-input input,
 .tab,
 .repo-name,
@@ -5934,77 +5846,6 @@ body::after {
 .btn,
 .btn-icon {
   border-radius: 8px;
-}
-
-.btn-ghost,
-.btn-icon,
-.summary-watch-btn,
-.ws-btn,
-.sb-filter {
-  background: rgba(255, 255, 255, 0.085);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-
-.nav-rail {
-  padding: 12px 10px 14px;
-  box-shadow:
-    1px 0 0 rgba(255, 255, 255, 0.08) inset,
-    16px 0 46px rgba(5, 5, 20, 0.24);
-}
-
-.nav-item.active {
-  color: var(--primary);
-  background: linear-gradient(
-    135deg,
-    rgba(34, 197, 94, 0.25),
-    rgba(34, 211, 238, 0.1)
-  );
-  border: 1px solid rgba(34, 197, 94, 0.25);
-}
-
-.nav-item.active svg,
-.tab.active svg,
-.summary-title-icon svg {
-  color: var(--primary);
-}
-
-.nav-divider {
-  width: 38px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.nav-rail {
-  padding: 12px 10px 14px;
-  box-shadow:
-    1px 0 0 rgba(255, 255, 255, 0.08) inset,
-    16px 0 46px rgba(9, 8, 32, 0.24);
-}
-
-.nav-item {
-  height: 44px;
-  border-radius: 8px;
-}
-
-.nav-item.active {
-  color: var(--primary);
-  background: linear-gradient(
-    135deg,
-    rgba(34, 197, 94, 0.25),
-    rgba(34, 211, 238, 0.1)
-  );
-  border: 1px solid rgba(34, 197, 94, 0.25);
-}
-
-.nav-item.active svg,
-.tab.active svg,
-.summary-title-icon svg {
-  color: var(--primary);
-}
-
-.nav-divider {
-  width: 38px;
-  background: rgba(255, 255, 255, 0.08);
 }
 
 .main {
@@ -6113,39 +5954,6 @@ body::after {
     0 0 42px rgba(34, 197, 94, 0.12);
 }
 
-.repo-drawer {
-  left: 68px;
-  top: 58px;
-  width: 314px;
-  background:
-    linear-gradient(160deg, rgba(34, 197, 94, 0.04), rgba(8, 11, 34, 0.74)),
-    rgba(5, 5, 16, 0.82);
-}
-
-.repo-card:hover,
-.repo-card.selected,
-.saved-view:hover,
-.saved-view.active {
-  background: rgba(255, 255, 255, 0.095);
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-
-.repo-card.selected .repo-name,
-.tab.active,
-.summary-watch-btn:hover {
-  color: var(--primary);
-}
-
-.repo-drawer {
-  left: 68px;
-  top: 58px;
-  width: 314px;
-  background:
-    linear-gradient(160deg, rgba(42, 25, 72, 0.76), rgba(8, 11, 34, 0.74)),
-    rgba(15, 13, 40, 0.72);
-}
-
 .repo-card,
 .saved-view {
   margin: 4px 10px;
@@ -6157,21 +5965,6 @@ body::after {
   padding: 10px 12px;
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid transparent;
-}
-
-.repo-card:hover,
-.repo-card.selected,
-.saved-view:hover,
-.saved-view.active {
-  background: rgba(255, 255, 255, 0.095);
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-
-.repo-card.selected .repo-name,
-.tab.active,
-.summary-watch-btn:hover {
-  color: var(--primary);
 }
 
 .workspace {

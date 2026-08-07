@@ -3,7 +3,27 @@ import { GitPullRequest, GitBranch } from "lucide-react";
 import { relativeTime } from "./PRReviewTab";
 
 export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impactLoading, onSelect }) {
-  if (!prsLoading && openPRs.length === 0) return null;
+  if (!prsLoading && openPRs.length === 0) return (
+    <div style={{ marginBottom: 20 }}>
+      <div
+        style={{
+          fontSize: 11,
+          color: "var(--text-3)",
+          marginBottom: 8,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          letterSpacing: ".05em",
+        }}
+      >
+        <GitPullRequest size={11} strokeWidth={1.5} />
+        OPEN PULL REQUESTS (0)
+      </div>
+      <div style={{ fontSize: 12, color: "var(--text-3)", padding: "8px 0" }}>
+        No open pull requests
+      </div>
+    </div>
+  );
 
   return (
     <div style={{ marginBottom: 20 }}>
@@ -45,6 +65,7 @@ export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impac
                 key={pr.number}
                 onClick={() => onSelect(pr.url)}
                 disabled={loading || impactLoading}
+                aria-label={`PR #${pr.number}: ${pr.title}`}
                 style={{
                   display: "flex",
                   alignItems: "flex-start",

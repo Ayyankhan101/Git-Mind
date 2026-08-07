@@ -807,6 +807,7 @@ export default function PRReviewTab({
             setError(null);
           }}
           onKeyDown={(e) => e.key === "Enter" && handleReview()}
+          aria-label="Pull request URL"
         />
         <button
           className="btn btn-primary"

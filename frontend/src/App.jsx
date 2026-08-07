@@ -7,15 +7,8 @@ import React, {
   lazy,
 } from "react";
 import {
-  Search,
-  FolderOpen,
-  Share2,
-  Download,
-  Command,
-  Check,
-  X,
   AlertTriangle,
-  ChevronDown,
+  X,
   GitBranch,
   FileCode2,
   ShieldAlert,
@@ -25,7 +18,6 @@ import {
   BarChart3,
   GitPullRequest,
   GitCommit,
-  Building2,
   Binary,
   Activity,
 } from "lucide-react";
@@ -34,12 +26,13 @@ import Sidebar from "./components/Sidebar";
 import LandingPage from "./components/LandingPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ToastSystem from "./components/ToastSystem";
+import CommandBar from "./components/CommandBar";
+import NavRail from "./components/NavRail";
 import {
   WS_BASE,
   fetchRepos,
   loadSharedAnalysis,
   generateFix,
-  isValidGhToken,
 } from "./api";
 import { LANG_COLOR } from "./constants";
 import { appReducer, initialState } from "./appReducer";
@@ -75,136 +68,6 @@ const SESSION_ID =
   })();
 const WS_URL = `${WS_BASE}/ws/analyze`;
 const TIMEOUT_MS = 180_000;
-const AGENT_KEYS = [
-  "scanner",
-  "architecture",
-  "api_docs",
-  "security",
-  "cve_scanner",
-  "chat",
-  "git_audit",
-  "solidity",
-  "code_audit",
-];
-
-const THEMES = [
-  {
-    id: "obsidian",
-    name: "Obsidian",
-    sub: "Default dark",
-    colors: ["#09090b", "#7c6fe0"],
-  },
-  {
-    id: "daylight",
-    name: "Daylight",
-    sub: "Light mode",
-    colors: ["#fafafa", "#6366f1"],
-  },
-  {
-    id: "amber",
-    name: "Amber",
-    sub: "Warm paper",
-    colors: ["#1a1612", "#f59e0b"],
-  },
-  {
-    id: "verdant",
-    name: "Verdant",
-    sub: "Forest dark",
-    colors: ["#0a100d", "#10b981"],
-  },
-  {
-    id: "glacier",
-    name: "Glacier",
-    sub: "Cool blue",
-    colors: ["#0b1220", "#38bdf8"],
-  },
-  {
-    id: "aurora",
-    name: "Aurora",
-    sub: "Glass violet",
-    colors: ["#0a0a18", "#a78bfa"],
-  },
-  {
-    id: "spatial",
-    name: "Spatial",
-    sub: "Glass cyan",
-    colors: ["#050510", "#22d3ee"],
-  },
-  {
-    id: "mist",
-    name: "Mist",
-    sub: "Light glass",
-    colors: ["#eef1f8", "#6366f1"],
-  },
-];
-
-function ThemeSwitcher({ theme, dispatch }) {
-  const [open, setOpen] = React.useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-  const current = THEMES.find((t) => t.id === theme) || THEMES[0];
-  return (
-    <div className="theme-switcher" ref={ref}>
-      <button
-        className="theme-btn"
-        onClick={() => setOpen((o) => !o)}
-        title="Change theme"
-      >
-        <span
-          className="swatch"
-          style={{
-            background: `linear-gradient(135deg, ${current.colors[0]} 50%, ${current.colors[1]} 50%)`,
-          }}
-        />
-        {current.name}
-        <ChevronDown size={11} style={{ opacity: 0.6 }} />
-      </button>
-      {open && (
-        <div className="theme-pop">
-          {THEMES.map((t) => (
-            <div
-              key={t.id}
-              className={`theme-opt${t.id === theme ? " active" : ""}`}
-              onClick={() => {
-                dispatch({ type: "SET_THEME", theme: t.id });
-                setOpen(false);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  dispatch({ type: "SET_THEME", theme: t.id });
-                  setOpen(false);
-                }
-              }}
-              tabIndex={0}
-              role="option"
-              aria-selected={t.id === theme}
-            >
-              <div className="theme-opt-swatch">
-                <span style={{ background: t.colors[0] }} />
-                <span style={{ background: t.colors[1] }} />
-              </div>
-              <div>
-                <div className="theme-opt-name">{t.name}</div>
-                <div className="theme-opt-sub">{t.sub}</div>
-              </div>
-              {t.id === theme && (
-                <Check size={13} className="theme-opt-check" />
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function App() {
   const [state, dispatch] = useReducer(appReducer, initialState);
@@ -899,201 +762,35 @@ export default function App() {
       ? `Analyzing · ${elapsedSec}s`
       : "Ready";
 
-  const mod = IS_MAC ? "⌘" : "Ctrl";
-
   return (
     <div className="app">
-      {/* ── Top bar ─────────────────────────────────────────────── */}
-      <div className="command-bar">
-        <span className="cb-wordmark">GitMind</span>
+      <CommandBar
+        githubUser={githubUser}
+        ghToken={ghToken}
+        reposLoading={reposLoading}
+        isAnalyzing={isAnalyzing}
+        analyzed={analyzed}
+        shareCopied={shareCopied}
+        statusClass={statusClass}
+        statusText={statusText}
+        usernameRef={usernameRef}
+        dispatch={dispatch}
+        handleLoadRepos={handleLoadRepos}
+        handleShare={handleShare}
+        handleExport={handleExport}
+        theme={theme}
+      />
 
-        <div
-          style={{
-            width: 1,
-            height: 20,
-            background: "var(--border)",
-            margin: "0 4px",
-          }}
-        />
-
-        {/* Username input */}
-        <div className="cb-input">
-          <Search size={14} />
-          <input
-            ref={usernameRef}
-            placeholder="github username"
-            aria-label="GitHub username"
-            value={githubUser}
-            onChange={(e) => {
-              dispatch({ type: "SET_GITHUB_USER", value: e.target.value });
-              dispatch({ type: "SET_REPOS_ERROR", error: null });
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !reposLoading && !isAnalyzing)
-                handleLoadRepos();
-            }}
-            disabled={isAnalyzing}
-          />
-        </div>
-
-        {/* PAT input */}
-        <div className="cb-input" style={{ width: 190 }}>
-          <Lock
-            size={14}
-            style={{
-              color: ghToken
-                ? isValidGhToken(ghToken)
-                  ? "var(--primary)"
-                  : "var(--danger)"
-                : "var(--text-3)",
-              flexShrink: 0,
-            }}
-          />
-          <input
-            type="password"
-            placeholder={
-              ghToken && !isValidGhToken(ghToken)
-                ? "unrecognized format"
-                : "token (optional)"
-            }
-            aria-label="GitHub personal access token"
-            value={ghToken}
-            onChange={(e) => {
-              dispatch({ type: "SET_GH_TOKEN", value: e.target.value });
-              tokenManager.set(e.target.value);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !reposLoading && !isAnalyzing)
-                handleLoadRepos();
-            }}
-            disabled={isAnalyzing}
-            style={{ minWidth: 0 }}
-          />
-        </div>
-
-        {/* Load button */}
-        <button
-          className="btn btn-ghost"
-          onClick={() => handleLoadRepos()}
-          disabled={reposLoading || isAnalyzing || !githubUser.trim()}
-        >
-          <FolderOpen size={13} />
-          {reposLoading ? "Loading…" : "Load Repos"}
-        </button>
-
-        <span style={{ flex: 1 }} />
-
-        {/* Status badge */}
-        {(isAnalyzing || analyzed) && (
-          <span className={`cb-status ${statusClass}`}>{statusText}</span>
-        )}
-
-        {/* Share */}
-        <button
-          className="btn-icon"
-          onClick={handleShare}
-          disabled={!analyzed}
-          title="Share analysis"
-        >
-          {shareCopied ? (
-            <Check size={14} style={{ color: "var(--success)" }} />
-          ) : (
-            <Share2 size={14} />
-          )}
-        </button>
-
-        {/* Export */}
-        <button
-          className="btn-icon"
-          onClick={handleExport}
-          disabled={!analyzed}
-          title="Export report"
-        >
-          <Download size={14} />
-        </button>
-
-        {/* Theme switcher */}
-        <ThemeSwitcher theme={theme} dispatch={dispatch} />
-      </div>
-
-      {/* ── Nav rail ────────────────────────────────────────────── */}
-      <nav className="nav-rail" role="navigation" aria-label="Main navigation">
-        <button
-          className={`nav-item${drawerOpen ? " active" : ""}`}
-          onClick={() =>
-            dispatch({ type: "SET_DRAWER_OPEN", open: !drawerOpen })
-          }
-          data-tip="Repositories"
-          aria-label="Repositories"
-        >
-          <FolderOpen size={18} strokeWidth={1.5} />
-        </button>
-
-        <div className="nav-divider" />
-
-        {tabs.map(({ key, Icon, label, count, alert }) => (
-          <button
-            key={key}
-            className={`nav-item${activeTab === key ? " active" : ""}`}
-            onClick={() => dispatch({ type: "SET_ACTIVE_TAB", tab: key })}
-            data-tip={label}
-            aria-label={label}
-            aria-current={activeTab === key ? "page" : undefined}
-          >
-            <Icon size={18} strokeWidth={1.5} />
-            <span className="nav-label">{label}</span>
-            {count > 0 && (
-              <span className={`nav-badge${alert ? " warn" : " info"}`}>
-                {count > 99 ? "99+" : count}
-              </span>
-            )}
-          </button>
-        ))}
-
-        {(isAnalyzing || analyzed) && (
-          <div className="nav-agents" title="Agent pipeline">
-            {AGENT_KEYS.map((key) => (
-              <div
-                key={key}
-                className={`nav-agent-dot ${agentStatus[key] || "waiting"}`}
-              />
-            ))}
-          </div>
-        )}
-
-        <div className="nav-spacer" />
-
-        {repos.length > 0 && (
-          <button
-            className="nav-item"
-            onClick={() => dispatch({ type: "SET_SHOW_ORG_AUDIT", show: true })}
-            data-tip="Org Audit"
-            aria-label="Org Audit"
-          >
-            <Building2 size={18} strokeWidth={1.5} />
-          </button>
-        )}
-
-        <button
-          className="nav-item"
-          onClick={() => dispatch({ type: "SET_SHOW_PALETTE", show: true })}
-          data-tip={`${mod}+K`}
-          aria-label="Command palette"
-        >
-          <Command size={18} strokeWidth={1.5} />
-        </button>
-
-        <button
-          className="nav-item"
-          onClick={() => dispatch({ type: "SET_SHOW_KB_HELP", show: true })}
-          data-tip="Shortcuts"
-          aria-label="Keyboard shortcuts"
-        >
-          <span style={{ fontSize: 14, fontWeight: 700, lineHeight: 1 }}>
-            ?
-          </span>
-        </button>
-      </nav>
+      <NavRail
+        activeTab={activeTab}
+        drawerOpen={drawerOpen}
+        isAnalyzing={isAnalyzing}
+        analyzed={analyzed}
+        agentStatus={agentStatus}
+        repos={repos}
+        tabs={tabs}
+        dispatch={dispatch}
+      />
 
       {/* ── Main content ────────────────────────────────────────── */}
       <div className="main">
@@ -1124,6 +821,7 @@ export default function App() {
             <button
               className="btn-icon"
               onClick={() => dispatch({ type: "CLEAR_ERROR" })}
+              aria-label="Dismiss error"
             >
               <X size={12} />
             </button>
@@ -1147,6 +845,7 @@ export default function App() {
               onClick={() =>
                 dispatch({ type: "DISMISS_AGENT_WARNING", index: i })
               }
+              aria-label="Dismiss warning"
             >
               <X size={12} />
             </button>

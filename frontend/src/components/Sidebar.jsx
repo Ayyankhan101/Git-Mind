@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
+import { List as FixedSizeList } from "react-window";
 import {
   Star,
   Clock,
@@ -432,6 +433,7 @@ export default function Sidebar({
                       setFilter(e.target.value);
                       setFocusedIdx(-1);
                     }}
+                    aria-label="Filter repositories"
                   />
                 </div>
               )}
@@ -463,23 +465,56 @@ export default function Sidebar({
                   ))}
                 </div>
               )}
-              {filtered.map((repo, i) => (
-                <RepoCard
-                  key={repo.url}
-                  repo={repo}
-                  selected={selectedUrl === repo.url}
-                  focused={focusedIdx === i}
-                  onSelect={onSelect}
-                  onMouseEnter={(e) => {
-                    setHoverRepo(repo);
-                    setHoverRect(e.currentTarget.getBoundingClientRect());
+              {filtered.length > 20 ? (
+                <FixedSizeList
+                  height={Math.min(filtered.length * 72, 400)}
+                  width="100%"
+                  itemCount={filtered.length}
+                  itemSize={72}
+                  style={{ overflowX: "hidden" }}
+                >
+                  {({ index, style }) => {
+                    const repo = filtered[index];
+                    return (
+                      <div style={style}>
+                        <RepoCard
+                          key={repo.url}
+                          repo={repo}
+                          selected={selectedUrl === repo.url}
+                          focused={focusedIdx === index}
+                          onSelect={onSelect}
+                          onMouseEnter={(e) => {
+                            setHoverRepo(repo);
+                            setHoverRect(e.currentTarget.getBoundingClientRect());
+                          }}
+                          onMouseLeave={() => {
+                            setHoverRepo(null);
+                            setHoverRect(null);
+                          }}
+                        />
+                      </div>
+                    );
                   }}
-                  onMouseLeave={() => {
-                    setHoverRepo(null);
-                    setHoverRect(null);
-                  }}
-                />
-              ))}
+                </FixedSizeList>
+              ) : (
+                filtered.map((repo, i) => (
+                  <RepoCard
+                    key={repo.url}
+                    repo={repo}
+                    selected={selectedUrl === repo.url}
+                    focused={focusedIdx === i}
+                    onSelect={onSelect}
+                    onMouseEnter={(e) => {
+                      setHoverRepo(repo);
+                      setHoverRect(e.currentTarget.getBoundingClientRect());
+                    }}
+                    onMouseLeave={() => {
+                      setHoverRepo(null);
+                      setHoverRect(null);
+                    }}
+                  />
+                ))
+              )}
               {!loading && repos.length > 0 && filtered.length === 0 && (
                 <div
                   style={{
@@ -526,7 +561,7 @@ function RepoHoverPreview({ repo, anchorRect }) {
   const left = Math.min(window.innerWidth - 296, anchorRect.right + 12);
   const top = Math.max(16, Math.min(window.innerHeight - 220, anchorRect.top));
   return (
-    <div className="repo-preview" style={{ left, top }}>
+    <div className="repo-preview" style={{ left, top }} role="tooltip" aria-live="polite">
       <div
         className="name"
         style={{ display: "flex", alignItems: "center", gap: 6 }}

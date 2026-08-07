@@ -51,6 +51,15 @@ function RepoRow({ repo }) {
           cursor: count ? "pointer" : "default",
         }}
         onClick={() => count && setOpen((o) => !o)}
+        onKeyDown={(e) => {
+          if (count && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            setOpen((o) => !o);
+          }
+        }}
+        tabIndex={count ? 0 : undefined}
+        role={count ? "button" : undefined}
+        aria-expanded={count ? open : undefined}
       >
         <span
           style={{

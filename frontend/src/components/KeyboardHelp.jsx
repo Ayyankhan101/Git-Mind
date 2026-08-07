@@ -70,7 +70,7 @@ export default function KeyboardHelp({ open, onClose }) {
           </span>
           <span className="kbhelp-title">Keyboard shortcuts</span>
           <span style={{ flex: 1 }} />
-          <button className="btn-icon" onClick={onClose}>
+          <button className="btn-icon" onClick={onClose} aria-label="Close help">
             <X size={13} strokeWidth={1.5} />
           </button>
         </div>

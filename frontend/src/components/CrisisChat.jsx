@@ -350,6 +350,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
                       setTimeout(() => setReportCopied(false), 2000);
                     });
                   }}
+                  aria-label="Copy incident report"
                   style={{
                     marginLeft: "auto",
                     background: "none",

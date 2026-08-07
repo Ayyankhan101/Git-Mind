@@ -133,6 +133,7 @@ export default function FilePreviewDrawer({
               rel="noopener noreferrer"
               className="btn-icon"
               title="Open on GitHub"
+              aria-label="Open on GitHub"
             >
               <ExternalLink size={13} strokeWidth={1.5} />
             </a>

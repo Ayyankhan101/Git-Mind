@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { List as FixedSizeList } from "react-window";
 import {
   GitCommit,
   AlertTriangle,
@@ -428,6 +429,20 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
                 No {section === "bad" ? "poor" : ""} commits found
               </div>
             </div>
+          ) : filteredCommits.length > 30 ? (
+            <FixedSizeList
+              height={Math.min(filteredCommits.length * 40, 500)}
+              width="100%"
+              itemCount={filteredCommits.length}
+              itemSize={40}
+              style={{ overflowX: "hidden" }}
+            >
+              {({ index, style }) => (
+                <div style={style}>
+                  <CommitRow commit={filteredCommits[index]} />
+                </div>
+              )}
+            </FixedSizeList>
           ) : (
             filteredCommits.map((c) => (
               <CommitRow key={c.full_sha || c.sha} commit={c} />

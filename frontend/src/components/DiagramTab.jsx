@@ -14,6 +14,7 @@ import {
   Copy,
   Expand,
   Check,
+  AlertTriangle,
 } from "lucide-react";
 import { parseMermaidToFlow } from "../utils/parseMermaid";
 import { parseGraphJsonToFlow } from "../utils/parseGraphJson";
@@ -84,6 +85,7 @@ export default function DiagramTab({
   const [selectedNode, setSelectedNode] = useState(null);
   const [displayScale, setDisplayScale] = useState(100);
   const [hoveredNode, setHoveredNode] = useState(null);
+  const [parseError, setParseError] = useState(null);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -94,6 +96,7 @@ export default function DiagramTab({
 
   useEffect(() => {
     try {
+      setParseError(null);
       // Determine input type: rich JSON graph vs Mermaid string
       const hasGraph = archGraph && archGraph.nodes && archGraph.nodes.length > 0;
       const hasMermaid =
@@ -198,6 +201,7 @@ export default function DiagramTab({
       }
     } catch (err) {
       console.error("[DiagramTab] Failed to parse diagram:", err);
+      setParseError(err.message || "Failed to parse diagram");
       setNodes([]);
       setEdges([]);
     }
@@ -288,6 +292,63 @@ export default function DiagramTab({
   const onPaneClick = useCallback(() => {
     setSelectedNode(null);
   }, []);
+
+  // ── Loading State ──
+  if (isAnalyzing && !diagram) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "calc(100vh - 104px)",
+          gap: 16,
+        }}
+      >
+        <div className="spinner" style={{ width: 32, height: 32 }} />
+        <div style={{ fontSize: 13, color: "var(--text-3)" }}>
+          Generating diagram…
+        </div>
+      </div>
+    );
+  }
+
+  // ── Parse Error State ──
+  if (parseError) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "calc(100vh - 104px)",
+          gap: 16,
+        }}
+      >
+        <div
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 16,
+            background: "rgba(239,68,68,0.1)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <AlertTriangle size={24} style={{ color: "var(--danger)" }} strokeWidth={1.5} />
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-1)" }}>
+          Diagram unavailable
+        </div>
+        <div style={{ fontSize: 12, color: "var(--text-3)", maxWidth: 320, textAlign: "center" }}>
+          {parseError}
+        </div>
+      </div>
+    );
+  }
 
   // ── Empty State Panel (With layout alignments fixed) ──
   if (!diagram && !isAnalyzing) {
@@ -474,6 +535,7 @@ export default function DiagramTab({
               cursor: "pointer",
             }}
             title="Zoom In"
+            aria-label="Zoom in"
           >
             <ZoomIn size={15} />
           </button>
@@ -492,7 +554,8 @@ export default function DiagramTab({
               color: "var(--text-3)",
               cursor: "pointer",
             }}
-            title="Zoom Out"
+            title="Zoom out"
+            aria-label="Zoom out"
           >
             <ZoomOut size={15} />
           </button>
@@ -519,7 +582,8 @@ export default function DiagramTab({
               color: "var(--text-3)",
               cursor: "pointer",
             }}
-            title="Recenter View"
+            title="Recenter view"
+            aria-label="Recenter view"
           >
             <Scan size={14} />
           </button>
@@ -538,7 +602,8 @@ export default function DiagramTab({
               color: "var(--text-3)",
               cursor: "pointer",
             }}
-            title="Fullscreen Mode"
+            title="Fullscreen mode"
+            aria-label="Toggle fullscreen"
           >
             <Expand size={14} />
           </button>
@@ -557,7 +622,8 @@ export default function DiagramTab({
               color: "var(--text-3)",
               cursor: "pointer",
             }}
-            title="Copy Diagram Content"
+            title="Copy diagram"
+            aria-label="Copy diagram"
           >
             {copied ? (
               <Check size={14} style={{ color: "var(--success)" }} />
