@@ -81,7 +81,7 @@
   ],
   "devDependencies": {
     "@lhci/cli": "^0.15.1",
-    "@size-limit/preset-app": "^11.0.0",
+    "@size-limit/preset-app": "^13.0.2",
     "@tailwindcss/postcss": "^4.3.2",
     "audit-ci": "^7.0.0",
     "autoprefixer": "^10.5.4",
