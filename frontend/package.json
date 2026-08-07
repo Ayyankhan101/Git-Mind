@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@sentry/react": "^10.66.0",
+    "@sentry/react": "^10.69.0",
     "@splinetool/react-spline": "^4.1.0",
     "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^13.5.0",
     "@xyflow/react": "^12.11.2",
@@ -17,8 +17,8 @@
     "lucide-react": "^1.16.0",
     "mermaid": "^11.14.0",
     "pdfmake": "^0.3.11",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "react-markdown": "^10.1.0",
     "react-scripts": "^5.0.1",
     "react-syntax-highlighter": "^16.1.1",
@@ -81,7 +81,7 @@
   ],
   "devDependencies": {
     "@lhci/cli": "^0.15.1",
-    "@size-limit/preset-app": "^11.0.0",
+    "@size-limit/preset-app": "^13.0.2",
     "@tailwindcss/postcss": "^4.3.2",
     "audit-ci": "^7.0.0",
     "autoprefixer": "^10.5.4",
@@ -89,7 +89,7 @@
     "postcss": "^8.5.14",
     "react-app-rewired": "^2.2.1",
     "serve": "^14.0.0",
-    "size-limit": "^11.0.0",
+    "size-limit": "^13.0.2",
     "tailwindcss": "^4.3.3"
   }
 }
