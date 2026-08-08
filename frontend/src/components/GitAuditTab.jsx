@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { List as FixedSizeList } from "react-window";
+import { FixedSizeList } from "react-window";
 import {
   GitCommit,
   AlertTriangle,

@@ -39,6 +39,9 @@ _ALLOWED_EXTENSIONS = {
     ".yaml",
     ".yml",
     ".toml",
+    ".sol",
+    ".vy",
+    ".rs",
 }
 
 _SKIP_DIRS = {

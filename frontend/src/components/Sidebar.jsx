@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { List as FixedSizeList } from "react-window";
+import { FixedSizeList } from "react-window";
 import {
   Star,
   Clock,

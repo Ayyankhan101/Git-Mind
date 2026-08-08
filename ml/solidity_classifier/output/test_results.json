@@ -1,0 +1,62 @@
+{
+  "passed": 8,
+  "total": 8,
+  "tests": [
+    {
+      "test": "TheDAO-style reentrancy",
+      "passed": true,
+      "expected": "reentrancy",
+      "predicted": "reentrancy",
+      "confidence": 0.95
+    },
+    {
+      "test": "Pre-0.8 overflow",
+      "passed": true,
+      "expected": "integer_overflow",
+      "predicted": "integer_overflow",
+      "confidence": 0.8
+    },
+    {
+      "test": "Missing onlyOwner",
+      "passed": true,
+      "expected": "access_control",
+      "predicted": "access_control",
+      "confidence": 0.8
+    },
+    {
+      "test": "Delegatecall to user input",
+      "passed": true,
+      "expected": "unsafe_external_call",
+      "predicted": "unsafe_external_call",
+      "confidence": 0.8
+    },
+    {
+      "test": "Bid without commit-reveal",
+      "passed": true,
+      "expected": "front_running",
+      "predicted": "front_running",
+      "confidence": 0.95
+    },
+    {
+      "test": "ReentrancyGuard + Ownable",
+      "passed": true,
+      "expected": "safe",
+      "predicted": "safe",
+      "confidence": 0.9
+    },
+    {
+      "test": "Unchecked send",
+      "passed": true,
+      "expected": "unsafe_external_call",
+      "predicted": "unsafe_external_call",
+      "confidence": 0.7
+    },
+    {
+      "test": "Commit-reveal scheme",
+      "passed": true,
+      "expected": "safe",
+      "predicted": "safe",
+      "confidence": 0.9
+    }
+  ]
+}
