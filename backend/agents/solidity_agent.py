@@ -32,6 +32,7 @@ def _get_ml_classifier():
         return _ml_clf
     try:
         from pure_classifier import PureSolidityClassifier
+
         _ml_clf = PureSolidityClassifier()
         logger.info("ML classifier loaded")
         return _ml_clf
@@ -53,18 +54,20 @@ def _ml_prescreen(file_contents: dict) -> list[dict]:
 
         result = clf.predict(code)
         if result["label"] != "safe":
-            findings.append({
-                "id": f"ml_{result['label'][:8]}_{uuid.uuid4().hex[:6]}",
-                "contract": path.split("/")[-1].replace(".sol", ""),
-                "function": "N/A",
-                "severity": result["severity"],
-                "title": f"ML: {result['label'].replace('_', ' ').title()}",
-                "description": result["explanation"],
-                "remediation": f"Review for {result['label']} patterns",
-                "swc": result.get("swc"),
-                "source": "ml_classifier",
-                "confidence": result.get("confidence", 0.85),
-            })
+            findings.append(
+                {
+                    "id": f"ml_{result['label'][:8]}_{uuid.uuid4().hex[:6]}",
+                    "contract": path.split("/")[-1].replace(".sol", ""),
+                    "function": "N/A",
+                    "severity": result["severity"],
+                    "title": f"ML: {result['label'].replace('_', ' ').title()}",
+                    "description": result["explanation"],
+                    "remediation": f"Review for {result['label']} patterns",
+                    "swc": result.get("swc"),
+                    "source": "ml_classifier",
+                    "confidence": result.get("confidence", 0.85),
+                }
+            )
 
     return findings
 
