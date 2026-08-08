@@ -744,6 +744,24 @@ select {
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
 }
+.repo-card-gh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color var(--duration-fast), background var(--duration-fast);
+}
+.repo-card-gh:hover {
+  color: var(--text-1);
+  background: var(--surface-hover);
+}
 .repo-desc {
   font-size: 14px;
   line-height: 1.625;

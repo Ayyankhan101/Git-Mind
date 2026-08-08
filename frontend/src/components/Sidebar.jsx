@@ -9,6 +9,7 @@ import {
   Filter,
   Bookmark,
   Lock,
+  ExternalLink,
 } from "lucide-react";
 import AgentPipeline from "./AgentPipeline";
 import { LANG_COLOR } from "../constants";
@@ -80,6 +81,17 @@ function RepoCard({
             {fmtStars(repo.stars)}
           </span>
         )}
+        <button
+          className="repo-card-gh"
+          title="Open on GitHub"
+          aria-label={`Open ${repo.name} on GitHub`}
+          onClick={(e) => {
+            e.stopPropagation();
+            window.open(repo.url, "_blank", "noopener,noreferrer");
+          }}
+        >
+          <ExternalLink size={11} strokeWidth={1.5} />
+        </button>
       </div>
       {repo.description && <div className="repo-desc">{repo.description}</div>}
       <div className="repo-meta">
