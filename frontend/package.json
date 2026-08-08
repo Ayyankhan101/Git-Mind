@@ -86,7 +86,7 @@
     "audit-ci": "^7.0.0",
     "autoprefixer": "^10.5.4",
     "husky": "^9.1.7",
-    "postcss": "^8.5.14",
+    "postcss": "^8.5.25",
     "react-app-rewired": "^2.2.1",
     "serve": "^14.0.0",
     "size-limit": "^13.0.2",
