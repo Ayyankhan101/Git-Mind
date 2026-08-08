@@ -6,7 +6,7 @@ import structlog
 from fastapi import APIRouter, Request
 
 from routes._errors import error_response
-from services.auth import _extract_token
+from services.auth import get_gh_token
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
 
@@ -21,7 +21,7 @@ async def list_repos(username: str, request: Request):
     if not _USERNAME_RE.match(username):
         return error_response("Invalid GitHub username", 400)
 
-    token = _extract_token(request)
+    token = get_gh_token(request)
     client_ip = get_client_ip(request)
     if not (await check_rate_limit("repos", client_ip))[0]:
         return await rate_limit_response("repos", client_ip)
@@ -29,12 +29,8 @@ async def list_repos(username: str, request: Request):
     if token:
         gh_headers["Authorization"] = f"Bearer {token}"
 
-    if token:
-        url = "https://api.github.com/user/repos"
-        params = {"per_page": 100, "sort": "pushed", "visibility": "all", "affiliation": "owner"}
-    else:
-        url = f"https://api.github.com/users/{username}/repos"
-        params = {"per_page": 100, "sort": "pushed"}
+    url = f"https://api.github.com/users/{username}/repos"
+    params = {"per_page": 100, "sort": "pushed"}
 
     _gh_timeout = httpx.Timeout(connect=8.0, read=20.0, write=5.0, pool=5.0)
     resp = None
