@@ -4,10 +4,6 @@
 
 /* ── CSS Custom Properties ──────────────────────────────────── */
 :root {
-  --lp-canvas: #050510;
-  --lp-emerald: #10b981;
-  --lp-cyan: #22c55e;
-  --lp-violet: #10b981;
   --lp-glass-bg: rgba(5, 5, 16, 0.7);
   --lp-glass-border: rgba(255, 255, 255, 0.08);
   --lp-glass-border-bright: rgba(255, 255, 255, 0.25);
@@ -35,18 +31,18 @@ html.lenis body {
   left: 16px;
   z-index: 9999;
   padding: 12px 24px;
-  background: var(--lp-cyan);
+  background: var(--primary);
   color: #050510;
   font-weight: 700;
-  font-size: 14px;
-  border-radius: 8px;
+  font-size: var(--text-base);
+  border-radius: var(--radius-md);
   text-decoration: none;
   transition: top var(--duration-normal);
 }
 
 .lp-skip-link:focus {
   top: 16px;
-  outline: 2px solid var(--lp-cyan);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -59,7 +55,7 @@ html.lenis body {
   position: relative;
   width: 100%;
   min-height: 100dvh;
-  background: var(--lp-canvas);
+  background: var(--bg);
   color: var(--lp-text-secondary);
   font-family: var(--font-sans);
   overflow-x: hidden;
@@ -333,7 +329,7 @@ html.lenis body {
   background: var(--lp-glass-bg);
   backdrop-filter: blur(24px) saturate(200%);
   -webkit-backdrop-filter: blur(24px) saturate(200%);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
 }
 
@@ -379,7 +375,7 @@ html.lenis body {
   background: rgba(5, 5, 16, 0.75);
   backdrop-filter: blur(24px) saturate(200%);
   -webkit-backdrop-filter: blur(24px) saturate(200%);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
     0 4px 24px rgba(0, 0, 0, 0.4),
@@ -400,8 +396,8 @@ html.lenis body {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--lp-cyan) 0%, var(--lp-violet) 100%);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--success) 100%);
   color: white;
   box-shadow:
     0 2px 10px rgba(34, 197, 94, 0.35),
@@ -417,7 +413,7 @@ html.lenis body {
 
 .lp-logo-text {
   font-family: var(--lp-pixel-font);
-  font-size: 16px;
+  font-size: var(--text-body);
   font-weight: 400;
   letter-spacing: 0.05em;
   color: var(--lp-text-primary);
@@ -433,7 +429,7 @@ html.lenis body {
 
 .lp-nav-link {
   padding: 4px 12px;
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: var(--lp-text-tertiary);
   text-decoration: none;
@@ -454,7 +450,7 @@ html.lenis body {
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
   font-family: inherit;
   border: none;
@@ -467,7 +463,7 @@ html.lenis body {
 .lp-btn:focus-visible,
 .lp-nav-link:focus-visible,
 .lp-hint-link:focus-visible {
-  outline: 2px solid var(--lp-cyan);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -486,7 +482,7 @@ html.lenis body {
 }
 
 .lp-btn-primary {
-  background: linear-gradient(135deg, var(--lp-cyan) 0%, #0891b2 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, #0891b2 100%);
   color: #050510;
   font-weight: 700;
   box-shadow:
@@ -501,7 +497,7 @@ html.lenis body {
   box-shadow:
     0 4px 20px rgba(34, 197, 94, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  background: linear-gradient(135deg, #4ade80 0%, var(--lp-cyan) 100%);
+  background: linear-gradient(135deg, #4ade80 0%, var(--primary) 100%);
 }
 
 .lp-btn-primary:active:not(:disabled) {
@@ -518,7 +514,7 @@ html.lenis body {
 
 .lp-btn-large {
   padding: 14px 28px;
-  font-size: 15px;
+  font-size: var(--text-md);
   border-radius: 12px;
 }
 
@@ -562,11 +558,11 @@ html.lenis body {
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--lp-cyan);
+  color: var(--primary);
   background: rgba(34, 197, 94, 0.08);
   border: 1px solid rgba(34, 197, 94, 0.2);
   border-radius: 100px;
@@ -610,8 +606,8 @@ html.lenis body {
 .lp-headline-accent {
   background: linear-gradient(
     135deg,
-    var(--lp-cyan) 0%,
-    var(--lp-violet) 50%,
+    var(--primary) 0%,
+    var(--success) 50%,
     #818cf8 100%
   );
   -webkit-background-clip: text;
@@ -663,7 +659,7 @@ html.lenis body {
 }
 
 .lp-input-wrapper:focus-within {
-  border-color: var(--lp-cyan);
+  border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
 }
 
@@ -678,7 +674,7 @@ html.lenis body {
   background: transparent;
   border: none;
   outline: none;
-  font-size: 15px;
+  font-size: var(--text-md);
   font-family: inherit;
   color: var(--lp-text-primary);
 }
@@ -688,7 +684,7 @@ html.lenis body {
 }
 
 .lp-hero-hint {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--lp-text-tertiary);
 }
 
@@ -696,10 +692,10 @@ html.lenis body {
   background: none;
   border: none;
   padding: 0;
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-family: inherit;
   font-weight: 600;
-  color: var(--lp-cyan);
+  color: var(--primary);
   cursor: pointer;
   text-decoration: underline;
   text-decoration-color: rgba(34, 197, 94, 0.3);
@@ -708,8 +704,8 @@ html.lenis body {
 }
 
 .lp-hint-link:hover {
-  color: var(--lp-cyan);
-  text-decoration-color: var(--lp-cyan);
+  color: var(--primary);
+  text-decoration-color: var(--primary);
 }
 
 .lp-hint-link {
@@ -719,7 +715,7 @@ html.lenis body {
 
 .lp-nav-link--active {
   color: var(--lp-text-primary) !important;
-  border-bottom: 2px solid var(--lp-cyan);
+  border-bottom: 2px solid var(--primary);
 }
 
 /* ── Sections Common ────────────────────────────────────────── */
@@ -740,7 +736,7 @@ html.lenis body {
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--lp-cyan);
+  color: var(--primary);
   margin-bottom: 12px;
 }
 
@@ -808,7 +804,7 @@ html.lenis body {
   border-radius: 12px;
   background: rgba(34, 197, 94, 0.08);
   border: 1px solid rgba(34, 197, 94, 0.15);
-  color: var(--lp-cyan);
+  color: var(--primary);
   margin-bottom: 20px;
 }
 
@@ -822,7 +818,7 @@ html.lenis body {
 }
 
 .lp-feature-desc {
-  font-size: 14px;
+  font-size: var(--text-base);
   line-height: 1.65;
   color: var(--lp-text-tertiary);
   margin: 0;
@@ -873,7 +869,7 @@ html.lenis body {
   border-radius: 10px;
   background: rgba(16, 185, 129, 0.08);
   border: 1px solid rgba(16, 185, 129, 0.15);
-  color: var(--lp-violet);
+  color: var(--success);
   margin-bottom: 16px;
 }
 
@@ -888,7 +884,7 @@ html.lenis body {
 }
 
 .lp-stat-label {
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: var(--lp-text-tertiary);
   text-transform: uppercase;
@@ -932,7 +928,7 @@ html.lenis body {
 }
 
 .lp-cta-desc {
-  font-size: 16px;
+  font-size: var(--text-body);
   color: var(--lp-text-secondary);
   margin: 0 0 32px;
 }
@@ -968,7 +964,7 @@ html.lenis body {
 }
 
 .lp-footer-copy {
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--lp-text-tertiary);
   opacity: 0.6;
 }
@@ -1029,7 +1025,7 @@ html.lenis body {
   }
 
   .lp-subhead {
-    font-size: 16px;
+    font-size: var(--text-body);
     margin-bottom: 32px;
   }
 
@@ -1053,7 +1049,7 @@ html.lenis body {
   }
 
   .lp-btn-nav {
-    font-size: 12px;
+    font-size: var(--text-xs);
     padding: 8px 14px;
   }
 
@@ -1104,7 +1100,7 @@ html.lenis body {
   }
 
   .lp-subhead {
-    font-size: 14px;
+    font-size: var(--text-base);
   }
 
   .lp-nav-inner {
@@ -1141,11 +1137,11 @@ html.lenis body {
   }
 
   .lp-cta-desc {
-    font-size: 14px;
+    font-size: var(--text-base);
   }
 
   .lp-stat-value {
-    font-size: 24px;
+    font-size: var(--text-2xl);
   }
 }
 
