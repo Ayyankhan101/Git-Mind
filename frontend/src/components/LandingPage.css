@@ -32,7 +32,7 @@ html.lenis body {
   z-index: 9999;
   padding: 12px 24px;
   background: var(--primary);
-  color: #050510;
+  color: var(--text-on-primary);
   font-weight: 700;
   font-size: var(--text-base);
   border-radius: var(--radius-md);
@@ -88,7 +88,7 @@ html.lenis body {
   left: -10%;
   background: radial-gradient(
     circle,
-    rgba(34, 197, 94, 0.4) 0%,
+    rgba(124, 111, 224, 0.4) 0%,
     transparent 70%
   );
   animation: lp-float-1 18s ease-in-out infinite alternate;
@@ -196,7 +196,7 @@ html.lenis body {
     ),
     radial-gradient(
       circle at 70% 75%,
-      rgba(34, 197, 94, 0.25) 0%,
+      rgba(124, 111, 224, 0.25) 0%,
       transparent 50%
     ),
     radial-gradient(
@@ -238,7 +238,7 @@ html.lenis body {
   border-radius: 50%;
   background: radial-gradient(
     ellipse,
-    rgba(34, 197, 94, 0.2) 0%,
+    rgba(124, 111, 224, 0.2) 0%,
     transparent 70%
   );
   filter: blur(12px);
@@ -400,7 +400,7 @@ html.lenis body {
   background: linear-gradient(135deg, var(--primary) 0%, var(--success) 100%);
   color: white;
   box-shadow:
-    0 2px 10px rgba(34, 197, 94, 0.35),
+    0 2px 10px rgba(124, 111, 224, 0.35),
     0 0 20px rgba(16, 185, 129, 0.15);
 }
 
@@ -417,7 +417,7 @@ html.lenis body {
   font-weight: 400;
   letter-spacing: 0.05em;
   color: var(--lp-text-primary);
-  text-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+  text-shadow: 0 0 10px rgba(124, 111, 224, 0.5);
 }
 
 .lp-nav-links {
@@ -482,11 +482,11 @@ html.lenis body {
 }
 
 .lp-btn-primary {
-  background: linear-gradient(135deg, var(--primary) 0%, #0891b2 100%);
-  color: #050510;
+  background: linear-gradient(135deg, var(--primary) 0%, #8b7fe8 100%);
+  color: var(--text-on-primary);
   font-weight: 700;
   box-shadow:
-    0 2px 12px rgba(34, 197, 94, 0.3),
+    0 2px 12px rgba(124, 111, 224, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   will-change: transform;
   cursor: pointer;
@@ -495,15 +495,15 @@ html.lenis body {
 .lp-btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow:
-    0 4px 20px rgba(34, 197, 94, 0.45),
+    0 4px 20px rgba(124, 111, 224, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  background: linear-gradient(135deg, #4ade80 0%, var(--primary) 100%);
+  background: linear-gradient(135deg, #8b7fe8 0%, var(--primary) 100%);
 }
 
 .lp-btn-primary:active:not(:disabled) {
   transform: translateY(0);
   box-shadow:
-    0 1px 8px rgba(34, 197, 94, 0.25),
+    0 1px 8px rgba(124, 111, 224, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
@@ -563,8 +563,8 @@ html.lenis body {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--primary);
-  background: rgba(34, 197, 94, 0.08);
-  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: rgba(124, 111, 224, 0.08);
+  border: 1px solid rgba(124, 111, 224, 0.2);
   border-radius: 100px;
   margin-bottom: 28px;
 }
@@ -586,7 +586,7 @@ html.lenis body {
     0 4px 0 #26c6da,
     0 5px 0 #00acc1,
     0 6px 8px rgba(0, 0, 0, 0.4),
-    0 0 30px rgba(34, 197, 94, 0.25),
+    0 0 30px rgba(124, 111, 224, 0.25),
     0 0 60px rgba(16, 185, 129, 0.15);
   position: relative;
 }
@@ -660,7 +660,7 @@ html.lenis body {
 
 .lp-input-wrapper:focus-within {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+  box-shadow: 0 0 0 3px rgba(124, 111, 224, 0.12);
 }
 
 .lp-input-icon {
@@ -698,7 +698,7 @@ html.lenis body {
   color: var(--primary);
   cursor: pointer;
   text-decoration: underline;
-  text-decoration-color: rgba(34, 197, 94, 0.3);
+  text-decoration-color: rgba(124, 111, 224, 0.3);
   text-underline-offset: 2px;
   transition: text-decoration-color var(--duration-fast);
 }
@@ -791,7 +791,7 @@ html.lenis body {
   transform: translateY(-4px);
   box-shadow:
     0 12px 40px rgba(0, 0, 0, 0.4),
-    0 0 60px rgba(34, 197, 94, 0.06),
+    0 0 60px rgba(124, 111, 224, 0.06),
     0 24px 80px -12px rgba(0, 0, 0, 0.5);
 }
 
@@ -802,8 +802,8 @@ html.lenis body {
   align-items: center;
   justify-content: center;
   border-radius: 12px;
-  background: rgba(34, 197, 94, 0.08);
-  border: 1px solid rgba(34, 197, 94, 0.15);
+  background: rgba(124, 111, 224, 0.08);
+  border: 1px solid rgba(124, 111, 224, 0.15);
   color: var(--primary);
   margin-bottom: 20px;
 }
@@ -915,7 +915,7 @@ html.lenis body {
   padding: 60px 40px;
   text-align: center;
   background: rgba(5, 5, 16, 0.75);
-  border-color: rgba(34, 197, 94, 0.15);
+  border-color: rgba(124, 111, 224, 0.15);
 }
 
 .lp-cta-title {
@@ -938,7 +938,7 @@ html.lenis body {
   position: relative;
   z-index: 2;
   padding: 24px;
-  border-top: 1px solid rgba(34, 197, 94, 0.08);
+  border-top: 1px solid rgba(124, 111, 224, 0.08);
 }
 
 .lp-footer-inner {

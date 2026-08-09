@@ -125,7 +125,7 @@ function IssueRow({ issue }) {
 const RISK_META = {
   low: {
     color: "var(--success)",
-    bg: "rgba(34,197,94,0.10)",
+    bg: "rgba(124,111,224,0.10)",
     label: "Low Risk",
   },
   medium: {
@@ -545,7 +545,7 @@ function ImpactPanel({ impact, loading, error }) {
                 fontSize: 11,
                 color: "var(--success)",
                 padding: "4px 9px",
-                background: "rgba(34,197,94,0.08)",
+                background: "rgba(124,111,224,0.08)",
                 borderRadius: 5,
               }}
             >
@@ -579,7 +579,7 @@ function ImpactPanel({ impact, loading, error }) {
                 fontSize: 11,
                 color: "var(--success)",
                 padding: "4px 9px",
-                background: "rgba(34,197,94,0.08)",
+                background: "rgba(124,111,224,0.08)",
                 borderRadius: 5,
               }}
             >
@@ -636,7 +636,7 @@ function ImpactPanel({ impact, loading, error }) {
                           borderRadius: 4,
                           background:
                             v > 0
-                              ? "rgba(34,197,94,0.1)"
+                              ? "rgba(124,111,224,0.1)"
                               : "rgba(239,68,68,0.1)",
                           color: v > 0 ? "var(--success)" : "var(--danger)",
                         }}

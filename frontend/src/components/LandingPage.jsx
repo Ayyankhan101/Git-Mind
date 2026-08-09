@@ -16,6 +16,7 @@ import {
   Gauge,
 } from "lucide-react";
 import ScrollWorldBg from "./ScrollWorldBg";
+import ParticleField from "./ParticleField";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
@@ -443,6 +444,7 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
         <div className="lp-gradient-orb lp-orb-1" />
         <div className="lp-gradient-orb lp-orb-2" />
         <div className="lp-gradient-orb lp-orb-3" />
+        <ParticleField />
       </div>
 
       {/* Scroll-world background */}

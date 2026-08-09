@@ -17,7 +17,7 @@ const TYPE_COLORS = {
   component: "#06b6d4",
   route: "#f97316",
   controller: "#a855f7",
-  service: "#22c55e",
+  service: "#8b7fe8",
   model: "#ef4444",
   middleware: "#a855f7",
   config: "#64748b",
@@ -41,7 +41,7 @@ const TYPE_ICONS = {
 };
 
 const HTTP_COLORS = {
-  GET: "#22c55e",
+  GET: "#8b7fe8",
   POST: "#3b82f6",
   PUT: "#f97316",
   PATCH: "#a855f7",
