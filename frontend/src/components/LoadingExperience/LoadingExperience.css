@@ -323,15 +323,15 @@
 }
 
 .lg-dot-red {
-  background: #ef4444;
+  background: var(--danger);
   opacity: 0.6;
 }
 .lg-dot-yellow {
-  background: #eab308;
+  background: var(--warning);
   opacity: 0.6;
 }
 .lg-dot-green {
-  background: #22c55e;
+  background: var(--primary);
   opacity: 0.6;
 }
 
@@ -457,10 +457,10 @@
   color: var(--info);
 }
 .lg-prefix-graph {
-  color: #a78bfa;
+  color: var(--info);
 }
 .lg-prefix-ai {
-  color: #f472b6;
+  color: var(--primary);
 }
 .lg-prefix-done {
   color: var(--success);
@@ -946,7 +946,7 @@
   border-radius: 8px;
   border: none;
   background: var(--primary);
-  color: #050510;
+  color: var(--text-on-primary);
   font-size: 13px;
   font-weight: 600;
   font-family: var(--font-sans);

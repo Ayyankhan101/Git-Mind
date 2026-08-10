@@ -35,3 +35,12 @@ capture-*
 
 # Rust sidecar build artifacts
 rust-sidecar/target/
+
+# Frontend build output
+frontend/dist/
+
+# OS files
+.DS_Store
+
+# Backup files
+*.bak

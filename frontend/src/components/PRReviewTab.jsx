@@ -846,6 +846,7 @@ export default function PRReviewTab({
       <button
         className="pr-advanced"
         onClick={() => setShowAdvanced((o) => !o)}
+        aria-expanded={showAdvanced}
       >
         <ChevronDown
           size={12}
@@ -863,6 +864,7 @@ export default function PRReviewTab({
           className="pr-token"
           type="password"
           placeholder="GitHub personal access token (optional)"
+          aria-label="GitHub personal access token"
           value={token}
           onChange={(e) => {
             setToken(e.target.value);

@@ -42,7 +42,7 @@ export default function ThemeSwitcher({ theme, dispatch }) {
         <ChevronDown size={11} style={{ opacity: 0.6 }} />
       </button>
       {open && (
-        <div className="theme-pop">
+        <div className="theme-pop" role="listbox" aria-label="Available themes">
           {THEMES.map((t) => (
             <div
               key={t.id}
