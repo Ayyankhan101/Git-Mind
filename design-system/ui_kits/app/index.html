@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitMind UI Kit — Applied Interface</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../colors_and_type.css" />
+  <style>
+    :root {
+      --bg: #08090e;
+      --bg-alt: #06070c;
+      --surface-0: #0d0e16;
+      --surface-1: #11121c;
+      --surface-2: #161824;
+      --surface-3: #1c1e2e;
+      --surface-4: #232538;
+      --primary: #7c6fe0;
+      --primary-hover: #8b7fe8;
+      --primary-strong: #6b5fd4;
+      --primary-muted: rgba(124,111,224,0.15);
+      --primary-subtle: rgba(124,111,224,0.08);
+      --success: #34d399;
+      --success-bg: rgba(52,211,153,0.08);
+      --warning: #fbbf24;
+      --warning-bg: rgba(251,191,36,0.08);
+      --danger: #f87171;
+      --danger-bg: rgba(248,113,113,0.08);
+      --info: #60a5fa;
+      --info-bg: rgba(96,165,250,0.08);
+      --text-primary: #f0eff4;
+      --text-secondary: #a8a7b3;
+      --text-tertiary: #6d6c7a;
+      --text-on-primary: #08090e;
+      --border-subtle: rgba(255,255,255,0.04);
+      --border-default: rgba(255,255,255,0.06);
+      --border-strong: rgba(255,255,255,0.10);
+      --border-accent: rgba(124,111,224,0.25);
+      --glass-bg: rgba(13,14,22,0.7);
+      --glass-border: rgba(255,255,255,0.06);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+      --shadow-accent: 0 4px 20px rgba(124,111,224,0.2);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --radius-full: 999px;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-2xl: 48px;
+      --space-3xl: 64px;
+      --duration-fast: 120ms;
+      --duration-normal: 200ms;
+      --duration-slow: 350ms;
+      --ease-out: cubic-bezier(0.16,1,0.3,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+    body { font-family: var(--font-sans); background: var(--bg); color: var(--text-secondary); line-height: 1.55; letter-spacing: -0.006em; display: flex; min-height: 100vh; }
+
+    /* Nav Rail */
+    .nav-rail { width: 64px; background: var(--surface-1); border-right: 1px solid var(--border-subtle); padding: var(--space-sm); display: flex; flex-direction: column; align-items: center; gap: var(--space-xs); flex-shrink: 0; }
+    .nav-item { width: 44px; height: 44px; min-height: 44px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: var(--text-tertiary); transition: all var(--duration-fast) var(--ease-out); cursor: pointer; }
+    .nav-item:hover { background: var(--surface-2); color: var(--text-secondary); }
+    .nav-item.active { background: var(--primary-muted); color: var(--primary); box-shadow: inset 0 0 0 1px var(--border-accent); }
+    .nav-item svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+    .nav-spacer { flex: 1; }
+
+    /* Main Content */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Top Bar */
+    .topbar { height: 56px; background: var(--surface-0); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; padding: 0 var(--space-lg); gap: var(--space-md); flex-shrink: 0; }
+    .topbar-title { font-size: 0.9375rem; font-weight: 600; color: var(--text-primary); }
+    .topbar-spacer { flex: 1; }
+    .topbar-search { display: flex; align-items: center; gap: var(--space-sm); background: var(--surface-1); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 6px 12px; font-size: 0.8125rem; color: var(--text-tertiary); cursor: pointer; transition: border-color var(--duration-fast) var(--ease-out); }
+    .topbar-search:hover { border-color: var(--border-strong); }
+    .topbar-search kbd { font-family: var(--font-mono); font-size: 0.6875rem; padding: 2px 6px; background: var(--surface-2); border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-secondary); }
+    .topbar-avatar { width: 32px; height: 32px; border-radius: var(--radius-full); background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); }
+
+    /* Content Area */
+    .content { flex: 1; padding: var(--space-xl); overflow-y: auto; }
+    .page-header { margin-bottom: var(--space-xl); }
+    .page-eyebrow { font-family: var(--font-mono); font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--primary); margin-bottom: var(--space-sm); }
+    .page-title { font-size: 1.75rem; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); margin-bottom: var(--space-sm); }
+    .page-desc { font-size: 0.9375rem; color: var(--text-secondary); max-width: 600px; }
+
+    /* Stat Grid */
+    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md); margin-bottom: var(--space-xl); }
+    .stat-tile { background: var(--surface-0); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-lg); transition: border-color var(--duration-fast) var(--ease-out); }
+    .stat-tile:hover { border-color: var(--border-default); }
+    .stat-value { font-size: 1.75rem; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1; }
+    .stat-label { font-size: 0.8125rem; color: var(--text-tertiary); margin-top: var(--space-sm); letter-spacing: 0.02em; }
+    .stat-change { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 500; margin-top: var(--space-sm); padding: 2px 8px; border-radius: var(--radius-full); }
+    .stat-change.positive { background: var(--success-bg); color: var(--success); }
+    .stat-change.negative { background: var(--danger-bg); color: var(--danger); }
+
+    /* Content Grid */
+    .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-lg); }
+
+    /* Card */
+    .card { background: var(--surface-0); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-lg); }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-lg); }
+    .card-title { font-size: 1rem; font-weight: 600; color: var(--text-primary); }
+
+    /* Grade Card */
+    .grade-card { background: var(--surface-1); border-radius: var(--radius-xl); padding: var(--space-xl); text-align: center; position: relative; overflow: hidden; }
+    .grade-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--primary); }
+    .grade-letter { font-size: 3.5rem; font-weight: 700; color: var(--primary); line-height: 1; margin-bottom: var(--space-sm); letter-spacing: -0.03em; }
+    .grade-label { font-size: 0.8125rem; color: var(--text-tertiary); margin-bottom: var(--space-lg); }
+    .grade-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md); padding-top: var(--space-lg); border-top: 1px solid var(--border-subtle); }
+    .grade-stat-value { font-size: 1.125rem; font-weight: 600; color: var(--text-primary); }
+    .grade-stat-label { font-size: 0.6875rem; color: var(--text-tertiary); margin-top: 2px; }
+
+    /* Badge */
+    .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 500; padding: 4px 10px; border-radius: var(--radius-full); border: 1px solid transparent; }
+    .badge-success { background: var(--success-bg); color: var(--success); border-color: rgba(52,211,153,0.2); }
+    .badge-warning { background: var(--warning-bg); color: var(--warning); border-color: rgba(251,191,36,0.2); }
+    .badge-danger { background: var(--danger-bg); color: var(--danger); border-color: rgba(248,113,113,0.2); }
+    .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    /* Table */
+    .table { width: 100%; border-collapse: collapse; }
+    .table th { text-align: left; font-size: 0.6875rem; font-weight: 500; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; padding: var(--space-sm) var(--space-md); border-bottom: 1px solid var(--border-subtle); }
+    .table td { padding: var(--space-sm) var(--space-md); font-size: 0.875rem; border-bottom: 1px solid var(--border-subtle); }
+    .table tr:hover td { background: var(--surface-1); }
+    .table .mono { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--text-secondary); }
+
+    /* Activity List */
+    .activity-list { display: flex; flex-direction: column; }
+    .activity-item { display: flex; gap: var(--space-md); padding: var(--space-md) 0; border-bottom: 1px solid var(--border-subtle); }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+    .activity-dot.success { background: var(--success); }
+    .activity-dot.warning { background: var(--warning); }
+    .activity-dot.danger { background: var(--danger); }
+    .activity-text { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5; }
+    .activity-time { font-size: 0.75rem; color: var(--text-tertiary); margin-top: 2px; }
+
+    /* Button */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); font-family: var(--font-sans); font-size: 0.875rem; font-weight: 500; padding: 10px 20px; border-radius: var(--radius-md); border: 1px solid transparent; cursor: pointer; transition: all var(--duration-fast) var(--ease-out); }
+    .btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .btn-primary { background: var(--primary); color: var(--text-on-primary); }
+    .btn-primary:hover { background: var(--primary-hover); box-shadow: var(--shadow-accent); }
+    .btn-primary:active { background: var(--primary-strong); transform: scale(0.98); }
+    .btn-ghost { background: transparent; color: var(--text-secondary); }
+    .btn-ghost:hover { background: var(--surface-1); color: var(--text-primary); }
+
+    @media (max-width: 768px) {
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+      .content-grid { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Nav Rail -->
+  <nav class="nav-rail" data-od-id="nav-rail">
+    <div class="nav-item active" title="Summary"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+    <div class="nav-item" title="Diagram"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg></div>
+    <div class="nav-item" title="Security"><svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5.5-3.8 10-8 11-4.2-1-8-5.5-8-11V6l8-4z"/></svg></div>
+    <div class="nav-item" title="PR Review"><svg viewBox="0 0 24 24"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg></div>
+    <div class="nav-item" title="Chat"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+    <div class="nav-spacer"></div>
+    <div class="nav-item" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></div>
+  </nav>
+
+  <!-- Main -->
+  <div class="main">
+    <!-- Top Bar -->
+    <header class="topbar" data-od-id="topbar">
+      <div class="topbar-title">GitMind</div>
+      <div class="topbar-spacer"></div>
+      <div class="topbar-search">Search... <kbd>⌘K</kbd></div>
+      <div class="topbar-avatar">JD</div>
+    </header>
+
+    <!-- Content -->
+    <div class="content">
+      <div class="page-header">
+        <div class="page-eyebrow">Dashboard</div>
+        <h1 class="page-title">Repository Summary</h1>
+        <p class="page-desc">Overview of repository health, security findings, and architectural analysis.</p>
+      </div>
+
+      <!-- Stats -->
+      <div class="stat-grid" data-od-id="stat-grid">
+        <div class="stat-tile">
+          <div class="stat-value">847</div>
+          <div class="stat-label">Files Analyzed</div>
+          <div class="stat-change positive">+23 today</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value">12</div>
+          <div class="stat-label">Issues Found</div>
+          <div class="stat-change negative">+3 critical</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value">98%</div>
+          <div class="stat-label">Test Coverage</div>
+          <div class="stat-change positive">+1.2%</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value">2.4k</div>
+          <div class="stat-label">Commits</div>
+          <div class="stat-change positive">+12%</div>
+        </div>
+      </div>
+
+      <!-- Content Grid -->
+      <div class="content-grid">
+        <!-- Left: Table -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Recent Findings</div>
+            <button class="btn btn-ghost" style="font-size:0.8125rem;padding:6px 12px">View All</button>
+          </div>
+          <table class="table">
+            <thead><tr><th>File</th><th>Severity</th><th>Issue</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">auth/middleware.ts</td><td><span class="badge badge-danger"><span class="badge-dot"></span> Critical</span></td><td>Token expiry check</td><td>Open</td></tr>
+              <tr><td class="mono">api/routes.ts</td><td><span class="badge badge-warning"><span class="badge-dot"></span> Warning</span></td><td>Missing rate limit</td><td>Open</td></tr>
+              <tr><td class="mono">db/schema.sql</td><td><span class="badge badge-success"><span class="badge-dot"></span> Fixed</span></td><td>Index optimization</td><td>Closed</td></tr>
+              <tr><td class="mono">utils/parse.ts</td><td><span class="badge badge-warning"><span class="badge-dot"></span> Warning</span></td><td>Unused import</td><td>Open</td></tr>
+              <tr><td class="mono">components/Dash.tsx</td><td><span class="badge badge-success"><span class="badge-dot"></span> Passing</span></td><td>All checks pass</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Right: Grade + Activity -->
+        <div style="display:flex;flex-direction:column;gap:var(--space-lg)">
+          <div class="card" style="padding:0;overflow:hidden">
+            <div class="grade-card">
+              <div class="grade-letter">A</div>
+              <div class="grade-label">Excellent Health Score</div>
+              <div class="grade-stats">
+                <div><div class="grade-stat-value">847</div><div class="grade-stat-label">Files</div></div>
+                <div><div class="grade-stat-value">12</div><div class="grade-stat-label">Issues</div></div>
+                <div><div class="grade-stat-value">98%</div><div class="grade-stat-label">Coverage</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Activity</div>
+            </div>
+            <div class="activity-list">
+              <div class="activity-item">
+                <div class="activity-dot danger"></div>
+                <div><div class="activity-text">Critical vulnerability in <strong>auth/middleware.ts</strong></div><div class="activity-time">2 min ago</div></div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot success"></div>
+                <div><div class="activity-text">PR #142 merged — <strong>db/schema.sql</strong> optimized</div><div class="activity-time">18 min ago</div></div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot warning"></div>
+                <div><div class="activity-text">Rate limit warning on <strong>api/routes.ts</strong></div><div class="activity-time">1 hour ago</div></div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot success"></div>
+                <div><div class="activity-text">Full scan completed — 847 files analyzed</div><div class="activity-time">3 hours ago</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
