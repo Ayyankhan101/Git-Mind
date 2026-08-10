@@ -8,7 +8,7 @@ const THEMES = [
   { id: "verdant", name: "Verdant", sub: "Forest dark", colors: ["#0a100d", "#10b981"] },
   { id: "glacier", name: "Glacier", sub: "Cool blue", colors: ["#0b1220", "#38bdf8"] },
   { id: "aurora", name: "Aurora", sub: "Glass violet", colors: ["#0a0a18", "#a78bfa"] },
-  { id: "spatial", name: "Spatial", sub: "Glass cyan", colors: ["#08090e", "#22d3ee"] },
+  { id: "spatial", name: "Spatial", sub: "Glass cyan", colors: ["#050510", "#22d3ee"] },
   { id: "mist", name: "Mist", sub: "Light glass", colors: ["#eef1f8", "#6366f1"] },
 ];
 
@@ -42,7 +42,7 @@ export default function ThemeSwitcher({ theme, dispatch }) {
         <ChevronDown size={11} style={{ opacity: 0.6 }} />
       </button>
       {open && (
-        <div className="theme-pop">
+        <div className="theme-pop" role="listbox" aria-label="Available themes">
           {THEMES.map((t) => (
             <div
               key={t.id}

@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@react-three/drei": "^10.7.8",
+    "@react-three/fiber": "^9.7.0",
+    "@react-three/postprocessing": "^3.0.4",
     "@sentry/react": "^10.69.0",
     "@splinetool/react-spline": "^4.1.0",
     "@testing-library/dom": "^10.4.1",
@@ -23,7 +26,8 @@
     "react-scripts": "^5.0.1",
     "react-syntax-highlighter": "^16.1.1",
     "react-window": "^1.8.10",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "three": "^0.185.1"
   },
   "scripts": {
     "start": "NODE_OPTIONS=\"--disable-warning=DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE --disable-warning=DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE\" react-app-rewired start",
@@ -82,7 +86,7 @@
   "devDependencies": {
     "@lhci/cli": "^0.15.1",
     "@size-limit/preset-app": "^13.0.2",
-    "@tailwindcss/postcss": "^4.3.2",
+    "@tailwindcss/postcss": "^4.0.0",
     "audit-ci": "^7.0.0",
     "autoprefixer": "^10.5.4",
     "husky": "^9.1.7",

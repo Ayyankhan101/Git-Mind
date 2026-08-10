@@ -272,8 +272,8 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
             <div
               style={{
                 padding: "16px",
-                background: "rgba(124,111,224,0.08)",
-                border: "1px solid rgba(124,111,224,0.2)",
+                background: "rgba(34,197,94,0.08)",
+                border: "1px solid rgba(34,197,94,0.2)",
                 borderRadius: 6,
                 textAlign: "center",
               }}

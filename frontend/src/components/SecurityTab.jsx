@@ -136,9 +136,9 @@ function FindingRow({
                 alignItems: "flex-start",
                 marginTop: 10,
                 padding: "8px 12px",
-                background: "rgba(124,111,224,0.06)",
+                background: "rgba(34,197,94,0.06)",
                 borderRadius: 6,
-                border: "1px solid rgba(124,111,224,0.18)",
+                border: "1px solid rgba(34,197,94,0.18)",
               }}
             >
               <Wrench
@@ -276,13 +276,14 @@ function FindingRow({
                   <input
                     type="password"
                     placeholder="GitHub token (repo write)"
+                    aria-label="GitHub personal access token for opening PRs"
                     value={tokenInput}
                     onChange={(e) => setTokenInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleOpenPR()}
                     autoFocus
                     style={{
                       fontSize: 12,
-                      padding: "2px 8px",
+                      padding: "8px 12px",
                       borderRadius: 4,
                       border: "1px solid var(--border-2)",
                       background: "var(--surface-2)",

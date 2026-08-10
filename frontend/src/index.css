@@ -367,7 +367,7 @@ body::before {
 .repo-stars { display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-xs); color: var(--text-3); flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .repo-card-gh {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; padding: 0; margin: -4px -4px -4px 0;
+  width: 44px; height: 44px; padding: 0; margin: -9px -9px -9px 0;
   border: none; border-radius: 4px; background: transparent;
   color: var(--text-3); cursor: pointer; flex-shrink: 0;
   transition: color var(--duration-fast), background var(--duration-fast);
@@ -518,8 +518,8 @@ body::before {
   box-shadow: 0 2px 10px rgba(124, 111, 224, 0.25);
 }
 .btn-primary:hover:not(:disabled) {
-  background: #8b7fe8;
-  box-shadow: 0 4px 16px rgba(124, 111, 224, 0.35);
+  background: color-mix(in srgb, var(--primary), white 15%);
+  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.35);
   transform: translateY(-1px);
 }
 .btn-primary:active:not(:disabled) { transform: translateY(0); }
@@ -530,7 +530,7 @@ body::before {
   color: var(--text-on-primary); border: none; cursor: pointer;
   transition: background var(--duration-fast);
 }
-.btn-primary-sm:hover:not(:disabled) { background: #8b7fe8; }
+.btn-primary-sm:hover:not(:disabled) { background: color-mix(in srgb, var(--primary), white 15%); }
 .btn-ghost {
   background: rgba(255, 255, 255, 0.03); color: var(--text-2);
   border: 1px solid var(--border);
@@ -538,7 +538,7 @@ body::before {
 .btn-ghost:hover:not(:disabled) { border-color: var(--border-2); background: rgba(255, 255, 255, 0.06); color: var(--text-1); }
 .btn-icon {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px; background: transparent; border: none;
+  width: 44px; height: 44px; background: transparent; border: none;
   color: var(--text-3); cursor: pointer; border-radius: var(--radius-md);
   transition: color var(--duration-fast), background var(--duration-fast);
 }
@@ -711,7 +711,7 @@ body::before {
 .sev-filter { display: flex; gap: 20px; padding: 16px 24px; border-bottom: 1px solid var(--border); font-size: var(--text-sm); align-items: center; }
 .sev-filter button {
   background: transparent; border: none; color: var(--text-3);
-  cursor: pointer; padding: 4px 0; font-size: var(--text-sm); font-weight: 500;
+  cursor: pointer; padding: 8px 4px; font-size: var(--text-sm); font-weight: 500;
   display: inline-flex; align-items: center; gap: 6px;
   transition: color var(--duration-fast);
 }
@@ -727,7 +727,7 @@ body::before {
 .sev-pills { display: flex; align-items: center; gap: 3px; padding: 3px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-md); }
 .sev-pill {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 4px 10px; font-size: var(--text-xs); font-weight: 500;
+  padding: 8px 12px; font-size: var(--text-xs); font-weight: 500;
   color: var(--text-3); background: transparent; border: none;
   border-radius: var(--radius-sm); cursor: pointer;
   transition: color var(--duration-fast), background var(--duration-fast);
@@ -1084,7 +1084,7 @@ body::before {
 .node-panel-input::placeholder { color: var(--text-3); }
 .node-send-btn {
   background: var(--primary); border: none; border-radius: 6px;
-  color: var(--text-on-primary); width: 28px; height: 28px;
+  color: var(--text-on-primary); width: 44px; height: 44px;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; flex-shrink: 0;
 }
@@ -1190,8 +1190,15 @@ body::before {
 /* ── Focus Visible ──────────────────────────────────────────── */
 *:focus { outline: none; }
 button:focus-visible, input:focus-visible, textarea:focus-visible,
-[role="button"]:focus-visible, .repo-card:focus-visible, .tab:focus-visible,
-.row:focus-visible, .saved-view:focus-visible, .ws-opt:focus-visible {
+[role="button"]:focus-visible, [role="option"]:focus-visible,
+.repo-card:focus-visible, .tab:focus-visible,
+.row:focus-visible, .saved-view:focus-visible, .ws-opt:focus-visible,
+.nav-item:focus-visible, .endpoint:focus-visible,
+.onboarding-example-card:focus-visible,
+.sev-filter button:focus-visible, .sev-pill:focus-visible,
+.theme-btn:focus-visible, .ws-btn:focus-visible,
+.arch-node:focus-visible, .palette-item:focus-visible,
+.node-suggestion-chip:focus-visible, .lp-btn:focus-visible {
   outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px;
 }
 
@@ -1245,7 +1252,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible,
   --sev-critical: #ef4444;
   --sev-high: #fb923c;
   --sev-medium: #facc15;
-  --sev-low: #8b7fe8;
+  --sev-low: #38bdf8;
   --text-1: #faf6ee;
   --text-2: rgba(250, 246, 238, 0.78);
   --text-3: rgba(250, 246, 238, 0.46);
@@ -1257,6 +1264,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible,
   --surface-overlay: rgba(18, 16, 8, 0.88);
   --surface-hover: rgba(245, 158, 11, 0.05);
   --surface-active: rgba(245, 158, 11, 0.10);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-medium: rgba(255, 255, 255, 0.10);
   --text-on-primary: #121008;
 }
 
@@ -1290,6 +1299,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible,
   --surface-overlay: rgba(6, 13, 9, 0.88);
   --surface-hover: rgba(16, 185, 129, 0.05);
   --surface-active: rgba(16, 185, 129, 0.10);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-medium: rgba(255, 255, 255, 0.10);
   --text-on-primary: #060d09;
 }
 
@@ -1311,7 +1322,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible,
   --sev-critical: #f87171;
   --sev-high: #fb923c;
   --sev-medium: #fbbf24;
-  --sev-low: #8b7fe8;
+  --sev-low: #5eead4;
   --text-1: #f0f9ff;
   --text-2: rgba(240, 249, 255, 0.78);
   --text-3: rgba(240, 249, 255, 0.46);
@@ -1323,6 +1334,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible,
   --surface-overlay: rgba(8, 14, 24, 0.88);
   --surface-hover: rgba(56, 189, 248, 0.05);
   --surface-active: rgba(56, 189, 248, 0.10);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-medium: rgba(255, 255, 255, 0.10);
   --text-on-primary: #080e18;
 }
 
@@ -1337,14 +1350,14 @@ button:focus-visible, input:focus-visible, textarea:focus-visible,
   --primary: #b794ff;
   --primary-dim: rgba(183, 148, 255, 0.10);
   --primary-glow: rgba(183, 148, 255, 0.24);
-  --success: #8b7fe8;
+  --success: #34d399;
   --warning: #facc15;
   --danger: #f87171;
   --info: #38bdf8;
   --sev-critical: #f43f5e;
   --sev-high: #fb923c;
   --sev-medium: #fbbf24;
-  --sev-low: #8b7fe8;
+  --sev-low: #5eead4;
   --text-1: #fafafa;
   --text-2: rgba(250, 250, 250, 0.78);
   --text-3: rgba(250, 250, 250, 0.46);
@@ -1356,6 +1369,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible,
   --surface-overlay: rgba(6, 6, 20, 0.88);
   --surface-hover: rgba(183, 148, 255, 0.05);
   --surface-active: rgba(183, 148, 255, 0.10);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-medium: rgba(255, 255, 255, 0.10);
   --text-on-primary: #060614;
 }
 
@@ -1377,7 +1392,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible,
   --sev-critical: #f87171;
   --sev-high: #fb923c;
   --sev-medium: #fbbf24;
-  --sev-low: #8b7fe8;
+  --sev-low: #4ade80;
   --text-1: #f0fdfa;
   --text-2: rgba(240, 253, 250, 0.78);
   --text-3: rgba(240, 253, 250, 0.46);
@@ -1389,6 +1404,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible,
   --surface-overlay: rgba(4, 8, 16, 0.88);
   --surface-hover: rgba(34, 211, 238, 0.05);
   --surface-active: rgba(34, 211, 238, 0.10);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-medium: rgba(255, 255, 255, 0.10);
   --text-on-primary: #040810;
 }
 
@@ -1502,7 +1519,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible,
   .nav-divider { width: 1px; height: 22px; margin: 0 4px; }
   .nav-spacer { display: none; }
   .nav-agents { flex-direction: row; gap: 3px; padding: 0 4px; }
-  .nav-item { width: 40px; height: 40px; padding: 0; gap: 0; }
+  .nav-item { width: 44px; height: 44px; padding: 0; gap: 0; }
   .nav-label { display: none; }
   .tip::after { display: none; }
   .main { grid-column: 1; grid-row: 2; min-height: 0; }
@@ -1531,7 +1548,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible,
 @media (max-width: 480px) {
   .command-bar { height: 44px; padding: 0 8px; gap: 5px; }
   .nav-rail { padding: 3px 6px; }
-  .nav-item { width: 38px; height: 38px; padding: 0 6px; }
+  .nav-item { width: 44px; height: 44px; padding: 0 6px; }
   .tab-rail { height: 34px; }
   .tab { padding: 0 5px; font-size: 11px; }
   .stat-value { font-size: 22px; }
@@ -1542,10 +1559,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible,
    ══════════════════════════════════════════════════════════════ */
 body {
   background:
-    radial-gradient(circle at 58% 16%, rgba(124, 111, 224, 0.2), transparent 15%),
-    radial-gradient(circle at 18% 54%, rgba(96, 165, 250, 0.12), transparent 20%),
-    radial-gradient(circle at 83% 84%, rgba(52, 211, 153, 0.10), transparent 22%),
-    linear-gradient(140deg, #08090e 0%, #0c0a16 38%, #08090e 66%, #0a0818 100%);
+    radial-gradient(circle at 58% 16%, var(--bloom-1), transparent 15%),
+    radial-gradient(circle at 18% 54%, var(--bloom-2), transparent 20%),
+    radial-gradient(circle at 83% 84%, var(--bloom-3), transparent 22%),
+    var(--bg);
 }
 body::after {
   content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;

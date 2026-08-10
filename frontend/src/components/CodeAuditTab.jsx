@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Code, ExternalLink, Wrench } from "lucide-react";
+import { Code, ExternalLink, Wrench, ChevronDown, ChevronUp } from "lucide-react";
 
 const LANG_COLORS = {
   python: "#3572A5",
@@ -80,8 +80,8 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
                 marginTop: 8,
                 padding: "8px 12px",
                 borderRadius: 6,
-                background: "rgba(124,111,224,0.08)",
-                border: "1px solid rgba(124,111,224,0.2)",
+                background: "rgba(34,197,94,0.08)",
+                border: "1px solid rgba(34,197,94,0.2)",
                 fontSize: 12,
                 lineHeight: 1.5,
                 color: "var(--success)",
@@ -152,6 +152,15 @@ function LangSection({ langResult, onFix, fixLoading, fixResult }) {
     <div style={{ marginBottom: 16 }}>
       <div
         onClick={() => setLangExpanded((e) => !e)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setLangExpanded((prev) => !prev);
+          }
+        }}
+        tabIndex={0}
+        role="button"
+        aria-expanded={langExpanded}
         style={{
           display: "flex",
           alignItems: "center",
@@ -184,7 +193,7 @@ function LangSection({ langResult, onFix, fixLoading, fixResult }) {
         <span
           style={{ marginLeft: "auto", fontSize: 11, color: "var(--text-3)" }}
         >
-          {langExpanded ? "▲" : "▼"}
+          {langExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
         </span>
       </div>
 

@@ -323,11 +323,11 @@
 }
 
 .lg-dot-red {
-  background: #ef4444;
+  background: var(--danger);
   opacity: 0.6;
 }
 .lg-dot-yellow {
-  background: #eab308;
+  background: var(--warning);
   opacity: 0.6;
 }
 .lg-dot-green {
@@ -457,10 +457,10 @@
   color: var(--info);
 }
 .lg-prefix-graph {
-  color: #a78bfa;
+  color: var(--info);
 }
 .lg-prefix-ai {
-  color: #f472b6;
+  color: var(--primary);
 }
 .lg-prefix-done {
   color: var(--success);
@@ -863,8 +863,8 @@
 }
 
 .lg-obs-bubble.lg-obs-done {
-  background: rgba(124, 111, 224, 0.06);
-  border-color: rgba(124, 111, 224, 0.15);
+  background: rgba(34, 197, 94, 0.06);
+  border-color: rgba(34, 197, 94, 0.15);
   color: var(--success);
 }
 
