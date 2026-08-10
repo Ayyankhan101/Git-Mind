@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Components — GitMind Midnight Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #08090e;
+      --surface-0: #0d0e16;
+      --surface-1: #11121c;
+      --surface-2: #161824;
+      --surface-3: #1c1e2e;
+      --primary: #7c6fe0;
+      --primary-hover: #8b7fe8;
+      --primary-strong: #6b5fd4;
+      --primary-muted: rgba(124,111,224,0.15);
+      --primary-subtle: rgba(124,111,224,0.08);
+      --success: #34d399;
+      --success-bg: rgba(52,211,153,0.08);
+      --warning: #fbbf24;
+      --warning-bg: rgba(251,191,36,0.08);
+      --danger: #f87171;
+      --danger-bg: rgba(248,113,113,0.08);
+      --info: #60a5fa;
+      --info-bg: rgba(96,165,250,0.08);
+      --text-primary: #f0eff4;
+      --text-secondary: #a8a7b3;
+      --text-tertiary: #6d6c7a;
+      --text-on-primary: #08090e;
+      --border-subtle: rgba(255,255,255,0.04);
+      --border-default: rgba(255,255,255,0.06);
+      --border-strong: rgba(255,255,255,0.10);
+      --border-accent: rgba(124,111,224,0.25);
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --radius-full: 999px;
+      --shadow-accent: 0 4px 20px rgba(124,111,224,0.2);
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --duration-fast: 120ms;
+      --ease-out: cubic-bezier(0.16,1,0.3,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-sans); background: var(--bg); color: var(--text-secondary); padding: var(--space-xl); }
+    .card { max-width: 520px; margin: 0 auto; }
+    .label { font-family: var(--font-mono); font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--primary); margin-bottom: var(--space-md); }
+    .title { font-size: 1.5rem; font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; margin-bottom: var(--space-lg); }
+    .section { margin-bottom: var(--space-xl); }
+    .section-title { font-size: 0.8125rem; font-weight: 500; color: var(--text-tertiary); margin-bottom: var(--space-md); letter-spacing: 0.04em; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: var(--space-sm); align-items: center; margin-bottom: var(--space-md); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm); font-family: var(--font-sans); font-size: 0.875rem; font-weight: 500; padding: 10px 20px; border-radius: var(--radius-md); border: 1px solid transparent; cursor: pointer; transition: all var(--duration-fast) var(--ease-out); white-space: nowrap; }
+    .btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .btn-primary { background: var(--primary); color: var(--text-on-primary); }
+    .btn-primary:hover { background: var(--primary-hover); box-shadow: var(--shadow-accent); }
+    .btn-primary:active { background: var(--primary-strong); transform: scale(0.98); }
+    .btn-secondary { background: var(--surface-2); color: var(--text-primary); border-color: var(--border-strong); }
+    .btn-secondary:hover { background: var(--surface-3); border-color: var(--border-accent); }
+    .btn-ghost { background: transparent; color: var(--text-secondary); }
+    .btn-ghost:hover { background: var(--surface-1); color: var(--text-primary); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #ef4444; }
+    .btn-disabled { background: var(--surface-2); color: var(--text-tertiary); border-color: var(--border-subtle); cursor: not-allowed; opacity: 0.6; }
+    .btn-sm { font-size: 0.8125rem; padding: 6px 14px; }
+    .btn-lg { font-size: 1rem; padding: 14px 28px; }
+    .badge-row { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space-md); }
+    .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 500; padding: 4px 10px; border-radius: var(--radius-full); border: 1px solid transparent; }
+    .badge-primary { background: var(--primary-subtle); color: var(--primary); border-color: var(--border-accent); }
+    .badge-success { background: var(--success-bg); color: var(--success); border-color: rgba(52,211,153,0.2); }
+    .badge-warning { background: var(--warning-bg); color: var(--warning); border-color: rgba(251,191,36,0.2); }
+    .badge-danger { background: var(--danger-bg); color: var(--danger); border-color: rgba(248,113,113,0.2); }
+    .badge-info { background: var(--info-bg); color: var(--info); border-color: rgba(96,165,250,0.2); }
+    .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .input-stack { display: flex; flex-direction: column; gap: var(--space-md); margin-bottom: var(--space-md); }
+    .input-group { display: flex; flex-direction: column; gap: var(--space-xs); }
+    .input-label { font-size: 0.8125rem; font-weight: 500; color: var(--text-secondary); }
+    .input { font-family: var(--font-sans); font-size: 0.9375rem; padding: 10px 14px; background: var(--surface-1); border: 1px solid var(--border-default); border-radius: var(--radius-md); color: var(--text-primary); transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out); }
+    .input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-subtle); }
+    .input::placeholder { color: var(--text-tertiary); }
+    .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-md); margin-bottom: var(--space-md); }
+    .stat-tile { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-lg); }
+    .stat-value { font-size: 2rem; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1; }
+    .stat-label { font-size: 0.8125rem; color: var(--text-tertiary); margin-top: var(--space-sm); letter-spacing: 0.02em; }
+    .stat-change { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 500; margin-top: var(--space-sm); padding: 2px 8px; border-radius: var(--radius-full); }
+    .stat-change.positive { background: var(--success-bg); color: var(--success); }
+    .stat-change.negative { background: var(--danger-bg); color: var(--danger); }
+    .grade-card { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: var(--radius-xl); padding: var(--space-xl); text-align: center; position: relative; overflow: hidden; }
+    .grade-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--primary); }
+    .grade-letter { font-size: 4rem; font-weight: 700; color: var(--primary); line-height: 1; margin-bottom: var(--space-sm); letter-spacing: -0.03em; }
+    .grade-label { font-size: 0.875rem; color: var(--text-tertiary); margin-bottom: var(--space-lg); }
+    .grade-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md); padding-top: var(--space-lg); border-top: 1px solid var(--border-subtle); }
+    .grade-stat-value { font-size: 1.25rem; font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; }
+    .grade-stat-label { font-size: 0.75rem; color: var(--text-tertiary); margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="label">03 — Components</div>
+    <div class="title">Interactive Elements</div>
+
+    <div class="section">
+      <div class="section-title">Buttons</div>
+      <div class="btn-row">
+        <button class="btn btn-primary">Scan Repository</button>
+        <button class="btn btn-secondary">Cancel</button>
+        <button class="btn btn-ghost">Learn More</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary btn-sm">Small</button>
+        <button class="btn btn-primary">Default</button>
+        <button class="btn btn-primary btn-lg">Large</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-disabled" disabled>Disabled</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Badges</div>
+      <div class="badge-row">
+        <span class="badge badge-primary"><span class="badge-dot"></span> Feature</span>
+        <span class="badge badge-success"><span class="badge-dot"></span> Passing</span>
+        <span class="badge badge-warning"><span class="badge-dot"></span> Warning</span>
+        <span class="badge badge-danger"><span class="badge-dot"></span> Critical</span>
+        <span class="badge badge-info"><span class="badge-dot"></span> Info</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Inputs</div>
+      <div class="input-stack">
+        <div class="input-group">
+          <label class="input-label">Repository URL</label>
+          <input class="input" type="text" placeholder="https://github.com/user/repo" />
+        </div>
+        <div class="input-group">
+          <label class="input-label">Branch</label>
+          <input class="input" type="text" value="main" style="font-family:var(--font-mono);font-size:0.875rem" />
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Health Card</div>
+      <div class="grade-card">
+        <div class="grade-letter">A</div>
+        <div class="grade-label">Excellent Health Score</div>
+        <div class="grade-stats">
+          <div><div class="grade-stat-value">847</div><div class="grade-stat-label">Files</div></div>
+          <div><div class="grade-stat-value">12</div><div class="grade-stat-label">Issues</div></div>
+          <div><div class="grade-stat-value">98%</div><div class="grade-stat-label">Coverage</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Stat Tiles</div>
+      <div class="stat-grid">
+        <div class="stat-tile"><div class="stat-value">2.4k</div><div class="stat-label">Commits</div><div class="stat-change positive">+12%</div></div>
+        <div class="stat-tile"><div class="stat-value">89</div><div class="stat-label">Contributors</div><div class="stat-change positive">+3</div></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

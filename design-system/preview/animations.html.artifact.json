@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "preview/animations.html",
+  "entry": "preview/animations.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-08-10T07:35:11.784Z",
+  "updatedAt": "2026-08-10T07:35:11.784Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}
