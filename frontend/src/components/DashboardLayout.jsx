@@ -85,7 +85,6 @@ export default function DashboardLayout({
     crisisFinding,
     globalError,
     retryUrl,
-    showOnboarding,
     showKbHelp,
     showPalette,
     filePreview,
