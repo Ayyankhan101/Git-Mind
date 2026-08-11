@@ -55,6 +55,8 @@ export default function NavRail({
             <div
               key={key}
               className={`nav-agent-dot ${agentStatus[key] || "waiting"}`}
+              role="img"
+              aria-label={`${key.replace(/_/g, " ")}: ${agentStatus[key] || "waiting"}`}
             />
           ))}
         </div>
