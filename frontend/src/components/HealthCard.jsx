@@ -32,7 +32,7 @@ function MiniBar({ value, color, delay = 0 }) {
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.06)",
+        background: "var(--border-s)",
         borderRadius: 4,
         height: 8,
         width: "100%",
@@ -87,7 +87,7 @@ export default function HealthCard({ health }) {
               cy="48"
               r="42"
               fill="none"
-              stroke="rgba(255,255,255,0.06)"
+              stroke="var(--border-s)"
               strokeWidth="4"
             />
             <circle

@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import * as Sentry from "@sentry/react";
+import "./design-tokens.css";
 import "./index.css";
 import App from "./App";
 
