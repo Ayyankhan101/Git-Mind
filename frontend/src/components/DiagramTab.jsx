@@ -332,7 +332,7 @@ export default function DiagramTab({
             width: 56,
             height: 56,
             borderRadius: 16,
-            background: "rgba(239,68,68,0.1)",
+            background: "var(--danger-bg)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -368,16 +368,16 @@ export default function DiagramTab({
             width: 56,
             height: 56,
             borderRadius: 16,
-            background: "rgba(168,85,247,0.1)",
+            background: "var(--accent-dim)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: "0 0 32px rgba(168,85,247,0.2)",
+            boxShadow: "0 0 32px var(--accent-dim)",
           }}
         >
           <GitBranch
             size={24}
-            style={{ color: "var(--primary)" }}
+            style={{ color: "var(--accent)" }}
             strokeWidth={1.5}
           />
         </div>
@@ -460,12 +460,12 @@ export default function DiagramTab({
               }}
               nodeColor={(n) => {
                 if (n.data?.tier === "frontend") return "var(--info)";
-                if (n.data?.tier === "backend") return "var(--primary)";
+                if (n.data?.tier === "backend") return "var(--accent)";
                 return "var(--text-3)";
               }}
-              maskColor="var(--surface-2)"
+              maskColor="var(--surface)"
             />
-            <Background color="rgba(255,255,255,0.02)" gap={24} size={1} />
+            <Background color="var(--border-s)" gap={24} size={1} />
           </ReactFlow>
         </div>
 
@@ -497,7 +497,7 @@ export default function DiagramTab({
             border: "1px solid var(--border)",
             borderRadius: 12,
             zIndex: 30,
-            boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.5)",
+            boxShadow: "var(--shadow-lg)",
           }}
         >
           <span
@@ -516,7 +516,7 @@ export default function DiagramTab({
             style={{
               width: 20,
               height: 1,
-              background: "var(--border)",
+              background: "var(--border-m)",
             }}
           />
 
@@ -564,7 +564,7 @@ export default function DiagramTab({
             style={{
               width: 20,
               height: 1,
-              background: "rgba(255,255,255,0.1)",
+              background: "var(--border-s)",
             }}
           />
 

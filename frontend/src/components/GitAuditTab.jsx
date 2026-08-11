@@ -36,7 +36,7 @@ function StatPill({ label, value, color }) {
         flexDirection: "column",
         alignItems: "center",
         padding: "10px 18px",
-        background: "var(--surface-2)",
+        background: "var(--surface)",
         borderRadius: 8,
         border: "1px solid var(--border)",
         minWidth: 80,

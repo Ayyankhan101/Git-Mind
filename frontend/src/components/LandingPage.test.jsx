@@ -7,11 +7,6 @@ jest.mock("gsap/ScrollTrigger", () =>
   require("../__mocks__/gsapScrollTrigger"),
 );
 jest.mock("lenis", () => require("../__mocks__/lenis"));
-jest.mock("./ScrollWorldBg", () => {
-  return function MockScrollWorldBg() {
-    return <div data-testid="scroll-world-bg" />;
-  };
-});
 
 describe("LandingPage", () => {
   beforeEach(() => {

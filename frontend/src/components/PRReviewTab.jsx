@@ -125,22 +125,22 @@ function IssueRow({ issue }) {
 const RISK_META = {
   low: {
     color: "var(--success)",
-    bg: "rgba(34,197,94,0.10)",
+    bg: "var(--success-bg)",
     label: "Low Risk",
   },
   medium: {
     color: "var(--warning)",
-    bg: "rgba(234,179,8,0.10)",
+    bg: "var(--warning-bg)",
     label: "Medium Risk",
   },
   high: {
     color: "var(--danger)",
-    bg: "rgba(239,68,68,0.10)",
+    bg: "var(--danger-bg)",
     label: "High Risk",
   },
   critical: {
     color: "var(--danger)",
-    bg: "var(--primary-dim)",
+    bg: "var(--danger-bg)",
     label: "Critical",
   },
 };
@@ -289,9 +289,9 @@ function ImpactPanel({ impact, loading, error }) {
                       fontSize: 11,
                       padding: "3px 8px",
                       borderRadius: 4,
-                      background: "var(--surface-2)",
-                      border: "1px solid var(--border)",
-                      color: "var(--text-2)",
+              background: "var(--surface)",
+              border: "1px solid var(--border-m)",
+              color: "var(--text-2)",
                     }}
                   >
                     {a}
@@ -347,9 +347,9 @@ function ImpactPanel({ impact, loading, error }) {
         <div
           style={{
             padding: "12px 16px",
-            background: "var(--surface-2)",
+            background: "var(--surface)",
             borderRadius: 8,
-            border: "1px solid var(--border)",
+            border: "1px solid var(--border-m)",
           }}
         >
           <div
@@ -382,9 +382,9 @@ function ImpactPanel({ impact, loading, error }) {
       <div
         style={{
           padding: "14px 16px",
-          background: "var(--surface-2)",
+          background: "var(--surface)",
           borderRadius: 8,
-          border: "1px solid var(--border)",
+          border: "1px solid var(--border-m)",
         }}
       >
         <div
@@ -407,7 +407,7 @@ function ImpactPanel({ impact, loading, error }) {
               fontSize: 11,
               color: "var(--warning)",
               padding: "6px 10px",
-              background: "rgba(234,179,8,0.08)",
+              background: "var(--warning-bg)",
               borderRadius: 6,
               marginBottom: 10,
             }}
@@ -433,7 +433,7 @@ function ImpactPanel({ impact, loading, error }) {
               padding: "8px 12px",
               background: "var(--surface)",
               borderRadius: 7,
-              border: "1px solid var(--border)",
+              border: "1px solid var(--border-m)",
             }}
           >
             <div
@@ -462,7 +462,7 @@ function ImpactPanel({ impact, loading, error }) {
               padding: "8px 12px",
               background: "var(--surface)",
               borderRadius: 7,
-              border: "1px solid var(--border)",
+              border: "1px solid var(--border-m)",
             }}
           >
             <div
@@ -527,7 +527,7 @@ function ImpactPanel({ impact, loading, error }) {
                 fontSize: 11,
                 color: "var(--danger)",
                 padding: "4px 9px",
-                background: "rgba(239,68,68,0.08)",
+                background: "var(--danger-bg)",
                 borderRadius: 5,
               }}
             >
@@ -545,7 +545,7 @@ function ImpactPanel({ impact, loading, error }) {
                 fontSize: 11,
                 color: "var(--success)",
                 padding: "4px 9px",
-                background: "rgba(34,197,94,0.08)",
+                background: "var(--success-bg)",
                 borderRadius: 5,
               }}
             >
@@ -562,7 +562,7 @@ function ImpactPanel({ impact, loading, error }) {
                 fontSize: 11,
                 color: "var(--warning)",
                 padding: "4px 9px",
-                background: "rgba(234,179,8,0.08)",
+              background: "var(--warning-bg)",
                 borderRadius: 5,
               }}
             >
@@ -579,7 +579,7 @@ function ImpactPanel({ impact, loading, error }) {
                 fontSize: 11,
                 color: "var(--success)",
                 padding: "4px 9px",
-                background: "rgba(34,197,94,0.08)",
+                background: "var(--success-bg)",
                 borderRadius: 5,
               }}
             >
@@ -609,7 +609,7 @@ function ImpactPanel({ impact, loading, error }) {
           Object.values(impact.breakdown_delta).some((v) => v !== 0) && (
             <div
               style={{
-                borderTop: "1px solid var(--border)",
+                borderTop: "1px solid var(--border-m)",
                 paddingTop: 10,
                 marginTop: 10,
               }}
@@ -636,8 +636,8 @@ function ImpactPanel({ impact, loading, error }) {
                           borderRadius: 4,
                           background:
                             v > 0
-                              ? "rgba(34,197,94,0.1)"
-                              : "rgba(239,68,68,0.1)",
+                              ? "var(--success-bg)"
+                              : "var(--danger-bg)",
                           color: v > 0 ? "var(--success)" : "var(--danger)",
                         }}
                       >

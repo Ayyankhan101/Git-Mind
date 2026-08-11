@@ -100,7 +100,7 @@ function ContractList({ contracts }) {
               padding: "6px 0",
               background: "none",
               border: "none",
-              color: "var(--text)",
+              color: "var(--text-1)",
               fontSize: 14,
               width: "100%",
               textAlign: "left",
@@ -121,13 +121,13 @@ function ContractList({ contracts }) {
                   <strong>Functions:</strong>
                   {c.functions.map((f, j) => (
                     <div key={j} style={{ paddingLeft: 12, marginTop: 2 }}>
-                      <span style={{ color: "var(--text)" }}>{f.name}</span>
+                      <span style={{ color: "var(--text-1)" }}>{f.name}</span>
                       <span style={{ color: "var(--text-3)", marginLeft: 6 }}>
                         ({f.visibility})
                       </span>
                       {f.modifiers?.length > 0 && (
                         <span
-                          style={{ color: "var(--primary)", marginLeft: 6 }}
+                          style={{ color: "var(--accent)", marginLeft: 6 }}
                         >
                           @{f.modifiers.join(", ")}
                         </span>
@@ -150,7 +150,7 @@ function ContractList({ contracts }) {
                       }}
                     >
                       <span>{v.typ}</span>
-                      <span style={{ color: "var(--text)" }}>{v.name}</span>
+                      <span style={{ color: "var(--text-1)" }}>{v.name}</span>
                       <span style={{ color: "var(--text-3)" }}>
                         ({v.visibility})
                       </span>

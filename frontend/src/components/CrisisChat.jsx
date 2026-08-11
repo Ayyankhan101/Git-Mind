@@ -233,8 +233,8 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
             <div
               style={{
                 padding: "12px 14px",
-                background: "rgba(239,68,68,0.08)",
-                border: "1px solid rgba(239,68,68,0.2)",
+                background: "var(--danger-bg)",
+                border: "1px solid var(--danger)",
                 borderRadius: 6,
                 fontSize: 12,
                 color: "var(--danger)",
@@ -272,8 +272,8 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
             <div
               style={{
                 padding: "16px",
-                background: "rgba(34,197,94,0.08)",
-                border: "1px solid rgba(34,197,94,0.2)",
+                background: "var(--success-bg)",
+                border: "1px solid var(--success)",
                 borderRadius: 6,
                 textAlign: "center",
               }}
@@ -298,8 +298,8 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
             <div
               style={{
                 padding: "16px",
-                background: "rgba(239,68,68,0.08)",
-                border: "1px solid rgba(239,68,68,0.2)",
+                background: "var(--danger-bg)",
+                border: "1px solid var(--danger)",
                 borderRadius: 6,
                 textAlign: "center",
               }}
@@ -326,7 +326,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
               style={{
                 marginTop: 12,
                 padding: "14px",
-                background: "var(--surface-2)",
+                background: "var(--surface)",
                 borderRadius: 8,
                 border: "1px solid var(--border)",
               }}
@@ -393,7 +393,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
               style={{
                 marginTop: 8,
                 padding: "8px 12px",
-                background: "rgba(239,68,68,0.08)",
+                background: "var(--danger-bg)",
                 borderRadius: 6,
                 fontSize: 12,
                 color: "var(--danger)",

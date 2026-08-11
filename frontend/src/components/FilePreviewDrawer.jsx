@@ -200,7 +200,7 @@ export default function FilePreviewDrawer({
                     href={ghUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: "var(--primary)" }}
+                    style={{ color: "var(--accent)" }}
                   >
                     Open on GitHub ↗
                   </a>

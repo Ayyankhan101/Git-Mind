@@ -1,11 +1,6 @@
 import { useRef, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import {
-  EffectComposer,
-  Bloom,
-  Vignette,
-} from "@react-three/postprocessing";
 import * as THREE from "three";
 
 const BRANCH_COLORS = [
@@ -63,41 +58,20 @@ function generateGitGraph() {
   return { nodes, edges };
 }
 
-function CommitNode({ position, color, scale, isMerge, time }) {
+function CommitNode({ position, color, scale, time }) {
   const ref = useRef();
-  const glowRef = useRef();
 
   useFrame(() => {
     if (!ref.current) return;
     const pulse = Math.sin(time * 0.8 + position[0] * 0.5) * 0.03;
     ref.current.scale.setScalar(scale + pulse);
-    if (glowRef.current) {
-      glowRef.current.scale.setScalar((scale + pulse) * 2.5);
-      glowRef.current.material.opacity =
-        0.15 + Math.sin(time * 1.2 + position[1] * 0.3) * 0.08;
-    }
   });
 
   return (
     <group position={position}>
       <mesh ref={ref}>
         <sphereGeometry args={[1, 16, 16]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={isMerge ? 1.2 : 0.6}
-          roughness={0.3}
-          metalness={0.7}
-        />
-      </mesh>
-      <mesh ref={glowRef}>
-        <sphereGeometry args={[1, 12, 12]} />
-        <meshBasicMaterial
-          color={color}
-          transparent
-          opacity={0.15}
-          depthWrite={false}
-        />
+        <meshStandardMaterial color={color} roughness={0.3} metalness={0.7} />
       </mesh>
     </group>
   );
@@ -125,8 +99,6 @@ function BranchLine({ from, to, color, isMerge }) {
     <mesh ref={ref} geometry={geometry}>
       <meshStandardMaterial
         color={color}
-        emissive={color}
-        emissiveIntensity={0.4}
         transparent
         opacity={isMerge ? 0.6 : 0.8}
         roughness={0.5}
@@ -135,7 +107,7 @@ function BranchLine({ from, to, color, isMerge }) {
   );
 }
 
-function FloatingParticles({ count = 60 }) {
+function FloatingParticles({ count = 30 }) {
   const ref = useRef();
   const positions = useMemo(() => {
     const arr = new Float32Array(count * 3);
@@ -225,16 +197,6 @@ function Scene() {
         maxPolarAngle={Math.PI / 1.6}
         minPolarAngle={Math.PI / 3}
       />
-
-      <EffectComposer>
-        <Bloom
-          luminanceThreshold={0.3}
-          luminanceSmoothing={0.9}
-          intensity={0.8}
-          mipmapBlur
-        />
-        <Vignette eskil={false} offset={0.1} darkness={0.8} />
-      </EffectComposer>
     </>
   );
 }

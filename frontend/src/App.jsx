@@ -119,11 +119,11 @@ export default function App() {
 
   // ── Restore theme & density from localStorage on mount ────
   useEffect(() => {
-    const savedTheme = localStorage.getItem("gm-theme") || "obsidian";
+    const savedTheme = localStorage.getItem("gm-theme");
     const savedDensity = localStorage.getItem("gm-density") || "comfortable";
     const root = document.documentElement;
-    if (savedTheme === "obsidian") root.removeAttribute("data-theme");
-    else root.setAttribute("data-theme", savedTheme);
+    if (savedTheme === "light") root.setAttribute("data-theme", "light");
+    else root.removeAttribute("data-theme");
     if (savedDensity === "comfortable") root.removeAttribute("data-density");
     else root.setAttribute("data-density", savedDensity);
   }, []);

@@ -24,7 +24,7 @@ function Sparkline({
   data,
   width = 360,
   height = 60,
-  color = "var(--primary)",
+  color = "var(--accent)",
 }) {
   if (!data || data.length < 2) return null;
   const max = Math.max(...data);

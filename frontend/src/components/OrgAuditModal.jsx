@@ -108,7 +108,7 @@ function RepoRow({ repo }) {
             key={i}
             style={{
               padding: "6px 20px 6px 32px",
-              background: "var(--surface-2)",
+              background: "var(--surface)",
             }}
           >
             <div
@@ -361,9 +361,9 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                     key={label}
                     style={{
                       padding: "8px 14px",
-                      background: "var(--surface-2)",
+                      background: "var(--surface)",
                       borderRadius: 8,
-                      border: "1px solid var(--border)",
+                      border: "1px solid var(--border-m)",
                       minWidth: 80,
                       textAlign: "center",
                     }}
@@ -441,7 +441,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                         style={{
                           fontSize: 11,
                           padding: "2px 6px",
-                          background: "rgba(239,68,68,0.1)",
+                          background: "var(--danger-bg)",
                           borderRadius: 4,
                           color: "var(--danger)",
                         }}
