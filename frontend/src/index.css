@@ -149,6 +149,11 @@ a:hover { text-decoration: underline; }
   height: 100vh;
   overflow: hidden;
 }
+.app:has(> .lp) {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
 .app:has(.nav-rail:hover) { grid-template-columns: 180px 1fr; }
 
 /* ── Command Bar (Top Bar) ───────────────────────────────────── */
