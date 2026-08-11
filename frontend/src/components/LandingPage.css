@@ -1,166 +1,471 @@
+/* ============================================================
+   Landing Page — Premium Minimal (Linear/Vercel aesthetic)
+   ============================================================ */
+
 .lp {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg);
+  overflow-x: hidden;
+}
+
+/* ── Nav ─────────────────────────────────────────────────────── */
+.lp-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 0 32px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  background: rgba(8, 9, 14, 0.8);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-s);
+}
+
+.lp-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.lp-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.02em;
+}
+
+.lp-nav-brand svg {
+  color: var(--accent);
+}
+
+.lp-nav-links {
+  display: flex;
+  gap: 28px;
+}
+
+.lp-nav-links a {
+  font-size: 13px;
+  color: var(--text-3);
+  text-decoration: none;
+  transition: color var(--duration-fast);
+}
+
+.lp-nav-links a:hover {
+  color: var(--text-1);
+}
+
+/* ── Hero ────────────────────────────────────────────────────── */
+.lp-hero {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
-  min-height: 0;
-  position: relative;
+  min-height: 100vh;
+  padding: 120px 32px 80px;
   overflow: hidden;
 }
 
-.lp-grid {
+.lp-hero-orb {
   position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(var(--border-m) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border-m) 1px, transparent 1px);
-  background-size: 60px 60px;
-  opacity: 0.3;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(124, 111, 224, 0.15) 0%,
+    rgba(124, 111, 224, 0.05) 40%,
+    transparent 70%
+  );
+  filter: blur(60px);
+  animation: orbFloat 8s ease-in-out infinite;
+  pointer-events: none;
 }
 
-.lp-content {
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(30px, -20px) scale(1.05); }
+}
+
+.lp-hero-content {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
-  max-width: 560px;
+  gap: 20px;
+  max-width: 640px;
   width: 100%;
-  padding: 0 24px;
-}
-
-.lp-logo {
-  font-family: var(--font-mono);
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--text-1);
-  letter-spacing: -0.03em;
-}
-
-.lp-tagline {
-  font-size: 15px;
-  color: var(--text-2);
   text-align: center;
-  line-height: 1.5;
+}
+
+.lp-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+}
+
+.lp-hero-title {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--text-1);
   margin: 0;
 }
 
-.lp-input-group {
+.lp-hero-sub {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-2);
+  margin: 0;
+  max-width: 480px;
+}
+
+.lp-hero-input-group {
   display: flex;
   gap: 8px;
   width: 100%;
+  max-width: 520px;
+  margin-top: 8px;
 }
 
-.lp-input-wrapper {
+.lp-hero-input-wrapper {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 12px;
-  background: var(--surface);
+  gap: 10px;
+  padding: 0 14px;
+  background: var(--surface-0);
   border: 1px solid var(--border-m);
   border-radius: var(--radius-md);
   transition: border-color var(--duration-normal), box-shadow var(--duration-normal);
 }
 
-.lp-input-wrapper:focus-within {
+.lp-hero-input-wrapper:focus-within {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-dim);
+  box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
-.lp-input-icon {
+.lp-hero-input-icon {
   color: var(--text-3);
   flex-shrink: 0;
 }
 
-.lp-input {
+.lp-hero-input {
   flex: 1;
-  padding: 10px 0;
+  padding: 12px 0;
   background: transparent;
   border: none;
   outline: none;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-1);
 }
 
-.lp-input::placeholder {
+.lp-hero-input::placeholder {
   color: var(--text-3);
 }
 
-.lp-btn {
+.lp-hero-btn {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 20px;
-  font-size: 13px;
+  padding: 12px 24px;
+  font-size: 14px;
   font-weight: 600;
-  white-space: nowrap;
-}
-
-.lp-recent {
-  width: 100%;
-  margin-top: 8px;
-}
-
-.lp-recent-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-3);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 10px;
-}
-
-.lp-recent-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.lp-recent-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  padding: 12px;
-  background: var(--surface);
-  border: 1px solid var(--border-s);
+  color: var(--text-on-primary);
+  background: var(--accent);
+  border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: border-color var(--duration-fast), background var(--duration-fast);
-  text-align: left;
+  white-space: nowrap;
+  transition: background var(--duration-fast), box-shadow var(--duration-fast);
 }
 
-.lp-recent-card:hover {
-  border-color: var(--accent);
-  background: var(--hover);
+.lp-hero-btn:hover {
+  background: var(--accent-hover);
+  box-shadow: var(--shadow-accent);
 }
 
-.lp-recent-card svg {
-  color: var(--text-3);
-}
-
-.lp-recent-name {
+.lp-hero-hint {
   font-size: 12px;
+  color: var(--text-3);
+  margin: 0;
+}
+
+.lp-hero-hint span {
+  font-family: var(--font-mono);
+  color: var(--text-2);
+}
+
+/* ── Sections shared ─────────────────────────────────────────── */
+.lp-section-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+.lp-section-title {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-1);
+  text-align: center;
+  margin: 0 0 12px;
+}
+
+.lp-section-sub {
+  font-size: 15px;
+  color: var(--text-2);
+  text-align: center;
+  margin: 0 0 48px;
+}
+
+/* ── Features ────────────────────────────────────────────────── */
+.lp-features {
+  padding: 100px 0;
+  border-top: 1px solid var(--border-s);
+}
+
+.lp-features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.lp-feature-card {
+  padding: 28px 24px;
+  background: var(--surface-0);
+  border: 1px solid var(--border-s);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--duration-normal), box-shadow var(--duration-normal);
+}
+
+.lp-feature-card:hover {
+  border-color: var(--border-m);
+  box-shadow: var(--shadow-md);
+}
+
+.lp-feature-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--accent-dim);
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+
+.lp-feature-title {
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-1);
-  font-family: var(--font-mono);
+  margin: 0 0 8px;
 }
 
-.lp-recent-lang {
+.lp-feature-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-2);
+  margin: 0;
+}
+
+/* ── How it works ────────────────────────────────────────────── */
+.lp-how {
+  padding: 100px 0;
+  border-top: 1px solid var(--border-s);
+}
+
+.lp-how-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.lp-how-step {
+  text-align: center;
+}
+
+.lp-how-step-num {
+  font-family: var(--font-mono);
   font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+  margin-bottom: 16px;
+}
+
+.lp-how-step-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  color: var(--accent);
+  margin: 0 auto 20px;
+}
+
+.lp-how-step-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-1);
+  margin: 0 0 8px;
+}
+
+.lp-how-step-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-2);
+  margin: 0;
+}
+
+/* ── CTA ─────────────────────────────────────────────────────── */
+.lp-cta {
+  padding: 100px 0;
+  border-top: 1px solid var(--border-s);
+  text-align: center;
+}
+
+.lp-cta-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-1);
+  margin: 0 0 12px;
+}
+
+.lp-cta-sub {
+  font-size: 14px;
+  color: var(--text-2);
+  margin: 0 0 28px;
+}
+
+.lp-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-on-primary);
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.lp-cta-btn:hover {
+  background: var(--accent-hover);
+  box-shadow: var(--shadow-accent);
+}
+
+/* ── Footer ──────────────────────────────────────────────────── */
+.lp-footer {
+  padding: 32px 0;
+  border-top: 1px solid var(--border-s);
+}
+
+.lp-footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lp-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text-3);
 }
 
-@media (max-width: 600px) {
-  .lp-recent-cards {
+.lp-footer-brand svg {
+  color: var(--text-3);
+}
+
+.lp-footer-copy {
+  font-size: 12px;
+  color: var(--text-3);
+  margin: 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .lp-hero-title {
+    font-size: 36px;
+  }
+
+  .lp-features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .lp-how-steps {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .lp-nav-links {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .lp-hero {
+    padding: 100px 20px 60px;
+  }
+
+  .lp-hero-title {
+    font-size: 28px;
+  }
+
+  .lp-hero-sub {
+    font-size: 14px;
+  }
+
+  .lp-hero-input-group {
+    flex-direction: column;
+  }
+
+  .lp-features-grid {
     grid-template-columns: 1fr;
   }
-  .lp-input-group {
+
+  .lp-section-inner {
+    padding: 0 20px;
+  }
+
+  .lp-footer-inner {
     flex-direction: column;
+    gap: 12px;
+    text-align: center;
   }
 }

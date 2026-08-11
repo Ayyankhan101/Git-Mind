@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 import * as Sentry from "@sentry/react";
 import "./design-tokens.css";
 import "./index.css";
@@ -32,6 +33,8 @@ window.addEventListener("unhandledrejection", (event) => {
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <App />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </React.StrictMode>,
 );
