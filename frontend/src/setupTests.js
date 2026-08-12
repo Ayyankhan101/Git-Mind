@@ -1,8 +1,8 @@
 import "@testing-library/jest-dom";
 
 // Mock crypto.randomUUID used in App.js for session IDs
-if (!globalThis.crypto?.randomUUID) {
-  Object.defineProperty(globalThis, "crypto", {
+if (!global.crypto?.randomUUID) {
+  Object.defineProperty(global, "crypto", {
     value: { randomUUID: () => "00000000-0000-0000-0000-000000000001" },
     writable: true,
   });

@@ -59,7 +59,7 @@ export default function AgentPipeline({
 
   return (
     <div className={`pipeline${mini ? " mini" : ""}`}>
-      <div className="pipeline-header">
+      <div className="pipeline-header" data-testid="pipeline-header">
         <span className="t-label" style={{ fontSize: 11 }}>
           AGENTS · {doneCount}/7
         </span>
@@ -108,11 +108,13 @@ export default function AgentPipeline({
             >
               <span className="pipe-dot" />
               <span className="pipe-name">{agent.label}</span>
-              <span className="pipe-time">
+              <span className="pipe-time" data-testid="pipe-time">
                 {rowStatus === "done" && (
                   <>{elapsedSec > 0 ? `${Math.min(elapsedSec, 99)}s` : "✓"}</>
                 )}
-                {rowStatus === "running" && <span className="spinner" />}
+                {rowStatus === "running" && (
+                  <span className="spinner" data-testid="agent-spinner" />
+                )}
               </span>
             </div>
           );

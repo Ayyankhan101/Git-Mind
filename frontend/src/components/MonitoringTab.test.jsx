@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import MonitoringTab from "./MonitoringTab";
 
 jest.mock("../api", () => ({

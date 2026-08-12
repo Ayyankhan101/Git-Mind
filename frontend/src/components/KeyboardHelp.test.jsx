@@ -3,19 +3,15 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import KeyboardHelp from "./KeyboardHelp";
 
 test("renders nothing when closed", () => {
-  const { container } = render(
-    <KeyboardHelp open={false} onClose={jest.fn()} />,
-  );
-  expect(container.firstChild).toBeNull();
+  render(<KeyboardHelp open={false} onClose={jest.fn()} />);
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 
 test("renders shortcuts when open", () => {
-  const { container } = render(
-    <KeyboardHelp open={true} onClose={jest.fn()} />,
-  );
-  expect(container.querySelector(".kbhelp-title").textContent).toBe(
-    "Keyboard shortcuts",
-  );
+  render(<KeyboardHelp open={true} onClose={jest.fn()} />);
+  expect(
+    screen.getByRole("dialog", { name: "Keyboard shortcuts" }),
+  ).toBeInTheDocument();
   expect(screen.getByText("General")).toBeInTheDocument();
   expect(screen.getByText("Navigation")).toBeInTheDocument();
   expect(screen.getByText("Architecture diagram")).toBeInTheDocument();

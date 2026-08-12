@@ -3,8 +3,8 @@ import { render, screen } from "@testing-library/react";
 import HealthCard from "./HealthCard";
 
 test("returns null when health is null", () => {
-  const { container } = render(<HealthCard health={null} />);
-  expect(container.firstChild).toBeNull();
+  render(<HealthCard health={null} />);
+  expect(screen.queryByTestId("health-card")).not.toBeInTheDocument();
 });
 
 test("renders grade and score", () => {

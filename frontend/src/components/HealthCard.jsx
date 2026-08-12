@@ -58,7 +58,7 @@ export default function HealthCard({ health }) {
   const gradeColor = GRADE_COLOR[health.grade] || "var(--text-3)";
 
   return (
-    <div className="health-card">
+    <div className="health-card" data-testid="health-card">
       {/* Glow backdrop */}
       <div
         className="health-card-glow"

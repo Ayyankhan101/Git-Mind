@@ -5,7 +5,7 @@ test("renders nothing when toasts is empty", () => {
   const { container } = render(
     <ToastSystem toasts={[]} onDismiss={() => {}} />,
   );
-  expect(container.innerHTML).toBe("");
+  expect(container).toBeEmptyDOMElement();
 });
 
 test("renders toast with title and subtitle", () => {
@@ -34,7 +34,9 @@ test("calls onDismiss when dismiss button clicked", () => {
   const handleDismiss = jest.fn();
   const toasts = [{ id: 4, kind: "danger", title: "Error" }];
   render(<ToastSystem toasts={toasts} onDismiss={handleDismiss} />);
-  fireEvent.click(screen.getByRole("button"));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Dismiss notification" }),
+  );
   expect(handleDismiss).not.toHaveBeenCalledWith(4);
   jest.advanceTimersByTime(260);
   expect(handleDismiss).toHaveBeenCalledWith(4);
@@ -53,8 +55,6 @@ test("renders multiple toasts", () => {
 
 test("applies kind class to toast", () => {
   const toasts = [{ id: 7, kind: "danger", title: "Boom" }];
-  const { container } = render(
-    <ToastSystem toasts={toasts} onDismiss={() => {}} />,
-  );
-  expect(container.querySelector(".toast.danger")).toBeInTheDocument();
+  render(<ToastSystem toasts={toasts} onDismiss={() => {}} />);
+  expect(screen.getByTestId("toast")).toHaveClass("danger");
 });

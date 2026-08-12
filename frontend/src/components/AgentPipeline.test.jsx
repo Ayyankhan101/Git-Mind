@@ -2,16 +2,16 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import AgentPipeline from "./AgentPipeline";
 
+const baseProps = {
+  status: {},
+  isAnalyzing: false,
+  analyzed: false,
+  elapsedSec: 0,
+  repoName: "",
+};
+
 test("renders all agent labels", () => {
-  render(
-    <AgentPipeline
-      status={{}}
-      isAnalyzing={false}
-      analyzed={false}
-      elapsedSec={0}
-      repoName=""
-    />,
-  );
+  render(<AgentPipeline {...baseProps} />);
   expect(screen.getByText("REPO SCANNER")).toBeInTheDocument();
   expect(screen.getByText("ARCHITECTURE")).toBeInTheDocument();
   expect(screen.getByText("API DOCS")).toBeInTheDocument();
@@ -22,7 +22,7 @@ test("renders all agent labels", () => {
 });
 
 test("shows done count in header", () => {
-  const { container } = render(
+  render(
     <AgentPipeline
       status={{ scanner: "done", architecture: "done" }}
       isAnalyzing={true}
@@ -31,12 +31,11 @@ test("shows done count in header", () => {
       repoName="test-repo"
     />,
   );
-  const header = container.querySelector(".pipeline-header");
-  expect(header.textContent).toMatch(/2\/7/);
+  expect(screen.getByTestId("pipeline-header")).toHaveTextContent(/2\/7/);
 });
 
 test("shows elapsed time on done agents", () => {
-  const { container } = render(
+  render(
     <AgentPipeline
       status={{ scanner: "done" }}
       isAnalyzing={true}
@@ -45,15 +44,13 @@ test("shows elapsed time on done agents", () => {
       repoName="test"
     />,
   );
-  const timeSpans = container.querySelectorAll(".pipe-time");
-  const scannerTime = Array.from(timeSpans).find((el) =>
+  expect(screen.getAllByTestId("pipe-time").some((el) =>
     el.textContent.includes("45s"),
-  );
-  expect(scannerTime).toBeTruthy();
+  )).toBe(true);
 });
 
 test("caps elapsed time at 99s per agent row", () => {
-  const { container } = render(
+  render(
     <AgentPipeline
       status={{ scanner: "done" }}
       isAnalyzing={true}
@@ -62,15 +59,13 @@ test("caps elapsed time at 99s per agent row", () => {
       repoName="test"
     />,
   );
-  const timeSpans = container.querySelectorAll(".pipe-time");
-  const scannerTime = Array.from(timeSpans).find((el) =>
+  expect(screen.getAllByTestId("pipe-time").some((el) =>
     el.textContent.includes("99s"),
-  );
-  expect(scannerTime).toBeTruthy();
+  )).toBe(true);
 });
 
 test("shows checkmark for done agent with zero elapsed", () => {
-  const { container } = render(
+  render(
     <AgentPipeline
       status={{ scanner: "done" }}
       isAnalyzing={false}
@@ -79,15 +74,13 @@ test("shows checkmark for done agent with zero elapsed", () => {
       repoName="test"
     />,
   );
-  const timeSpans = container.querySelectorAll(".pipe-time");
-  const scannerTime = Array.from(timeSpans).find((el) =>
+  expect(screen.getAllByTestId("pipe-time").some((el) =>
     el.textContent.includes("✓"),
-  );
-  expect(scannerTime).toBeTruthy();
+  )).toBe(true);
 });
 
 test("shows spinner on running agents", () => {
-  const { container } = render(
+  render(
     <AgentPipeline
       status={{ scanner: "running" }}
       isAnalyzing={true}
@@ -96,6 +89,7 @@ test("shows spinner on running agents", () => {
       repoName="test"
     />,
   );
-  const spinners = container.querySelectorAll(".spinner");
-  expect(spinners.length).toBeGreaterThanOrEqual(1);
+  expect(screen.getAllByTestId("agent-spinner").length).toBeGreaterThanOrEqual(
+    1,
+  );
 });

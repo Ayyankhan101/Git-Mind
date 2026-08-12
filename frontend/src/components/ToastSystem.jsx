@@ -29,6 +29,7 @@ export default function ToastSystem({ toasts, onDismiss }) {
         return (
           <div
             key={t.id}
+            data-testid="toast"
             className={`toast${t.kind ? ` ${t.kind}` : ""}${isExiting ? " toast-exit" : ""}`}
           >
             <span className="toast-icon">

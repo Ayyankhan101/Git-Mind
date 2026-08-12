@@ -231,6 +231,7 @@ export default function TrendChart({ data, days, onDaysChange }) {
           Object.entries(dimLines).map(([key, pts]) => (
             <polyline
               key={key}
+              data-testid="trend-line-dim"
               points={pts}
               fill="none"
               stroke={DIM_COLORS[key]}
@@ -240,6 +241,7 @@ export default function TrendChart({ data, days, onDaysChange }) {
           ))}
 
         <polyline
+          data-testid="trend-line-main"
           points={mainPoints}
           fill="none"
           stroke="var(--primary)"
@@ -253,6 +255,7 @@ export default function TrendChart({ data, days, onDaysChange }) {
           return (
             <circle
               key={i}
+              data-testid="trend-point"
               cx={xScale(i)}
               cy={yScale(score)}
               r={isHovered ? 5 : 3}
