@@ -115,13 +115,11 @@ export default function AnimatedEdge({
               pointerEvents: "none",
               opacity,
               transition: "opacity 0.25s ease",
-            }}
-            className="px-2 py-0.5 rounded text-[11px] font-mono tracking-wide font-medium backdrop-blur-sm shadow-md whitespace-nowrap"
-            style={{
               background: "color-mix(in srgb, var(--surface-0) 70%, transparent)",
               border: "1px solid var(--border-m)",
               color: "var(--text-2)",
             }}
+            className="px-2 py-0.5 rounded text-[11px] font-mono tracking-wide font-medium backdrop-blur-sm shadow-md whitespace-nowrap"
           >
             {label}
           </div>

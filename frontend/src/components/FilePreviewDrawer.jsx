@@ -112,7 +112,7 @@ export default function FilePreviewDrawer({
     const m = repoUrl.match(/github\.com\/([^/?#]+\/[^/?#]+)/);
     if (!m) return null;
     return `https://github.com/${m[1].replace(/\.git$/, "")}/blob/${defaultBranch}/${path}${line ? `#L${line}` : ""}`;
-  }, [repoUrl, path, line]);
+  }, [repoUrl, path, line, defaultBranch]);
 
   if (!path) return null;
 
