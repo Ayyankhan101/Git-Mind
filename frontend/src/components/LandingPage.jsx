@@ -150,7 +150,7 @@ function HowStep({ num, title, desc, delay }) {
 /* ── Hero Form ───────────────────────────────────────────────── */
 /* Isolated component so typing in the input only re-renders the form,
    not the whole landing page (feature grid, stats, steps, etc.). */
-function HeroForm({ onLoad, onAnalyzeUrl }) {
+function HeroForm({ onLoad, onAnalyzeUrl, inputRef }) {
   const [input, setInput] = useState("");
 
   const handleSubmit = (e) => {
@@ -173,12 +173,14 @@ function HeroForm({ onLoad, onAnalyzeUrl }) {
         <div className="lp-hero-input-wrapper">
           <Search size={16} className="lp-hero-input-icon" />
           <input
+            ref={inputRef}
             className="lp-hero-input"
             placeholder="GitHub username or repo URL"
             aria-label="GitHub username or repository URL"
+            autoComplete="off"
+            spellCheck={false}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            autoFocus
           />
         </div>
         <button type="submit" className="lp-hero-btn">
@@ -193,10 +195,128 @@ function HeroForm({ onLoad, onAnalyzeUrl }) {
   );
 }
 
+/* ── Hero Product Preview ───────────────────────────────────── */
+/* A tasteful agent-scan radar that shows GitMind in action — 6
+   agents sweeping a repository in parallel. Kept decorative
+   (aria-hidden) since the real product is one click away. */
+
+const SCAN_AGENTS = [
+  { code: "SCAN", angle: 0 },
+  { code: "SEC", angle: 60 },
+  { code: "CVE", angle: 120 },
+  { code: "ARCH", angle: 180 },
+  { code: "DOCS", angle: 240 },
+  { code: "GIT", angle: 300 },
+];
+
+function HeroPreview() {
+  return (
+    <div className="lp-preview" aria-hidden="true">
+      {/* Window chrome */}
+      <div className="lp-preview-chrome">
+        <span className="lp-preview-dots">
+          <i />
+          <i />
+          <i />
+        </span>
+        <span className="lp-preview-title">
+          gitmind · facebook/react
+        </span>
+        <span className="lp-preview-badge">
+          <span className="lp-preview-pulse" />
+          6 AGENTS · SWEEPING
+        </span>
+      </div>
+
+      <div className="lp-preview-body">
+        {/* File tree sidebar */}
+        <div className="lp-preview-sidebar">
+          {[
+            "src/",
+            "  components/",
+            "  hooks/",
+            "  utils/",
+            "  App.js",
+            "  index.js",
+            "package.json",
+            "webpack.config.js",
+          ].map((line, i) => (
+            <div
+              key={i}
+              className={`lp-preview-tree${line.startsWith("  ") ? " indent" : ""}${i === 2 ? " active" : ""}`}
+            >
+              {line.trim()}
+            </div>
+          ))}
+        </div>
+
+        {/* Agent-scan radar */}
+        <div className="lp-radar">
+          {/* Orbit rings */}
+          <span className="lp-radar-ring r1" />
+          <span className="lp-radar-ring r2" />
+          <span className="lp-radar-ring r3" />
+          <span className="lp-radar-ring r4" />
+          {/* Rotating sweep beam */}
+          <span className="lp-radar-sweep" />
+          {/* Crosshair ticks */}
+          <span className="lp-radar-tick t0" />
+          <span className="lp-radar-tick t60" />
+          <span className="lp-radar-tick t120" />
+
+          {/* Central repository node */}
+          <div className="lp-radar-core">
+            <span className="lp-radar-core-mark">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+            </span>
+            <span className="lp-radar-core-label">repo</span>
+          </div>
+
+          {/* Six orbiting agent nodes */}
+          {SCAN_AGENTS.map(({ code, angle }, i) => (
+            <div
+              key={code}
+              className="lp-radar-orbit"
+              style={{ transform: `rotate(${angle}deg) translateX(var(--radar-r))` }}
+            >
+              <div
+                className="lp-radar-agent"
+                style={{ transform: `translate(-50%, -50%) rotate(${-angle}deg)` }}
+              >
+                <span
+                  className="lp-radar-agent-dot"
+                  style={{ animationDelay: `${i * 0.32}s` }}
+                />
+                <span className="lp-radar-agent-code">{code}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Terminal footer */}
+      <div className="lp-preview-terminal">
+        <span className="lp-preview-prompt">$</span>
+        <span className="lp-preview-cmd">gitmind analyze facebook/react</span>
+        <span className="lp-preview-cursor" />
+        <span className="lp-preview-ok">
+          <span className="lp-preview-ok-check">✓</span>
+          <span className="lp-preview-ok-text">3 findings · grade A · 48 endpoints</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
 /* ── Main Landing Page ───────────────────────────────────────── */
 export default function LandingPage({ onLoad, onAnalyzeUrl }) {
   const [scrollY, setScrollY] = useState(0);
   const [activeSection, setActiveSection] = useState("");
+  const heroInputRef = useRef(null);
   const heroRef = useRef(null);
   const featuresRef = useRef(null);
   const statsRef = useRef(null);
@@ -344,7 +464,12 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
             Analyze repositories for vulnerabilities, architecture patterns, and
             code quality — powered by 6 AI agents working in parallel.
           </p>
-          <HeroForm onLoad={onLoad} onAnalyzeUrl={onAnalyzeUrl} />
+          <HeroForm
+            onLoad={onLoad}
+            onAnalyzeUrl={onAnalyzeUrl}
+            inputRef={heroInputRef}
+          />
+          <HeroPreview />
         </div>
         <div className="lp-scroll-hint" style={{ opacity: Math.max(0, 1 - scrollY * 0.005) }}>
           <ChevronDown size={20} />
@@ -412,7 +537,16 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
           <p className="lp-cta-sub">
             Start with a public repository or connect your GitHub token for private repos.
           </p>
-          <button className="lp-cta-btn" onClick={() => onLoad("")}>
+          <button
+            className="lp-cta-btn"
+            onClick={() => {
+              heroInputRef.current?.focus({ preventScroll: true });
+              heroInputRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+              });
+            }}
+          >
             Get started
             <ArrowRight size={16} />
           </button>

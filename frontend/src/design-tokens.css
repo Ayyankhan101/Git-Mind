@@ -4,6 +4,10 @@
    ============================================================ */
 
 :root {
+  /* Native controls (scrollbars, form fields, date pickers) follow the
+     dark canvas. Overridden to `light` for the Daylight theme below. */
+  color-scheme: dark;
+
   /* Core Palette — Freebuff canvas + slate surfaces */
   --bg: #090a0f;
   --bg-alt: #06070b;

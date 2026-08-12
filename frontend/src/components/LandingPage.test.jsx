@@ -103,10 +103,40 @@ describe("LandingPage", () => {
     );
   });
 
-  it("calls onLoad when Get Started button is clicked", () => {
+  it("focuses the hero input when Get Started button is clicked", () => {
     const onLoad = jest.fn();
     render(<LandingPage onLoad={onLoad} onAnalyzeUrl={jest.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Get started" }));
-    expect(onLoad).toHaveBeenCalled();
+    expect(
+      screen.getByPlaceholderText("GitHub username or repo URL"),
+    ).toHaveFocus();
+    expect(onLoad).not.toHaveBeenCalled();
+  });
+
+  it("renders the agent-scan radar preview with six orbiting agents", () => {
+    const { container } = render(
+      <LandingPage onLoad={jest.fn()} onAnalyzeUrl={jest.fn()} />,
+    );
+    expect(container.querySelector(".lp-radar")).toBeInTheDocument();
+    expect(container.querySelector(".lp-radar-sweep")).toBeInTheDocument();
+    expect(container.querySelector(".lp-radar-core")).toBeInTheDocument();
+    // The six agents that sweep the repo in parallel
+    expect(container.querySelectorAll(".lp-radar-agent")).toHaveLength(6);
+    const codes = [...container.querySelectorAll(".lp-radar-agent-code")].map(
+      (el) => el.textContent,
+    );
+    expect(codes).toEqual(["SCAN", "SEC", "CVE", "ARCH", "DOCS", "GIT"]);
+  });
+
+  it("keeps the product preview hidden from assistive tech", () => {
+    const { container } = render(
+      <LandingPage onLoad={jest.fn()} onAnalyzeUrl={jest.fn()} />,
+    );
+    // The preview is decorative: the real product is one click away, so
+    // screen readers must skip the mock entirely.
+    expect(container.querySelector(".lp-preview")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
   });
 });

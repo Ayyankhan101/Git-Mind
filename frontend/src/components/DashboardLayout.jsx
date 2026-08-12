@@ -197,7 +197,7 @@ export default function DashboardLayout({
             className="error-banner"
             role="status"
             style={{
-              borderColor: "var(--warning-bg-strong)",
+              borderColor: "var(--warning-border)",
               background: "var(--warning-bg)",
               color: "var(--warning)",
             }}

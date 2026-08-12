@@ -58,3 +58,12 @@ test("applies kind class to toast", () => {
   render(<ToastSystem toasts={toasts} onDismiss={() => {}} />);
   expect(screen.getByTestId("toast")).toHaveClass("danger");
 });
+
+test("announces toasts through an aria-live status region", () => {
+  const toasts = [{ id: 8, kind: "info", title: "Analysis started" }];
+  render(<ToastSystem toasts={toasts} onDismiss={() => {}} />);
+  const region = screen.getByRole("status");
+  // Screen readers announce additions to this region unprompted.
+  expect(region).toHaveAttribute("aria-live", "polite");
+  expect(region).toHaveClass("toasts");
+});

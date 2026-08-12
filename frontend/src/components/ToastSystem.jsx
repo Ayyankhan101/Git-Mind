@@ -22,7 +22,7 @@ export default function ToastSystem({ toasts, onDismiss }) {
 
   if (!toasts.length) return null;
   return (
-    <div className="toasts">
+    <div className="toasts" role="status" aria-live="polite">
       {toasts.map((t) => {
         const Icon = ICON[t.kind] || Info;
         const isExiting = exiting.has(t.id);

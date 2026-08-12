@@ -44,6 +44,8 @@ export default function CommandBar({
           ref={usernameRef}
           placeholder="github username"
           aria-label="GitHub username"
+          autoComplete="off"
+          spellCheck={false}
           value={githubUser}
           onChange={(e) => {
             dispatch({ type: "SET_GITHUB_USER", value: e.target.value });
@@ -57,7 +59,7 @@ export default function CommandBar({
         />
       </div>
 
-      <div className="cb-input" style={{ width: 190 }}>
+      <div className="cb-input cb-input--token">
         <Lock
           size={14}
           style={{
@@ -77,6 +79,8 @@ export default function CommandBar({
               : "token (optional)"
           }
           aria-label="GitHub personal access token"
+          autoComplete="off"
+          spellCheck={false}
           value={ghToken}
           onChange={(e) => {
             dispatch({ type: "SET_GH_TOKEN", value: e.target.value });
@@ -103,7 +107,9 @@ export default function CommandBar({
       <span style={{ flex: 1 }} />
 
       {(isAnalyzing || analyzed) && (
-        <span className={`cb-status ${statusClass}`}>{statusText}</span>
+        <span className={`cb-status ${statusClass}`} role="status">
+          {statusText}
+        </span>
       )}
 
       <button

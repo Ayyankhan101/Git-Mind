@@ -105,16 +105,6 @@
   50% { transform: translate(-25px, 20px) scale(1.05); }
 }
 
-/* ── SVG Visualizations ──────────────────────────────────────── */
-.lp-code-viz {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  opacity: 0.5;
-}
-
 /* ── Nav ─────────────────────────────────────────────────────── */
 .lp-nav {
   position: fixed;
@@ -193,6 +183,13 @@
 .lp-nav-link--active {
   color: var(--accent);
   background: var(--accent-dim);
+}
+
+.lp-nav-link:focus-visible,
+.lp-hero-btn:focus-visible,
+.lp-cta-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* ── Hero ────────────────────────────────────────────────────── */
@@ -320,7 +317,7 @@
   border-radius: var(--radius-full);
   cursor: pointer;
   white-space: nowrap;
-  transition: all var(--duration-fast);
+  transition: box-shadow var(--duration-fast), transform var(--duration-fast), opacity var(--duration-fast);
   position: relative;
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(59, 130, 246, 0.25);
@@ -349,6 +346,315 @@
   color: var(--text-3);
   margin: 0;
   animation: fadeSlideUp 0.6s ease-out 0.4s both;
+}
+
+/* ── Hero Product Preview ────────────────────────────────────── */
+.lp-preview {
+  width: 100%;
+  max-width: 560px;
+  margin-top: 12px;
+  text-align: left;
+  background: var(--lp-glass-bg);
+  border: 1px solid var(--lp-glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  overflow: hidden;
+  backdrop-filter: var(--lp-glass-blur);
+  animation: fadeSlideUp 0.7s ease-out 0.5s both;
+  transition: border-color var(--duration-normal), transform var(--duration-normal), box-shadow var(--duration-normal);
+}
+
+.lp-preview:hover {
+  border-color: var(--lp-glass-border-bright);
+  transform: translateY(-2px);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5), 0 0 40px rgba(59, 130, 246, 0.08);
+}
+
+.lp-preview-chrome {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--lp-glass-border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.lp-preview-dots {
+  display: inline-flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.lp-preview-dots i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border-m);
+}
+
+.lp-preview-dots i:nth-child(1) { background: #f87171; opacity: 0.8; }
+.lp-preview-dots i:nth-child(2) { background: #fbbf24; opacity: 0.8; }
+.lp-preview-dots i:nth-child(3) { background: #34d399; opacity: 0.8; }
+
+.lp-preview-title {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lp-preview-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.lp-preview-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.lp-preview-body {
+  display: flex;
+  height: 150px;
+}
+
+.lp-preview-sidebar {
+  width: 150px;
+  flex-shrink: 0;
+  padding: 12px 0 12px 14px;
+  border-right: 1px solid var(--lp-glass-border);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.9;
+  color: var(--text-3);
+  overflow: hidden;
+}
+
+.lp-preview-tree { white-space: nowrap; }
+.lp-preview-tree.indent { color: var(--text-2); }
+.lp-preview-tree.active {
+  color: var(--accent);
+  background: var(--accent-dim);
+  border-radius: 4px;
+  display: inline-block;
+  padding: 0 6px;
+}
+
+/* ── Agent-Scan Radar (hero signature) ────────────────────────── */
+.lp-radar {
+  --radar-r: 54px;
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.lp-radar-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid var(--border-accent);
+}
+.lp-radar-ring.r1 { width: 108px; height: 108px; opacity: 0.8; }
+.lp-radar-ring.r2 { width: 78px; height: 78px; opacity: 0.55; }
+.lp-radar-ring.r3 { width: 50px; height: 50px; opacity: 0.4; }
+.lp-radar-ring.r4 { width: 130px; height: 130px; opacity: 0.22; border-style: dashed; }
+
+/* Sweep beam — animates transform only (compositor-friendly) */
+.lp-radar-sweep {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 124px;
+  height: 124px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(59, 130, 246, 0.30) 0deg,
+    rgba(59, 130, 246, 0.08) 42deg,
+    transparent 78deg
+  );
+  animation: radarSpin 3.6s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes radarSpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Crosshair ticks */
+.lp-radar-tick {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1px;
+  height: 66px;
+  background: linear-gradient(transparent, var(--border-accent));
+  opacity: 0.35;
+  pointer-events: none;
+}
+.lp-radar-tick.t0 { transform: translate(-50%, -50%); }
+.lp-radar-tick.t60 { transform: translate(-50%, -50%) rotate(60deg); }
+.lp-radar-tick.t120 { transform: translate(-50%, -50%) rotate(120deg); }
+
+/* Central repository node */
+.lp-radar-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  z-index: 2;
+}
+.lp-radar-core-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--text-on-primary);
+  box-shadow: 0 0 12px var(--accent-glow), 0 0 24px var(--accent-dim);
+}
+.lp-radar-core-label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--text-2);
+}
+.lp-radar-core::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: 10px;
+  border: 1px solid var(--accent);
+  animation: radarPing 2.4s ease-out infinite;
+}
+@keyframes radarPing {
+  0% { transform: scale(0.85); opacity: 0.9; }
+  70%, 100% { transform: scale(1.7); opacity: 0; }
+}
+
+/* Orbiting agent nodes */
+.lp-radar-orbit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  z-index: 2;
+}
+.lp-radar-agent {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.lp-radar-agent-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent-glow), 0 0 12px var(--accent-dim);
+  animation: radarPulse 2s ease-in-out infinite;
+}
+.lp-radar-agent-code {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+@keyframes radarPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.82); }
+}
+
+.lp-preview-terminal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--lp-glass-border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text-2);
+}
+
+.lp-preview-prompt { color: var(--success); font-weight: 600; }
+
+.lp-preview-cmd { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.lp-preview-cursor {
+  width: 7px;
+  height: 13px;
+  background: var(--text-1);
+  animation: blink 1s step-end infinite;
+  flex-shrink: 0;
+}
+
+.lp-preview-ok {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-3);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.lp-preview-ok-check {
+  color: var(--success);
+  font-weight: 700;
+}
+
+@media (max-width: 480px) {
+  .lp-preview-sidebar { display: none; }
+  .lp-preview-body { height: 120px; }
+  .lp-preview-badge { display: none; }
+  .lp-preview-ok-text { display: none; }
+
+  /* Compact radar for small screens */
+  .lp-radar { --radar-r: 42px; }
+  .lp-radar-ring.r1 { width: 88px; height: 88px; }
+  .lp-radar-ring.r2 { width: 62px; height: 62px; }
+  .lp-radar-ring.r3,
+  .lp-radar-ring.r4 { display: none; }
+  .lp-radar-sweep { width: 100px; height: 100px; }
+  .lp-radar-tick { height: 50px; }
+  .lp-radar-agent-code { display: none; }
 }
 
 .lp-hero-hint span {
@@ -390,12 +696,6 @@
   align-items: center;
   gap: 32px;
   margin-bottom: 48px;
-}
-
-.lp-section-header svg {
-  flex-shrink: 0;
-  width: 120px;
-  height: 144px;
 }
 
 .lp-section-title {
@@ -461,7 +761,7 @@
   background: var(--lp-glass-bg);
   border: 1px solid var(--lp-glass-border);
   border-radius: var(--radius-lg);
-  transition: all var(--duration-normal);
+  transition: border-color var(--duration-normal), box-shadow var(--duration-normal), opacity 0.5s ease-out, transform 0.5s ease-out;
   opacity: 0;
   transform: translateY(16px);
 }
@@ -693,7 +993,7 @@
   border: none;
   border-radius: var(--radius-full);
   cursor: pointer;
-  transition: all var(--duration-fast);
+  transition: box-shadow var(--duration-fast), transform var(--duration-fast), opacity var(--duration-fast);
   position: relative;
   z-index: 2;
   overflow: hidden;
@@ -740,16 +1040,16 @@
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-3);
+  color: var(--text-2);
 }
 
 .lp-footer-brand svg {
-  color: var(--text-3);
+  color: var(--text-2);
 }
 
 .lp-footer-copy {
   font-size: 12px;
-  color: var(--text-3);
+  color: var(--text-2);
   margin: 0;
 }
 
@@ -790,9 +1090,6 @@
     text-align: center;
   }
 
-  .lp-code-viz {
-    opacity: 0.2;
-  }
 }
 
 @media (max-width: 480px) {
@@ -979,10 +1276,16 @@
 /* ── Reduced Motion ──────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .lp-orb,
-  .lp-scroll-hint { animation: none; }
+  .lp-scroll-hint,
+  .lp-preview { animation: none; }
   .lp-feature-card,
   .lp-how-step,
   .lp-badge { animation: none; opacity: 1; transform: none; }
   .lp-title-line,
   .lp-hero-sub { transform: none !important; opacity: 1 !important; }
+  .lp-preview-pulse,
+  .lp-preview-cursor { animation: none; opacity: 1; }
+  .lp-radar-sweep { display: none; }
+  .lp-radar-core::before,
+  .lp-radar-agent-dot { animation: none; }
 }
