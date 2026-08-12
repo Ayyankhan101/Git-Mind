@@ -115,7 +115,11 @@ function ContractList({ contracts }) {
           </button>
           {open === i && (
             <div
-              style={{ paddingLeft: 16, fontSize: fs.md, color: "var(--text-2)" }}
+              style={{
+                paddingLeft: 16,
+                fontSize: fs.md,
+                color: "var(--text-2)",
+              }}
             >
               {c.functions?.length > 0 && (
                 <div style={{ marginBottom: 8 }}>
@@ -127,9 +131,7 @@ function ContractList({ contracts }) {
                         ({f.visibility})
                       </span>
                       {f.modifiers?.length > 0 && (
-                        <span
-                          style={{ color: "var(--accent)", marginLeft: 6 }}
-                        >
+                        <span style={{ color: "var(--accent)", marginLeft: 6 }}>
                           @{f.modifiers.join(", ")}
                         </span>
                       )}
@@ -194,7 +196,11 @@ export default function SolidityTab({
       <div className="tab-content-inner">
         <div className="skeleton-card" style={{ padding: 24 }}>
           {[1, 2, 3].map((i) => (
-            <div key={i} className="sk" style={{ height: 60, marginBottom: 8, borderRadius: 8 }} />
+            <div
+              key={i}
+              className="sk"
+              style={{ height: 60, marginBottom: 8, borderRadius: 8 }}
+            />
           ))}
         </div>
       </div>

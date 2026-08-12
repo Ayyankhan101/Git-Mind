@@ -63,14 +63,24 @@ export default function KeyboardHelp({ open, onClose }) {
 
   return (
     <div className="kbhelp-backdrop" onMouseDown={onClose}>
-      <div className="kbhelp" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" onMouseDown={(e) => e.stopPropagation()}>
+      <div
+        className="kbhelp"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Keyboard shortcuts"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <div className="kbhelp-header">
           <span className="kbhelp-icon">
             <Keyboard size={15} strokeWidth={1.5} />
           </span>
           <span className="kbhelp-title">Keyboard shortcuts</span>
           <span style={{ flex: 1 }} />
-          <button className="btn-icon" onClick={onClose} aria-label="Close help">
+          <button
+            className="btn-icon"
+            onClick={onClose}
+            aria-label="Close help"
+          >
             <X size={13} strokeWidth={1.5} />
           </button>
         </div>

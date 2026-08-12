@@ -3,28 +3,38 @@ import { GitPullRequest, GitBranch } from "lucide-react";
 import { fs } from "../typeScale";
 import { relativeTime } from "./PRReviewTab";
 
-export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impactLoading, onSelect }) {
-  if (!prsLoading && openPRs.length === 0) return (
-    <div style={{ marginBottom: 20 }}>
-      <div
-        style={{
-          fontSize: fs.xs,
-          color: "var(--text-3)",
-          marginBottom: 8,
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          letterSpacing: ".05em",
-        }}
-      >
-        <GitPullRequest size={11} strokeWidth={1.5} />
-        OPEN PULL REQUESTS (0)
+export default function OpenPRsList({
+  openPRs,
+  prsLoading,
+  prUrl,
+  loading,
+  impactLoading,
+  onSelect,
+}) {
+  if (!prsLoading && openPRs.length === 0)
+    return (
+      <div style={{ marginBottom: 20 }}>
+        <div
+          style={{
+            fontSize: fs.xs,
+            color: "var(--text-3)",
+            marginBottom: 8,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            letterSpacing: ".05em",
+          }}
+        >
+          <GitPullRequest size={11} strokeWidth={1.5} />
+          OPEN PULL REQUESTS (0)
+        </div>
+        <div
+          style={{ fontSize: fs.sm, color: "var(--text-3)", padding: "8px 0" }}
+        >
+          No open pull requests
+        </div>
       </div>
-      <div style={{ fontSize: fs.sm, color: "var(--text-3)", padding: "8px 0" }}>
-        No open pull requests
-      </div>
-    </div>
-  );
+    );
 
   return (
     <div style={{ marginBottom: 20 }}>
@@ -76,7 +86,9 @@ export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impac
                   borderRadius: 8,
                   textAlign: "left",
                   cursor: "pointer",
-                  background: active ? "color-mix(in srgb, var(--primary) 10%, transparent)" : "var(--surface-2)",
+                  background: active
+                    ? "color-mix(in srgb, var(--primary) 10%, transparent)"
+                    : "var(--surface-2)",
                   border: `1px solid ${active ? "var(--primary)" : "var(--border)"}`,
                   transition: "border-color .15s, background .15s",
                 }}

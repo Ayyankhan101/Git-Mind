@@ -23,9 +23,9 @@
   --text-on-primary: #050508;
 
   --border-subtle: rgba(34, 211, 238, 0.06);
-  --border-default: rgba(34, 211, 238, 0.10);
+  --border-default: rgba(34, 211, 238, 0.1);
   --border-strong: rgba(34, 211, 238, 0.16);
-  --border-accent: rgba(34, 211, 238, 0.30);
+  --border-accent: rgba(34, 211, 238, 0.3);
 
   --glass-bg: rgba(5, 5, 8, 0.7);
   --glass-border: rgba(34, 211, 238, 0.08);

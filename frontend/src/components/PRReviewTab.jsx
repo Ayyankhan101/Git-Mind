@@ -290,9 +290,9 @@ function ImpactPanel({ impact, loading, error }) {
                       fontSize: fs.xs,
                       padding: "3px 8px",
                       borderRadius: 4,
-              background: "var(--surface)",
-              border: "1px solid var(--border-m)",
-              color: "var(--text-2)",
+                      background: "var(--surface)",
+                      border: "1px solid var(--border-m)",
+                      color: "var(--text-2)",
                     }}
                   >
                     {a}
@@ -438,7 +438,11 @@ function ImpactPanel({ impact, loading, error }) {
             }}
           >
             <div
-              style={{ fontSize: fs.xs, color: "var(--text-3)", marginBottom: 3 }}
+              style={{
+                fontSize: fs.xs,
+                color: "var(--text-3)",
+                marginBottom: 3,
+              }}
             >
               BASE
             </div>
@@ -467,7 +471,11 @@ function ImpactPanel({ impact, loading, error }) {
             }}
           >
             <div
-              style={{ fontSize: fs.xs, color: "var(--text-3)", marginBottom: 3 }}
+              style={{
+                fontSize: fs.xs,
+                color: "var(--text-3)",
+                marginBottom: 3,
+              }}
             >
               PR
             </div>
@@ -496,7 +504,11 @@ function ImpactPanel({ impact, loading, error }) {
             }}
           >
             <div
-              style={{ fontSize: fs.xs, color: "var(--text-3)", marginBottom: 3 }}
+              style={{
+                fontSize: fs.xs,
+                color: "var(--text-3)",
+                marginBottom: 3,
+              }}
             >
               DELTA
             </div>
@@ -563,7 +575,7 @@ function ImpactPanel({ impact, loading, error }) {
                 fontSize: fs.xs,
                 color: "var(--warning)",
                 padding: "4px 9px",
-              background: "var(--warning-bg)",
+                background: "var(--warning-bg)",
                 borderRadius: 5,
               }}
             >
@@ -636,9 +648,7 @@ function ImpactPanel({ impact, loading, error }) {
                           padding: "3px 8px",
                           borderRadius: 4,
                           background:
-                            v > 0
-                              ? "var(--success-bg)"
-                              : "var(--danger-bg)",
+                            v > 0 ? "var(--success-bg)" : "var(--danger-bg)",
                           color: v > 0 ? "var(--success)" : "var(--danger)",
                         }}
                       >

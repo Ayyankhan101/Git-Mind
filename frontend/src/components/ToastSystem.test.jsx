@@ -34,9 +34,7 @@ test("calls onDismiss when dismiss button clicked", () => {
   const handleDismiss = jest.fn();
   const toasts = [{ id: 4, kind: "danger", title: "Error" }];
   render(<ToastSystem toasts={toasts} onDismiss={handleDismiss} />);
-  fireEvent.click(
-    screen.getByRole("button", { name: "Dismiss notification" }),
-  );
+  fireEvent.click(screen.getByRole("button", { name: "Dismiss notification" }));
   expect(handleDismiss).not.toHaveBeenCalledWith(4);
   jest.advanceTimersByTime(260);
   expect(handleDismiss).toHaveBeenCalledWith(4);

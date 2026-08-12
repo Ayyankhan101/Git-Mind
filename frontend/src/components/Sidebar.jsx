@@ -261,7 +261,6 @@ export default function Sidebar({
     [repos, view, filter],
   );
 
-
   const handleRepoSelect = useCallback((url) => onSelect(url), [onSelect]);
 
   const handleRepoHover = useCallback((e, repo) => {
@@ -283,7 +282,14 @@ export default function Sidebar({
       onHover: handleRepoHover,
       onLeave: handleRepoLeave,
     }),
-    [filtered, selectedUrl, focusedIdx, handleRepoSelect, handleRepoHover, handleRepoLeave],
+    [
+      filtered,
+      selectedUrl,
+      focusedIdx,
+      handleRepoSelect,
+      handleRepoHover,
+      handleRepoLeave,
+    ],
   );
 
   const handleKeyDown = useCallback(
@@ -603,7 +609,12 @@ function RepoHoverPreview({ repo, anchorRect }) {
   const left = Math.min(window.innerWidth - 296, anchorRect.right + 12);
   const top = Math.max(16, Math.min(window.innerHeight - 220, anchorRect.top));
   return (
-    <div className="repo-preview" style={{ left, top }} role="tooltip" aria-live="polite">
+    <div
+      className="repo-preview"
+      style={{ left, top }}
+      role="tooltip"
+      aria-live="polite"
+    >
       <div
         className="name"
         style={{ display: "flex", alignItems: "center", gap: 6 }}

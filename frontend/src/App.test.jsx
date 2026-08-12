@@ -49,9 +49,7 @@ test("renders app root", () => {
 
 test("renders theme switcher", async () => {
   renderApp();
-  expect(
-    await screen.findByLabelText("Change theme"),
-  ).toBeInTheDocument();
+  expect(await screen.findByLabelText("Change theme")).toBeInTheDocument();
 });
 
 test("renders keyboard help trigger", async () => {
@@ -63,14 +61,10 @@ test("renders keyboard help trigger", async () => {
 
 test("renders command palette trigger", async () => {
   renderApp();
-  expect(
-    await screen.findByLabelText("Command palette"),
-  ).toBeInTheDocument();
+  expect(await screen.findByLabelText("Command palette")).toBeInTheDocument();
 });
 
 test("renders repository toggle", async () => {
   renderApp();
-  expect(
-    await screen.findByLabelText("Repositories"),
-  ).toBeInTheDocument();
+  expect(await screen.findByLabelText("Repositories")).toBeInTheDocument();
 });

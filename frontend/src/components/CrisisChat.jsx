@@ -164,7 +164,13 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="crisis-panel" role="dialog" aria-modal="true" aria-label="Crisis simulation" ref={trapRef}>
+      <div
+        className="crisis-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Crisis simulation"
+        ref={trapRef}
+      >
         {/* Header */}
         <div className="crisis-header">
           <div className="crisis-tag">

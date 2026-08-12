@@ -97,7 +97,10 @@ async function _apiFetch(url, options = {}, timeoutMs = 30_000, retries = 2) {
         throw new Error(msg);
       }
       // Retry on 502/503/504 (server temporarily unavailable)
-      if ((res.status === 502 || res.status === 503 || res.status === 504) && attempt < retries) {
+      if (
+        (res.status === 502 || res.status === 503 || res.status === 504) &&
+        attempt < retries
+      ) {
         continue;
       }
       let msg = `Server error ${res.status}`;
@@ -108,7 +111,8 @@ async function _apiFetch(url, options = {}, timeoutMs = 30_000, retries = 2) {
       throw new Error(msg);
     }
     const data = await res.json();
-    if (data.error) throw new Error(_extractError(data.error, "Request failed"));
+    if (data.error)
+      throw new Error(_extractError(data.error, "Request failed"));
     return data;
   }
   throw lastErr || new Error("Request failed after retries");

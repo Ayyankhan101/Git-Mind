@@ -105,28 +105,74 @@ export default function DashboardLayout({
     (f) => f.worst_severity === "critical",
   );
 
-  const tabs = useMemo(() => [
-    { key: "summary", Icon: BarChart3, label: "Summary" },
-    { key: "diagram", Icon: GitBranch, label: "Architecture" },
-    { key: "docs", Icon: FileCode2, label: "API Docs", count: apiDocs.length || null },
-    { key: "security", Icon: ShieldAlert, label: "Security", count: findings.length || null, alert: hasCritical },
-    { key: "cve", Icon: Lock, label: "CVE", count: cveFindings.length || null, alert: hasCveCritical },
-    {
-      key: "git",
-      Icon: GitCommit,
-      label: "Git Audit",
-      count:
-        (gitAudit?.stats?.bad_messages || 0) +
-          (gitAudit?.stats?.secrets_found || 0) +
-          (gitAudit?.stats?.sensitive_files || 0) || null,
-      alert: !!(gitAudit?.stats?.secrets_found || gitAudit?.stats?.sensitive_files),
-    },
-    { key: "solidity", Icon: Binary, label: "Solidity", count: solidityAudit?.findings?.length || null, alert: solidityAudit?.findings?.some((f) => f.severity === "critical") },
-    { key: "code_audit", Icon: Code2, label: "Code Audit", count: codeAudit?.reduce((s, r) => s + (r.findings?.length || 0), 0) || null, alert: codeAudit?.some((r) => r.findings?.some((f) => f.severity === "critical")) },
-    { key: "pr", Icon: GitPullRequest, label: "PR Review" },
-    { key: "monitor", Icon: Activity, label: "Watch" },
-    { key: "chat", Icon: MessageSquare, label: "Chat" },
-  ], [apiDocs, findings, cveFindings, gitAudit, solidityAudit, codeAudit, hasCritical, hasCveCritical]);
+  const tabs = useMemo(
+    () => [
+      { key: "summary", Icon: BarChart3, label: "Summary" },
+      { key: "diagram", Icon: GitBranch, label: "Architecture" },
+      {
+        key: "docs",
+        Icon: FileCode2,
+        label: "API Docs",
+        count: apiDocs.length || null,
+      },
+      {
+        key: "security",
+        Icon: ShieldAlert,
+        label: "Security",
+        count: findings.length || null,
+        alert: hasCritical,
+      },
+      {
+        key: "cve",
+        Icon: Lock,
+        label: "CVE",
+        count: cveFindings.length || null,
+        alert: hasCveCritical,
+      },
+      {
+        key: "git",
+        Icon: GitCommit,
+        label: "Git Audit",
+        count:
+          (gitAudit?.stats?.bad_messages || 0) +
+            (gitAudit?.stats?.secrets_found || 0) +
+            (gitAudit?.stats?.sensitive_files || 0) || null,
+        alert: !!(
+          gitAudit?.stats?.secrets_found || gitAudit?.stats?.sensitive_files
+        ),
+      },
+      {
+        key: "solidity",
+        Icon: Binary,
+        label: "Solidity",
+        count: solidityAudit?.findings?.length || null,
+        alert: solidityAudit?.findings?.some((f) => f.severity === "critical"),
+      },
+      {
+        key: "code_audit",
+        Icon: Code2,
+        label: "Code Audit",
+        count:
+          codeAudit?.reduce((s, r) => s + (r.findings?.length || 0), 0) || null,
+        alert: codeAudit?.some((r) =>
+          r.findings?.some((f) => f.severity === "critical"),
+        ),
+      },
+      { key: "pr", Icon: GitPullRequest, label: "PR Review" },
+      { key: "monitor", Icon: Activity, label: "Watch" },
+      { key: "chat", Icon: MessageSquare, label: "Chat" },
+    ],
+    [
+      apiDocs,
+      findings,
+      cveFindings,
+      gitAudit,
+      solidityAudit,
+      codeAudit,
+      hasCritical,
+      hasCveCritical,
+    ],
+  );
 
   return (
     <div className="app">
@@ -460,9 +506,7 @@ export default function DashboardLayout({
           />
           <CommandPalette
             open={showPalette}
-            onClose={() =>
-              dispatch({ type: "SET_SHOW_PALETTE", show: false })
-            }
+            onClose={() => dispatch({ type: "SET_SHOW_PALETTE", show: false })}
             onAction={handlePaletteAction}
             repos={repos}
             recents={recents}

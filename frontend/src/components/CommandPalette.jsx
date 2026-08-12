@@ -222,7 +222,14 @@ export default function CommandPalette({
   let itemIdx = 0;
   return (
     <div className="palette-backdrop" onMouseDown={onClose}>
-      <div className="palette" onMouseDown={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Command palette" ref={trapRef}>
+      <div
+        className="palette"
+        onMouseDown={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
+        ref={trapRef}
+      >
         <div className="palette-input-row">
           <Search size={15} strokeWidth={1.5} />
           <input
@@ -241,7 +248,12 @@ export default function CommandPalette({
             <span className="kbd">Esc</span>
           </span>
         </div>
-        <div className="palette-list" ref={listRef} role="listbox" aria-label="Commands">
+        <div
+          className="palette-list"
+          ref={listRef}
+          role="listbox"
+          aria-label="Commands"
+        >
           {groups.length === 0 && (
             <div className="palette-empty">No results for "{query}"</div>
           )}

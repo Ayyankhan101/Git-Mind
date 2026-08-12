@@ -23,9 +23,9 @@
   --text-on-primary: #0f0a18;
 
   --border-subtle: rgba(168, 85, 247, 0.06);
-  --border-default: rgba(168, 85, 247, 0.10);
+  --border-default: rgba(168, 85, 247, 0.1);
   --border-strong: rgba(168, 85, 247, 0.16);
-  --border-accent: rgba(168, 85, 247, 0.30);
+  --border-accent: rgba(168, 85, 247, 0.3);
 
   --glass-bg: rgba(15, 10, 24, 0.7);
   --glass-border: rgba(168, 85, 247, 0.08);
@@ -62,6 +62,3 @@
 .aurora .btn-primary:hover {
   background: linear-gradient(135deg, #c084fc, #3ee0f2);
 }
-
-
-

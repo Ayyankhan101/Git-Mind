@@ -1,8 +1,19 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Search, ArrowRight, ChevronDown, Zap, FileCode2,
-  Lock, Shield, Globe, Layers, BrainCircuit,
-  Workflow, Gauge, BarChart3, ShieldCheck,
+  Search,
+  ArrowRight,
+  ChevronDown,
+  Zap,
+  FileCode2,
+  Lock,
+  Shield,
+  Globe,
+  Layers,
+  BrainCircuit,
+  Workflow,
+  Gauge,
+  BarChart3,
+  ShieldCheck,
 } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -13,15 +24,51 @@ gsap.registerPlugin(ScrollTrigger);
 
 /* ── Data ─────────────────────────────────────────────────────── */
 const FEATURES = [
-  { Icon: Zap, title: "6 AI Agents in Parallel", desc: "Architecture mapper, API surface analyzer, security auditor, dependency tracker, code quality scorer, and documentation reviewer — all running simultaneously." },
-  { Icon: Shield, title: "Security & CVE Scanning", desc: "Automatic CVE matching against every dependency. Exploit scenario generation, CVSS scoring, and one-click crisis simulation." },
-  { Icon: Layers, title: "Architecture Visualization", desc: "Auto-generated dependency graphs, module boundaries, and call chains. Understand data flow at a glance." },
-  { Icon: FileCode2, title: "Deep Code Understanding", desc: "Goes beyond syntax. Understands business logic, design patterns, architectural decisions, and tech debt hotspots." },
-  { Icon: Globe, title: "GitHub URL Analysis", desc: "Paste any public GitHub URL. GitMind clones, parses, and produces a senior-engineer-level report in under 60 seconds." },
-  { Icon: ShieldCheck, title: "Zero Setup Required", desc: "No config files, no SDK, no boilerplate. Point at a repo and get results. Works with any language or framework." },
-  { Icon: BrainCircuit, title: "AI-Powered Insights", desc: "Reasons about your code like a senior engineer — suggesting refactors, flagging anti-patterns, predicting failure points." },
-  { Icon: Workflow, title: "Dependency Risk Mapping", desc: "Maps the full dependency tree and highlights vulnerable, outdated, or abandoned packages." },
-  { Icon: Gauge, title: "Performance Profiling", desc: "Identifies hot paths, N+1 queries, unnecessary re-renders, and memory leaks ranked by impact." },
+  {
+    Icon: Zap,
+    title: "6 AI Agents in Parallel",
+    desc: "Architecture mapper, API surface analyzer, security auditor, dependency tracker, code quality scorer, and documentation reviewer — all running simultaneously.",
+  },
+  {
+    Icon: Shield,
+    title: "Security & CVE Scanning",
+    desc: "Automatic CVE matching against every dependency. Exploit scenario generation, CVSS scoring, and one-click crisis simulation.",
+  },
+  {
+    Icon: Layers,
+    title: "Architecture Visualization",
+    desc: "Auto-generated dependency graphs, module boundaries, and call chains. Understand data flow at a glance.",
+  },
+  {
+    Icon: FileCode2,
+    title: "Deep Code Understanding",
+    desc: "Goes beyond syntax. Understands business logic, design patterns, architectural decisions, and tech debt hotspots.",
+  },
+  {
+    Icon: Globe,
+    title: "GitHub URL Analysis",
+    desc: "Paste any public GitHub URL. GitMind clones, parses, and produces a senior-engineer-level report in under 60 seconds.",
+  },
+  {
+    Icon: ShieldCheck,
+    title: "Zero Setup Required",
+    desc: "No config files, no SDK, no boilerplate. Point at a repo and get results. Works with any language or framework.",
+  },
+  {
+    Icon: BrainCircuit,
+    title: "AI-Powered Insights",
+    desc: "Reasons about your code like a senior engineer — suggesting refactors, flagging anti-patterns, predicting failure points.",
+  },
+  {
+    Icon: Workflow,
+    title: "Dependency Risk Mapping",
+    desc: "Maps the full dependency tree and highlights vulnerable, outdated, or abandoned packages.",
+  },
+  {
+    Icon: Gauge,
+    title: "Performance Profiling",
+    desc: "Identifies hot paths, N+1 queries, unnecessary re-renders, and memory leaks ranked by impact.",
+  },
 ];
 
 const STATS = [
@@ -47,7 +94,10 @@ function Particles() {
     if (!ctx) return;
     let raf;
     const particles = [];
-    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
     resize();
     window.addEventListener("resize", resize);
     /* Fewer particles on small screens keeps the hero smooth on mobile */
@@ -65,7 +115,8 @@ function Particles() {
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       particles.forEach((p) => {
-        p.x += p.dx; p.y += p.dy;
+        p.x += p.dx;
+        p.y += p.dy;
         if (p.x < 0) p.x = canvas.width;
         if (p.x > canvas.width) p.x = 0;
         if (p.y < 0) p.y = canvas.height;
@@ -78,7 +129,10 @@ function Particles() {
       raf = requestAnimationFrame(draw);
     };
     draw();
-    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", resize);
+    };
   }, []);
   return <canvas ref={canvasRef} className="lp-particles" />;
 }
@@ -101,7 +155,7 @@ function useScrollReveal(threshold = 0.15) {
           observer.unobserve(el);
         }
       },
-      { threshold }
+      { threshold },
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -113,7 +167,11 @@ function useScrollReveal(threshold = 0.15) {
 function FeatureCard({ Icon, title, desc, delay }) {
   const ref = useScrollReveal();
   return (
-    <div ref={ref} className="lp-feature-card" style={{ transitionDelay: `${delay}s` }}>
+    <div
+      ref={ref}
+      className="lp-feature-card"
+      style={{ transitionDelay: `${delay}s` }}
+    >
       <div className="lp-feature-icon">
         <Icon size={20} />
       </div>
@@ -127,8 +185,14 @@ function FeatureCard({ Icon, title, desc, delay }) {
 function StatItem({ value, label, Icon, delay }) {
   const ref = useScrollReveal();
   return (
-    <div ref={ref} className="lp-stat-item" style={{ transitionDelay: `${delay}s` }}>
-      <div className="lp-stat-icon"><Icon size={20} /></div>
+    <div
+      ref={ref}
+      className="lp-stat-item"
+      style={{ transitionDelay: `${delay}s` }}
+    >
+      <div className="lp-stat-icon">
+        <Icon size={20} />
+      </div>
       <div className="lp-stat-value">{value}</div>
       <div className="lp-stat-label">{label}</div>
     </div>
@@ -139,7 +203,11 @@ function StatItem({ value, label, Icon, delay }) {
 function HowStep({ num, title, desc, delay }) {
   const ref = useScrollReveal();
   return (
-    <div ref={ref} className="lp-how-step" style={{ transitionDelay: `${delay}s` }}>
+    <div
+      ref={ref}
+      className="lp-how-step"
+      style={{ transitionDelay: `${delay}s` }}
+    >
       <div className="lp-how-step-num">{num}</div>
       <h3 className="lp-how-step-title">{title}</h3>
       <p className="lp-how-step-desc">{desc}</p>
@@ -219,12 +287,9 @@ function HeroPreview() {
           <i />
           <i />
         </span>
-        <span className="lp-preview-title">
-          gitmind · facebook/react
-        </span>
+        <span className="lp-preview-title">gitmind · facebook/react</span>
         <span className="lp-preview-badge">
-          <span className="lp-preview-pulse" />
-          6 AGENTS · SWEEPING
+          <span className="lp-preview-pulse" />6 AGENTS · SWEEPING
         </span>
       </div>
 
@@ -267,7 +332,14 @@ function HeroPreview() {
           {/* Central repository node */}
           <div className="lp-radar-core">
             <span className="lp-radar-core-mark">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M12 2L2 7l10 5 10-5-10-5z" />
                 <path d="M2 17l10 5 10-5" />
                 <path d="M2 12l10 5 10-5" />
@@ -281,11 +353,15 @@ function HeroPreview() {
             <div
               key={code}
               className="lp-radar-orbit"
-              style={{ transform: `rotate(${angle}deg) translateX(var(--radar-r))` }}
+              style={{
+                transform: `rotate(${angle}deg) translateX(var(--radar-r))`,
+              }}
             >
               <div
                 className="lp-radar-agent"
-                style={{ transform: `translate(-50%, -50%) rotate(${-angle}deg)` }}
+                style={{
+                  transform: `translate(-50%, -50%) rotate(${-angle}deg)`,
+                }}
               >
                 <span
                   className="lp-radar-agent-dot"
@@ -305,7 +381,9 @@ function HeroPreview() {
         <span className="lp-preview-cursor" />
         <span className="lp-preview-ok">
           <span className="lp-preview-ok-check">✓</span>
-          <span className="lp-preview-ok-text">3 findings · grade A · 48 endpoints</span>
+          <span className="lp-preview-ok-text">
+            3 findings · grade A · 48 endpoints
+          </span>
         </span>
       </div>
     </div>
@@ -325,7 +403,9 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
 
   /* Lenis smooth scroll + GSAP ticker */
   useEffect(() => {
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)")?.matches;
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    )?.matches;
     if (reducedMotion) return;
 
     const lenis = new Lenis({
@@ -346,18 +426,24 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
     requestAnimationFrame(raf);
 
     lenis.on("scroll", ScrollTrigger.update);
-    gsap.ticker.add((time) => { lenis.raf(time * 1000); });
+    gsap.ticker.add((time) => {
+      lenis.raf(time * 1000);
+    });
     gsap.ticker.lagSmoothing(0);
 
     return () => {
       lenis.destroy();
-      gsap.ticker.remove((time) => { lenis.raf(time * 1000); });
+      gsap.ticker.remove((time) => {
+        lenis.raf(time * 1000);
+      });
     };
   }, []);
 
   /* GSAP scroll animations */
   useEffect(() => {
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)")?.matches;
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    )?.matches;
     if (reducedMotion) return;
 
     const ctx = gsap.context(() => {
@@ -415,8 +501,10 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
       const el = document.getElementById(id);
       if (!el) return;
       const observer = new IntersectionObserver(
-        ([entry]) => { if (entry.isIntersecting) setActiveSection(id); },
-        { threshold: 0.3, rootMargin: "-56px 0px 0px 0px" }
+        ([entry]) => {
+          if (entry.isIntersecting) setActiveSection(id);
+        },
+        { threshold: 0.3, rootMargin: "-56px 0px 0px 0px" },
       );
       observer.observe(el);
       observers.push(observer);
@@ -433,7 +521,14 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
         <div className="lp-nav-inner">
           <div className="lp-nav-brand">
             <div className="lp-nav-logo">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M12 2L2 7l10 5 10-5-10-5z" />
                 <path d="M2 17l10 5 10-5" />
                 <path d="M2 12l10 5 10-5" />
@@ -442,9 +537,24 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
             <span>GitMind</span>
           </div>
           <div className="lp-nav-links">
-            <a href="#features" className={`lp-nav-link${activeSection === "features" ? " lp-nav-link--active" : ""}`}>Features</a>
-            <a href="#stats" className={`lp-nav-link${activeSection === "stats" ? " lp-nav-link--active" : ""}`}>Stats</a>
-            <a href="#how-it-works" className={`lp-nav-link${activeSection === "how-it-works" ? " lp-nav-link--active" : ""}`}>How it works</a>
+            <a
+              href="#features"
+              className={`lp-nav-link${activeSection === "features" ? " lp-nav-link--active" : ""}`}
+            >
+              Features
+            </a>
+            <a
+              href="#stats"
+              className={`lp-nav-link${activeSection === "stats" ? " lp-nav-link--active" : ""}`}
+            >
+              Stats
+            </a>
+            <a
+              href="#how-it-works"
+              className={`lp-nav-link${activeSection === "how-it-works" ? " lp-nav-link--active" : ""}`}
+            >
+              How it works
+            </a>
           </div>
         </div>
       </nav>
@@ -458,7 +568,9 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
           <h1 className="lp-hero-title">
             <span className="lp-title-line">Understand your code.</span>
             <br />
-            <span className="lp-title-line lp-title-accent">Ship with confidence.</span>
+            <span className="lp-title-line lp-title-accent">
+              Ship with confidence.
+            </span>
           </h1>
           <p className="lp-hero-sub">
             Analyze repositories for vulnerabilities, architecture patterns, and
@@ -471,7 +583,10 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
           />
           <HeroPreview />
         </div>
-        <div className="lp-scroll-hint" style={{ opacity: Math.max(0, 1 - scrollY * 0.005) }}>
+        <div
+          className="lp-scroll-hint"
+          style={{ opacity: Math.max(0, 1 - scrollY * 0.005) }}
+        >
           <ChevronDown size={20} />
         </div>
       </section>
@@ -483,15 +598,24 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
           <div className="lp-section-header">
             <div>
               <span className="lp-section-label">What's Inside</span>
-              <h2 className="lp-section-title">Everything you need to ship safer</h2>
+              <h2 className="lp-section-title">
+                Everything you need to ship safer
+              </h2>
               <p className="lp-section-sub">
-                Six agents working in parallel to analyze every dimension of your repository.
+                Six agents working in parallel to analyze every dimension of
+                your repository.
               </p>
             </div>
           </div>
           <div className="lp-features-grid">
             {FEATURES.map(({ Icon, title, desc }, i) => (
-              <FeatureCard key={title} Icon={Icon} title={title} desc={desc} delay={i * 0.06} />
+              <FeatureCard
+                key={title}
+                Icon={Icon}
+                title={title}
+                desc={desc}
+                delay={i * 0.06}
+              />
             ))}
           </div>
         </div>
@@ -502,7 +626,13 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
         <div className="lp-section-inner">
           <div className="lp-stats-grid">
             {STATS.map(({ value, label, Icon }, i) => (
-              <StatItem key={label} value={value} label={label} Icon={Icon} delay={i * 0.1} />
+              <StatItem
+                key={label}
+                value={value}
+                label={label}
+                Icon={Icon}
+                delay={i * 0.1}
+              />
             ))}
           </div>
         </div>
@@ -522,9 +652,24 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
             </div>
           </div>
           <div className="lp-how-steps">
-            <HowStep num="01" title="Enter a repo" desc="Paste a GitHub URL or type a username to browse repos." delay={0} />
-            <HowStep num="02" title="AI analyzes" desc="Six agents scan security, architecture, docs, CVEs, and code quality in parallel." delay={0.12} />
-            <HowStep num="03" title="Get results" desc="Interactive reports with severity-ranked findings, fix suggestions, and exportable PDFs." delay={0.24} />
+            <HowStep
+              num="01"
+              title="Enter a repo"
+              desc="Paste a GitHub URL or type a username to browse repos."
+              delay={0}
+            />
+            <HowStep
+              num="02"
+              title="AI analyzes"
+              desc="Six agents scan security, architecture, docs, CVEs, and code quality in parallel."
+              delay={0.12}
+            />
+            <HowStep
+              num="03"
+              title="Get results"
+              desc="Interactive reports with severity-ranked findings, fix suggestions, and exportable PDFs."
+              delay={0.24}
+            />
           </div>
         </div>
       </section>
@@ -535,7 +680,8 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
         <div className="lp-section-inner">
           <h2 className="lp-cta-title">Ready to analyze your code?</h2>
           <p className="lp-cta-sub">
-            Start with a public repository or connect your GitHub token for private repos.
+            Start with a public repository or connect your GitHub token for
+            private repos.
           </p>
           <button
             className="lp-cta-btn"
@@ -557,7 +703,14 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
       <footer className="lp-footer">
         <div className="lp-footer-inner">
           <div className="lp-footer-brand">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M12 2L2 7l10 5 10-5-10-5z" />
               <path d="M2 17l10 5 10-5" />
               <path d="M2 12l10 5 10-5" />

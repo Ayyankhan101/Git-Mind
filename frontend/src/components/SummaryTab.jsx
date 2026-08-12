@@ -553,7 +553,6 @@ export default function SummaryTab({
               </span>
             </div>
           </div>
-
         </div>
 
         {/* Right Card — Repository Description (summary text) */}

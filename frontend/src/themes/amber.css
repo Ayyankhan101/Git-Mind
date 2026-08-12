@@ -23,9 +23,9 @@
   --text-on-primary: #1a1208;
 
   --border-subtle: rgba(212, 167, 74, 0.06);
-  --border-default: rgba(212, 167, 74, 0.10);
+  --border-default: rgba(212, 167, 74, 0.1);
   --border-strong: rgba(212, 167, 74, 0.16);
-  --border-accent: rgba(212, 167, 74, 0.30);
+  --border-accent: rgba(212, 167, 74, 0.3);
 
   --glass-bg: rgba(26, 18, 8, 0.7);
   --glass-border: rgba(212, 167, 74, 0.08);
@@ -38,7 +38,7 @@
   --success: #34d399;
   --success-bg: rgba(52, 211, 153, 0.08);
   --warning: #d4a74a;
-  --warning-bg: rgba(212, 167, 74, 0.10);
+  --warning-bg: rgba(212, 167, 74, 0.1);
   --danger: #f87171;
   --danger-bg: rgba(248, 113, 113, 0.08);
   --info: #60a5fa;

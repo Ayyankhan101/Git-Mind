@@ -233,7 +233,10 @@ export default function ArchNode({ data, selected }) {
               </span>
             </div>
             {(language || framework) && (
-              <div className="text-[11px] mt-0.5 truncate" style={{ color: "var(--text-2)" }}>
+              <div
+                className="text-[11px] mt-0.5 truncate"
+                style={{ color: "var(--text-2)" }}
+              >
                 {language}
                 {framework ? ` · ${framework}` : ""}
               </div>
@@ -260,12 +263,17 @@ export default function ArchNode({ data, selected }) {
                   <span style={{ color: methodColor, fontWeight: 700 }}>
                     {ep.method}
                   </span>
-                  <span className="truncate" style={{ color: "var(--text-2)" }}>{ep.path}</span>
+                  <span className="truncate" style={{ color: "var(--text-2)" }}>
+                    {ep.path}
+                  </span>
                 </span>
               );
             })}
             {endpoints.length > 4 && (
-              <span className="text-[10px] px-1" style={{ color: "var(--text-3)" }}>
+              <span
+                className="text-[10px] px-1"
+                style={{ color: "var(--text-3)" }}
+              >
                 +{endpoints.length - 4}
               </span>
             )}
@@ -273,7 +281,10 @@ export default function ArchNode({ data, selected }) {
         )}
 
         {/* Imports / Export chips */}
-        <div className="flex items-center gap-2 text-[11px]" style={{ color: "var(--text-3)" }}>
+        <div
+          className="flex items-center gap-2 text-[11px]"
+          style={{ color: "var(--text-3)" }}
+        >
           {imports.length > 0 && (
             <div className="flex items-center gap-1 truncate min-w-0">
               <span className="shrink-0 opacity-60">in</span>

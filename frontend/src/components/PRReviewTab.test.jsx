@@ -112,7 +112,9 @@ describe("parseReview", () => {
         "APPROVE",
       ].join("\n"),
     );
-    expect(parsed.issues).toEqual([{ raw: "this line does not match the format" }]);
+    expect(parsed.issues).toEqual([
+      { raw: "this line does not match the format" },
+    ]);
   });
 
   test("returns empty verdict when missing", () => {
@@ -238,9 +240,7 @@ test("renders impact panel with risk, deltas, and chips", async () => {
     fixed_cves: [],
     breakdown_delta: { security: 2 },
   });
-  render(
-    <PRReviewTab analyzed={true} sessionId="sess-1" />,
-  );
+  render(<PRReviewTab analyzed={true} sessionId="sess-1" />);
   fireEvent.change(screen.getByLabelText("Pull request URL"), {
     target: { value: "https://github.com/owner/repo/pull/12" },
   });
@@ -269,9 +269,7 @@ test("shows impact error without a base session", async () => {
 test("filters open PRs via fetchOpenPRs when repoUrl is provided", async () => {
   const { fetchOpenPRs } = require("../api");
   fetchOpenPRs.mockResolvedValue({ prs: [{ number: 1, title: "Fix bug" }] });
-  render(
-    <PRReviewTab repoUrl="https://github.com/acme/app.git" />,
-  );
+  render(<PRReviewTab repoUrl="https://github.com/acme/app.git" />);
   await waitFor(() =>
     expect(fetchOpenPRs).toHaveBeenCalledWith("acme", "app", null),
   );

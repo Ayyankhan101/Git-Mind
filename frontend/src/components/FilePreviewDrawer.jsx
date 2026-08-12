@@ -39,8 +39,10 @@ export default function FilePreviewDrawer({
     const headers = { Accept: "application/vnd.github.v3+json" };
     if (ghToken) headers["Authorization"] = `Bearer ${ghToken}`;
     fetch(`https://api.github.com/repos/${ownerRepo}`, { headers })
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => { if (data?.default_branch) setDefaultBranch(data.default_branch); })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.default_branch) setDefaultBranch(data.default_branch);
+      })
       .catch(() => {});
   }, [repoUrl, ghToken]);
 
@@ -122,7 +124,13 @@ export default function FilePreviewDrawer({
   return (
     <>
       <div className="drawer-backdrop" onClick={onClose} />
-      <div className="drawer" role="dialog" aria-modal="true" aria-label="File preview" ref={trapRef}>
+      <div
+        className="drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="File preview"
+        ref={trapRef}
+      >
         <div className="drawer-header">
           <span className="drawer-icon">
             <FileText size={14} strokeWidth={1.5} />
@@ -160,7 +168,11 @@ export default function FilePreviewDrawer({
           >
             <Copy size={13} strokeWidth={1.5} />
           </button>
-          <button className="btn-icon" onClick={onClose} aria-label="Close file preview">
+          <button
+            className="btn-icon"
+            onClick={onClose}
+            aria-label="Close file preview"
+          >
             <X size={13} strokeWidth={1.5} />
           </button>
         </div>

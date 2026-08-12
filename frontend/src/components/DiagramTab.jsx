@@ -84,9 +84,7 @@ function humanizeNodeLabel(label, tier) {
 
   // Underscore labels → title case
   if (label.includes("_")) {
-    return label
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase());
+    return label.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   }
 
   return label;
@@ -120,7 +118,8 @@ export default function DiagramTab({
     try {
       setParseError(null);
       // Determine input type: rich JSON graph vs Mermaid string
-      const hasGraph = archGraph && archGraph.nodes && archGraph.nodes.length > 0;
+      const hasGraph =
+        archGraph && archGraph.nodes && archGraph.nodes.length > 0;
       const hasMermaid =
         diagram && typeof diagram === "string" && diagram.startsWith("graph");
 
@@ -363,12 +362,29 @@ export default function DiagramTab({
               justifyContent: "center",
             }}
           >
-            <AlertTriangle size={24} style={{ color: "var(--danger)" }} strokeWidth={1.5} />
+            <AlertTriangle
+              size={24}
+              style={{ color: "var(--danger)" }}
+              strokeWidth={1.5}
+            />
           </div>
-          <div style={{ fontSize: fs.base, fontWeight: 600, color: "var(--text-1)" }}>
+          <div
+            style={{
+              fontSize: fs.base,
+              fontWeight: 600,
+              color: "var(--text-1)",
+            }}
+          >
             Diagram unavailable
           </div>
-          <div style={{ fontSize: fs.sm, color: "var(--text-3)", maxWidth: 320, textAlign: "center" }}>
+          <div
+            style={{
+              fontSize: fs.sm,
+              color: "var(--text-3)",
+              maxWidth: 320,
+              textAlign: "center",
+            }}
+          >
             {parseError}
           </div>
         </div>
@@ -408,7 +424,9 @@ export default function DiagramTab({
               strokeWidth={1.5}
             />
           </div>
-          <div style={{ fontSize: fs.lg, fontWeight: 600, color: "var(--text-1)" }}>
+          <div
+            style={{ fontSize: fs.lg, fontWeight: 600, color: "var(--text-1)" }}
+          >
             Architecture not available
           </div>
           <div style={{ fontSize: fs.sm, color: "var(--text-3)" }}>
@@ -431,183 +449,181 @@ export default function DiagramTab({
           overflow: "hidden",
         }}
       >
-      <div
-        style={{
-          display: "flex",
-          width: "100%",
-          height: "100%",
-          overflow: "hidden",
-          position: "relative",
-        }}
-      >
-        {/* Canvas Area Container */}
         <div
-          className="diagram-canvas"
           style={{
+            display: "flex",
             width: "100%",
             height: "100%",
+            overflow: "hidden",
             position: "relative",
-            boxShadow: "none",
           }}
-          ref={reactFlowWrapper}
         >
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            onNodeClick={onNodeClick}
-            onNodeMouseEnter={onNodeMouseEnter}
-            onNodeMouseLeave={onNodeMouseLeave}
-            onPaneClick={onPaneClick}
-            onMove={onMove}
-            onInit={(instance) => {
-              reactFlowInstance.current = instance;
+          {/* Canvas Area Container */}
+          <div
+            className="diagram-canvas"
+            style={{
+              width: "100%",
+              height: "100%",
+              position: "relative",
+              boxShadow: "none",
             }}
-            nodesDraggable={true}
-            fitView
-            fitViewOptions={{ padding: 0.2 }}
-            minZoom={0.1}
-            maxZoom={2}
-            proOptions={{ hideAttribution: true }}
-            style={{ background: "transparent" }}
+            ref={reactFlowWrapper}
           >
-            <MiniMap
-              zoomable
-              pannable
-              style={{
-                position: "absolute",
-                left: 16,
-                bottom: 16,
-                width: 150,
-                height: 100,
-                display: "block",
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: 12,
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
+              onNodeClick={onNodeClick}
+              onNodeMouseEnter={onNodeMouseEnter}
+              onNodeMouseLeave={onNodeMouseLeave}
+              onPaneClick={onPaneClick}
+              onMove={onMove}
+              onInit={(instance) => {
+                reactFlowInstance.current = instance;
               }}
-              nodeColor={(n) => {
-                if (n.data?.tier === "frontend") return "var(--info)";
-                if (n.data?.tier === "backend") return "var(--accent)";
-                return "var(--text-3)";
-              }}
-              maskColor="var(--surface)"
+              nodesDraggable={true}
+              fitView
+              fitViewOptions={{ padding: 0.2 }}
+              minZoom={0.1}
+              maxZoom={2}
+              proOptions={{ hideAttribution: true }}
+              style={{ background: "transparent" }}
+            >
+              <MiniMap
+                zoomable
+                pannable
+                style={{
+                  position: "absolute",
+                  left: 16,
+                  bottom: 16,
+                  width: 150,
+                  height: 100,
+                  display: "block",
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 12,
+                }}
+                nodeColor={(n) => {
+                  if (n.data?.tier === "frontend") return "var(--info)";
+                  if (n.data?.tier === "backend") return "var(--accent)";
+                  return "var(--text-3)";
+                }}
+                maskColor="var(--surface)"
+              />
+              <Background color="var(--border-s)" gap={24} size={1} />
+            </ReactFlow>
+          </div>
+
+          {/* Node Drawer Panel */}
+          {selectedNode && (
+            <NodePanel
+              node={selectedNode}
+              sessionId={sessionId}
+              enabled={enabled}
+              onClose={() => setSelectedNode(null)}
             />
-            <Background color="var(--border-s)" gap={24} size={1} />
-          </ReactFlow>
-        </div>
+          )}
 
-        {/* Node Drawer Panel */}
-        {selectedNode && (
-          <NodePanel
-            node={selectedNode}
-            sessionId={sessionId}
-            enabled={enabled}
-            onClose={() => setSelectedNode(null)}
-          />
-        )}
-
-        {/* Centered Floating Control Dock */}
-        <div
-          style={{
-            position: "absolute",
-            right: 16,
-            top: "50%",
-            transform: "translateY(-50%)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 12,
-            padding: "12px 8px",
-            background: "var(--surface)",
-            backdropFilter: "blur(24px)",
-            WebkitBackdropFilter: "blur(24px)",
-            border: "1px solid var(--border)",
-            borderRadius: 12,
-            zIndex: 30,
-            boxShadow: "var(--shadow-lg)",
-          }}
-        >
-          <span
-            style={{
-              fontSize: fs.micro,
-              fontFamily: "monospace",
-              fontWeight: 700,
-              color: "var(--text-2)",
-              userSelect: "none",
-            }}
-          >
-            {displayScale}%
-          </span>
-
+          {/* Centered Floating Control Dock */}
           <div
             style={{
-              width: 20,
-              height: 1,
-              background: "var(--border-m)",
+              position: "absolute",
+              right: 16,
+              top: "50%",
+              transform: "translateY(-50%)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 12,
+              padding: "12px 8px",
+              background: "var(--surface)",
+              backdropFilter: "blur(24px)",
+              WebkitBackdropFilter: "blur(24px)",
+              border: "1px solid var(--border)",
+              borderRadius: 12,
+              zIndex: 30,
+              boxShadow: "var(--shadow-lg)",
             }}
-          />
-
-          <button
-            onClick={() => reactFlowInstance.current?.zoomIn()}
-            className="diagram-control-btn"
-            title="Zoom In"
-            aria-label="Zoom in"
           >
-            <ZoomIn size={15} />
-          </button>
+            <span
+              style={{
+                fontSize: fs.micro,
+                fontFamily: "monospace",
+                fontWeight: 700,
+                color: "var(--text-2)",
+                userSelect: "none",
+              }}
+            >
+              {displayScale}%
+            </span>
 
-          <button
-            onClick={() => reactFlowInstance.current?.zoomOut()}
-            className="diagram-control-btn"
-            title="Zoom out"
-            aria-label="Zoom out"
-          >
-            <ZoomOut size={15} />
-          </button>
+            <div
+              style={{
+                width: 20,
+                height: 1,
+                background: "var(--border-m)",
+              }}
+            />
 
-          <div
-            style={{
-              width: 20,
-              height: 1,
-              background: "var(--border-s)",
-            }}
-          />
+            <button
+              onClick={() => reactFlowInstance.current?.zoomIn()}
+              className="diagram-control-btn"
+              title="Zoom In"
+              aria-label="Zoom in"
+            >
+              <ZoomIn size={15} />
+            </button>
 
-          <button
-            onClick={() => reactFlowInstance.current?.fitView({ padding: 0.2 })}
-            className="diagram-control-btn"
-            title="Recenter view"
-            aria-label="Recenter view"
-          >
-            <Scan size={14} />
-          </button>
+            <button
+              onClick={() => reactFlowInstance.current?.zoomOut()}
+              className="diagram-control-btn"
+              title="Zoom out"
+              aria-label="Zoom out"
+            >
+              <ZoomOut size={15} />
+            </button>
 
-          <button
-            onClick={handleFullscreen}
-            className="diagram-control-btn"
-            title="Fullscreen mode"
-            aria-label="Toggle fullscreen"
-          >
-            <Expand size={14} />
-          </button>
+            <div
+              style={{
+                width: 20,
+                height: 1,
+                background: "var(--border-s)",
+              }}
+            />
 
-          <button
-            onClick={handleCopy}
-            className={`diagram-control-btn${copied ? " diagram-control-btn-active" : ""}`}
-            title="Copy diagram"
-            aria-label="Copy diagram"
-          >
-            {copied ? (
-              <Check size={14} />
-            ) : (
-              <Copy size={14} />
-            )}
-          </button>
+            <button
+              onClick={() =>
+                reactFlowInstance.current?.fitView({ padding: 0.2 })
+              }
+              className="diagram-control-btn"
+              title="Recenter view"
+              aria-label="Recenter view"
+            >
+              <Scan size={14} />
+            </button>
+
+            <button
+              onClick={handleFullscreen}
+              className="diagram-control-btn"
+              title="Fullscreen mode"
+              aria-label="Toggle fullscreen"
+            >
+              <Expand size={14} />
+            </button>
+
+            <button
+              onClick={handleCopy}
+              className={`diagram-control-btn${copied ? " diagram-control-btn-active" : ""}`}
+              title="Copy diagram"
+              aria-label="Copy diagram"
+            >
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+            </button>
+          </div>
         </div>
-      </div>
       </div>
     </DiagramShell>
   );

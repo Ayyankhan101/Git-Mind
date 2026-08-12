@@ -11,14 +11,17 @@ export default function ToastSystem({ toasts, onDismiss }) {
   const [exiting, setExiting] = useState(new Set());
   const timers = useRef({});
 
-  const handleDismiss = useCallback((id) => {
-    if (timers.current[id]) return;
-    setExiting((prev) => new Set([...prev, id]));
-    timers.current[id] = setTimeout(() => {
-      onDismiss(id);
-      delete timers.current[id];
-    }, 250);
-  }, [onDismiss]);
+  const handleDismiss = useCallback(
+    (id) => {
+      if (timers.current[id]) return;
+      setExiting((prev) => new Set([...prev, id]));
+      timers.current[id] = setTimeout(() => {
+        onDismiss(id);
+        delete timers.current[id];
+      }, 250);
+    },
+    [onDismiss],
+  );
 
   if (!toasts.length) return null;
   return (
@@ -42,7 +45,11 @@ export default function ToastSystem({ toasts, onDismiss }) {
               </div>
               {t.sub && <div className="toast-sub">{t.sub}</div>}
             </div>
-            <button className="btn-icon" onClick={() => handleDismiss(t.id)} aria-label="Dismiss notification">
+            <button
+              className="btn-icon"
+              onClick={() => handleDismiss(t.id)}
+              aria-label="Dismiss notification"
+            >
               <X size={12} strokeWidth={1.5} />
             </button>
           </div>

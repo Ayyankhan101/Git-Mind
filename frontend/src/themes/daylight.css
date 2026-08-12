@@ -30,9 +30,9 @@
   --text-on-primary: #ffffff;
 
   --border-subtle: rgba(15, 23, 42, 0.06);
-  --border-default: rgba(15, 23, 42, 0.10);
+  --border-default: rgba(15, 23, 42, 0.1);
   --border-strong: rgba(15, 23, 42, 0.16);
-  --border-accent: rgba(59, 130, 246, 0.30);
+  --border-accent: rgba(59, 130, 246, 0.3);
 
   --glass-bg: rgba(255, 255, 255, 0.8);
   --glass-border: rgba(15, 23, 42, 0.08);
@@ -46,7 +46,7 @@
   --success-bg: rgba(22, 163, 74, 0.08);
   --warning: #d97706;
   --warning-bg: rgba(217, 119, 6, 0.08);
-  --warning-border: rgba(217, 119, 6, 0.30);
+  --warning-border: rgba(217, 119, 6, 0.3);
   --danger: #dc2626;
   --danger-bg: rgba(220, 38, 38, 0.08);
   --info: #2563eb;

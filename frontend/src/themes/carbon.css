@@ -14,7 +14,7 @@
   --primary: #ffffff;
   --primary-hover: #e0e0e0;
   --primary-strong: #cccccc;
-  --primary-muted: rgba(255, 255, 255, 0.10);
+  --primary-muted: rgba(255, 255, 255, 0.1);
   --primary-subtle: rgba(255, 255, 255, 0.05);
 
   --text-primary: #ffffff;
@@ -23,7 +23,7 @@
   --text-on-primary: #000000;
 
   --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-default: rgba(255, 255, 255, 0.10);
+  --border-default: rgba(255, 255, 255, 0.1);
   --border-strong: rgba(255, 255, 255, 0.16);
   --border-accent: rgba(255, 255, 255, 0.25);
 

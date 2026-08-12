@@ -9,8 +9,11 @@ jest.mock("../api", () => ({
   fetchAnalysisHistory: jest.fn(),
 }));
 
-const { subscribeMonitor, fetchMonitorStatus, unsubscribeMonitor } =
-  require("../api");
+const {
+  subscribeMonitor,
+  fetchMonitorStatus,
+  unsubscribeMonitor,
+} = require("../api");
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -75,7 +78,9 @@ test("opens subscribe form and validates empty URL", async () => {
   ).toBeInTheDocument();
 
   fireEvent.click(screen.getByText("Subscribe"));
-  expect(screen.getByText("Enter a GitHub repository URL.")).toBeInTheDocument();
+  expect(
+    screen.getByText("Enter a GitHub repository URL."),
+  ).toBeInTheDocument();
   expect(subscribeMonitor).not.toHaveBeenCalled();
 });
 
@@ -101,14 +106,14 @@ test("subscribes successfully and refreshes the list", async () => {
   fetchMonitorStatus
     .mockResolvedValueOnce({ repos: [] })
     .mockResolvedValueOnce({
-    repos: [
-      {
-        id: "mon-3",
-        repo_url: "https://github.com/foo/bar",
-        last_sha: "abc",
-        last_check_at: Math.floor(Date.now() / 1000),
-      },
-    ],
+      repos: [
+        {
+          id: "mon-3",
+          repo_url: "https://github.com/foo/bar",
+          last_sha: "abc",
+          last_check_at: Math.floor(Date.now() / 1000),
+        },
+      ],
     });
   subscribeMonitor.mockResolvedValue({ ok: true });
   render(<MonitoringTab />);
@@ -136,7 +141,10 @@ test("subscribes successfully and refreshes the list", async () => {
 });
 
 test("sends optional slack webhook with the subscription", async () => {
-  fetchMonitorStatus.mockResolvedValueOnce({ repos: [] }).mockResolvedValueOnce({      repos: [
+  fetchMonitorStatus
+    .mockResolvedValueOnce({ repos: [] })
+    .mockResolvedValueOnce({
+      repos: [
         {
           id: "mon-4",
           repo_url: "https://github.com/foo/bar",
@@ -144,7 +152,7 @@ test("sends optional slack webhook with the subscription", async () => {
           last_check_at: null,
         },
       ],
-  });
+    });
   subscribeMonitor.mockResolvedValue({ ok: true });
   render(<MonitoringTab />);
   await screen.findByText("No repos monitored yet");
@@ -154,9 +162,12 @@ test("sends optional slack webhook with the subscription", async () => {
     screen.getByPlaceholderText("https://github.com/owner/repo"),
     { target: { value: "https://github.com/foo/bar" } },
   );
-  fireEvent.change(screen.getByPlaceholderText("Slack webhook URL (optional)"), {
-    target: { value: "https://hooks.slack.com/XYZ" },
-  });
+  fireEvent.change(
+    screen.getByPlaceholderText("Slack webhook URL (optional)"),
+    {
+      target: { value: "https://hooks.slack.com/XYZ" },
+    },
+  );
   fireEvent.click(screen.getByText("Subscribe"));
 
   await waitFor(() =>

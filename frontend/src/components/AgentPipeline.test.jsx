@@ -44,9 +44,11 @@ test("shows elapsed time on done agents", () => {
       repoName="test"
     />,
   );
-  expect(screen.getAllByTestId("pipe-time").some((el) =>
-    el.textContent.includes("45s"),
-  )).toBe(true);
+  expect(
+    screen
+      .getAllByTestId("pipe-time")
+      .some((el) => el.textContent.includes("45s")),
+  ).toBe(true);
 });
 
 test("caps elapsed time at 99s per agent row", () => {
@@ -59,9 +61,11 @@ test("caps elapsed time at 99s per agent row", () => {
       repoName="test"
     />,
   );
-  expect(screen.getAllByTestId("pipe-time").some((el) =>
-    el.textContent.includes("99s"),
-  )).toBe(true);
+  expect(
+    screen
+      .getAllByTestId("pipe-time")
+      .some((el) => el.textContent.includes("99s")),
+  ).toBe(true);
 });
 
 test("shows checkmark for done agent with zero elapsed", () => {
@@ -74,9 +78,11 @@ test("shows checkmark for done agent with zero elapsed", () => {
       repoName="test"
     />,
   );
-  expect(screen.getAllByTestId("pipe-time").some((el) =>
-    el.textContent.includes("✓"),
-  )).toBe(true);
+  expect(
+    screen
+      .getAllByTestId("pipe-time")
+      .some((el) => el.textContent.includes("✓")),
+  ).toBe(true);
 });
 
 test("shows spinner on running agents", () => {

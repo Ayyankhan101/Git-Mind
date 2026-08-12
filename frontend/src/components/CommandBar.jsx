@@ -1,5 +1,12 @@
 import React, { useRef, useCallback } from "react";
-import { Search, FolderOpen, Share2, Download, Check, Lock } from "lucide-react";
+import {
+  Search,
+  FolderOpen,
+  Share2,
+  Download,
+  Check,
+  Lock,
+} from "lucide-react";
 import ThemeSwitcher from "./ThemeSwitcher";
 import { isValidGhToken } from "../api";
 import * as tokenManager from "../tokenManager";

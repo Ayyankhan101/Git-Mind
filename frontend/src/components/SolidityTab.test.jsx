@@ -62,9 +62,7 @@ const SAMPLE_AUDIT = {
 };
 
 test("shows skeleton while analyzing", () => {
-  render(
-    <SolidityTab solAudit={null} isAnalyzing={true} />,
-  );
+  render(<SolidityTab solAudit={null} isAnalyzing={true} />);
   expect(document.querySelectorAll(".sk").length).toBeGreaterThan(0);
   expect(
     screen.queryByText("No Solidity (.sol) files found in this repository."),
@@ -72,9 +70,7 @@ test("shows skeleton while analyzing", () => {
 });
 
 test("shows empty state when no sol files", () => {
-  render(
-    <SolidityTab solAudit={null} isAnalyzing={false} />,
-  );
+  render(<SolidityTab solAudit={null} isAnalyzing={false} />);
   expect(
     screen.getByText("No Solidity (.sol) files found in this repository."),
   ).toBeInTheDocument();
@@ -124,7 +120,9 @@ test("expanding a finding row reveals description, remediation, and fix button",
   const row = screen.getByText("Reentrancy in withdraw");
   fireEvent.click(row);
 
-  expect(screen.getByText("External call before state update.")).toBeInTheDocument();
+  expect(
+    screen.getByText("External call before state update."),
+  ).toBeInTheDocument();
   expect(
     screen.getByText("Use checks-effects-interactions."),
   ).toBeInTheDocument();
@@ -141,7 +139,9 @@ test("finding rows are keyboard-accessible", () => {
   expect(row).toHaveAttribute("aria-expanded", "false");
 
   fireEvent.keyDown(row, { key: "Enter" });
-  expect(screen.getByText("External call before state update.")).toBeInTheDocument();
+  expect(
+    screen.getByText("External call before state update."),
+  ).toBeInTheDocument();
   expect(row).toHaveAttribute("aria-expanded", "true");
 
   fireEvent.keyDown(row, { key: " " });

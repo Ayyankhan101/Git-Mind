@@ -220,7 +220,14 @@ export default function OrgAuditModal({ repos, token, onClose }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="crisis-panel" style={{ maxWidth: 680 }} role="dialog" aria-modal="true" aria-label="Org-wide CVE audit" ref={trapRef}>
+      <div
+        className="crisis-panel"
+        style={{ maxWidth: 680 }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Org-wide CVE audit"
+        ref={trapRef}
+      >
         {/* Header */}
         <div
           className="crisis-header"

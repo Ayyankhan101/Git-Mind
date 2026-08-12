@@ -51,8 +51,22 @@ export default function NavRail({
       ))}
 
       {(isAnalyzing || analyzed) && (
-        <div className="nav-agents" title="Agent pipeline" aria-label="Agent pipeline status">
-          {["scanner", "architecture", "api_docs", "security", "cve_scanner", "chat", "git_audit", "solidity", "code_audit"].map((key) => (
+        <div
+          className="nav-agents"
+          title="Agent pipeline"
+          aria-label="Agent pipeline status"
+        >
+          {[
+            "scanner",
+            "architecture",
+            "api_docs",
+            "security",
+            "cve_scanner",
+            "chat",
+            "git_audit",
+            "solidity",
+            "code_audit",
+          ].map((key) => (
             <div
               key={key}
               className={`nav-agent-dot ${agentStatus[key] || "waiting"}`}
@@ -91,7 +105,9 @@ export default function NavRail({
         data-tip="Shortcuts"
         aria-label="Keyboard shortcuts"
       >
-        <span style={{ fontSize: fs.base, fontWeight: 700, lineHeight: 1 }}>?</span>
+        <span style={{ fontSize: fs.base, fontWeight: 700, lineHeight: 1 }}>
+          ?
+        </span>
       </button>
     </nav>
   );

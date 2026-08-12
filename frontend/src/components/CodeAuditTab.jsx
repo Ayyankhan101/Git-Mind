@@ -1,5 +1,11 @@
 import React, { useState, useMemo } from "react";
-import { Code, ExternalLink, Wrench, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Code,
+  ExternalLink,
+  Wrench,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { fs } from "../typeScale";
 
 const LANG_COLORS = {
@@ -182,17 +188,27 @@ function LangSection({ langResult, onFix, fixLoading, fixResult }) {
           }}
         />
         <span
-          style={{ fontWeight: 600, fontSize: fs.md, textTransform: "capitalize" }}
+          style={{
+            fontWeight: 600,
+            fontSize: fs.md,
+            textTransform: "capitalize",
+          }}
         >
           {language}
         </span>
-        <span style={{ fontSize: fs.xs, color: "var(--text-3)", marginLeft: 4 }}>
+        <span
+          style={{ fontSize: fs.xs, color: "var(--text-3)", marginLeft: 4 }}
+        >
           · {file_count} file{file_count !== 1 ? "s" : ""}· {findings.length}{" "}
           finding{findings.length !== 1 ? "s" : ""}
           {tool && ` · ${tool}`}
         </span>
         <span
-          style={{ marginLeft: "auto", fontSize: fs.xs, color: "var(--text-3)" }}
+          style={{
+            marginLeft: "auto",
+            fontSize: fs.xs,
+            color: "var(--text-3)",
+          }}
         >
           {langExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
         </span>

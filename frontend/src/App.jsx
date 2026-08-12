@@ -11,12 +11,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import LandingPage from "./components/LandingPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ToastSystem from "./components/ToastSystem";
-import {
-  WS_BASE,
-  fetchRepos,
-  loadSharedAnalysis,
-  generateFix,
-} from "./api";
+import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix } from "./api";
 import { appReducer, initialState } from "./appReducer";
 import * as tokenManager from "./tokenManager";
 import { loadTheme } from "./themeLoader";
@@ -84,7 +79,8 @@ export default function App() {
     const savedTheme = localStorage.getItem("gm-theme");
     const savedDensity = localStorage.getItem("gm-density") || "comfortable";
     const root = document.documentElement;
-    if (savedTheme && savedTheme !== "obsidian") root.setAttribute("data-theme", savedTheme);
+    if (savedTheme && savedTheme !== "obsidian")
+      root.setAttribute("data-theme", savedTheme);
     else root.removeAttribute("data-theme");
     if (savedDensity === "comfortable") root.removeAttribute("data-density");
     else root.setAttribute("data-density", savedDensity);
@@ -749,9 +745,7 @@ export default function App() {
           />
           <CommandPalette
             open={showPalette}
-            onClose={() =>
-              dispatch({ type: "SET_SHOW_PALETTE", show: false })
-            }
+            onClose={() => dispatch({ type: "SET_SHOW_PALETTE", show: false })}
             onAction={handlePaletteAction}
             repos={repos}
             recents={recents}
