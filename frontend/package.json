@@ -3,22 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@react-three/drei": "^10.7.8",
-    "@react-three/fiber": "^9.7.0",
-    "@react-three/postprocessing": "^3.0.4",
     "@sentry/react": "^10.69.0",
-    "@splinetool/react-spline": "^4.1.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^13.5.0",
     "@xyflow/react": "^12.11.2",
-    "ajv": "^8.20.0",
     "dagre": "^0.8.5",
     "gsap": "^3.15.0",
     "lenis": "^1.3.25",
     "lucide-react": "^1.16.0",
-    "mermaid": "^11.14.0",
     "pdfmake": "^0.3.11",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
@@ -27,8 +21,7 @@
     "react-scripts": "^5.0.1",
     "react-syntax-highlighter": "^16.1.1",
     "react-window": "^1.8.10",
-    "remark-gfm": "^4.0.1",
-    "three": "^0.185.1"
+    "remark-gfm": "^4.0.1"
   },
   "scripts": {
     "start": "NODE_OPTIONS=\"--disable-warning=DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE --disable-warning=DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE\" react-app-rewired start",
@@ -60,16 +53,16 @@
   },
   "jest": {
     "transformIgnorePatterns": [
-      "node_modules/(?!(gsap|@gsap|lenis|@xyflow|mermaid|pdfmake|react-markdown|remark-gfm|react-syntax-highlighter|bail|is-plain-obj|trough|vfile|unist-util-stringify|micromark|decode-named-character-reference|character-entities|property-information|comma-separated-tokens|space-separated-tokens|rehype|mdast-util-from-markdown|devlop|dir-glob|strip-ansi|escape-string-regexp|find-up|locate-path|p-locate|path-exists|yocto-queue|react-markdown)/)"
+      "node_modules/(?!(@xyflow|pdfmake|react-markdown|remark-gfm|react-syntax-highlighter|bail|is-plain-obj|trough|vfile|unist-util-stringify|micromark|decode-named-character-reference|character-entities|property-information|comma-separated-tokens|space-separated-tokens|rehype|mdast-util-from-markdown|devlop|dir-glob|strip-ansi|escape-string-regexp|find-up|locate-path|p-locate|path-exists|yocto-queue|react-markdown)/)"
     ],
     "moduleNameMapper": {
+      "^react-router-dom$": "<rootDir>/node_modules/react-router-dom/dist/index.js",
+      "^react-router/dom$": "<rootDir>/node_modules/react-router/dist/development/dom-export.js",
+      "^react-router$": "<rootDir>/node_modules/react-router/dist/development/index.js",
       "^react-markdown$": "<rootDir>/src/__mocks__/react-markdown.js",
       "^remark-gfm$": "<rootDir>/src/__mocks__/remark-gfm.js",
       "^react-syntax-highlighter$": "<rootDir>/src/__mocks__/react-syntax-highlighter.js",
-      "^react-syntax-highlighter/dist/esm/styles/hljs$": "<rootDir>/src/__mocks__/react-syntax-highlighter-styles.js",
-      "^gsap$": "<rootDir>/src/__mocks__/gsap.js",
-      "^gsap/ScrollTrigger$": "<rootDir>/src/__mocks__/gsapScrollTrigger.js",
-      "^lenis$": "<rootDir>/src/__mocks__/lenis.js"
+      "^react-syntax-highlighter/dist/esm/styles/hljs$": "<rootDir>/src/__mocks__/react-syntax-highlighter-styles.js"
     }
   },
   "size-limit": [

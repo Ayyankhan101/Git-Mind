@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import App from "./App";
 
 jest.mock("./components/LandingPage", () => {
@@ -16,12 +17,7 @@ jest.mock("./api", () => ({
   isValidGhToken: jest.fn().mockReturnValue(true),
 }));
 
-// mermaid is ESM-only and breaks Jest; mock it before the import chain pulls it in
-jest.mock("mermaid", () => ({
-  run: jest.fn(),
-  initialize: jest.fn(),
-  mermaidAPI: { getConfig: () => ({}) },
-}));
+// mermaid dependency was removed; no production code imports it anymore
 
 beforeAll(() => {
   global.WebSocket = class MockWS {
@@ -37,28 +33,36 @@ afterAll(() => {
   delete global.WebSocket;
 });
 
+function renderApp(path = "/dashboard") {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <App />
+    </MemoryRouter>,
+  );
+}
+
 test("renders app root", () => {
-  render(<App />);
+  renderApp("/");
   const elements = screen.getAllByText("GitMind");
   expect(elements.length).toBeGreaterThanOrEqual(1);
 });
 
 test("renders theme switcher", () => {
-  render(<App />);
-  expect(screen.getByTitle("Change theme")).toBeInTheDocument();
+  renderApp();
+  expect(screen.getByLabelText("Change theme")).toBeInTheDocument();
 });
 
 test("renders keyboard help trigger", () => {
-  render(<App />);
+  renderApp();
   expect(screen.getByLabelText("Keyboard shortcuts")).toBeInTheDocument();
 });
 
 test("renders command palette trigger", () => {
-  render(<App />);
+  renderApp();
   expect(screen.getByLabelText("Command palette")).toBeInTheDocument();
 });
 
 test("renders repository toggle", () => {
-  render(<App />);
+  renderApp();
   expect(screen.getByLabelText("Repositories")).toBeInTheDocument();
 });

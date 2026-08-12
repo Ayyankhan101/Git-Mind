@@ -37,7 +37,14 @@ function Particles() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    let ctx;
+    try {
+      ctx = canvas.getContext("2d");
+    } catch (e) {
+      // jsdom (Jest) doesn't implement getContext; bail out gracefully
+      return;
+    }
+    if (!ctx) return;
     let raf;
     const particles = [];
     const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
@@ -138,9 +145,54 @@ function HowStep({ num, title, desc, delay }) {
   );
 }
 
+/* ── Hero Form ───────────────────────────────────────────────── */
+/* Isolated component so typing in the input only re-renders the form,
+   not the whole landing page (feature grid, stats, steps, etc.). */
+function HeroForm({ onLoad, onAnalyzeUrl }) {
+  const [input, setInput] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    if (input.includes("github.com")) {
+      onAnalyzeUrl(input.trim());
+    } else {
+      onLoad(input.trim());
+    }
+  };
+
+  return (
+    <>
+      <form
+        className="lp-hero-input-group"
+        onSubmit={handleSubmit}
+        aria-label="Analyze a GitHub repository"
+      >
+        <div className="lp-hero-input-wrapper">
+          <Search size={16} className="lp-hero-input-icon" />
+          <input
+            className="lp-hero-input"
+            placeholder="GitHub username or repo URL"
+            aria-label="GitHub username or repository URL"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            autoFocus
+          />
+        </div>
+        <button type="submit" className="lp-hero-btn">
+          Analyze
+          <ArrowRight size={14} />
+        </button>
+      </form>
+      <p className="lp-hero-hint">
+        Try <span>facebook/react</span> or paste a repo URL
+      </p>
+    </>
+  );
+}
+
 /* ── Main Landing Page ───────────────────────────────────────── */
 export default function LandingPage({ onLoad, onAnalyzeUrl }) {
-  const [input, setInput] = useState("");
   const [scrollY, setScrollY] = useState(0);
   const [activeSection, setActiveSection] = useState("");
   const lpRef = useRef(null);
@@ -258,16 +310,6 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
     return () => observers.forEach((o) => o.disconnect());
   }, []);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-    if (input.includes("github.com")) {
-      onAnalyzeUrl(input.trim());
-    } else {
-      onLoad(input.trim());
-    }
-  };
-
   return (
     <div className="lp" ref={lpRef}>
       <Particles />
@@ -308,25 +350,7 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
             Analyze repositories for vulnerabilities, architecture patterns, and
             code quality — powered by 6 AI agents working in parallel.
           </p>
-          <form className="lp-hero-input-group" onSubmit={handleSubmit}>
-            <div className="lp-hero-input-wrapper">
-              <Search size={16} className="lp-hero-input-icon" />
-              <input
-                className="lp-hero-input"
-                placeholder="GitHub username or repo URL"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                autoFocus
-              />
-            </div>
-            <button type="submit" className="lp-hero-btn">
-              Analyze
-              <ArrowRight size={14} />
-            </button>
-          </form>
-          <p className="lp-hero-hint">
-            Try <span>facebook/react</span> or paste a repo URL
-          </p>
+          <HeroForm onLoad={onLoad} onAnalyzeUrl={onAnalyzeUrl} />
         </div>
         <div className="lp-scroll-hint" style={{ opacity: Math.max(0, 1 - scrollY * 0.005) }}>
           <ChevronDown size={20} />

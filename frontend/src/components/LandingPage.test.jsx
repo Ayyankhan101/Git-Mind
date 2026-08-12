@@ -2,11 +2,62 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import LandingPage from "./LandingPage";
 
-jest.mock("gsap", () => require("../__mocks__/gsap"));
-jest.mock("gsap/ScrollTrigger", () =>
-  require("../__mocks__/gsapScrollTrigger"),
-);
-jest.mock("lenis", () => require("../__mocks__/lenis"));
+// CRA's jest config sets `resetMocks: true`, which wipes `jest.fn(impl)`
+// implementations before each test. So behaviors the component depends on
+// (e.g. gsap.context returning an object with .revert()) are defined as plain
+// functions here rather than jest.fn() with implementations.
+jest.mock("gsap", () => ({
+  gsap: {
+    registerPlugin: jest.fn(),
+    fromTo: jest.fn(),
+    to: jest.fn(),
+    from: jest.fn(),
+    set: jest.fn(),
+    timeline: () => ({
+      from: jest.fn(),
+      to: jest.fn(),
+      fromTo: jest.fn(),
+      set: jest.fn(),
+    }),
+    context: (cb) => {
+      if (typeof cb === "function") cb();
+      return { revert: jest.fn() };
+    },
+    utils: {
+      toArray: () => [],
+    },
+    ticker: {
+      add: jest.fn(),
+      remove: jest.fn(),
+      lagSmoothing: jest.fn(),
+    },
+    matchMedia: () => ({ add: jest.fn() }),
+  },
+}));
+
+jest.mock("gsap/ScrollTrigger", () => ({
+  ScrollTrigger: {
+    update: jest.fn(),
+    create: jest.fn(),
+    refresh: jest.fn(),
+    getAll: () => [],
+  },
+}));
+
+jest.mock("lenis", () => {
+  return class Lenis {
+    on() {
+      return this;
+    }
+    off() {
+      return this;
+    }
+    start() {}
+    stop() {}
+    destroy() {}
+    raf() {}
+  };
+});
 
 describe("LandingPage", () => {
   beforeEach(() => {
@@ -16,37 +67,37 @@ describe("LandingPage", () => {
   it("renders navigation links", () => {
     render(<LandingPage onLoad={jest.fn()} onAnalyzeUrl={jest.fn()} />);
     expect(screen.getByText("Features")).toBeInTheDocument();
-    expect(screen.getByText("Capabilities")).toBeInTheDocument();
+    expect(screen.getByText("How it works")).toBeInTheDocument();
   });
 
   it("renders the input field for GitHub URL or username", () => {
     render(<LandingPage onLoad={jest.fn()} onAnalyzeUrl={jest.fn()} />);
     expect(
-      screen.getByPlaceholderText("Paste a GitHub URL or enter a username"),
+      screen.getByPlaceholderText("GitHub username or repo URL"),
     ).toBeInTheDocument();
   });
 
   it("calls onLoad with username when plain text is submitted", () => {
     const onLoad = jest.fn();
     render(<LandingPage onLoad={onLoad} onAnalyzeUrl={jest.fn()} />);
-    const input = screen.getByPlaceholderText(
-      "Paste a GitHub URL or enter a username",
-    );
+    const input = screen.getByPlaceholderText("GitHub username or repo URL");
     fireEvent.change(input, { target: { value: "facebook" } });
-    fireEvent.submit(input.closest("form"));
+    fireEvent.submit(
+      screen.getByRole("form", { name: "Analyze a GitHub repository" }),
+    );
     expect(onLoad).toHaveBeenCalledWith("facebook");
   });
 
   it("calls onAnalyzeUrl when GitHub URL is submitted", () => {
     const onAnalyzeUrl = jest.fn();
     render(<LandingPage onLoad={jest.fn()} onAnalyzeUrl={onAnalyzeUrl} />);
-    const input = screen.getByPlaceholderText(
-      "Paste a GitHub URL or enter a username",
-    );
+    const input = screen.getByPlaceholderText("GitHub username or repo URL");
     fireEvent.change(input, {
       target: { value: "https://github.com/facebook/react" },
     });
-    fireEvent.submit(input.closest("form"));
+    fireEvent.submit(
+      screen.getByRole("form", { name: "Analyze a GitHub repository" }),
+    );
     expect(onAnalyzeUrl).toHaveBeenCalledWith(
       "https://github.com/facebook/react",
     );
@@ -55,21 +106,7 @@ describe("LandingPage", () => {
   it("calls onLoad when Get Started button is clicked", () => {
     const onLoad = jest.fn();
     render(<LandingPage onLoad={onLoad} onAnalyzeUrl={jest.fn()} />);
-    // Find the button with aria-label containing "Get Started" or the hero CTA
-    const buttons = screen.getAllByRole("button");
-    const getStartedBtn = buttons.find(
-      (btn) =>
-        btn.textContent.includes("Get Started") ||
-        btn.getAttribute("aria-label")?.includes("Get Started"),
-    );
-    if (getStartedBtn) {
-      fireEvent.click(getStartedBtn);
-      expect(onLoad).toHaveBeenCalled();
-    }
-  });
-
-  it("renders skip to content link for accessibility", () => {
-    render(<LandingPage onLoad={jest.fn()} onAnalyzeUrl={jest.fn()} />);
-    expect(screen.getByText("Skip to content")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Get started" }));
+    expect(onLoad).toHaveBeenCalled();
   });
 });

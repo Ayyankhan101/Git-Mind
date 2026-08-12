@@ -1,4 +1,11 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  memo,
+} from "react";
 import { FixedSizeList } from "react-window";
 import {
   Star,
@@ -19,6 +26,13 @@ function fmtStars(n) {
   return String(n);
 }
 
+function byPushed(a, b) {
+  return (
+    new Date(b.pushed_at || b.updated_at) -
+    new Date(a.pushed_at || a.updated_at)
+  );
+}
+
 const SAVED_VIEWS = [
   { id: "all", label: "All Repos", filter: () => true },
   { id: "python", label: "Python", filter: (r) => r.language === "Python" },
@@ -36,13 +50,13 @@ const SAVED_VIEWS = [
   },
 ];
 
-function RepoCard({
+const RepoCard = memo(function RepoCard({
   repo,
   selected,
   focused,
   onSelect,
-  onMouseEnter,
-  onMouseLeave,
+  onHover,
+  onLeave,
 }) {
   const pushedAt =
     repo.pushed_at || repo.updated_at
@@ -55,8 +69,8 @@ function RepoCard({
     <div
       className={`repo-card${selected ? " selected" : ""}${focused ? " focused" : ""}`}
       onClick={() => onSelect(repo.url)}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+      onMouseEnter={(e) => onHover(e, repo)}
+      onMouseLeave={onLeave}
       tabIndex={0}
       role="option"
       aria-selected={selected}
@@ -111,7 +125,23 @@ function RepoCard({
       </div>
     </div>
   );
-}
+});
+
+const RepoRow = memo(function RepoRow({ index, style, data }) {
+  const repo = data.items[index];
+  return (
+    <div style={style}>
+      <RepoCard
+        repo={repo}
+        selected={data.selectedUrl === repo.url}
+        focused={data.focusedIdx === index}
+        onSelect={data.onSelect}
+        onHover={data.onHover}
+        onLeave={data.onLeave}
+      />
+    </div>
+  );
+});
 
 function WorkspaceSwitcher({ currentUser, loadedUsers, onSwitch }) {
   const [open, setOpen] = useState(false);
@@ -219,16 +249,41 @@ export default function Sidebar({
 
   const view = SAVED_VIEWS.find((v) => v.id === savedView) || SAVED_VIEWS[0];
 
-  const byPushed = (a, b) =>
-    new Date(b.pushed_at || b.updated_at) -
-    new Date(a.pushed_at || a.updated_at);
+  const filtered = useMemo(
+    () =>
+      repos
+        .filter((r) => view.filter(r))
+        .filter(
+          (r) => !filter || r.name.toLowerCase().includes(filter.toLowerCase()),
+        )
+        .sort(view.sort || byPushed),
+    [repos, view, filter],
+  );
 
-  const filtered = repos
-    .filter((r) => view.filter(r))
-    .filter(
-      (r) => !filter || r.name.toLowerCase().includes(filter.toLowerCase()),
-    )
-    .sort(view.sort || byPushed);
+
+  const handleRepoSelect = useCallback((url) => onSelect(url), [onSelect]);
+
+  const handleRepoHover = useCallback((e, repo) => {
+    setHoverRepo(repo);
+    setHoverRect(e.currentTarget.getBoundingClientRect());
+  }, []);
+
+  const handleRepoLeave = useCallback(() => {
+    setHoverRepo(null);
+    setHoverRect(null);
+  }, []);
+
+  const repoItemData = useMemo(
+    () => ({
+      items: filtered,
+      selectedUrl,
+      focusedIdx,
+      onSelect: handleRepoSelect,
+      onHover: handleRepoHover,
+      onLeave: handleRepoLeave,
+    }),
+    [filtered, selectedUrl, focusedIdx, handleRepoSelect, handleRepoHover, handleRepoLeave],
+  );
 
   const handleKeyDown = useCallback(
     (e) => {
@@ -483,30 +538,10 @@ export default function Sidebar({
                   width="100%"
                   itemCount={filtered.length}
                   itemSize={72}
+                  itemData={repoItemData}
                   style={{ overflowX: "hidden" }}
                 >
-                  {({ index, style }) => {
-                    const repo = filtered[index];
-                    return (
-                      <div style={style}>
-                        <RepoCard
-                          key={repo.url}
-                          repo={repo}
-                          selected={selectedUrl === repo.url}
-                          focused={focusedIdx === index}
-                          onSelect={onSelect}
-                          onMouseEnter={(e) => {
-                            setHoverRepo(repo);
-                            setHoverRect(e.currentTarget.getBoundingClientRect());
-                          }}
-                          onMouseLeave={() => {
-                            setHoverRepo(null);
-                            setHoverRect(null);
-                          }}
-                        />
-                      </div>
-                    );
-                  }}
+                  {RepoRow}
                 </FixedSizeList>
               ) : (
                 filtered.map((repo, i) => (
@@ -515,15 +550,9 @@ export default function Sidebar({
                     repo={repo}
                     selected={selectedUrl === repo.url}
                     focused={focusedIdx === i}
-                    onSelect={onSelect}
-                    onMouseEnter={(e) => {
-                      setHoverRepo(repo);
-                      setHoverRect(e.currentTarget.getBoundingClientRect());
-                    }}
-                    onMouseLeave={() => {
-                      setHoverRepo(null);
-                      setHoverRect(null);
-                    }}
+                    onSelect={handleRepoSelect}
+                    onHover={handleRepoHover}
+                    onLeave={handleRepoLeave}
                   />
                 ))
               )}

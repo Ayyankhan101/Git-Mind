@@ -49,6 +49,12 @@ Object.defineProperty(navigator, "userAgentData", {
   writable: true,
 });
 
+// Stub HTMLCanvasElement.getContext (jsdom defines it but throws
+// "Not implemented" without the canvas npm package)
+HTMLCanvasElement.prototype.getContext = function () {
+  return null;
+};
+
 // Mock window.matchMedia - use plain function (jest.fn mockImplementation seems unreliable here)
 window.matchMedia = function (query) {
   return {
