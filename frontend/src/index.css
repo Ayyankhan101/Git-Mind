@@ -147,14 +147,18 @@ a:hover { text-decoration: underline; }
   grid-template-rows: 48px 1fr 28px;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 .app:has(> .lp) {
   display: flex;
   flex-direction: column;
-  overflow: auto;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
-.app:has(.nav-rail:hover) { grid-template-columns: 180px 1fr; }
+.app:has(.nav-rail:hover):not(:has(> .lp)) { grid-template-columns: 180px 1fr; }
 
 /* ── Command Bar (Top Bar) ───────────────────────────────────── */
 .command-bar {
