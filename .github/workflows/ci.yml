@@ -109,9 +109,48 @@ jobs:
           path: frontend/coverage/
           retention-days: 7
 
+  frontend-smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+      - name: Build
+        run: npm run build
+        env:
+          NODE_OPTIONS: "--openssl-legacy-provider --max-old-space-size=4096"
+          CI: "true"
+      # Note: ubuntu runners have no Brave installed, so this job exercises the
+      # script's bundled-Chromium fallback. Brave is used automatically when the
+      # script runs locally (macOS/Linux) or via $BRAVE_PATH / --browser brave.
+      - name: Install Playwright (bundled Chromium fallback)
+        run: |
+          pip install playwright --break-system-packages
+          python -m playwright install chromium --with-deps
+      - name: Run frontend smoke test
+        run: python e2e/smoke_test.py --browser auto
+      - name: Upload smoke screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-smoke-screenshots
+          path: /tmp/gitmind-smoke/
+          retention-days: 7
+
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [lint, backend-tests, frontend-tests]
+    needs: [lint, backend-tests, frontend-tests, frontend-smoke]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

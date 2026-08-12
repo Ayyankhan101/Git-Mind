@@ -1,4 +1,4 @@
-.PHONY: dev prod stop stop-prod restart restart-prod status logs logs-prod build build-prod clean start bare-stop bare-restart smoke
+.PHONY: dev prod stop stop-prod restart restart-prod status logs logs-prod build build-prod clean start bare-stop bare-restart smoke smoke-frontend
 
 # ── Docker shortcuts ───────────────────────────────────────────────────────────
 dev:
@@ -50,3 +50,6 @@ bare-restart:
 # ── Dev tooling ────────────────────────────────────────────────────────────────
 smoke:
 	cd backend && venv/bin/python3 smoke_test.py
+
+smoke-frontend:
+	cd frontend && python3 e2e/smoke_test.py --browser auto
