@@ -9,6 +9,7 @@ import {
   FileWarning,
   ExternalLink,
 } from "lucide-react";
+import { fs } from "../typeScale";
 
 const QUALITY_META = {
   good: {
@@ -44,7 +45,7 @@ function StatPill({ label, value, color }) {
     >
       <span
         style={{
-          fontSize: 22,
+          fontSize: fs.xxxl,
           fontWeight: 700,
           color: color || "var(--text-1)",
           fontFamily: "var(--font-mono)",
@@ -52,7 +53,7 @@ function StatPill({ label, value, color }) {
       >
         {value}
       </span>
-      <span style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>
+      <span style={{ fontSize: fs.xs, color: "var(--text-3)", marginTop: 2 }}>
         {label}
       </span>
     </div>
@@ -83,7 +84,7 @@ function CommitRow({ commit }) {
             alignItems: "center",
             gap: 4,
             color: q.color,
-            fontSize: 11,
+            fontSize: fs.xs,
             minWidth: 60,
             flexShrink: 0,
           }}
@@ -93,7 +94,7 @@ function CommitRow({ commit }) {
         <div className="row-main">
           <span
             className="row-title"
-            style={{ fontFamily: "var(--font-mono)", fontSize: 12 }}
+            style={{ fontFamily: "var(--font-mono)", fontSize: fs.sm }}
           >
             {commit.sha}
           </span>
@@ -108,12 +109,12 @@ function CommitRow({ commit }) {
             flexShrink: 0,
           }}
         >
-          <span style={{ fontSize: 11, color: "var(--text-3)" }}>
+          <span style={{ fontSize: fs.xs, color: "var(--text-3)" }}>
             {commit.author}
           </span>
           <span
             style={{
-              fontSize: 11,
+              fontSize: fs.xs,
               color: "var(--text-3)",
               display: "flex",
               alignItems: "center",
@@ -128,6 +129,7 @@ function CommitRow({ commit }) {
             href={commit.url}
             target="_blank"
             rel="noopener noreferrer"
+            aria-label="Open commit on GitHub"
             style={{
               color: "var(--text-3)",
               flexShrink: 0,
@@ -145,7 +147,7 @@ function CommitRow({ commit }) {
           className="row-expand"
           style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 12,
+            fontSize: fs.sm,
             whiteSpace: "pre-wrap",
             color: "var(--text-2)",
           }}
@@ -176,7 +178,7 @@ function SecretRow({ finding }) {
           className="row-path"
           style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 11,
+            fontSize: fs.xs,
             color: "var(--text-3)",
             maxWidth: 200,
             overflow: "hidden",
@@ -292,7 +294,7 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
         style={{
           display: "flex",
           gap: 10,
-          padding: "16px 20px",
+          padding: "16px 28px",
           flexWrap: "wrap",
         }}
       >
@@ -320,10 +322,7 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
       </div>
 
       {/* Section pills */}
-      <div
-        className="tab-header"
-        style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}
-      >
+      <div className="sec-toolbar">
         <div className="sev-pills">
           {[
             { id: "commits", label: "All Commits", count: stats.total },
@@ -376,8 +375,8 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
                 <>
                   <div
                     style={{
-                      padding: "10px 20px 4px",
-                      fontSize: 11,
+                      padding: "10px 28px 4px",
+                      fontSize: fs.xs,
                       color: "var(--text-3)",
                       display: "flex",
                       alignItems: "center",
@@ -396,8 +395,8 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
                 <>
                   <div
                     style={{
-                      padding: "10px 20px 4px",
-                      fontSize: 11,
+                      padding: "10px 28px 4px",
+                      fontSize: fs.xs,
                       color: "var(--text-3)",
                       display: "flex",
                       alignItems: "center",

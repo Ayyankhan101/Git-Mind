@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ShieldAlert, Wrench } from "lucide-react";
+import { fs } from "../typeScale";
 
 const SEV_ORDER = ["critical", "high", "medium", "low"];
 
@@ -41,7 +42,7 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
       {expanded && (
         <div className="row-detail">
           <p>{finding.description}</p>
-          <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
+          <p style={{ color: "var(--text-2)", fontSize: fs.md, marginTop: 4 }}>
             {finding.remediation}
           </p>
           {onFix && (
@@ -64,7 +65,7 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
                   <p
                     style={{
                       color: "var(--success)",
-                      fontSize: 13,
+                      fontSize: fs.md,
                       marginBottom: 4,
                     }}
                   >
@@ -101,20 +102,20 @@ function ContractList({ contracts }) {
               background: "none",
               border: "none",
               color: "var(--text-1)",
-              fontSize: 14,
+              fontSize: fs.base,
               width: "100%",
               textAlign: "left",
             }}
           >
             <span style={{ flex: 1 }}>📄 {c.name}</span>
-            <span style={{ color: "var(--text-3)", fontSize: 12 }}>
+            <span style={{ color: "var(--text-3)", fontSize: fs.sm }}>
               {c.functions?.length || 0} fn · {c.state_variables?.length || 0}{" "}
               var
             </span>
           </button>
           {open === i && (
             <div
-              style={{ paddingLeft: 16, fontSize: 13, color: "var(--text-2)" }}
+              style={{ paddingLeft: 16, fontSize: fs.md, color: "var(--text-2)" }}
             >
               {c.functions?.length > 0 && (
                 <div style={{ marginBottom: 8 }}>
@@ -223,15 +224,20 @@ export default function SolidityTab({
 
   return (
     <div className="tab-content-inner">
-      <div className="sec-header">
-        <ShieldAlert size={16} />
-        <span>Solidity Audit</span>
-        <span className="sec-count">{sorted.length} findings</span>
-        {contracts.length > 0 && (
-          <span className="sec-count" style={{ opacity: 0.5 }}>
-            {contracts.length} contract{contracts.length > 1 ? "s" : ""}
+      <div className="tab-header">
+        <div className="tab-header-main">
+          <span className="tab-header-icon">
+            <ShieldAlert size={15} strokeWidth={1.5} />
           </span>
-        )}
+          <div className="tab-header-text">
+            <div className="tab-header-title">Solidity Audit</div>
+            <div className="tab-header-sub">
+              {sorted.length} finding{sorted.length !== 1 ? "s" : ""}
+              {contracts.length > 0 &&
+                ` · ${contracts.length} contract${contracts.length > 1 ? "s" : ""}`}
+            </div>
+          </div>
+        </div>
       </div>
 
       {critical.length + high.length > 0 && (

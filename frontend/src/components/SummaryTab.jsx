@@ -8,6 +8,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import gsap from "gsap";
+import { fs } from "../typeScale";
 import { fetchSummary, subscribeMonitor, fetchMonitorStatus } from "../api";
 import * as tokenManager from "../tokenManager";
 import HealthCard from "./HealthCard";
@@ -381,16 +382,19 @@ export default function SummaryTab({
   );
 
   return (
-    <div className="summary summary--upgraded">
+    <div className="summary">
       <FloatingShapes />
 
-      <div className="summary-header">
-        <h2>
-          <span className="summary-title-icon">
-            <BarChart3 size={24} strokeWidth={1.5} />
+      <div className="tab-header">
+        <div className="tab-header-main">
+          <span className="tab-header-icon">
+            <BarChart3 size={15} strokeWidth={1.5} />
           </span>
-          Executive Summary
-        </h2>
+          <div className="tab-header-text">
+            <div className="tab-header-title">Executive Summary</div>
+            <div className="tab-header-sub">{repoName}</div>
+          </div>
+        </div>
       </div>
 
       <HealthCard health={health} />
@@ -424,7 +428,7 @@ export default function SummaryTab({
             gap: 8,
             alignItems: "center",
             color: "var(--text-3)",
-            fontSize: 14,
+            fontSize: fs.base,
             marginBottom: 24,
           }}
         >
@@ -459,7 +463,7 @@ export default function SummaryTab({
                   className="chart-trend"
                   style={{ color: "var(--text-3)", gap: 4 }}
                 >
-                  <span style={{ fontSize: 11 }}>LOW → CRITICAL</span>
+                  <span style={{ fontSize: fs.xs }}>LOW → CRITICAL</span>
                   {[
                     nCritical && "critical",
                     nHigh && "high",
@@ -550,33 +554,6 @@ export default function SummaryTab({
             </div>
           </div>
 
-          {/* Severity text breakdown */}
-          {findings.length > 0 && (
-            <div>
-              <div className="t-label" style={{ marginBottom: 12 }}>
-                SECURITY BREAKDOWN
-              </div>
-              <div className="sev-breakdown">
-                {[
-                  ["critical", nCritical],
-                  ["high", nHigh],
-                  ["medium", nMedium],
-                  ["low", nLow],
-                ].map(
-                  ([sev, count]) =>
-                    count > 0 && (
-                      <span key={sev}>
-                        <span
-                          className="sev-glyph"
-                          style={{ background: SEV_COLORS[sev] }}
-                        />
-                        {count} {sev.charAt(0).toUpperCase() + sev.slice(1)}
-                      </span>
-                    ),
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Right Card — Repository Description (summary text) */}

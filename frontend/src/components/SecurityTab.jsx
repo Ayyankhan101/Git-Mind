@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { ShieldAlert, Wrench, ExternalLink } from "lucide-react";
+import { fs } from "../typeScale";
 
 const SEV_ORDER = ["critical", "high", "medium", "low"];
 
@@ -149,7 +150,7 @@ function FindingRow({
               <div>
                 <div
                   style={{
-                    fontSize: 11,
+                    fontSize: fs.xs,
                     fontWeight: 600,
                     letterSpacing: "0.1em",
                     color: "var(--success)",
@@ -160,7 +161,7 @@ function FindingRow({
                 </div>
                 <div
                   style={{
-                    fontSize: 13,
+                    fontSize: fs.md,
                     color: "var(--text-2)",
                     lineHeight: 1.55,
                   }}
@@ -195,7 +196,7 @@ function FindingRow({
                   alignItems: "center",
                   gap: 3,
                   color: "var(--info)",
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   textDecoration: "none",
                 }}
               >
@@ -210,7 +211,7 @@ function FindingRow({
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
-                fontSize: 11,
+                fontSize: fs.xs,
                 color: "var(--text-3)",
                 marginTop: 6,
                 flexWrap: "wrap",
@@ -282,7 +283,7 @@ function FindingRow({
                     onKeyDown={(e) => e.key === "Enter" && handleOpenPR()}
                     autoFocus
                     style={{
-                      fontSize: 12,
+                      fontSize: fs.sm,
                       padding: "8px 12px",
                       borderRadius: 4,
                       border: "1px solid var(--border-m)",
@@ -320,21 +321,21 @@ function FindingRow({
               ))}
             {prUrl && (
               <>
-                <span style={{ fontSize: 11, color: "var(--success)" }}>
+                <span style={{ fontSize: fs.xs, color: "var(--success)" }}>
                   ✓ PR opened
                 </span>
                 <a
                   href={prUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ fontSize: 11, color: "var(--text-3)" }}
+                  style={{ fontSize: fs.xs, color: "var(--text-3)" }}
                 >
                   {prUrl}
                 </a>
               </>
             )}
             {prError && (
-              <span style={{ fontSize: 11, color: "var(--danger)" }}>
+              <span style={{ fontSize: fs.xs, color: "var(--danger)" }}>
                 {prError}
               </span>
             )}
@@ -348,7 +349,7 @@ function FindingRow({
               {parsed.explanation && (
                 <div
                   style={{
-                    fontSize: 14,
+                    fontSize: fs.base,
                     color: "var(--text-2)",
                     lineHeight: 1.65,
                     marginBottom: 10,
@@ -458,6 +459,21 @@ export default function SecurityTab({
 
   return (
     <div>
+      {/* Tab header */}
+      <div className="tab-header">
+        <div className="tab-header-main">
+          <span className="tab-header-icon">
+            <ShieldAlert size={15} strokeWidth={1.5} />
+          </span>
+          <div className="tab-header-text">
+            <div className="tab-header-title">Security</div>
+            <div className="tab-header-sub">
+              {findings?.length || 0} findings
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Severity filter */}
       <div className="sev-filter">
         {["all", ...SEV_ORDER].map((key) => {

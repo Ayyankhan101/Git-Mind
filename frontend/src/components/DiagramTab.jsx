@@ -16,6 +16,7 @@ import {
   Check,
   AlertTriangle,
 } from "lucide-react";
+import { fs } from "../typeScale";
 import { parseMermaidToFlow } from "../utils/parseMermaid";
 import { parseGraphJsonToFlow } from "../utils/parseGraphJson";
 import { applyLayerLayout, sortByLayer } from "../utils/layerLayout";
@@ -27,6 +28,27 @@ import "@xyflow/react/dist/style.css";
 
 const nodeTypes = { archNode: ArchNode };
 const edgeTypes = { animatedEdge: AnimatedEdge };
+
+/* Standard tab-header shell so Architecture matches every other dashboard
+   tab. Children fill the remaining height via flex. */
+function DiagramShell({ sub, children }) {
+  return (
+    <div className="diagram-tab">
+      <div className="tab-header">
+        <div className="tab-header-main">
+          <span className="tab-header-icon">
+            <GitBranch size={15} strokeWidth={1.5} />
+          </span>
+          <div className="tab-header-text">
+            <div className="tab-header-title">Architecture</div>
+            <div className="tab-header-sub">{sub}</div>
+          </div>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
 
 function humanizeNodeLabel(label, tier) {
   if (!label) return label;
@@ -296,111 +318,119 @@ export default function DiagramTab({
   // ── Loading State ──
   if (isAnalyzing && !diagram) {
     return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "calc(100vh - 104px)",
-          gap: 16,
-        }}
-      >
-        <div className="spinner" style={{ width: 32, height: 32 }} />
-        <div style={{ fontSize: 13, color: "var(--text-3)" }}>
-          Generating diagram…
+      <DiagramShell sub="Generating diagram…">
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 16,
+          }}
+        >
+          <div className="spinner" style={{ width: 32, height: 32 }} />
+          <div style={{ fontSize: fs.md, color: "var(--text-3)" }}>
+            Generating diagram…
+          </div>
         </div>
-      </div>
+      </DiagramShell>
     );
   }
 
   // ── Parse Error State ──
   if (parseError) {
     return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "calc(100vh - 104px)",
-          gap: 16,
-        }}
-      >
+      <DiagramShell sub="Diagram unavailable">
         <div
           style={{
-            width: 56,
-            height: 56,
-            borderRadius: 16,
-            background: "var(--danger-bg)",
+            flex: 1,
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
+            gap: 16,
           }}
         >
-          <AlertTriangle size={24} style={{ color: "var(--danger)" }} strokeWidth={1.5} />
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 16,
+              background: "var(--danger-bg)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <AlertTriangle size={24} style={{ color: "var(--danger)" }} strokeWidth={1.5} />
+          </div>
+          <div style={{ fontSize: fs.base, fontWeight: 600, color: "var(--text-1)" }}>
+            Diagram unavailable
+          </div>
+          <div style={{ fontSize: fs.sm, color: "var(--text-3)", maxWidth: 320, textAlign: "center" }}>
+            {parseError}
+          </div>
         </div>
-        <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-1)" }}>
-          Diagram unavailable
-        </div>
-        <div style={{ fontSize: 12, color: "var(--text-3)", maxWidth: 320, textAlign: "center" }}>
-          {parseError}
-        </div>
-      </div>
+      </DiagramShell>
     );
   }
 
   // ── Empty State Panel (With layout alignments fixed) ──
   if (!diagram && !isAnalyzing) {
     return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "calc(100vh - 104px)",
-          gap: 16,
-        }}
-      >
+      <DiagramShell sub="System architecture">
         <div
           style={{
-            width: 56,
-            height: 56,
-            borderRadius: 16,
-            background: "var(--accent-dim)",
+            flex: 1,
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: "0 0 32px var(--accent-dim)",
+            gap: 16,
           }}
         >
-          <GitBranch
-            size={24}
-            style={{ color: "var(--accent)" }}
-            strokeWidth={1.5}
-          />
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 16,
+              background: "var(--accent-dim)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 0 32px var(--accent-dim)",
+            }}
+          >
+            <GitBranch
+              size={24}
+              style={{ color: "var(--accent)" }}
+              strokeWidth={1.5}
+            />
+          </div>
+          <div style={{ fontSize: fs.lg, fontWeight: 600, color: "var(--text-1)" }}>
+            Architecture not available
+          </div>
+          <div style={{ fontSize: fs.sm, color: "var(--text-3)" }}>
+            Analyze a repository to generate the system diagram
+          </div>
         </div>
-        <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-1)" }}>
-          Architecture not available
-        </div>
-        <div style={{ fontSize: 12, color: "var(--text-3)" }}>
-          Analyze a repository to generate the system diagram
-        </div>
-      </div>
+      </DiagramShell>
     );
   }
 
   return (
-    <div
-      className="diagram-wrap"
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "calc(100vh - 104px)",
-        overflow: "hidden",
-      }}
-    >
+    <DiagramShell sub="System architecture">
+      <div
+        className="diagram-wrap"
+        style={{
+          position: "relative",
+          flex: 1,
+          minHeight: 0,
+          height: "auto",
+          overflow: "hidden",
+        }}
+      >
       <div
         style={{
           display: "flex",
@@ -502,7 +532,7 @@ export default function DiagramTab({
         >
           <span
             style={{
-              fontSize: 10,
+              fontSize: fs.micro,
               fontFamily: "monospace",
               fontWeight: 700,
               color: "var(--text-2)",
@@ -578,6 +608,7 @@ export default function DiagramTab({
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </DiagramShell>
   );
 }

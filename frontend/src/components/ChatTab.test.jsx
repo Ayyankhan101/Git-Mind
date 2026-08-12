@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import ChatTab from "./ChatTab";
 
 jest.mock("../api", () => ({
@@ -36,8 +36,11 @@ describe("ChatTab disabled state", () => {
 describe("ChatTab rendering", () => {
   it("renders welcome prompt when enabled", () => {
     render(<ChatTab {...defaultProps} />);
-    expect(screen.getByText(/Ask anything about/)).toBeInTheDocument();
-    expect(screen.getByText("test/repo")).toBeInTheDocument();
+    // Scope to the message list — the new header sub also starts with
+    // "Ask anything about", so a bare screen query would be ambiguous.
+    const messages = within(document.querySelector(".chat-messages"));
+    expect(messages.getByText(/Ask anything about/)).toBeInTheDocument();
+    expect(messages.getByText("test/repo")).toBeInTheDocument();
   });
 
   it("renders chat input", () => {
