@@ -35,9 +35,12 @@ jobs:
           ruff format --check backend/
           echo "=== MyPy ==="
           mypy backend/ --ignore-missing-imports
-          echo "=== Prettier check ==="
-          cd frontend && npx prettier --check "src/**/*.{js,jsx,ts,tsx,css,json}" && cd ..
-          echo "=== All checks passed ==="
+      # Prettier gets its own step so a failed --check propagates as a job
+      # failure. (In the old combined step the mid-chain `&&` failure was
+      # silently swallowed by bash -e, so the gate never failed the job.)
+      - name: Prettier check
+        working-directory: frontend
+        run: npx prettier --check "src/**/*.{js,jsx,ts,tsx,css,json}"
 
   backend-tests:
     runs-on: ubuntu-latest
