@@ -2,6 +2,14 @@
    Landing Page — Creative Scroll-Driven Experience
    ============================================================ */
 
+/* ── Glassmorphism Tokens ──────────────────────────────────── */
+:root {
+  --lp-glass-bg: rgba(8, 9, 14, 0.65);
+  --lp-glass-border: rgba(255, 255, 255, 0.06);
+  --lp-glass-border-bright: rgba(255, 255, 255, 0.12);
+  --lp-glass-blur: blur(16px);
+}
+
 .lp {
   display: flex;
   flex-direction: column;
@@ -97,23 +105,6 @@
   opacity: 0.5;
 }
 
-.lp-shield-viz {
-  width: 120px;
-  height: 144px;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 2;
-}
-
-.lp-arch-viz {
-  width: 120px;
-  max-width: 120px;
-  height: 144px;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 2;
-}
-
 /* ── Nav ─────────────────────────────────────────────────────── */
 .lp-nav {
   position: fixed;
@@ -125,9 +116,10 @@
   height: 56px;
   display: flex;
   align-items: center;
-  background: rgba(8, 9, 14, 0.7);
-  backdrop-filter: blur(16px) saturate(1.5);
-  border-bottom: 1px solid var(--border-s);
+  background: var(--lp-glass-bg);
+  backdrop-filter: var(--lp-glass-blur) saturate(1.4);
+  border-bottom: 1px solid var(--lp-glass-border);
+  transition: background var(--duration-normal), border-color var(--duration-normal);
 }
 
 .lp-nav-inner {
@@ -159,22 +151,38 @@
   border-radius: var(--radius-sm);
   background: var(--accent-dim);
   color: var(--accent);
+  transition: transform var(--duration-fast), background var(--duration-fast);
+}
+
+.lp-nav-brand:hover .lp-nav-logo {
+  transform: scale(1.08);
+  background: var(--accent);
+  color: var(--text-on-primary);
 }
 
 .lp-nav-links {
   display: flex;
-  gap: 28px;
+  gap: 8px;
 }
 
-.lp-nav-links a {
+.lp-nav-link {
   font-size: 13px;
+  font-weight: 500;
   color: var(--text-3);
   text-decoration: none;
-  transition: color var(--duration-fast);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  transition: color var(--duration-fast), background var(--duration-fast);
 }
 
-.lp-nav-links a:hover {
+.lp-nav-link:hover {
   color: var(--text-1);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.lp-nav-link--active {
+  color: var(--accent);
+  background: var(--accent-dim);
 }
 
 /* ── Hero ────────────────────────────────────────────────────── */
@@ -391,7 +399,7 @@
 /* ── Features ────────────────────────────────────────────────── */
 .lp-features {
   padding: 100px 0;
-  border-top: 1px solid var(--border-s);
+  border-top: 1px solid var(--lp-glass-border);
   position: relative;
   overflow: hidden;
   isolation: isolate;
@@ -424,17 +432,23 @@
 
 .lp-feature-card {
   padding: 28px 24px;
-  background: color-mix(in srgb, var(--surface-0) 60%, transparent);
-  border: 1px solid var(--border-s);
+  background: var(--lp-glass-bg);
+  border: 1px solid var(--lp-glass-border);
   border-radius: var(--radius-lg);
   transition: all var(--duration-normal);
-  animation: fadeSlideUp 0.5s ease-out both;
-  backdrop-filter: blur(8px);
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.lp-feature-card.lp-visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out, border-color var(--duration-normal), box-shadow var(--duration-normal);
 }
 
 .lp-feature-card:hover {
-  border-color: var(--border-m);
-  box-shadow: var(--shadow-md);
+  border-color: var(--lp-glass-border-bright);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--lp-glass-border-bright);
   transform: translateY(-2px);
 }
 
@@ -472,7 +486,7 @@
 /* ── How It Works ────────────────────────────────────────────── */
 .lp-how {
   padding: 100px 0;
-  border-top: 1px solid var(--border-s);
+  border-top: 1px solid var(--lp-glass-border);
   position: relative;
   overflow: hidden;
   isolation: isolate;
@@ -507,15 +521,20 @@
   text-align: center;
   padding: 32px 24px;
   border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--surface-0) 40%, transparent);
-  border: 1px solid var(--border-s);
-  backdrop-filter: blur(8px);
-  animation: fadeSlideUp 0.5s ease-out both;
-  transition: all var(--duration-normal);
+  background: var(--lp-glass-bg);
+  border: 1px solid var(--lp-glass-border);
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.lp-how-step.lp-visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out, border-color var(--duration-normal);
 }
 
 .lp-how-step:hover {
-  border-color: var(--border-m);
+  border-color: var(--lp-glass-border-bright);
   transform: translateY(-2px);
 }
 
@@ -545,10 +564,22 @@
 /* ── CTA ─────────────────────────────────────────────────────── */
 .lp-cta {
   padding: 100px 0;
-  border-top: 1px solid var(--border-s);
+  border-top: 1px solid var(--lp-glass-border);
   text-align: center;
   position: relative;
   overflow: hidden;
+}
+
+.lp-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 60% 50% at 50% 50%,
+    rgba(124, 111, 224, 0.06) 0%,
+    transparent 100%
+  );
+  pointer-events: none;
 }
 
 .lp-cta-title {
@@ -609,7 +640,8 @@
 /* ── Footer ──────────────────────────────────────────────────── */
 .lp-footer {
   padding: 32px 0;
-  border-top: 1px solid var(--border-s);
+  border-top: 1px solid var(--lp-glass-border);
+  background: var(--lp-glass-bg);
 }
 
 .lp-footer-inner {
@@ -712,7 +744,7 @@
   .lp-scroll-hint { animation: none; }
   .lp-feature-card,
   .lp-how-step,
-  .lp-badge { animation: none; }
+  .lp-badge { animation: none; opacity: 1; transform: none; }
   .lp-title-line,
   .lp-hero-sub { transform: none !important; opacity: 1 !important; }
 }

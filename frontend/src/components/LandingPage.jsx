@@ -55,7 +55,6 @@ function CodeViz({ scrollY }) {
   const offset = scrollY * 0.15;
   return (
     <svg className="lp-code-viz" viewBox="0 0 800 400" fill="none">
-      {/* Grid lines */}
       {Array.from({ length: 20 }).map((_, i) => (
         <line key={`h${i}`} x1="0" y1={i * 20} x2="800" y2={i * 20}
           stroke="var(--border-s)" strokeWidth="0.5" opacity={0.3} />
@@ -64,15 +63,14 @@ function CodeViz({ scrollY }) {
         <line key={`v${i}`} x1={i * 20} y1="0" x2={i * 20} y2="400"
           stroke="var(--border-s)" strokeWidth="0.5" opacity={0.3} />
       ))}
-      {/* Animated nodes */}
       {[
-        { cx: 200, cy: 120, r: 24, color: "var(--primary)", delay: 0 },
-        { cx: 400, cy: 80, r: 18, color: "var(--info)", delay: 0.2 },
-        { cx: 600, cy: 140, r: 20, color: "var(--success)", delay: 0.4 },
-        { cx: 300, cy: 250, r: 16, color: "var(--warning)", delay: 0.6 },
-        { cx: 500, cy: 280, r: 22, color: "var(--primary)", delay: 0.8 },
-        { cx: 150, cy: 320, r: 14, color: "var(--danger)", delay: 1.0 },
-        { cx: 650, cy: 300, r: 19, color: "var(--info)", delay: 1.2 },
+        { cx: 200, cy: 120, r: 24, color: "var(--primary)" },
+        { cx: 400, cy: 80, r: 18, color: "var(--info)" },
+        { cx: 600, cy: 140, r: 20, color: "var(--success)" },
+        { cx: 300, cy: 250, r: 16, color: "var(--warning)" },
+        { cx: 500, cy: 280, r: 22, color: "var(--primary)" },
+        { cx: 150, cy: 320, r: 14, color: "var(--danger)" },
+        { cx: 650, cy: 300, r: 19, color: "var(--info)" },
       ].map((n, i) => (
         <g key={i}>
           <circle cx={n.cx} cy={n.cy + Math.sin((offset + i * 30) * 0.02) * 8}
@@ -83,7 +81,6 @@ function CodeViz({ scrollY }) {
             r={n.r * 0.3} fill={n.color} opacity={0.9} />
         </g>
       ))}
-      {/* Connection lines */}
       {[
         [200, 120, 400, 80], [400, 80, 600, 140], [200, 120, 300, 250],
         [300, 250, 500, 280], [600, 140, 500, 280], [150, 320, 300, 250],
@@ -97,61 +94,50 @@ function CodeViz({ scrollY }) {
   );
 }
 
-/* ── Security Shield SVG ─────────────────────────────────────── */
-function ShieldViz({ scrollY }) {
-  const progress = Math.min(1, Math.max(0, (scrollY - 600) / 400));
+/* ── useScrollReveal ─────────────────────────────────────────── */
+function useScrollReveal(threshold = 0.15) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add("lp-visible");
+          observer.unobserve(el);
+        }
+      },
+      { threshold }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [threshold]);
+  return ref;
+}
+
+/* ── Feature Card ────────────────────────────────────────────── */
+function FeatureCard({ Icon, title, desc, delay }) {
+  const ref = useScrollReveal();
   return (
-    <svg className="lp-shield-viz" viewBox="0 0 200 240" fill="none">
-      <path d="M100 20 L180 60 L180 140 Q180 200 100 230 Q20 200 20 140 L20 60 Z"
-        fill="var(--primary)" fillOpacity={0.08 + progress * 0.12}
-        stroke="var(--primary)" strokeWidth="2" strokeOpacity={0.3 + progress * 0.4} />
-      <path d="M100 50 L155 75 L155 130 Q155 175 100 195 Q45 175 45 130 L45 75 Z"
-        fill="var(--primary)" fillOpacity={0.05 + progress * 0.1}
-        stroke="var(--primary)" strokeWidth="1" strokeOpacity={0.2 + progress * 0.3}
-        strokeDasharray={`${progress * 400} 400`} />
-      {/* Checkmark */}
-      <path d="M70 120 L90 140 L130 100" fill="none" stroke="var(--success)"
-        strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
-        strokeDasharray={`${progress * 100} 100`} opacity={progress} />
-    </svg>
+    <div ref={ref} className="lp-feature-card" style={{ transitionDelay: `${delay}s` }}>
+      <div className="lp-feature-icon">
+        <Icon size={20} />
+      </div>
+      <h3 className="lp-feature-title">{title}</h3>
+      <p className="lp-feature-desc">{desc}</p>
+    </div>
   );
 }
 
-/* ── Architecture Diagram SVG ────────────────────────────────── */
-function ArchViz({ scrollY }) {
-  const progress = Math.min(1, Math.max(0, (scrollY - 1200) / 400));
-  const boxes = [
-    { x: 300, y: 40, w: 200, h: 50, label: "API Gateway", color: "var(--primary)" },
-    { x: 100, y: 140, w: 160, h: 40, label: "Auth Service", color: "var(--info)" },
-    { x: 320, y: 140, w: 160, h: 40, label: "Core Engine", color: "var(--success)" },
-    { x: 540, y: 140, w: 160, h: 40, label: "AI Agents", color: "var(--warning)" },
-    { x: 200, y: 240, w: 140, h: 36, label: "Database", color: "var(--primary)" },
-    { x: 460, y: 240, w: 140, h: 36, label: "Cache", color: "var(--info)" },
-  ];
+/* ── How Step ────────────────────────────────────────────────── */
+function HowStep({ num, title, desc, delay }) {
+  const ref = useScrollReveal();
   return (
-    <svg className="lp-arch-viz" viewBox="0 0 800 320" fill="none">
-      {boxes.map((b, i) => (
-        <g key={i} opacity={progress > i * 0.15 ? 1 : 0}
-          style={{ transition: "opacity 0.5s ease" }}>
-          <rect x={b.x} y={b.y} width={b.w} height={b.h} rx="8"
-            fill="var(--surface-0)" stroke={b.color} strokeWidth="1.5" />
-          <text x={b.x + b.w / 2} y={b.y + b.h / 2 + 4} textAnchor="middle"
-            fill="var(--text-2)" fontSize="12" fontFamily="var(--font-mono)">
-            {b.label}
-          </text>
-        </g>
-      ))}
-      {/* Connection lines */}
-      {[
-        [400, 90, 180, 140], [400, 90, 400, 140], [400, 90, 620, 140],
-        [180, 180, 270, 240], [400, 180, 270, 240], [400, 180, 530, 240],
-        [620, 180, 530, 240],
-      ].map(([x1, y1, x2, y2], i) => (
-        <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
-          stroke="var(--primary)" strokeWidth="1" opacity={progress * 0.3}
-          strokeDasharray="4 4" />
-      ))}
-    </svg>
+    <div ref={ref} className="lp-how-step" style={{ transitionDelay: `${delay}s` }}>
+      <div className="lp-how-step-num">{num}</div>
+      <h3 className="lp-how-step-title">{title}</h3>
+      <p className="lp-how-step-desc">{desc}</p>
+    </div>
   );
 }
 
@@ -159,6 +145,7 @@ function ArchViz({ scrollY }) {
 export default function LandingPage({ onLoad, onAnalyzeUrl }) {
   const [input, setInput] = useState("");
   const [scrollY, setScrollY] = useState(0);
+  const [activeSection, setActiveSection] = useState("");
   const lpRef = useRef(null);
 
   useEffect(() => {
@@ -167,6 +154,23 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
     const onScroll = () => setScrollY(el.scrollTop);
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  /* Nav active section observer */
+  useEffect(() => {
+    const sections = ["features", "how-it-works"];
+    const observers = [];
+    sections.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const observer = new IntersectionObserver(
+        ([entry]) => { if (entry.isIntersecting) setActiveSection(id); },
+        { threshold: 0.3, rootMargin: "-56px 0px 0px 0px" }
+      );
+      observer.observe(el);
+      observers.push(observer);
+    });
+    return () => observers.forEach((o) => o.disconnect());
   }, []);
 
   const handleSubmit = (e) => {
@@ -212,8 +216,8 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
             <span>GitMind</span>
           </div>
           <div className="lp-nav-links">
-            <a href="#features">Features</a>
-            <a href="#how-it-works">How it works</a>
+            <a href="#features" className={`lp-nav-link${activeSection === "features" ? " lp-nav-link--active" : ""}`}>Features</a>
+            <a href="#how-it-works" className={`lp-nav-link${activeSection === "how-it-works" ? " lp-nav-link--active" : ""}`}>How it works</a>
           </div>
         </div>
       </nav>
@@ -268,7 +272,6 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
         <GradientOrb className="lp-orb-3" />
         <div className="lp-section-inner">
           <div className="lp-section-header">
-            <ShieldViz scrollY={scrollY} />
             <div>
               <h2 className="lp-section-title">Everything you need to ship safer</h2>
               <p className="lp-section-sub">
@@ -279,14 +282,7 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
           </div>
           <div className="lp-features-grid">
             {features.map(({ Icon, title, desc }, i) => (
-              <div key={title} className="lp-feature-card"
-                style={{ animationDelay: `${i * 0.1}s` }}>
-                <div className="lp-feature-icon">
-                  <Icon size={20} />
-                </div>
-                <h3 className="lp-feature-title">{title}</h3>
-                <p className="lp-feature-desc">{desc}</p>
-              </div>
+              <FeatureCard key={title} Icon={Icon} title={title} desc={desc} delay={i * 0.08} />
             ))}
           </div>
         </div>
@@ -297,7 +293,6 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
         <GradientOrb className="lp-orb-4" />
         <div className="lp-section-inner">
           <div className="lp-section-header">
-            <ArchViz scrollY={scrollY} />
             <div>
               <h2 className="lp-section-title">Three steps to insight</h2>
               <p className="lp-section-sub">
@@ -307,12 +302,7 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
           </div>
           <div className="lp-how-steps">
             {steps.map(({ num, title, desc }, i) => (
-              <div key={num} className="lp-how-step"
-                style={{ animationDelay: `${i * 0.15}s` }}>
-                <div className="lp-how-step-num">{num}</div>
-                <h3 className="lp-how-step-title">{title}</h3>
-                <p className="lp-how-step-desc">{desc}</p>
-              </div>
+              <HowStep key={num} num={num} title={title} desc={desc} delay={i * 0.12} />
             ))}
           </div>
         </div>
