@@ -153,10 +153,15 @@ a:hover { text-decoration: underline; }
 .app:has(> .lp) {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  height: 100dvh;
-  overflow-y: auto;
-  overflow-x: hidden;
+  /* height: auto lets the shell grow with the landing page instead of
+     relying on overflow propagation from a fixed-height box. Landing
+     scrolls with the WINDOW — Lenis + GSAP ScrollTrigger are wired to
+     the window scroller; a nested scroll container froze scrolling and
+     left every below-fold section at opacity: 0. */
+  height: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: visible;
 }
 .app:has(.nav-rail:hover):not(:has(> .lp)) { grid-template-columns: 180px 1fr; }
 

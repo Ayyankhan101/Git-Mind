@@ -17,10 +17,18 @@
   min-height: 100dvh;
   width: 100%;
   background: var(--bg);
-  overflow-x: hidden;
+  /* clip (not hidden): overflow-x:hidden would make .lp a scroll
+     container, which — combined with Lenis/ScrollTrigger targeting the
+     window — froze scrolling and hid below-fold sections. Requires
+     Safari 16+ / Chrome 90+ / Firefox 81+ (all newer than the dvh/svh
+     support floor already in use). */
+  overflow-x: clip;
   position: relative;
-  scroll-behavior: smooth;
-  flex: 1;
+  /* Size to content: flex: 1 (basis 0%) made .lp exactly viewport
+     height, so the flex column shrunk every section to ~200px and
+     clipped their content with overflow:hidden — hiding the whole
+     features/stats/how sections. */
+  flex: 0 0 auto;
 }
 
 /* ── Particles Canvas ────────────────────────────────────────── */
@@ -883,11 +891,9 @@
   .lp-scroll-hint {
     display: none;
   }
-}
-
-/* Touch-first input sizing: >= 16px prevents iOS auto-zoom on focus.
-   Covers portrait phones (<480), landscape phones, and tablets up to
-   iPad portrait (1024px) — keeps 14px on desktop windows. */
+}  /* Touch-first input sizing: >= 16px prevents iOS auto-zoom on focus.
+     Covers portrait phones (<480), landscape phones, and tablets up to
+     iPad portrait (1024px) — keeps 14px on desktop windows. */
 @media (max-width: 1024px) {
   .lp-hero-input {
     font-size: 16px;

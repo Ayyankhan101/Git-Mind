@@ -217,6 +217,34 @@ def main():
             )
             page.screenshot(path=str(shot_dir / "01-landing.png"))
 
+            # ── Below-fold sections scroll + reveal ────────────────────────
+            # Regression guard: the landing page must scroll with the window
+            # and every section (features/stats/how) must fade in from
+            # opacity 0 via the lp-visible reveal when scrolled into view.
+            print("\n== below-fold sections ==")
+            check(
+                page.evaluate("document.documentElement.scrollHeight") > 900,
+                "document is taller than the viewport",
+            )
+
+            def section_reveals(sel, label):
+                page.evaluate(f"document.querySelector('{sel}').scrollIntoView()")
+                page.wait_for_timeout(1200)
+                revealed = page.evaluate(
+                    """(sel) => {
+                        const el = document.querySelector(sel);
+                        return !!el && el.classList.contains('lp-visible') &&
+                               parseFloat(getComputedStyle(el).opacity) > 0.9;
+                    }""",
+                    sel,
+                )
+                check(revealed, label)
+
+            section_reveals(".lp-feature-card", "feature cards reveal (lp-visible, opacity 1)")
+            section_reveals(".lp-stat-item", "stat items reveal (lp-visible, opacity 1)")
+            section_reveals(".lp-how-step", "how-it-works steps reveal (lp-visible, opacity 1)")
+            page.screenshot(path=str(shot_dir / "01b-sections.png"))
+
             # ── Dashboard + theme switcher ──────────────────────────────────
             print("\n== dashboard + theme switcher ==")
             page.goto(base + "/dashboard", wait_until="networkidle", timeout=60000)

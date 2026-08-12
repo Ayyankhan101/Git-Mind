@@ -197,7 +197,6 @@ function HeroForm({ onLoad, onAnalyzeUrl }) {
 export default function LandingPage({ onLoad, onAnalyzeUrl }) {
   const [scrollY, setScrollY] = useState(0);
   const [activeSection, setActiveSection] = useState("");
-  const lpRef = useRef(null);
   const heroRef = useRef(null);
   const featuresRef = useRef(null);
   const statsRef = useRef(null);
@@ -267,32 +266,20 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
         });
       });
 
-      /* Stats counter animation */
-      gsap.utils.toArray(".lp-stat-item").forEach((el) => {
-        gsap.from(el, {
-          y: 30,
-          opacity: 0,
-          duration: 0.6,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: el,
-            start: "top 90%",
-            toggleActions: "play none none none",
-          },
-        });
-      });
+      /* NOTE: stats are revealed by useScrollReveal (.lp-visible class)
+         only — a gsap.from opacity:0 tween here pinned an inline
+         opacity:0 that overrode the class and kept them invisible. */
     });
 
     return () => ctx.revert();
   }, []);
 
-  /* Scroll position tracking */
+  /* Scroll position tracking — the landing page scrolls with the window */
   useEffect(() => {
-    const el = lpRef.current;
-    if (!el) return;
-    const onScroll = () => setScrollY(el.scrollTop);
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
+    const onScroll = () => setScrollY(window.scrollY);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   /* Nav active section observer */
@@ -313,7 +300,7 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
   }, []);
 
   return (
-    <div className="lp" ref={lpRef}>
+    <div className="lp">
       <Particles />
 
       {/* ── Nav ──────────────────────────────────────────────── */}
