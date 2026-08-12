@@ -140,6 +140,11 @@ jobs:
           python -m playwright install chromium --with-deps
       - name: Run frontend smoke test
         run: python e2e/smoke_test.py --browser auto
+      # Spacing regression gate: every tab must keep its standard tab-header
+      # (32px icon / 12px sub) and the shared 28px content gutter. Any drift
+      # (e.g. someone reverts .sev-filter to 24px) fails the build here.
+      - name: Run spacing audit (gutter/header regression gate)
+        run: python e2e/spacing_audit.py --check
       - name: Upload smoke screenshots
         if: always()
         uses: actions/upload-artifact@v4

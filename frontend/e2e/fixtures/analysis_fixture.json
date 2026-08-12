@@ -1,0 +1,130 @@
+{
+  "repo_name": "gitmind/sample-app",
+  "architecture_diagram": "flowchart TD\n    A[React Frontend] --> B[FastAPI Backend]\n    B --> C[PostgreSQL]\n    B --> D[Redis Queue]\n    D --> E[Worker]\n    E --> C",
+  "architecture_graph": {
+    "nodes": [
+      { "id": "frontend", "label": "React Frontend", "type": "frontend", "layer": "presentation", "importance": "primary" },
+      { "id": "api", "label": "FastAPI Backend", "type": "api", "layer": "backend", "importance": "primary" },
+      { "id": "db", "label": "PostgreSQL", "type": "database", "layer": "data", "importance": "primary" },
+      { "id": "queue", "label": "Redis Queue", "type": "service", "layer": "backend", "importance": "secondary" },
+      { "id": "worker", "label": "Background Worker", "type": "service", "layer": "backend", "importance": "secondary" }
+    ],
+    "edges": [
+      { "source": "frontend", "target": "api" },
+      { "source": "api", "target": "db" },
+      { "source": "api", "target": "queue" },
+      { "source": "queue", "target": "worker" },
+      { "source": "worker", "target": "db" }
+    ]
+  },
+  "api_docs": [
+    { "method": "GET", "path": "/api/v1/repos", "description": "List repositories for the authenticated user with pagination, language filters and star counts.", "auth_required": false, "file": "backend/routes/repos.py", "line": 42 },
+    { "method": "POST", "path": "/api/v1/analyze", "description": "Kick off a full repository analysis and stream progress over WebSocket.", "auth_required": true, "file": "backend/routes/analyze.py", "line": 77 },
+    { "method": "GET", "path": "/api/v1/analysis/{id}", "description": "Fetch a previously stored analysis snapshot by session id.", "auth_required": true, "file": "backend/routes/analysis.py", "line": 31 },
+    { "method": "DELETE", "path": "/api/v1/analysis/{id}", "description": "Delete an analysis snapshot and its associated artifacts.", "auth_required": true, "file": "backend/routes/analysis.py", "line": 96 },
+    { "method": "PATCH", "path": "/api/v1/analysis/{id}", "description": "Update analysis metadata such as labels or notes.", "auth_required": false, "file": "backend/routes/analysis.py", "line": 140 },
+    { "method": "POST", "path": "/api/v1/fix", "description": "Generate an LLM fix suggestion for a specific security finding.", "auth_required": true, "file": "backend/routes/fix.py", "line": 12 },
+    { "method": "GET", "path": "/api/v1/monitor/status", "description": "Return the list of repositories currently being watched.", "auth_required": false, "file": "backend/routes/monitor.py", "line": 58 }
+  ],
+  "security_findings": [
+    { "id": "F-001", "severity": "critical", "rule": "G401", "description": "Hardcoded API secret in source", "file": "backend/settings.py", "line_start": 14, "line_end": 14, "code": "GROQ_API_KEY = \"sk-...\"", "remediation": "Move the key to environment variables or a secrets manager." },
+    { "id": "F-002", "severity": "high", "rule": "SQL-INJ-002", "description": "SQL injection via f-string query construction", "file": "backend/db.py", "line_start": 55, "code": "query = f\"SELECT * FROM repos WHERE owner = '{owner}'\"", "remediation": "Use parameterized queries." },
+    { "id": "F-003", "severity": "high", "rule": "SSRF-001", "description": "Unvalidated URL passed to requests.get", "file": "backend/proxy.py", "line_start": 32, "code": "resp = requests.get(target_url)", "remediation": "Validate and allowlist outbound URLs." },
+    { "id": "F-004", "severity": "medium", "rule": "CRYPTO-003", "description": "TLS 1.0 still enabled in client config", "file": "backend/client.py", "line_start": 77, "code": "ssl_version=ssl.PROTOCOL_TLSv1", "remediation": "Disable TLS 1.0 and 1.1." },
+    { "id": "F-005", "severity": "low", "rule": "PERF-009", "description": "N+1 query in repository listing", "file": "backend/repos.py", "line_start": 101, "code": "for r in repos: r.stars()", "remediation": "Use a joined query or eager loading." }
+  ],
+  "cve_findings": [
+    {
+      "package": "urllib3", "version": "1.26.9", "ecosystem": "PyPI", "worst_severity": "critical",
+      "vulns": [
+        { "id": "GHSA-v845-joo5-fxcg", "url": "https://osv.dev/vulnerability/GHSA-v845-joo5-fxcg", "summary": "Request body not fully read on connection reuse can lead to request smuggling.", "fixed_in": "1.26.12" }
+      ]
+    },
+    {
+      "package": "requests", "version": "2.28.1", "ecosystem": "PyPI", "worst_severity": "high",
+      "vulns": [
+        { "id": "CVE-2023-32681", "url": "https://osv.dev/vulnerability/CVE-2023-32681", "summary": "Requests can be vulnerable to credential leak via forwarded proxies.", "fixed_in": "2.31.0" }
+      ]
+    },
+    {
+      "package": "lodash", "version": "4.17.20", "ecosystem": "npm", "worst_severity": "medium",
+      "vulns": [
+        { "id": "CVE-2021-23337", "url": "https://osv.dev/vulnerability/CVE-2021-23337", "summary": "Command injection in template function.", "fixed_in": "4.17.21" }
+      ]
+    }
+  ],
+  "git_audit": {
+    "stats": { "total": 128, "bad_messages": 9, "warn_messages": 22, "secrets_found": 2, "sensitive_files": 3 },
+    "commits": [
+      { "sha": "9f8e2d1", "message": "Fix SSRF validation in proxy layer", "body": "Validate that outbound URLs resolve to public IPs before forwarding requests. Adds a unit test for the blocklist.", "author": "ada", "date": "2026-07-18", "msg_quality": "good", "url": "https://github.com/gitmind/sample-app/commit/9f8e2d1" },
+      { "sha": "4c1ab90", "message": "wip", "body": "", "author": "kim", "date": "2026-07-16", "msg_quality": "bad", "url": "https://github.com/gitmind/sample-app/commit/4c1ab90" },
+      { "sha": "7d02c5f", "message": "update deps", "body": "", "author": "ada", "date": "2026-07-15", "msg_quality": "bad", "url": "https://github.com/gitmind/sample-app/commit/7d02c5f" },
+      { "sha": "a3b9e77", "message": "Refactor API routes and add pagination", "body": "Moved route registration to a router module and added limit/offset params.", "author": "kim", "date": "2026-07-14", "msg_quality": "good", "url": "https://github.com/gitmind/sample-app/commit/a3b9e77" },
+      { "sha": "e8c4d12", "message": "some stuff", "body": "", "author": "sam", "date": "2026-07-12", "msg_quality": "bad", "url": "https://github.com/gitmind/sample-app/commit/e8c4d12" },
+      { "sha": "5f6a033", "message": "Add health checks to worker startup", "body": "Worker now pings the DB before consuming from the queue.", "author": "ada", "date": "2026-07-10", "msg_quality": "good", "url": "https://github.com/gitmind/sample-app/commit/5f6a033" },
+      { "sha": "b21c889", "message": "maybe fix caching", "body": "", "author": "sam", "date": "2026-07-08", "msg_quality": "warn", "url": "https://github.com/gitmind/sample-app/commit/b21c889" },
+      { "sha": "d03f4aa", "message": "Upgrade auth middleware to JWT", "body": "Replaced session cookies with signed JWTs; token rotation is next.", "author": "kim", "date": "2026-07-05", "msg_quality": "good", "url": "https://github.com/gitmind/sample-app/commit/d03f4aa" }
+    ],
+    "secret_findings": [
+      { "severity": "high", "type": "AWS Access Key", "path": ".env.example", "line": 3, "snippet": "AWS_SECRET_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE" },
+      { "severity": "medium", "type": "Private Key", "path": "deploy/jenkins.key", "line": 1, "snippet": "-----BEGIN RSA PRIVATE KEY-----" }
+    ],
+    "sensitive_files": [
+      { "path": "config/credentials.json", "reason": "Service account key committed to the repo" },
+      { "path": "logs/access.log", "reason": "Contains IP addresses and auth headers" },
+      { "path": "docs/roadmap-internal.md", "reason": "Internal planning doc with unreleased feature names" }
+    ]
+  },
+  "solidity_audit": {
+    "contracts": [
+      {
+        "name": "Token.sol",
+        "functions": [
+          { "name": "transfer", "visibility": "public", "modifiers": ["onlyOwner"] },
+          { "name": "mint", "visibility": "public", "modifiers": [] },
+          { "name": "burn", "visibility": "external", "modifiers": ["whenNotPaused"] }
+        ],
+        "state_variables": [
+          { "typ": "uint256", "name": "totalSupply", "visibility": "public" },
+          { "typ": "bool", "name": "paused", "visibility": "private", "is_constant": true }
+        ],
+        "events": [{ "name": "Transfer" }, { "name": "Mint" }]
+      },
+      {
+        "name": "Vault.sol",
+        "functions": [{ "name": "withdraw", "visibility": "external", "modifiers": [] }],
+        "state_variables": [],
+        "events": []
+      }
+    ],
+    "findings": [
+      { "id": "sol-1", "severity": "critical", "title": "Reentrancy in withdraw", "contract": "Vault.sol", "function": "withdraw", "swc": "SWC-107", "description": "External call happens before the balance is updated, allowing reentrancy.", "remediation": "Apply the checks-effects-interactions pattern." },
+      { "id": "sol-2", "severity": "medium", "title": "Unchecked return value", "contract": "Token.sol", "function": "transfer", "swc": "SWC-104", "description": "transfer() return value is not checked.", "remediation": "Use SafeERC20 or OpenZeppelin's safeTransfer." },
+      { "id": "sol-3", "severity": "low", "title": "Floating pragma", "contract": "Token.sol", "function": null, "swc": "SWC-103", "description": "Pragma version is not pinned.", "remediation": "Pin the compiler version with a caret range." }
+    ]
+  },
+  "code_audit": [
+    {
+      "language": "python",
+      "tool": "pylint",
+      "file_count": 2,
+      "findings": [
+        { "id": "py-1", "severity": "high", "title": "Unused import", "file": "src/main.py", "line": 1, "description": "Import os is unused.", "remediation": "Remove the unused import.", "rule": "W0611" },
+        { "id": "py-2", "severity": "medium", "title": "Broad exception clause", "file": "src/main.py", "line": 88, "description": "Bare except swallows all errors.", "remediation": "Catch specific exceptions.", "rule": "W0703" }
+      ]
+    },
+    {
+      "language": "javascript",
+      "tool": "eslint",
+      "file_count": 1,
+      "findings": [
+        { "id": "js-1", "severity": "low", "title": "No unused vars", "file": "src/App.js", "line": 12, "description": "'result' is assigned but never used.", "remediation": "Remove the variable.", "rule": "no-unused-vars" }
+      ]
+    }
+  ],
+  "health": {
+    "grade": "B",
+    "score": 78,
+    "breakdown": { "security": 62, "documentation": 55, "testing": 71, "maintainability": 88, "dependencies": 90 }
+  }
+}
