@@ -1,5 +1,5 @@
 /* ============================================================
-   Landing Page — Premium Minimal (Linear/Vercel aesthetic)
+   Landing Page — Creative Scroll-Driven Experience
    ============================================================ */
 
 .lp {
@@ -9,6 +9,104 @@
   width: 100%;
   background: var(--bg);
   overflow-x: hidden;
+  position: relative;
+  scroll-behavior: smooth;
+}
+
+/* ── Particles Canvas ────────────────────────────────────────── */
+.lp-particles {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── Gradient Orbs ───────────────────────────────────────────── */
+.lp-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.lp-orb-1 {
+  width: 500px;
+  height: 500px;
+  top: -100px;
+  right: -100px;
+  background: radial-gradient(circle, rgba(124, 111, 224, 0.12) 0%, transparent 70%);
+  animation: orbFloat1 10s ease-in-out infinite;
+}
+
+.lp-orb-2 {
+  width: 400px;
+  height: 400px;
+  bottom: 10%;
+  left: -80px;
+  background: radial-gradient(circle, rgba(96, 165, 250, 0.1) 0%, transparent 70%);
+  animation: orbFloat2 12s ease-in-out infinite;
+}
+
+.lp-orb-3 {
+  width: 350px;
+  height: 350px;
+  top: 20%;
+  right: -60px;
+  background: radial-gradient(circle, rgba(52, 211, 153, 0.08) 0%, transparent 70%);
+  animation: orbFloat1 14s ease-in-out infinite reverse;
+}
+
+.lp-orb-4 {
+  width: 300px;
+  height: 300px;
+  bottom: 15%;
+  left: 10%;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.08) 0%, transparent 70%);
+  animation: orbFloat2 11s ease-in-out infinite;
+}
+
+.lp-orb-5 {
+  width: 450px;
+  height: 450px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(124, 111, 224, 0.1) 0%, transparent 70%);
+  animation: orbFloat1 13s ease-in-out infinite;
+}
+
+@keyframes orbFloat1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(20px, -15px) scale(1.03); }
+  66% { transform: translate(-15px, 10px) scale(0.97); }
+}
+
+@keyframes orbFloat2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-25px, 20px) scale(1.05); }
+}
+
+/* ── SVG Visualizations ──────────────────────────────────────── */
+.lp-code-viz {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+.lp-shield-viz {
+  width: 120px;
+  height: 144px;
+  flex-shrink: 0;
+}
+
+.lp-arch-viz {
+  width: 100%;
+  max-width: 500px;
+  height: auto;
 }
 
 /* ── Nav ─────────────────────────────────────────────────────── */
@@ -22,8 +120,8 @@
   height: 56px;
   display: flex;
   align-items: center;
-  background: rgba(8, 9, 14, 0.8);
-  backdrop-filter: blur(12px);
+  background: rgba(8, 9, 14, 0.7);
+  backdrop-filter: blur(16px) saturate(1.5);
   border-bottom: 1px solid var(--border-s);
 }
 
@@ -47,7 +145,14 @@
   letter-spacing: -0.02em;
 }
 
-.lp-nav-brand svg {
+.lp-nav-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-dim);
   color: var(--accent);
 }
 
@@ -78,30 +183,9 @@
   overflow: hidden;
 }
 
-.lp-hero-orb {
-  position: absolute;
-  width: 600px;
-  height: 600px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(124, 111, 224, 0.15) 0%,
-    rgba(124, 111, 224, 0.05) 40%,
-    transparent 70%
-  );
-  filter: blur(60px);
-  animation: orbFloat 8s ease-in-out infinite;
-  pointer-events: none;
-}
-
-@keyframes orbFloat {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(30px, -20px) scale(1.05); }
-}
-
 .lp-hero-content {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -123,15 +207,21 @@
   border: 1px solid var(--border-accent);
   border-radius: var(--radius-full);
   text-transform: uppercase;
+  animation: fadeSlideUp 0.6s ease-out both;
 }
 
 .lp-hero-title {
-  font-size: 48px;
+  font-size: 52px;
   font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
   color: var(--text-1);
   margin: 0;
+}
+
+.lp-title-line {
+  display: inline-block;
+  will-change: transform, opacity;
 }
 
 .lp-hero-sub {
@@ -140,6 +230,7 @@
   color: var(--text-2);
   margin: 0;
   max-width: 480px;
+  will-change: transform, opacity;
 }
 
 .lp-hero-input-group {
@@ -148,6 +239,7 @@
   width: 100%;
   max-width: 520px;
   margin-top: 8px;
+  animation: fadeSlideUp 0.6s ease-out 0.2s both;
 }
 
 .lp-hero-input-wrapper {
@@ -164,7 +256,7 @@
 
 .lp-hero-input-wrapper:focus-within {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-dim);
+  box-shadow: 0 0 0 3px var(--accent-dim), 0 0 30px var(--accent-dim);
 }
 
 .lp-hero-input-icon {
@@ -199,18 +291,35 @@
   border-radius: var(--radius-md);
   cursor: pointer;
   white-space: nowrap;
-  transition: background var(--duration-fast), box-shadow var(--duration-fast);
+  transition: all var(--duration-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.lp-hero-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+  opacity: 0;
+  transition: opacity var(--duration-fast);
 }
 
 .lp-hero-btn:hover {
   background: var(--accent-hover);
   box-shadow: var(--shadow-accent);
+  transform: translateY(-1px);
+}
+
+.lp-hero-btn:hover::before {
+  opacity: 1;
 }
 
 .lp-hero-hint {
   font-size: 12px;
   color: var(--text-3);
   margin: 0;
+  animation: fadeSlideUp 0.6s ease-out 0.4s both;
 }
 
 .lp-hero-hint span {
@@ -218,11 +327,40 @@
   color: var(--text-2);
 }
 
+.lp-scroll-hint {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--text-3);
+  animation: bounce 2s ease-in-out infinite;
+  z-index: 2;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(8px); }
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ── Sections shared ─────────────────────────────────────────── */
 .lp-section-inner {
   max-width: 1100px;
   margin: 0 auto;
   padding: 0 32px;
+  position: relative;
+  z-index: 2;
+}
+
+.lp-section-header {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  margin-bottom: 48px;
 }
 
 .lp-section-title {
@@ -230,21 +368,21 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-1);
-  text-align: center;
   margin: 0 0 12px;
 }
 
 .lp-section-sub {
   font-size: 15px;
   color: var(--text-2);
-  text-align: center;
-  margin: 0 0 48px;
+  margin: 0;
 }
 
 /* ── Features ────────────────────────────────────────────────── */
 .lp-features {
   padding: 100px 0;
   border-top: 1px solid var(--border-s);
+  position: relative;
+  overflow: hidden;
 }
 
 .lp-features-grid {
@@ -255,15 +393,18 @@
 
 .lp-feature-card {
   padding: 28px 24px;
-  background: var(--surface-0);
+  background: color-mix(in srgb, var(--surface-0) 60%, transparent);
   border: 1px solid var(--border-s);
   border-radius: var(--radius-lg);
-  transition: border-color var(--duration-normal), box-shadow var(--duration-normal);
+  transition: all var(--duration-normal);
+  animation: fadeSlideUp 0.5s ease-out both;
+  backdrop-filter: blur(8px);
 }
 
 .lp-feature-card:hover {
   border-color: var(--border-m);
   box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .lp-feature-icon {
@@ -276,6 +417,11 @@
   background: var(--accent-dim);
   color: var(--accent);
   margin-bottom: 16px;
+  transition: transform var(--duration-fast);
+}
+
+.lp-feature-card:hover .lp-feature-icon {
+  transform: scale(1.1);
 }
 
 .lp-feature-title {
@@ -292,10 +438,12 @@
   margin: 0;
 }
 
-/* ── How it works ────────────────────────────────────────────── */
+/* ── How It Works ────────────────────────────────────────────── */
 .lp-how {
   padding: 100px 0;
   border-top: 1px solid var(--border-s);
+  position: relative;
+  overflow: hidden;
 }
 
 .lp-how-steps {
@@ -306,6 +454,18 @@
 
 .lp-how-step {
   text-align: center;
+  padding: 32px 24px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface-0) 40%, transparent);
+  border: 1px solid var(--border-s);
+  backdrop-filter: blur(8px);
+  animation: fadeSlideUp 0.5s ease-out both;
+  transition: all var(--duration-normal);
+}
+
+.lp-how-step:hover {
+  border-color: var(--border-m);
+  transform: translateY(-2px);
 }
 
 .lp-how-step-num {
@@ -315,18 +475,6 @@
   color: var(--accent);
   letter-spacing: 0.06em;
   margin-bottom: 16px;
-}
-
-.lp-how-step-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--accent-dim);
-  color: var(--accent);
-  margin: 0 auto 20px;
 }
 
 .lp-how-step-title {
@@ -348,6 +496,8 @@
   padding: 100px 0;
   border-top: 1px solid var(--border-s);
   text-align: center;
+  position: relative;
+  overflow: hidden;
 }
 
 .lp-cta-title {
@@ -356,32 +506,53 @@
   letter-spacing: -0.02em;
   color: var(--text-1);
   margin: 0 0 12px;
+  position: relative;
+  z-index: 2;
 }
 
 .lp-cta-sub {
   font-size: 14px;
   color: var(--text-2);
   margin: 0 0 28px;
+  position: relative;
+  z-index: 2;
 }
 
 .lp-cta-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 28px;
-  font-size: 14px;
+  padding: 14px 32px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-on-primary);
   background: var(--accent);
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background var(--duration-fast), box-shadow var(--duration-fast);
+  transition: all var(--duration-fast);
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.lp-cta-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+  opacity: 0;
+  transition: opacity var(--duration-fast);
 }
 
 .lp-cta-btn:hover {
   background: var(--accent-hover);
   box-shadow: var(--shadow-accent);
+  transform: translateY(-2px);
+}
+
+.lp-cta-btn:hover::before {
+  opacity: 1;
 }
 
 /* ── Footer ──────────────────────────────────────────────────── */
@@ -431,11 +602,20 @@
 
   .lp-how-steps {
     grid-template-columns: 1fr;
-    gap: 40px;
+    gap: 24px;
   }
 
   .lp-nav-links {
     display: none;
+  }
+
+  .lp-section-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .lp-code-viz {
+    opacity: 0.2;
   }
 }
 
@@ -469,4 +649,19 @@
     gap: 12px;
     text-align: center;
   }
+
+  .lp-orb {
+    display: none;
+  }
+}
+
+/* ── Reduced Motion ──────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .lp-orb,
+  .lp-scroll-hint { animation: none; }
+  .lp-feature-card,
+  .lp-how-step,
+  .lp-badge { animation: none; }
+  .lp-title-line,
+  .lp-hero-sub { transform: none !important; opacity: 1 !important; }
 }
