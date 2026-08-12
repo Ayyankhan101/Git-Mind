@@ -1,0 +1,54 @@
+/* ============================================================
+   CARBON THEME (lazy-loaded)
+   ============================================================ */
+[data-theme="carbon"],
+.carbon {
+  --bg: #111111;
+  --bg-alt: #0a0a0a;
+  --surface-0: #1a1a1a;
+  --surface-1: #222222;
+  --surface-2: #2a2a2a;
+  --surface-3: #333333;
+  --surface-4: #404040;
+
+  --primary: #ffffff;
+  --primary-hover: #e0e0e0;
+  --primary-strong: #cccccc;
+  --primary-muted: rgba(255, 255, 255, 0.10);
+  --primary-subtle: rgba(255, 255, 255, 0.05);
+
+  --text-primary: #ffffff;
+  --text-secondary: #999999;
+  --text-tertiary: #555555;
+  --text-on-primary: #000000;
+
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --border-accent: rgba(255, 255, 255, 0.25);
+
+  --glass-bg: rgba(17, 17, 17, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-accent: 0 4px 24px rgba(255, 255, 255, 0.08);
+
+  --success: #ffffff;
+  --success-bg: rgba(255, 255, 255, 0.06);
+  --warning: #cccccc;
+  --warning-bg: rgba(204, 204, 204, 0.06);
+  --danger: #ff4444;
+  --danger-bg: rgba(255, 68, 68, 0.08);
+  --info: #aaaaaa;
+  --info-bg: rgba(170, 170, 170, 0.06);
+
+  --code-keyword: #ffffff;
+  --code-string: #cccccc;
+  --code-comment: #555555;
+  --code-fn: #e0e0e0;
+  --code-number: #999999;
+  --code-operator: #e0e0e0;
+  --code-punctuation: #777777;
+}

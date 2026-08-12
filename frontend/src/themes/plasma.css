@@ -1,0 +1,57 @@
+/* ============================================================
+   PLASMA THEME (lazy-loaded)
+   ============================================================ */
+[data-theme="plasma"],
+.plasma {
+  --bg: #08041a;
+  --bg-alt: #050212;
+  --surface-0: #0c0622;
+  --surface-1: #120a30;
+  --surface-2: #180e3e;
+  --surface-3: #1f134e;
+  --surface-4: #271860;
+
+  --primary: #a855f7;
+  --primary-hover: #bf7aff;
+  --primary-strong: #9333ea;
+  --primary-muted: rgba(168, 85, 247, 0.12);
+  --primary-subtle: rgba(168, 85, 247, 0.06);
+
+  --accent-blue: #3b82f6;
+  --accent-blue-muted: rgba(59, 130, 246, 0.12);
+
+  --text-primary: #f0eaff;
+  --text-secondary: #a088cc;
+  --text-tertiary: #5a4480;
+  --text-on-primary: #000000;
+
+  --border-subtle: rgba(168, 85, 247, 0.08);
+  --border-default: rgba(168, 85, 247, 0.12);
+  --border-strong: rgba(168, 85, 247, 0.20);
+  --border-accent: rgba(168, 85, 247, 0.35);
+
+  --glass-bg: rgba(8, 4, 26, 0.8);
+  --glass-border: rgba(168, 85, 247, 0.12);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(168, 85, 247, 0.08);
+  --shadow-lg: 0 8px 32px rgba(168, 85, 247, 0.12);
+  --shadow-accent: 0 4px 24px rgba(168, 85, 247, 0.2);
+
+  --success: #34d399;
+  --success-bg: rgba(52, 211, 153, 0.08);
+  --warning: #fbbf24;
+  --warning-bg: rgba(251, 191, 36, 0.08);
+  --danger: #f87171;
+  --danger-bg: rgba(248, 113, 113, 0.08);
+  --info: #60a5fa;
+  --info-bg: rgba(96, 165, 250, 0.08);
+
+  --code-keyword: #a855f7;
+  --code-string: #34d399;
+  --code-comment: #5a4480;
+  --code-fn: #60a5fa;
+  --code-number: #fbbf24;
+  --code-operator: #60a5fa;
+  --code-punctuation: #a088cc;
+}

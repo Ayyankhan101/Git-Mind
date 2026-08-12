@@ -11,7 +11,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import LandingPage from "./components/LandingPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ToastSystem from "./components/ToastSystem";
-import DashboardLayout from "./components/DashboardLayout";
 import {
   WS_BASE,
   fetchRepos,
@@ -20,7 +19,11 @@ import {
 } from "./api";
 import { appReducer, initialState } from "./appReducer";
 import * as tokenManager from "./tokenManager";
+import { loadTheme } from "./themeLoader";
 
+// Dashboard shell (CommandBar/NavRail/Sidebar + all tabs) is lazy-loaded so
+// the landing page doesn't ship the full 400KB+ dashboard bundle.
+const DashboardLayout = lazy(() => import("./components/DashboardLayout"));
 const CrisisChat = lazy(() => import("./components/CrisisChat"));
 const KeyboardHelp = lazy(() => import("./components/KeyboardHelp"));
 const FilePreviewDrawer = lazy(() => import("./components/FilePreviewDrawer"));
@@ -86,6 +89,14 @@ export default function App() {
     if (savedDensity === "comfortable") root.removeAttribute("data-density");
     else root.setAttribute("data-density", savedDensity);
   }, []);
+
+  // ── Lazy-load the active theme's CSS chunk ─────────────────
+  // Fires on mount (restores the saved theme) and on every switch
+  // (ThemeSwitcher + command palette). webpack fetches only the one
+  // theme file being used; the other 12 stay off the network.
+  useEffect(() => {
+    loadTheme(theme);
+  }, [theme]);
   const timerRef = useRef(null);
   const timeoutRef = useRef(null);
   const startRef = useRef(null);
@@ -156,13 +167,6 @@ export default function App() {
       .catch(() => {});
   }, [location.search, navigate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Notification permission ───────────────────────────────
-  useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-  }, []);
-
   // ── Global paste → PR auto-load ──────────────────────────
   useEffect(() => {
     const onPaste = (e) => {
@@ -212,6 +216,12 @@ export default function App() {
       if (!url) return;
       cleanup();
       dispatch({ type: "START_ANALYSIS", url });
+      // Ask for notification permission as part of a user gesture (analysis
+      // start) instead of on page load — prompts on load hurt UX and the
+      // Lighthouse best-practices score.
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+      }
       analyzingRef.current = true;
 
       startRef.current = Date.now();
@@ -673,23 +683,33 @@ export default function App() {
           }}
         />
       ) : (
-        <DashboardLayout
-          state={state}
-          dispatch={dispatch}
-          sessionId={SESSION_ID}
-          usernameRef={usernameRef}
-          handleLoadRepos={handleLoadRepos}
-          handleSelectRepo={handleSelectRepo}
-          handleAnalyze={handleAnalyze}
-          handleShare={handleShare}
-          handleExport={handleExport}
-          handleFix={handleFix}
-          handlePaletteAction={handlePaletteAction}
-          statusClass={statusClass}
-          statusText={statusText}
-          dismissToast={dismissToast}
-          toasts={toasts}
-        />
+        <ErrorBoundary>
+          <Suspense
+            fallback={
+              <div className="app-loading">
+                <span className="spinner" />
+              </div>
+            }
+          >
+            <DashboardLayout
+              state={state}
+              dispatch={dispatch}
+              sessionId={SESSION_ID}
+              usernameRef={usernameRef}
+              handleLoadRepos={handleLoadRepos}
+              handleSelectRepo={handleSelectRepo}
+              handleAnalyze={handleAnalyze}
+              handleShare={handleShare}
+              handleExport={handleExport}
+              handleFix={handleFix}
+              handlePaletteAction={handlePaletteAction}
+              statusClass={statusClass}
+              statusText={statusText}
+              dismissToast={dismissToast}
+              toasts={toasts}
+            />
+          </Suspense>
+        </ErrorBoundary>
       )}
 
       {/* ── Global overlays (shared across routes) ─────────────── */}

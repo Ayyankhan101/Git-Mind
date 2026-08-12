@@ -1,0 +1,67 @@
+/* ============================================================
+   AURORA THEME (lazy-loaded)
+   ============================================================ */
+[data-theme="aurora"],
+.aurora {
+  --bg: #0f0a18;
+  --bg-alt: #0c0814;
+  --surface-0: #150f20;
+  --surface-1: #1c142c;
+  --surface-2: #241a38;
+  --surface-3: #2c2044;
+  --surface-4: #362850;
+
+  --primary: #a855f7;
+  --primary-hover: #c084fc;
+  --primary-strong: #9333ea;
+  --primary-muted: rgba(168, 85, 247, 0.15);
+  --primary-subtle: rgba(168, 85, 247, 0.08);
+
+  --text-primary: #faf5ff;
+  --text-secondary: #c8b8e0;
+  --text-tertiary: #7a5a9a;
+  --text-on-primary: #0f0a18;
+
+  --border-subtle: rgba(168, 85, 247, 0.06);
+  --border-default: rgba(168, 85, 247, 0.10);
+  --border-strong: rgba(168, 85, 247, 0.16);
+  --border-accent: rgba(168, 85, 247, 0.30);
+
+  --glass-bg: rgba(15, 10, 24, 0.7);
+  --glass-border: rgba(168, 85, 247, 0.08);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(168, 85, 247, 0.08);
+  --shadow-lg: 0 8px 32px rgba(168, 85, 247, 0.12);
+  --shadow-accent: 0 4px 20px rgba(168, 85, 247, 0.2);
+
+  --success: #34d399;
+  --success-bg: rgba(52, 211, 153, 0.08);
+  --warning: #fbbf24;
+  --warning-bg: rgba(251, 191, 36, 0.08);
+  --danger: #f87171;
+  --danger-bg: rgba(248, 113, 113, 0.08);
+  --info: #60a5fa;
+  --info-bg: rgba(96, 165, 250, 0.08);
+
+  --code-keyword: #c084fc;
+  --code-string: #a5d6a7;
+  --code-comment: #7a5a9a;
+  --code-fn: #93c5fd;
+  --code-number: #fbbf24;
+  --code-operator: #93c5fd;
+  --code-punctuation: #c8b8e0;
+}
+
+/* Aurora gradient accent (only theme with gradient) */
+[data-theme="aurora"] .btn-primary,
+.aurora .btn-primary {
+  background: linear-gradient(135deg, #a855f7, #22d3ee);
+}
+[data-theme="aurora"] .btn-primary:hover,
+.aurora .btn-primary:hover {
+  background: linear-gradient(135deg, #c084fc, #3ee0f2);
+}
+
+
+

@@ -1,0 +1,54 @@
+/* ============================================================
+   CIRCUIT THEME (lazy-loaded)
+   ============================================================ */
+[data-theme="circuit"],
+.circuit {
+  --bg: #0f0d08;
+  --bg-alt: #0a0905;
+  --surface-0: #141209;
+  --surface-1: #1c1a0e;
+  --surface-2: #242114;
+  --surface-3: #2e2a1a;
+  --surface-4: #3a3522;
+
+  --primary: #f59e0b;
+  --primary-hover: #fbbf24;
+  --primary-strong: #d97706;
+  --primary-muted: rgba(245, 158, 11, 0.12);
+  --primary-subtle: rgba(245, 158, 11, 0.06);
+
+  --text-primary: #fef3c7;
+  --text-secondary: #b89a5a;
+  --text-tertiary: #6b5a30;
+  --text-on-primary: #000000;
+
+  --border-subtle: rgba(245, 158, 11, 0.08);
+  --border-default: rgba(245, 158, 11, 0.12);
+  --border-strong: rgba(245, 158, 11, 0.20);
+  --border-accent: rgba(245, 158, 11, 0.35);
+
+  --glass-bg: rgba(15, 13, 8, 0.8);
+  --glass-border: rgba(245, 158, 11, 0.10);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(245, 158, 11, 0.06);
+  --shadow-lg: 0 8px 32px rgba(245, 158, 11, 0.10);
+  --shadow-accent: 0 4px 24px rgba(245, 158, 11, 0.15);
+
+  --success: #34d399;
+  --success-bg: rgba(52, 211, 153, 0.08);
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.08);
+  --danger: #f87171;
+  --danger-bg: rgba(248, 113, 113, 0.08);
+  --info: #60a5fa;
+  --info-bg: rgba(96, 165, 250, 0.08);
+
+  --code-keyword: #f59e0b;
+  --code-string: #34d399;
+  --code-comment: #6b5a30;
+  --code-fn: #60a5fa;
+  --code-number: #fbbf24;
+  --code-operator: #60a5fa;
+  --code-punctuation: #b89a5a;
+}
