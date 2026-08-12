@@ -47,22 +47,30 @@ test("renders app root", () => {
   expect(elements.length).toBeGreaterThanOrEqual(1);
 });
 
-test("renders theme switcher", () => {
+test("renders theme switcher", async () => {
   renderApp();
-  expect(screen.getByLabelText("Change theme")).toBeInTheDocument();
+  expect(
+    await screen.findByLabelText("Change theme"),
+  ).toBeInTheDocument();
 });
 
-test("renders keyboard help trigger", () => {
+test("renders keyboard help trigger", async () => {
   renderApp();
-  expect(screen.getByLabelText("Keyboard shortcuts")).toBeInTheDocument();
+  expect(
+    await screen.findByLabelText("Keyboard shortcuts"),
+  ).toBeInTheDocument();
 });
 
-test("renders command palette trigger", () => {
+test("renders command palette trigger", async () => {
   renderApp();
-  expect(screen.getByLabelText("Command palette")).toBeInTheDocument();
+  expect(
+    await screen.findByLabelText("Command palette"),
+  ).toBeInTheDocument();
 });
 
-test("renders repository toggle", () => {
+test("renders repository toggle", async () => {
   renderApp();
-  expect(screen.getByLabelText("Repositories")).toBeInTheDocument();
+  expect(
+    await screen.findByLabelText("Repositories"),
+  ).toBeInTheDocument();
 });
