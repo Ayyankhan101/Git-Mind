@@ -1,6 +1,35 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Search, ArrowRight, Shield, GitBranch, FileCode2, Lock, Code2, MessageSquare, ChevronDown } from "lucide-react";
+import {
+  Search, ArrowRight, ChevronDown, Zap, FileCode2,
+  Lock, Shield, Globe, Layers, BrainCircuit,
+  Workflow, Gauge, BarChart3, ShieldCheck,
+} from "lucide-react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Lenis from "lenis";
 import "./LandingPage.css";
+
+gsap.registerPlugin(ScrollTrigger);
+
+/* ── Data ─────────────────────────────────────────────────────── */
+const FEATURES = [
+  { Icon: Zap, title: "6 AI Agents in Parallel", desc: "Architecture mapper, API surface analyzer, security auditor, dependency tracker, code quality scorer, and documentation reviewer — all running simultaneously." },
+  { Icon: Shield, title: "Security & CVE Scanning", desc: "Automatic CVE matching against every dependency. Exploit scenario generation, CVSS scoring, and one-click crisis simulation." },
+  { Icon: Layers, title: "Architecture Visualization", desc: "Auto-generated dependency graphs, module boundaries, and call chains. Understand data flow at a glance." },
+  { Icon: FileCode2, title: "Deep Code Understanding", desc: "Goes beyond syntax. Understands business logic, design patterns, architectural decisions, and tech debt hotspots." },
+  { Icon: Globe, title: "GitHub URL Analysis", desc: "Paste any public GitHub URL. GitMind clones, parses, and produces a senior-engineer-level report in under 60 seconds." },
+  { Icon: ShieldCheck, title: "Zero Setup Required", desc: "No config files, no SDK, no boilerplate. Point at a repo and get results. Works with any language or framework." },
+  { Icon: BrainCircuit, title: "AI-Powered Insights", desc: "Reasons about your code like a senior engineer — suggesting refactors, flagging anti-patterns, predicting failure points." },
+  { Icon: Workflow, title: "Dependency Risk Mapping", desc: "Maps the full dependency tree and highlights vulnerable, outdated, or abandoned packages." },
+  { Icon: Gauge, title: "Performance Profiling", desc: "Identifies hot paths, N+1 queries, unnecessary re-renders, and memory leaks ranked by impact." },
+];
+
+const STATS = [
+  { value: "6", label: "AI Agents", Icon: Zap },
+  { value: "<60s", label: "Full Analysis", Icon: BarChart3 },
+  { value: "30+", label: "Languages", Icon: Globe },
+  { value: "0", label: "Config Required", Icon: Lock },
+];
 
 /* ── Floating Particles ──────────────────────────────────────── */
 function Particles() {
@@ -14,14 +43,14 @@ function Particles() {
     const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     resize();
     window.addEventListener("resize", resize);
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 50; i++) {
       particles.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        r: Math.random() * 2 + 0.5,
-        dx: (Math.random() - 0.5) * 0.3,
-        dy: (Math.random() - 0.5) * 0.3,
-        o: Math.random() * 0.5 + 0.1,
+        r: Math.random() * 1.5 + 0.5,
+        dx: (Math.random() - 0.5) * 0.2,
+        dy: (Math.random() - 0.5) * 0.2,
+        o: Math.random() * 0.4 + 0.1,
       });
     }
     const draw = () => {
@@ -45,53 +74,9 @@ function Particles() {
   return <canvas ref={canvasRef} className="lp-particles" />;
 }
 
-/* ── Animated Gradient Orb ───────────────────────────────────── */
+/* ── Gradient Orbs ───────────────────────────────────────────── */
 function GradientOrb({ className }) {
   return <div className={`lp-orb ${className || ""}`} />;
-}
-
-/* ── SVG Code Visualization ──────────────────────────────────── */
-function CodeViz({ scrollY }) {
-  const offset = scrollY * 0.15;
-  return (
-    <svg className="lp-code-viz" viewBox="0 0 800 400" fill="none">
-      {Array.from({ length: 20 }).map((_, i) => (
-        <line key={`h${i}`} x1="0" y1={i * 20} x2="800" y2={i * 20}
-          stroke="var(--border-s)" strokeWidth="0.5" opacity={0.3} />
-      ))}
-      {Array.from({ length: 40 }).map((_, i) => (
-        <line key={`v${i}`} x1={i * 20} y1="0" x2={i * 20} y2="400"
-          stroke="var(--border-s)" strokeWidth="0.5" opacity={0.3} />
-      ))}
-      {[
-        { cx: 200, cy: 120, r: 24, color: "var(--primary)" },
-        { cx: 400, cy: 80, r: 18, color: "var(--info)" },
-        { cx: 600, cy: 140, r: 20, color: "var(--success)" },
-        { cx: 300, cy: 250, r: 16, color: "var(--warning)" },
-        { cx: 500, cy: 280, r: 22, color: "var(--primary)" },
-        { cx: 150, cy: 320, r: 14, color: "var(--danger)" },
-        { cx: 650, cy: 300, r: 19, color: "var(--info)" },
-      ].map((n, i) => (
-        <g key={i}>
-          <circle cx={n.cx} cy={n.cy + Math.sin((offset + i * 30) * 0.02) * 8}
-            r={n.r} fill={n.color} opacity={0.15} />
-          <circle cx={n.cx} cy={n.cy + Math.sin((offset + i * 30) * 0.02) * 8}
-            r={n.r * 0.6} fill={n.color} opacity={0.4} />
-          <circle cx={n.cx} cy={n.cy + Math.sin((offset + i * 30) * 0.02) * 8}
-            r={n.r * 0.3} fill={n.color} opacity={0.9} />
-        </g>
-      ))}
-      {[
-        [200, 120, 400, 80], [400, 80, 600, 140], [200, 120, 300, 250],
-        [300, 250, 500, 280], [600, 140, 500, 280], [150, 320, 300, 250],
-        [500, 280, 650, 300],
-      ].map(([x1, y1, x2, y2], i) => (
-        <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
-          stroke="var(--primary)" strokeWidth="1" opacity={0.2}
-          strokeDasharray="4 4" />
-      ))}
-    </svg>
-  );
 }
 
 /* ── useScrollReveal ─────────────────────────────────────────── */
@@ -129,6 +114,18 @@ function FeatureCard({ Icon, title, desc, delay }) {
   );
 }
 
+/* ── Stat Item ───────────────────────────────────────────────── */
+function StatItem({ value, label, Icon, delay }) {
+  const ref = useScrollReveal();
+  return (
+    <div ref={ref} className="lp-stat-item" style={{ transitionDelay: `${delay}s` }}>
+      <div className="lp-stat-icon"><Icon size={20} /></div>
+      <div className="lp-stat-value">{value}</div>
+      <div className="lp-stat-label">{label}</div>
+    </div>
+  );
+}
+
 /* ── How Step ────────────────────────────────────────────────── */
 function HowStep({ num, title, desc, delay }) {
   const ref = useScrollReveal();
@@ -147,7 +144,95 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
   const [scrollY, setScrollY] = useState(0);
   const [activeSection, setActiveSection] = useState("");
   const lpRef = useRef(null);
+  const heroRef = useRef(null);
+  const featuresRef = useRef(null);
+  const statsRef = useRef(null);
+  const howRef = useRef(null);
+  const ctaRef = useRef(null);
 
+  /* Lenis smooth scroll + GSAP ticker */
+  useEffect(() => {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)")?.matches;
+    if (reducedMotion) return;
+
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+    });
+
+    const raf = (time) => {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    };
+    requestAnimationFrame(raf);
+
+    lenis.on("scroll", ScrollTrigger.update);
+    gsap.ticker.add((time) => { lenis.raf(time * 1000); });
+    gsap.ticker.lagSmoothing(0);
+
+    return () => {
+      lenis.destroy();
+      gsap.ticker.remove((time) => { lenis.raf(time * 1000); });
+    };
+  }, []);
+
+  /* GSAP scroll animations */
+  useEffect(() => {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)")?.matches;
+    if (reducedMotion) return;
+
+    const ctx = gsap.context(() => {
+      /* Hero parallax */
+      if (heroRef.current) {
+        gsap.to(".lp-hero-content", {
+          y: -80,
+          opacity: 0,
+          ease: "none",
+          scrollTrigger: {
+            trigger: heroRef.current,
+            start: "top top",
+            end: "bottom top",
+            scrub: 1,
+          },
+        });
+      }
+
+      /* Section headers */
+      gsap.utils.toArray(".lp-section-header").forEach((el) => {
+        gsap.from(el, {
+          y: 40,
+          opacity: 0,
+          duration: 0.8,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: el,
+            start: "top 85%",
+            toggleActions: "play none none none",
+          },
+        });
+      });
+
+      /* Stats counter animation */
+      gsap.utils.toArray(".lp-stat-item").forEach((el) => {
+        gsap.from(el, {
+          y: 30,
+          opacity: 0,
+          duration: 0.6,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: el,
+            start: "top 90%",
+            toggleActions: "play none none none",
+          },
+        });
+      });
+    });
+
+    return () => ctx.revert();
+  }, []);
+
+  /* Scroll position tracking */
   useEffect(() => {
     const el = lpRef.current;
     if (!el) return;
@@ -158,7 +243,7 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
 
   /* Nav active section observer */
   useEffect(() => {
-    const sections = ["features", "how-it-works"];
+    const sections = ["features", "stats", "how-it-works"];
     const observers = [];
     sections.forEach((id) => {
       const el = document.getElementById(id);
@@ -183,21 +268,6 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
     }
   };
 
-  const features = [
-    { Icon: Shield, title: "Security Scanning", desc: "Find vulnerabilities, secrets, and misconfigurations across your codebase." },
-    { Icon: GitBranch, title: "Architecture Maps", desc: "Interactive diagrams showing module dependencies and data flow." },
-    { Icon: FileCode2, title: "API Documentation", desc: "Auto-generated endpoint docs from your source code." },
-    { Icon: Lock, title: "CVE Intelligence", desc: "Match dependencies against known CVE databases." },
-    { Icon: Code2, title: "Code Audit", desc: "Deep static analysis with severity-ranked findings." },
-    { Icon: MessageSquare, title: "AI Chat", desc: "Ask questions about your codebase in natural language." },
-  ];
-
-  const steps = [
-    { num: "01", title: "Enter a repo", desc: "Paste a URL or type a GitHub username." },
-    { num: "02", title: "AI analyzes", desc: "Six agents scan security, architecture, docs, and more." },
-    { num: "03", title: "Get results", desc: "Interactive reports with findings, fixes, and exportable PDFs." },
-  ];
-
   return (
     <div className="lp" ref={lpRef}>
       <Particles />
@@ -217,30 +287,26 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
           </div>
           <div className="lp-nav-links">
             <a href="#features" className={`lp-nav-link${activeSection === "features" ? " lp-nav-link--active" : ""}`}>Features</a>
+            <a href="#stats" className={`lp-nav-link${activeSection === "stats" ? " lp-nav-link--active" : ""}`}>Stats</a>
             <a href="#how-it-works" className={`lp-nav-link${activeSection === "how-it-works" ? " lp-nav-link--active" : ""}`}>How it works</a>
           </div>
         </div>
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────── */}
-      <section className="lp-hero">
+      <section className="lp-hero" ref={heroRef}>
         <GradientOrb className="lp-orb-1" />
         <GradientOrb className="lp-orb-2" />
-        <CodeViz scrollY={scrollY} />
         <div className="lp-hero-content">
           <div className="lp-badge">AI-Powered Code Intelligence</div>
           <h1 className="lp-hero-title">
-            <span className="lp-title-line" style={{ transform: `translateY(${scrollY * -0.1}px)`, opacity: 1 - scrollY * 0.002 }}>
-              Understand your code.
-            </span>
+            <span className="lp-title-line">Understand your code.</span>
             <br />
-            <span className="lp-title-line" style={{ transform: `translateY(${scrollY * -0.05}px)`, opacity: 1 - scrollY * 0.0015 }}>
-              Ship with confidence.
-            </span>
+            <span className="lp-title-line lp-title-accent">Ship with confidence.</span>
           </h1>
-          <p className="lp-hero-sub" style={{ transform: `translateY(${scrollY * -0.08}px)`, opacity: 1 - scrollY * 0.002 }}>
+          <p className="lp-hero-sub">
             Analyze repositories for vulnerabilities, architecture patterns, and
-            code quality — powered by multi-agent AI.
+            code quality — powered by 6 AI agents working in parallel.
           </p>
           <form className="lp-hero-input-group" onSubmit={handleSubmit}>
             <div className="lp-hero-input-wrapper">
@@ -268,32 +334,44 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
       </section>
 
       {/* ── Features ─────────────────────────────────────────── */}
-      <section id="features" className="lp-features">
+      <section id="features" className="lp-features" ref={featuresRef}>
         <GradientOrb className="lp-orb-3" />
         <div className="lp-section-inner">
           <div className="lp-section-header">
             <div>
+              <span className="lp-section-label">What's Inside</span>
               <h2 className="lp-section-title">Everything you need to ship safer</h2>
               <p className="lp-section-sub">
-                Six agents working in parallel to analyze every dimension of your
-                repository.
+                Six agents working in parallel to analyze every dimension of your repository.
               </p>
             </div>
           </div>
           <div className="lp-features-grid">
-            {features.map(({ Icon, title, desc }, i) => (
-              <FeatureCard key={title} Icon={Icon} title={title} desc={desc} delay={i * 0.08} />
+            {FEATURES.map(({ Icon, title, desc }, i) => (
+              <FeatureCard key={title} Icon={Icon} title={title} desc={desc} delay={i * 0.06} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Stats ────────────────────────────────────────────── */}
+      <section id="stats" className="lp-stats" ref={statsRef}>
+        <div className="lp-section-inner">
+          <div className="lp-stats-grid">
+            {STATS.map(({ value, label, Icon }, i) => (
+              <StatItem key={label} value={value} label={label} Icon={Icon} delay={i * 0.1} />
             ))}
           </div>
         </div>
       </section>
 
       {/* ── How It Works ─────────────────────────────────────── */}
-      <section id="how-it-works" className="lp-how">
+      <section id="how-it-works" className="lp-how" ref={howRef}>
         <GradientOrb className="lp-orb-4" />
         <div className="lp-section-inner">
           <div className="lp-section-header">
             <div>
+              <span className="lp-section-label">How It Works</span>
               <h2 className="lp-section-title">Three steps to insight</h2>
               <p className="lp-section-sub">
                 No configuration. No setup. Just paste and go.
@@ -301,21 +379,20 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
             </div>
           </div>
           <div className="lp-how-steps">
-            {steps.map(({ num, title, desc }, i) => (
-              <HowStep key={num} num={num} title={title} desc={desc} delay={i * 0.12} />
-            ))}
+            <HowStep num="01" title="Enter a repo" desc="Paste a GitHub URL or type a username to browse repos." delay={0} />
+            <HowStep num="02" title="AI analyzes" desc="Six agents scan security, architecture, docs, CVEs, and code quality in parallel." delay={0.12} />
+            <HowStep num="03" title="Get results" desc="Interactive reports with severity-ranked findings, fix suggestions, and exportable PDFs." delay={0.24} />
           </div>
         </div>
       </section>
 
       {/* ── CTA ──────────────────────────────────────────────── */}
-      <section className="lp-cta">
+      <section className="lp-cta" ref={ctaRef}>
         <GradientOrb className="lp-orb-5" />
         <div className="lp-section-inner">
           <h2 className="lp-cta-title">Ready to analyze your code?</h2>
           <p className="lp-cta-sub">
-            Start with a public repository or connect your GitHub token for private
-            repos.
+            Start with a public repository or connect your GitHub token for private repos.
           </p>
           <button className="lp-cta-btn" onClick={() => onLoad("")}>
             Get started
