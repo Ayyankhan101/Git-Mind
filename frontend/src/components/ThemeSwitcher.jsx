@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Palette, Check } from "lucide-react";
 
 const THEMES = [
-  { id: "obsidian", name: "Obsidian", sub: "Navy + Indigo", swatches: ["#08090e", "#7c6fe0"] },
+  { id: "obsidian", name: "Freebuff", sub: "Electric Blue + Violet", swatches: ["#090a0f", "#3b82f6"] },
   { id: "default", name: "Default", sub: "Deep Blue + Violet", swatches: ["#0a0f1e", "#8b5cf6"] },
   { id: "amber", name: "Amber", sub: "Dark Brown + Amber", swatches: ["#1a1208", "#d4a74a"] },
   { id: "verdant", name: "Verdant", sub: "Forest + Emerald", swatches: ["#081208", "#22c55e"] },

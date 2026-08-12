@@ -114,7 +114,7 @@ function Donut({ segments, size = 120, thickness = 14 }) {
         fill="var(--text-1)"
         fontSize="22"
         fontWeight="600"
-        fontFamily="DM Sans, system-ui, sans-serif"
+        fontFamily="var(--font-sans)"
       >
         {total}
       </text>
@@ -124,7 +124,7 @@ function Donut({ segments, size = 120, thickness = 14 }) {
         textAnchor="middle"
         fill="var(--text-3)"
         fontSize="10"
-        fontFamily="DM Sans, system-ui, sans-serif"
+        fontFamily="var(--font-sans)"
         letterSpacing="0.14em"
       >
         FINDINGS

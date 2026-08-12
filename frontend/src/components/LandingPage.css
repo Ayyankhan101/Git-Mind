@@ -4,7 +4,7 @@
 
 /* ── Glassmorphism Tokens ──────────────────────────────────── */
 :root {
-  --lp-glass-bg: rgba(8, 9, 14, 0.65);
+  --lp-glass-bg: rgba(9, 10, 15, 0.65);
   --lp-glass-border: rgba(255, 255, 255, 0.06);
   --lp-glass-border-bright: rgba(255, 255, 255, 0.12);
   --lp-glass-blur: blur(16px);
@@ -45,7 +45,7 @@
   height: 500px;
   top: -100px;
   right: -100px;
-  background: radial-gradient(circle, rgba(124, 111, 224, 0.12) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.16) 0%, transparent 70%);
   animation: orbFloat1 10s ease-in-out infinite;
 }
 
@@ -54,7 +54,7 @@
   height: 400px;
   bottom: 10%;
   left: -80px;
-  background: radial-gradient(circle, rgba(96, 165, 250, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.14) 0%, transparent 70%);
   animation: orbFloat2 12s ease-in-out infinite;
 }
 
@@ -63,7 +63,7 @@
   height: 350px;
   top: 20%;
   right: -60px;
-  background: radial-gradient(circle, rgba(52, 211, 153, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.10) 0%, transparent 70%);
   animation: orbFloat1 14s ease-in-out infinite reverse;
 }
 
@@ -72,7 +72,7 @@
   height: 300px;
   bottom: 15%;
   left: 10%;
-  background: radial-gradient(circle, rgba(251, 191, 36, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.10) 0%, transparent 70%);
   animation: orbFloat2 11s ease-in-out infinite;
 }
 
@@ -82,7 +82,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(124, 111, 224, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.14) 0%, transparent 70%);
   animation: orbFloat1 13s ease-in-out infinite;
 }
 
@@ -218,7 +218,7 @@
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: var(--accent);
+  color: #93c5fd;
   background: var(--accent-dim);
   border: 1px solid var(--border-accent);
   border-radius: var(--radius-full);
@@ -240,7 +240,7 @@
 }
 
 .lp-title-accent {
-  background: linear-gradient(135deg, var(--accent) 0%, #60a5fa 50%, #34d399 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #93c5fd 45%, #a78bfa 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -306,15 +306,16 @@
   padding: 12px 24px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-on-primary);
-  background: var(--accent);
+  color: #ffffff;
+  background: var(--accent-gradient);
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   cursor: pointer;
   white-space: nowrap;
   transition: all var(--duration-fast);
   position: relative;
   overflow: hidden;
+  box-shadow: 0 2px 12px rgba(59, 130, 246, 0.25);
 }
 
 .lp-hero-btn::before {
@@ -327,8 +328,7 @@
 }
 
 .lp-hero-btn:hover {
-  background: var(--accent-hover);
-  box-shadow: var(--shadow-accent);
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4), 0 4px 20px rgba(139, 92, 246, 0.25);
   transform: translateY(-1px);
 }
 
@@ -648,7 +648,7 @@
   inset: 0;
   background: radial-gradient(
     ellipse 60% 50% at 50% 50%,
-    rgba(124, 111, 224, 0.06) 0%,
+    rgba(59, 130, 246, 0.08) 0%,
     transparent 100%
   );
   pointer-events: none;
@@ -679,10 +679,10 @@
   padding: 14px 32px;
   font-size: 15px;
   font-weight: 600;
-  color: var(--text-on-primary);
-  background: var(--accent);
+  color: #ffffff;
+  background: var(--accent-gradient);
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   cursor: pointer;
   transition: all var(--duration-fast);
   position: relative;
@@ -700,8 +700,7 @@
 }
 
 .lp-cta-btn:hover {
-  background: var(--accent-hover);
-  box-shadow: var(--shadow-accent);
+  box-shadow: 0 4px 24px rgba(59, 130, 246, 0.35), 0 4px 24px rgba(139, 92, 246, 0.2);
   transform: translateY(-2px);
 }
 

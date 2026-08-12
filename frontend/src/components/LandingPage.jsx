@@ -70,7 +70,7 @@ function Particles() {
         if (p.y > canvas.height) p.y = 0;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(124, 111, 224, ${p.o})`;
+        ctx.fillStyle = `rgba(96, 165, 250, ${p.o})`;
         ctx.fill();
       });
       raf = requestAnimationFrame(draw);

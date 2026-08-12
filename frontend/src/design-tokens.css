@@ -4,21 +4,25 @@
    ============================================================ */
 
 :root {
-  /* Core Palette */
-  --bg: #08090e;
-  --bg-alt: #06070c;
-  --surface-0: #0d0e16;
-  --surface-1: #11121c;
-  --surface-2: #161824;
-  --surface-3: #1c1e2e;
-  --surface-4: #232538;
+  /* Core Palette — Freebuff canvas + slate surfaces */
+  --bg: #090a0f;
+  --bg-alt: #06070b;
+  --surface-0: #101216;
+  --surface-1: #14161c;
+  --surface-2: #1a1d26;
+  --surface-3: #21242f;
+  --surface-4: #2a2e3b;
 
-  /* Accent — single accent, indigo */
-  --primary: #7c6fe0;
-  --primary-hover: #8b7fe8;
-  --primary-strong: #6b5fd4;
-  --primary-muted: rgba(124, 111, 224, 0.15);
-  --primary-subtle: rgba(124, 111, 224, 0.08);
+  /* Accent — electric blue (freebuff) */
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --primary-strong: #2f6fe4;
+  --primary-muted: rgba(59, 130, 246, 0.15);
+  --primary-subtle: rgba(59, 130, 246, 0.08);
+
+  /* Gradient partner — violet (freebuff blue→violet) */
+  --accent-2: #8b5cf6;
+  --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
 
   /* Semantic */
   --success: #34d399;
@@ -31,26 +35,26 @@
   --info-bg: rgba(96, 165, 250, 0.08);
 
   /* Text */
-  --text-primary: #f0eff4;
-  --text-secondary: #a8a7b3;
-  --text-tertiary: #6d6c7a;
-  --text-on-primary: #08090e;
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --text-tertiary: #6b7280;
+  --text-on-primary: #ffffff;
 
   /* Borders */
-  --border-subtle: rgba(255, 255, 255, 0.04);
-  --border-default: rgba(255, 255, 255, 0.06);
-  --border-strong: rgba(255, 255, 255, 0.10);
-  --border-accent: rgba(124, 111, 224, 0.25);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --border-accent: rgba(59, 130, 246, 0.30);
 
   /* Glass */
-  --glass-bg: rgba(13, 14, 22, 0.7);
+  --glass-bg: rgba(9, 10, 15, 0.7);
   --glass-border: rgba(255, 255, 255, 0.06);
 
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-accent: 0 4px 20px rgba(124, 111, 224, 0.2);
+  --shadow-accent: 0 4px 20px rgba(59, 130, 246, 0.2);
 
   /* Radii */
   --radius-sm: 6px;
