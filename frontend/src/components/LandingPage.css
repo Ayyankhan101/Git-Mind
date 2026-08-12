@@ -101,12 +101,17 @@
   width: 120px;
   height: 144px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .lp-arch-viz {
   width: 100%;
   max-width: 500px;
   height: auto;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
 }
 
 /* ── Nav ─────────────────────────────────────────────────────── */
@@ -383,12 +388,15 @@
   border-top: 1px solid var(--border-s);
   position: relative;
   overflow: hidden;
+  isolation: isolate;
 }
 
 .lp-features-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
+  position: relative;
+  z-index: 2;
 }
 
 .lp-feature-card {
@@ -444,12 +452,15 @@
   border-top: 1px solid var(--border-s);
   position: relative;
   overflow: hidden;
+  isolation: isolate;
 }
 
 .lp-how-steps {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 32px;
+  position: relative;
+  z-index: 2;
 }
 
 .lp-how-step {
