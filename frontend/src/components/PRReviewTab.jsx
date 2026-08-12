@@ -15,6 +15,7 @@ import {
   GitMerge,
   XCircle,
 } from "lucide-react";
+import { fs } from "../typeScale";
 import { reviewPR, prImpact, fetchOpenPRs } from "../api";
 import * as tokenManager from "../tokenManager";
 import OpenPRsList from "./OpenPRsList";
@@ -35,7 +36,7 @@ const VERDICT_CLASS = {
   "NEEDS DISCUSSION": "discuss",
 };
 
-function parseReview(text) {
+export function parseReview(text) {
   const sections = { summary: "", issues: [], verdict: "", verdictLine: "" };
   const lines = text.split("\n");
   let current = null;
@@ -213,7 +214,7 @@ function ImpactPanel({ impact, loading, error }) {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span
               style={{
-                fontSize: 11,
+                fontSize: fs.xs,
                 fontWeight: 700,
                 letterSpacing: ".06em",
                 color: riskMeta.color,
@@ -225,7 +226,7 @@ function ImpactPanel({ impact, loading, error }) {
               {riskMeta.label.toUpperCase()}
             </span>
             {impact.confidence && (
-              <span style={{ fontSize: 11, color: "var(--text-3)" }}>
+              <span style={{ fontSize: fs.xs, color: "var(--text-3)" }}>
                 confidence: {impact.confidence}
               </span>
             )}
@@ -233,7 +234,7 @@ function ImpactPanel({ impact, loading, error }) {
           {impact.one_liner && (
             <div
               style={{
-                fontSize: 13,
+                fontSize: fs.md,
                 color: "var(--text-1)",
                 lineHeight: 1.5,
                 marginTop: 2,
@@ -249,7 +250,7 @@ function ImpactPanel({ impact, loading, error }) {
               display: "flex",
               alignItems: "center",
               gap: 6,
-              fontSize: 12,
+              fontSize: fs.sm,
               fontWeight: 600,
               color: riskMeta.color,
               whiteSpace: "nowrap",
@@ -273,7 +274,7 @@ function ImpactPanel({ impact, loading, error }) {
             <div style={{ flex: 1, minWidth: 160 }}>
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   color: "var(--text-3)",
                   marginBottom: 6,
                   letterSpacing: ".06em",
@@ -286,7 +287,7 @@ function ImpactPanel({ impact, loading, error }) {
                   <span
                     key={a}
                     style={{
-                      fontSize: 11,
+                      fontSize: fs.xs,
                       padding: "3px 8px",
                       borderRadius: 4,
               background: "var(--surface)",
@@ -304,7 +305,7 @@ function ImpactPanel({ impact, loading, error }) {
             <div style={{ flex: 1, minWidth: 160 }}>
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   color: "var(--danger)",
                   marginBottom: 6,
                   letterSpacing: ".06em",
@@ -317,7 +318,7 @@ function ImpactPanel({ impact, loading, error }) {
                   <div
                     key={i}
                     style={{
-                      fontSize: 11,
+                      fontSize: fs.xs,
                       display: "flex",
                       alignItems: "flex-start",
                       gap: 6,
@@ -354,7 +355,7 @@ function ImpactPanel({ impact, loading, error }) {
         >
           <div
             style={{
-              fontSize: 11,
+              fontSize: fs.xs,
               color: "var(--text-3)",
               marginBottom: 8,
               letterSpacing: ".06em",
@@ -367,7 +368,7 @@ function ImpactPanel({ impact, loading, error }) {
           </div>
           <div
             style={{
-              fontSize: 13,
+              fontSize: fs.md,
               color: "var(--text-2)",
               lineHeight: 1.75,
               whiteSpace: "pre-line",
@@ -389,7 +390,7 @@ function ImpactPanel({ impact, loading, error }) {
       >
         <div
           style={{
-            fontSize: 11,
+            fontSize: fs.xs,
             color: "var(--text-3)",
             marginBottom: 10,
             letterSpacing: ".06em",
@@ -404,7 +405,7 @@ function ImpactPanel({ impact, loading, error }) {
               display: "flex",
               alignItems: "center",
               gap: 6,
-              fontSize: 11,
+              fontSize: fs.xs,
               color: "var(--warning)",
               padding: "6px 10px",
               background: "var(--warning-bg)",
@@ -437,19 +438,19 @@ function ImpactPanel({ impact, loading, error }) {
             }}
           >
             <div
-              style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 3 }}
+              style={{ fontSize: fs.xs, color: "var(--text-3)", marginBottom: 3 }}
             >
               BASE
             </div>
             <div
               style={{
-                fontSize: 20,
+                fontSize: fs.xxl,
                 fontWeight: 700,
                 fontFamily: "var(--font-mono)",
               }}
             >
               {impact.base_score}
-              <span style={{ fontSize: 12, color: "var(--text-3)" }}>
+              <span style={{ fontSize: fs.sm, color: "var(--text-3)" }}>
                 {" "}
                 ({impact.base_grade})
               </span>
@@ -466,19 +467,19 @@ function ImpactPanel({ impact, loading, error }) {
             }}
           >
             <div
-              style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 3 }}
+              style={{ fontSize: fs.xs, color: "var(--text-3)", marginBottom: 3 }}
             >
               PR
             </div>
             <div
               style={{
-                fontSize: 20,
+                fontSize: fs.xxl,
                 fontWeight: 700,
                 fontFamily: "var(--font-mono)",
               }}
             >
               {impact.pr_score}
-              <span style={{ fontSize: 12, color: "var(--text-3)" }}>
+              <span style={{ fontSize: fs.sm, color: "var(--text-3)" }}>
                 {" "}
                 ({impact.pr_grade})
               </span>
@@ -495,13 +496,13 @@ function ImpactPanel({ impact, loading, error }) {
             }}
           >
             <div
-              style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 3 }}
+              style={{ fontSize: fs.xs, color: "var(--text-3)", marginBottom: 3 }}
             >
               DELTA
             </div>
             <div
               style={{
-                fontSize: 20,
+                fontSize: fs.xxl,
                 fontWeight: 700,
                 fontFamily: "var(--font-mono)",
                 color: deltaColor,
@@ -524,7 +525,7 @@ function ImpactPanel({ impact, loading, error }) {
                 display: "flex",
                 alignItems: "center",
                 gap: 5,
-                fontSize: 11,
+                fontSize: fs.xs,
                 color: "var(--danger)",
                 padding: "4px 9px",
                 background: "var(--danger-bg)",
@@ -542,7 +543,7 @@ function ImpactPanel({ impact, loading, error }) {
                 display: "flex",
                 alignItems: "center",
                 gap: 5,
-                fontSize: 11,
+                fontSize: fs.xs,
                 color: "var(--success)",
                 padding: "4px 9px",
                 background: "var(--success-bg)",
@@ -559,7 +560,7 @@ function ImpactPanel({ impact, loading, error }) {
                 display: "flex",
                 alignItems: "center",
                 gap: 5,
-                fontSize: 11,
+                fontSize: fs.xs,
                 color: "var(--warning)",
                 padding: "4px 9px",
               background: "var(--warning-bg)",
@@ -576,7 +577,7 @@ function ImpactPanel({ impact, loading, error }) {
                 display: "flex",
                 alignItems: "center",
                 gap: 5,
-                fontSize: 11,
+                fontSize: fs.xs,
                 color: "var(--success)",
                 padding: "4px 9px",
                 background: "var(--success-bg)",
@@ -594,7 +595,7 @@ function ImpactPanel({ impact, loading, error }) {
             !impact.fixed_cves?.length && (
               <span
                 style={{
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   color: "var(--text-3)",
                   padding: "4px 9px",
                 }}
@@ -616,7 +617,7 @@ function ImpactPanel({ impact, loading, error }) {
             >
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   color: "var(--text-3)",
                   marginBottom: 7,
                   letterSpacing: ".06em",
@@ -631,7 +632,7 @@ function ImpactPanel({ impact, loading, error }) {
                       <span
                         key={k}
                         style={{
-                          fontSize: 11,
+                          fontSize: fs.xs,
                           padding: "3px 8px",
                           borderRadius: 4,
                           background:
@@ -789,7 +790,7 @@ export default function PRReviewTab({
       {/* Manual input — always available as fallback */}
       <div
         style={{
-          fontSize: 11,
+          fontSize: fs.xs,
           color: "var(--text-3)",
           marginBottom: 6,
           letterSpacing: ".05em",

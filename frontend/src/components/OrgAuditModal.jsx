@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { fs } from "../typeScale";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import {
   X,
@@ -64,7 +65,7 @@ function RepoRow({ repo }) {
         <span
           style={{
             fontWeight: 600,
-            fontSize: 13,
+            fontSize: fs.md,
             flex: 1,
             color: "var(--text-1)",
           }}
@@ -72,14 +73,14 @@ function RepoRow({ repo }) {
           {repo.repo_name}
         </span>
         {hasError ? (
-          <span style={{ fontSize: 11, color: "var(--danger)" }}>error</span>
+          <span style={{ fontSize: fs.xs, color: "var(--danger)" }}>error</span>
         ) : count === 0 ? (
           <span
             style={{
               display: "flex",
               alignItems: "center",
               gap: 4,
-              fontSize: 11,
+              fontSize: fs.xs,
               color: "var(--success)",
             }}
           >
@@ -88,7 +89,7 @@ function RepoRow({ repo }) {
         ) : (
           <span
             style={{
-              fontSize: 11,
+              fontSize: fs.xs,
               color: "var(--danger)",
               fontFamily: "var(--font-mono)",
             }}
@@ -97,7 +98,7 @@ function RepoRow({ repo }) {
           </span>
         )}
         {repo.dep_files_found?.length > 0 && (
-          <span style={{ fontSize: 11, color: "var(--text-3)" }}>
+          <span style={{ fontSize: fs.xs, color: "var(--text-3)" }}>
             {repo.dep_files_found.join(", ")}
           </span>
         )}
@@ -126,14 +127,14 @@ function RepoRow({ repo }) {
               />
               <span
                 style={{
-                  fontSize: 12,
+                  fontSize: fs.sm,
                   fontFamily: "var(--font-mono)",
                   color: "var(--text-2)",
                 }}
               >
                 {pkg.package} v{pkg.version}
               </span>
-              <span style={{ fontSize: 11, color: "var(--text-3)" }}>
+              <span style={{ fontSize: fs.xs, color: "var(--text-3)" }}>
                 {pkg.ecosystem}
               </span>
             </div>
@@ -144,7 +145,7 @@ function RepoRow({ repo }) {
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   color: "var(--text-3)",
                   marginLeft: 18,
                   marginBottom: 2,
@@ -237,14 +238,14 @@ export default function OrgAuditModal({ repos, token, onClose }) {
             <div>
               <div
                 style={{
-                  fontSize: 14,
+                  fontSize: fs.base,
                   fontWeight: 700,
                   color: "var(--text-1)",
                 }}
               >
                 Org-wide CVE Audit
               </div>
-              <div style={{ fontSize: 11, color: "var(--text-3)" }}>
+              <div style={{ fontSize: fs.xs, color: "var(--text-3)" }}>
                 {repos.length} repositories
               </div>
             </div>
@@ -270,7 +271,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
               />
               <div
                 style={{
-                  fontSize: 13,
+                  fontSize: fs.md,
                   color: "var(--text-2)",
                   marginBottom: 6,
                 }}
@@ -279,7 +280,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
               </div>
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   color: "var(--text-3)",
                   marginBottom: 20,
                 }}
@@ -301,7 +302,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                 className="spinner"
                 style={{ width: 20, height: 20, marginBottom: 12 }}
               />
-              <div style={{ fontSize: 13, color: "var(--text-3)" }}>
+              <div style={{ fontSize: fs.md, color: "var(--text-3)" }}>
                 Scanning {scanList.length} repositories…
               </div>
             </div>
@@ -370,7 +371,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                   >
                     <div
                       style={{
-                        fontSize: 20,
+                        fontSize: fs.xxl,
                         fontWeight: 700,
                         fontFamily: "var(--font-mono)",
                         color: color || "var(--text-1)",
@@ -380,7 +381,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                     </div>
                     <div
                       style={{
-                        fontSize: 11,
+                        fontSize: fs.xs,
                         color: "var(--text-3)",
                         marginTop: 2,
                       }}
@@ -397,7 +398,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                   <div
                     style={{
                       padding: "10px 20px 4px",
-                      fontSize: 11,
+                      fontSize: fs.xs,
                       color: "var(--text-3)",
                       display: "flex",
                       alignItems: "center",
@@ -421,7 +422,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                       <span
                         style={{
                           fontFamily: "var(--font-mono)",
-                          fontSize: 12,
+                          fontSize: fs.sm,
                           color: "var(--danger)",
                           minWidth: 100,
                         }}
@@ -430,7 +431,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                       </span>
                       <span
                         style={{
-                          fontSize: 11,
+                          fontSize: fs.xs,
                           color: "var(--text-3)",
                           flex: 1,
                         }}
@@ -439,7 +440,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                       </span>
                       <span
                         style={{
-                          fontSize: 11,
+                          fontSize: fs.xs,
                           padding: "2px 6px",
                           background: "var(--danger-bg)",
                           borderRadius: 4,
@@ -457,7 +458,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
               <div
                 style={{
                   padding: "10px 20px 4px",
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   color: "var(--text-3)",
                 }}
               >

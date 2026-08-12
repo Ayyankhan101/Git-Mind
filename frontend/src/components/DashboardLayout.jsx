@@ -14,6 +14,7 @@ import {
   Binary,
   Activity,
 } from "lucide-react";
+import { fs } from "../typeScale";
 import CommandBar from "./CommandBar";
 import NavRail from "./NavRail";
 import Sidebar from "./Sidebar";
@@ -170,7 +171,7 @@ export default function DashboardLayout({
                 style={{
                   color: "var(--primary)",
                   flexShrink: 0,
-                  fontSize: 12,
+                  fontSize: fs.sm,
                   fontWeight: 600,
                   whiteSpace: "nowrap",
                 }}

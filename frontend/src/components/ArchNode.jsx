@@ -15,6 +15,7 @@ import {
   Server,
   Globe,
 } from "lucide-react";
+import { fs } from "../typeScale";
 
 const ICON_MAP = {
   Shield,
@@ -211,7 +212,7 @@ export default function ArchNode({ data, selected }) {
               <h4
                 className="truncate"
                 style={{
-                  fontSize: 17,
+                  fontSize: fs.xl,
                   fontWeight: 700,
                   color: "var(--text-1)",
                 }}

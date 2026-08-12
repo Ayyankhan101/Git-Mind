@@ -1,6 +1,7 @@
 import React from "react";
 import * as Sentry from "@sentry/react";
 import { AlertTriangle } from "lucide-react";
+import { fs } from "../typeScale";
 
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -32,7 +33,7 @@ export default class ErrorBoundary extends React.Component {
           <button
             style={{
               marginTop: 16,
-              fontSize: 12,
+              fontSize: fs.sm,
               padding: "6px 14px",
               border: "1px solid var(--border)",
               borderRadius: 6,

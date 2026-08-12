@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Lock, ExternalLink } from "lucide-react";
+import { fs } from "../typeScale";
 
 const SEV_ORDER = ["critical", "high", "medium", "low"];
 
@@ -72,7 +73,7 @@ function PkgRow({ pkg }) {
                       display: "inline-flex",
                       alignItems: "center",
                       gap: 3,
-                      fontSize: 11,
+                      fontSize: fs.xs,
                     }}
                   >
                     <ExternalLink size={11} strokeWidth={1.5} /> OSV
@@ -84,7 +85,7 @@ function PkgRow({ pkg }) {
                       display: "inline-flex",
                       alignItems: "center",
                       gap: 4,
-                      fontSize: 11,
+                      fontSize: fs.xs,
                       fontWeight: 600,
                       color: "var(--success)",
                       background: "var(--success-bg)",

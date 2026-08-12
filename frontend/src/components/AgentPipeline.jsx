@@ -9,6 +9,7 @@ import {
   GitCommit,
   ChevronDown,
 } from "lucide-react";
+import { fs } from "../typeScale";
 
 const AGENTS = [
   { key: "scanner", label: "REPO SCANNER", Icon: Search },
@@ -60,7 +61,7 @@ export default function AgentPipeline({
   return (
     <div className={`pipeline${mini ? " mini" : ""}`}>
       <div className="pipeline-header" data-testid="pipeline-header">
-        <span className="t-label" style={{ fontSize: 11 }}>
+        <span className="t-label" style={{ fontSize: fs.xs }}>
           AGENTS · {doneCount}/7
         </span>
         {allDone && (

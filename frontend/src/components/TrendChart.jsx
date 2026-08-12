@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { fs } from "../typeScale";
 import { GRADE_COLOR } from "../constants";
 
 const DIM_KEYS = [
@@ -58,7 +59,7 @@ export default function TrendChart({ data, days, onDaysChange }) {
           padding: 16,
           textAlign: "center",
           color: "var(--text-3)",
-          fontSize: 13,
+          fontSize: fs.md,
         }}
       >
         {data?.length === 1
@@ -116,7 +117,7 @@ export default function TrendChart({ data, days, onDaysChange }) {
       >
         <span
           style={{
-            fontSize: 11,
+            fontSize: fs.xs,
             fontWeight: 600,
             color: "var(--text-2)",
             letterSpacing: "0.05em",
@@ -131,7 +132,7 @@ export default function TrendChart({ data, days, onDaysChange }) {
               onClick={() => onDaysChange?.(d)}
               style={{
                 padding: "2px 8px",
-                fontSize: 11,
+                fontSize: fs.xs,
                 borderRadius: 4,
                 border: "none",
                 cursor: "pointer",
@@ -148,7 +149,7 @@ export default function TrendChart({ data, days, onDaysChange }) {
           onClick={() => setShowDetails((v) => !v)}
           style={{
             padding: "2px 8px",
-            fontSize: 11,
+            fontSize: fs.xs,
             borderRadius: 4,
             border: "1px solid var(--border-2)",
             background: "transparent",
@@ -185,7 +186,7 @@ export default function TrendChart({ data, days, onDaysChange }) {
                 y={y + 3}
                 textAnchor="end"
                 fill="var(--text-3)"
-                fontSize={9}
+                fontSize={fs.tiny}
               >
                 {v}
               </text>
@@ -201,7 +202,7 @@ export default function TrendChart({ data, days, onDaysChange }) {
                 y={height - 6}
                 textAnchor="middle"
                 fill="var(--text-3)"
-                fontSize={8}
+                fontSize={fs.tiny}
               >
                 {formatDate(d.saved_at)}
               </text>
@@ -220,7 +221,7 @@ export default function TrendChart({ data, days, onDaysChange }) {
                     y={height - 6}
                     textAnchor="middle"
                     fill="var(--text-3)"
-                    fontSize={8}
+                    fontSize={fs.tiny}
                   >
                     {formatDate(d.saved_at)}
                   </text>
@@ -291,7 +292,7 @@ export default function TrendChart({ data, days, onDaysChange }) {
               y={PADDING.top + 14}
               textAnchor="middle"
               fill="var(--text-1)"
-              fontSize={11}
+              fontSize={fs.xs}
               fontWeight={600}
             >
               {hoveredScore}/100 ({hoveredGrade})
@@ -304,7 +305,7 @@ export default function TrendChart({ data, days, onDaysChange }) {
               y={PADDING.top + 28}
               textAnchor="middle"
               fill="var(--text-3)"
-              fontSize={9}
+              fontSize={fs.tiny}
             >
               {formatDateFull(hovered.saved_at)}
             </text>
@@ -316,7 +317,7 @@ export default function TrendChart({ data, days, onDaysChange }) {
               y={PADDING.top + 42}
               textAnchor="middle"
               fill="var(--text-3)"
-              fontSize={8}
+              fontSize={fs.tiny}
             >
               {(hovered.head_sha || "").slice(0, 7)}
             </text>
@@ -336,7 +337,7 @@ export default function TrendChart({ data, days, onDaysChange }) {
         >
           <span
             style={{
-              fontSize: 10,
+              fontSize: fs.micro,
               color: "var(--text-3)",
               display: "flex",
               alignItems: "center",
@@ -357,7 +358,7 @@ export default function TrendChart({ data, days, onDaysChange }) {
             <span
               key={key}
               style={{
-                fontSize: 10,
+                fontSize: fs.micro,
                 color: "var(--text-3)",
                 display: "flex",
                 alignItems: "center",

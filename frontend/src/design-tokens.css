@@ -71,6 +71,19 @@
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
 
+  /* Type scale — single source of truth for font sizes.
+     Reference from JSX via the `fs` helper in src/typeScale.js. */
+  --fs-3xs: 8px;
+  --fs-2xs: 10px;
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-base: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 17px;
+  --fs-2xl: 20px;
+  --fs-3xl: 22px;
+
   /* Spacing */
   --space-xs: 4px;
   --space-sm: 8px;

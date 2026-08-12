@@ -255,6 +255,8 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
             className="btn-sm"
             onClick={() => setError(null)}
             style={{ marginLeft: "auto" }}
+            aria-label="Dismiss error"
+            title="Dismiss"
           >
             <X size={11} />
           </button>
@@ -318,6 +320,7 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
                   className="btn-icon mon-unsub"
                   onClick={() => handleUnsubscribe(repo.id)}
                   title="Stop monitoring"
+                  aria-label={`Stop monitoring ${repoShort}`}
                 >
                   <Trash2 size={13} />
                 </button>

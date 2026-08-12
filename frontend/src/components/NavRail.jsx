@@ -1,5 +1,6 @@
 import React from "react";
 import { FolderOpen, Command, Building2 } from "lucide-react";
+import { fs } from "../typeScale";
 
 const IS_MAC = /Mac/i.test(
   navigator.userAgentData?.platform ?? navigator.platform,
@@ -90,7 +91,7 @@ export default function NavRail({
         data-tip="Shortcuts"
         aria-label="Keyboard shortcuts"
       >
-        <span style={{ fontSize: 14, fontWeight: 700, lineHeight: 1 }}>?</span>
+        <span style={{ fontSize: fs.base, fontWeight: 700, lineHeight: 1 }}>?</span>
       </button>
     </nav>
   );

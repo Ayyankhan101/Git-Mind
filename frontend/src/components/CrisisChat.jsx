@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { fs } from "../typeScale";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import {
   X,
@@ -210,7 +211,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
                 display: "flex",
                 alignItems: "center",
                 gap: 5,
-                fontSize: 11,
+                fontSize: fs.xs,
                 color: "var(--text-3)",
               }}
             >
@@ -237,7 +238,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
                 background: "var(--danger-bg)",
                 border: "1px solid var(--danger)",
                 borderRadius: 6,
-                fontSize: 12,
+                fontSize: fs.sm,
                 color: "var(--danger)",
               }}
             >
@@ -250,7 +251,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
             !leaked &&
             messages.length === 0 &&
             !error && (
-              <div style={{ color: "var(--text-3)", fontSize: 13 }}>
+              <div style={{ color: "var(--text-3)", fontSize: fs.md }}>
                 Connecting to crisis simulation…
               </div>
             )}
@@ -281,7 +282,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
             >
               <div
                 style={{
-                  fontSize: 14,
+                  fontSize: fs.base,
                   fontWeight: 600,
                   color: "var(--success)",
                   marginBottom: 4,
@@ -289,7 +290,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
               >
                 Incident Contained
               </div>
-              <div style={{ fontSize: 12, color: "var(--text-3)" }}>
+              <div style={{ fontSize: fs.sm, color: "var(--text-3)" }}>
                 Team issued statement before reporter published.
               </div>
             </div>
@@ -307,7 +308,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
             >
               <div
                 style={{
-                  fontSize: 14,
+                  fontSize: fs.base,
                   fontWeight: 600,
                   color: "var(--danger)",
                   marginBottom: 4,
@@ -315,7 +316,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
               >
                 BREAKING: Reporter Published
               </div>
-              <div style={{ fontSize: 12, color: "var(--text-3)" }}>
+              <div style={{ fontSize: fs.sm, color: "var(--text-3)" }}>
                 The team failed to contain the incident in time.
               </div>
             </div>
@@ -334,7 +335,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
             >
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   color: "var(--text-3)",
                   marginBottom: 8,
                   display: "flex",
@@ -361,7 +362,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
                     display: "flex",
                     alignItems: "center",
                     gap: 4,
-                    fontSize: 11,
+                    fontSize: fs.xs,
                     padding: "2px 6px",
                     borderRadius: 4,
                   }}
@@ -376,7 +377,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
               </div>
               <pre
                 style={{
-                  fontSize: 12,
+                  fontSize: fs.sm,
                   color: "var(--text-2)",
                   whiteSpace: "pre-wrap",
                   fontFamily: "var(--font-mono)",
@@ -396,7 +397,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
                 padding: "8px 12px",
                 background: "var(--danger-bg)",
                 borderRadius: 6,
-                fontSize: 12,
+                fontSize: fs.sm,
                 color: "var(--danger)",
                 display: "flex",
                 alignItems: "center",

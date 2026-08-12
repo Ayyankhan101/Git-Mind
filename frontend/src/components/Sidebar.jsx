@@ -18,6 +18,7 @@ import {
   Lock,
   ExternalLink,
 } from "lucide-react";
+import { fs } from "../typeScale";
 import AgentPipeline from "./AgentPipeline";
 import { LANG_COLOR } from "../constants";
 
@@ -199,13 +200,13 @@ function WorkspaceSwitcher({ currentUser, loadedUsers, onSwitch }) {
             >
               <span
                 className="ws-mark"
-                style={{ width: 22, height: 22, fontSize: 11 }}
+                style={{ width: 22, height: 22, fontSize: fs.xs }}
               >
                 {u[0].toUpperCase()}
               </span>
               <span
                 style={{
-                  fontSize: 13,
+                  fontSize: fs.md,
                   color: "var(--text-1)",
                   fontWeight: 500,
                 }}
@@ -333,7 +334,7 @@ export default function Sidebar({
         <div
           style={{
             padding: "8px 14px",
-            fontSize: 12,
+            fontSize: fs.sm,
             color: "var(--danger)",
             borderBottom: "1px solid var(--border)",
           }}
@@ -354,7 +355,7 @@ export default function Sidebar({
               <span
                 className="t-label"
                 style={{
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
@@ -423,7 +424,7 @@ export default function Sidebar({
               onClick={() => setHistorySectionOpen((o) => !o)}
               aria-expanded={historySectionOpen}
             >
-              <span className="t-label" style={{ fontSize: 11 }}>
+              <span className="t-label" style={{ fontSize: fs.xs }}>
                 RECENT
               </span>
               <ChevronDown size={12} strokeWidth={1.5} className="chevron" />
@@ -452,7 +453,7 @@ export default function Sidebar({
                         alignItems: "center",
                         gap: 6,
                         color: "var(--text-2)",
-                        fontSize: 13,
+                        fontSize: fs.md,
                       }}
                     >
                       <Clock
@@ -480,7 +481,7 @@ export default function Sidebar({
               onClick={() => setRepoSectionOpen((o) => !o)}
               aria-expanded={repoSectionOpen}
             >
-              <span className="t-label" style={{ fontSize: 11 }}>
+              <span className="t-label" style={{ fontSize: fs.xs }}>
                 REPOSITORIES
                 {repos.length
                   ? ` · ${filtered.length}${filtered.length !== repos.length ? `/${repos.length}` : ""}`
@@ -560,7 +561,7 @@ export default function Sidebar({
                 <div
                   style={{
                     padding: "16px 14px",
-                    fontSize: 12,
+                    fontSize: fs.sm,
                     color: "var(--text-3)",
                   }}
                 >
@@ -575,7 +576,7 @@ export default function Sidebar({
         {!loading && repos.length === 0 && history.length === 0 && (
           <div className="empty" style={{ padding: "40px 16px" }}>
             <FolderOpen size={18} strokeWidth={1.5} className="empty-icon" />
-            <div className="empty-title" style={{ fontSize: 13 }}>
+            <div className="empty-title" style={{ fontSize: fs.md }}>
               No repositories
             </div>
             <div className="empty-sub">Enter a GitHub username above</div>
@@ -618,7 +619,7 @@ function RepoHoverPreview({ repo, anchorRect }) {
         {repo.private && (
           <span
             style={{
-              fontSize: 11,
+              fontSize: fs.xs,
               color: "var(--text-3)",
               background: "var(--surface-2)",
               padding: "1px 5px",

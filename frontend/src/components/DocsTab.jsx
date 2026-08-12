@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { FileCode2, Lock, LockOpen } from "lucide-react";
+import { fs } from "../typeScale";
 
 const METHODS = ["ALL", "GET", "POST", "PUT", "DELETE", "PATCH"];
 
@@ -11,7 +12,7 @@ function AuthBadge({ authRequired }) {
           display: "inline-flex",
           alignItems: "center",
           gap: 3,
-          fontSize: 10,
+          fontSize: fs.micro,
           fontWeight: 600,
           letterSpacing: "0.08em",
           color: "var(--warning)",
@@ -32,7 +33,7 @@ function AuthBadge({ authRequired }) {
           display: "inline-flex",
           alignItems: "center",
           gap: 3,
-          fontSize: 10,
+          fontSize: fs.micro,
           fontWeight: 600,
           letterSpacing: "0.08em",
           color: "var(--text-3)",
@@ -71,6 +72,14 @@ function Endpoint({ doc, onPickFile }) {
             onClick={() =>
               hasFile && onPickFile?.({ path: doc.file, line: doc.line })
             }
+            onKeyDown={(e) => {
+              if (hasFile && (e.key === "Enter" || e.key === " ")) {
+                e.preventDefault();
+                onPickFile?.({ path: doc.file, line: doc.line });
+              }
+            }}
+            role={hasFile ? "button" : undefined}
+            tabIndex={hasFile ? 0 : undefined}
             title={hasFile ? "Preview file" : undefined}
           >
             {route}

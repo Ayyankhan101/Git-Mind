@@ -1,5 +1,6 @@
 import React from "react";
 import { GitPullRequest, GitBranch } from "lucide-react";
+import { fs } from "../typeScale";
 import { relativeTime } from "./PRReviewTab";
 
 export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impactLoading, onSelect }) {
@@ -7,7 +8,7 @@ export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impac
     <div style={{ marginBottom: 20 }}>
       <div
         style={{
-          fontSize: 11,
+          fontSize: fs.xs,
           color: "var(--text-3)",
           marginBottom: 8,
           display: "flex",
@@ -19,7 +20,7 @@ export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impac
         <GitPullRequest size={11} strokeWidth={1.5} />
         OPEN PULL REQUESTS (0)
       </div>
-      <div style={{ fontSize: 12, color: "var(--text-3)", padding: "8px 0" }}>
+      <div style={{ fontSize: fs.sm, color: "var(--text-3)", padding: "8px 0" }}>
         No open pull requests
       </div>
     </div>
@@ -29,7 +30,7 @@ export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impac
     <div style={{ marginBottom: 20 }}>
       <div
         style={{
-          fontSize: 11,
+          fontSize: fs.xs,
           color: "var(--text-3)",
           marginBottom: 8,
           display: "flex",
@@ -82,7 +83,7 @@ export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impac
               >
                 <span
                   style={{
-                    fontSize: 11,
+                    fontSize: fs.xs,
                     fontFamily: "var(--font-mono)",
                     color: active ? "var(--primary)" : "var(--text-3)",
                     flexShrink: 0,
@@ -94,7 +95,7 @@ export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impac
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={{
-                      fontSize: 13,
+                      fontSize: fs.md,
                       fontWeight: 500,
                       color: "var(--text-1)",
                       overflow: "hidden",
@@ -106,7 +107,7 @@ export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impac
                     {pr.draft && (
                       <span
                         style={{
-                          fontSize: 11,
+                          fontSize: fs.xs,
                           padding: "1px 5px",
                           borderRadius: 3,
                           background: "var(--surface)",
@@ -130,7 +131,7 @@ export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impac
                   >
                     <span
                       style={{
-                        fontSize: 11,
+                        fontSize: fs.xs,
                         color: "var(--text-3)",
                         display: "flex",
                         alignItems: "center",
@@ -140,17 +141,17 @@ export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impac
                       <GitBranch size={10} strokeWidth={1.5} />
                       {pr.head_ref} → {pr.base_ref}
                     </span>
-                    <span style={{ fontSize: 11, color: "var(--text-3)" }}>
+                    <span style={{ fontSize: fs.xs, color: "var(--text-3)" }}>
                       @{pr.user}
                     </span>
-                    <span style={{ fontSize: 11, color: "var(--text-3)" }}>
+                    <span style={{ fontSize: fs.xs, color: "var(--text-3)" }}>
                       {relativeTime(pr.updated_at)}
                     </span>
                     {pr.labels?.map((l) => (
                       <span
                         key={l}
                         style={{
-                          fontSize: 11,
+                          fontSize: fs.xs,
                           padding: "1px 6px",
                           borderRadius: 3,
                           background: "var(--surface)",
