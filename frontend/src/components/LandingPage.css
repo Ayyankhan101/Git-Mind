@@ -106,9 +106,9 @@
 }
 
 .lp-arch-viz {
-  width: 100%;
-  max-width: 500px;
-  height: auto;
+  width: 120px;
+  max-width: 120px;
+  height: 144px;
   flex-shrink: 0;
   position: relative;
   z-index: 2;
@@ -368,6 +368,12 @@
   margin-bottom: 48px;
 }
 
+.lp-section-header svg {
+  flex-shrink: 0;
+  width: 120px;
+  height: 144px;
+}
+
 .lp-section-title {
   font-size: 32px;
   font-weight: 700;
@@ -389,6 +395,23 @@
   position: relative;
   overflow: hidden;
   isolation: isolate;
+  z-index: 2;
+  scroll-margin-top: 80px;
+}
+
+.lp-features::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(5, 5, 16, 0.3) 20%,
+    rgba(5, 5, 16, 0.4) 50%,
+    rgba(5, 5, 16, 0.3) 80%,
+    transparent 100%
+  );
+  pointer-events: none;
 }
 
 .lp-features-grid {
@@ -453,6 +476,23 @@
   position: relative;
   overflow: hidden;
   isolation: isolate;
+  z-index: 2;
+  scroll-margin-top: 80px;
+}
+
+.lp-how::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(5, 5, 16, 0.3) 20%,
+    rgba(5, 5, 16, 0.4) 50%,
+    rgba(5, 5, 16, 0.3) 80%,
+    transparent 100%
+  );
+  pointer-events: none;
 }
 
 .lp-how-steps {
