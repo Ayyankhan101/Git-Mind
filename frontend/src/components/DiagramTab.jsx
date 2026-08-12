@@ -522,18 +522,7 @@ export default function DiagramTab({
 
           <button
             onClick={() => reactFlowInstance.current?.zoomIn()}
-            style={{
-              width: 32,
-              height: 32,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 8,
-              border: "none",
-              background: "transparent",
-              color: "var(--text-3)",
-              cursor: "pointer",
-            }}
+            className="diagram-control-btn"
             title="Zoom In"
             aria-label="Zoom in"
           >
@@ -542,18 +531,7 @@ export default function DiagramTab({
 
           <button
             onClick={() => reactFlowInstance.current?.zoomOut()}
-            style={{
-              width: 32,
-              height: 32,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 8,
-              border: "none",
-              background: "transparent",
-              color: "var(--text-3)",
-              cursor: "pointer",
-            }}
+            className="diagram-control-btn"
             title="Zoom out"
             aria-label="Zoom out"
           >
@@ -570,18 +548,7 @@ export default function DiagramTab({
 
           <button
             onClick={() => reactFlowInstance.current?.fitView({ padding: 0.2 })}
-            style={{
-              width: 32,
-              height: 32,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 8,
-              border: "none",
-              background: "transparent",
-              color: "var(--text-3)",
-              cursor: "pointer",
-            }}
+            className="diagram-control-btn"
             title="Recenter view"
             aria-label="Recenter view"
           >
@@ -590,18 +557,7 @@ export default function DiagramTab({
 
           <button
             onClick={handleFullscreen}
-            style={{
-              width: 32,
-              height: 32,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 8,
-              border: "none",
-              background: "transparent",
-              color: "var(--text-3)",
-              cursor: "pointer",
-            }}
+            className="diagram-control-btn"
             title="Fullscreen mode"
             aria-label="Toggle fullscreen"
           >
@@ -610,23 +566,12 @@ export default function DiagramTab({
 
           <button
             onClick={handleCopy}
-            style={{
-              width: 32,
-              height: 32,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 8,
-              border: "none",
-              background: "transparent",
-              color: "var(--text-3)",
-              cursor: "pointer",
-            }}
+            className={`diagram-control-btn${copied ? " diagram-control-btn-active" : ""}`}
             title="Copy diagram"
             aria-label="Copy diagram"
           >
             {copied ? (
-              <Check size={14} style={{ color: "var(--success)" }} />
+              <Check size={14} />
             ) : (
               <Copy size={14} />
             )}
