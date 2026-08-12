@@ -14,7 +14,7 @@ const THEMES = [
   { id: "carbon", name: "Carbon", sub: "Monochrome", swatches: ["#111111", "#ffffff"] },
   { id: "plasma", name: "Plasma", sub: "Electric Purple", swatches: ["#08041a", "#a855f7"] },
   { id: "circuit", name: "Circuit", sub: "Amber Tech", swatches: ["#0f0d08", "#f59e0b"] },
-  { id: "daylight", name: "Daylight", sub: "Light Mode", swatches: ["#fafafa", "#7c6fe0"] },
+  { id: "daylight", name: "Daylight", sub: "Light Mode", swatches: ["#f8fafc", "#3b82f6"] },
 ];
 
 export default function ThemeSwitcher({ theme, dispatch }) {

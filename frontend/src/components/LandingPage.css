@@ -240,7 +240,7 @@
 }
 
 .lp-title-accent {
-  background: linear-gradient(135deg, #ffffff 0%, #93c5fd 45%, #a78bfa 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #93c5fd 45%, var(--accent-2) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -825,6 +825,46 @@
   .lp-orb {
     display: none;
   }
+}
+
+/* ── Daylight (light mode) overrides ────────────────────────── */
+[data-theme="daylight"] {
+  --lp-glass-bg: rgba(255, 255, 255, 0.75);
+  --lp-glass-border: rgba(15, 23, 42, 0.08);
+  --lp-glass-border-bright: rgba(15, 23, 42, 0.16);
+}
+
+/* Light mode: gradient headline must be readable on white —
+   blue→violet instead of the dark-mode white→blue fade. */
+[data-theme="daylight"] .lp-title-accent {
+  background: linear-gradient(135deg, #2563eb 0%, var(--accent-2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+[data-theme="daylight"] .lp-badge {
+  color: #2563eb;
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+/* Soften the dark section overlays on light backgrounds */
+[data-theme="daylight"] .lp-features::before,
+[data-theme="daylight"] .lp-how::before {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(15, 23, 42, 0.03) 20%,
+    rgba(15, 23, 42, 0.05) 50%,
+    rgba(15, 23, 42, 0.03) 80%,
+    transparent 100%
+  );
+}
+
+/* Reduce orb/particle intensity slightly on bright backgrounds */
+[data-theme="daylight"] .lp-orb {
+  opacity: 0.75;
 }
 
 /* ── Reduced Motion ──────────────────────────────────────────── */
