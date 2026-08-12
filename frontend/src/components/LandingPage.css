@@ -750,6 +750,14 @@
     font-size: 36px;
   }
 
+  .lp-hero-sub {
+    font-size: 15px;
+  }
+
+  .lp-hero-input-group {
+    max-width: 460px;
+  }
+
   .lp-features-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -779,20 +787,53 @@
 }
 
 @media (max-width: 480px) {
+  .lp-nav {
+    padding: 0 16px;
+  }
+
   .lp-hero {
-    padding: 100px 20px 60px;
+    /* Non-env fallback first, then the safe-area enhanced value */
+    padding: 88px 20px 48px;
+    padding: calc(88px + env(safe-area-inset-top)) 20px
+      calc(48px + env(safe-area-inset-bottom));
+    min-height: 100svh;
+  }
+
+  .lp-hero-content {
+    gap: 18px;
   }
 
   .lp-hero-title {
-    font-size: 28px;
+    font-size: 30px;
   }
 
   .lp-hero-sub {
     font-size: 14px;
+    line-height: 1.6;
   }
 
+  /* Stack the search form vertically and make the button
+     a full-width tap target (44px+ minimum). */
   .lp-hero-input-group {
     flex-direction: column;
+    gap: 10px;
+  }
+
+  .lp-hero-input-wrapper {
+    width: 100%;
+  }
+
+  .lp-hero-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 24px;
+    font-size: 15px;
+  }
+
+  .lp-cta-btn {
+    width: 100%;
+    max-width: 360px;
+    justify-content: center;
   }
 
   .lp-features-grid {
@@ -822,7 +863,68 @@
     text-align: center;
   }
 
-  .lp-orb {
+  /* Keep one soft orb for depth instead of blanking the hero */
+  .lp-orb-2,
+  .lp-orb-3,
+  .lp-orb-4,
+  .lp-orb-5 {
+    display: none;
+  }
+
+  .lp-orb-1 {
+    width: 300px;
+    height: 300px;
+    top: -60px;
+    right: -120px;
+    opacity: 0.85;
+  }
+
+  /* The scroll hint overlaps the stacked form on small screens */
+  .lp-scroll-hint {
+    display: none;
+  }
+}
+
+/* Touch-first input sizing: >= 16px prevents iOS auto-zoom on focus.
+   Covers portrait phones (<480), landscape phones, and tablets up to
+   iPad portrait (1024px) — keeps 14px on desktop windows. */
+@media (max-width: 1024px) {
+  .lp-hero-input {
+    font-size: 16px;
+  }
+}
+
+/* Short viewports / landscape phones: don't force full-height hero
+   and drop the scroll hint so content never feels cramped.
+   NOTE: flex-shrink: 0 is essential — with overflow: hidden the flex
+   automatic minimum size is 0, so without it the hero collapses below
+   its content height and the title gets clipped. */
+@media (max-height: 640px) and (orientation: landscape) {
+  .lp-hero {
+    min-height: auto;
+    flex-shrink: 0;
+    padding-top: 72px;
+    padding-bottom: 32px;
+  }
+
+  .lp-hero-content {
+    gap: 12px;
+  }
+
+  .lp-hero-title {
+    font-size: 34px;
+  }
+
+  .lp-hero-sub {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .lp-hero-hint {
+    display: none;
+  }
+
+  .lp-scroll-hint {
     display: none;
   }
 }

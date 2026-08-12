@@ -50,7 +50,9 @@ function Particles() {
     const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     resize();
     window.addEventListener("resize", resize);
-    for (let i = 0; i < 50; i++) {
+    /* Fewer particles on small screens keeps the hero smooth on mobile */
+    const count = window.innerWidth < 480 ? 20 : 50;
+    for (let i = 0; i < count; i++) {
       particles.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
