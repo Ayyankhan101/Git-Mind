@@ -212,6 +212,11 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
+      /* Smooth in-page anchor navigation (#features, #stats, #how-it-works).
+         Lenis intercepts same-page hash clicks and scrolls via its own
+         animation; scroll-margin-top: 80px on the sections is respected
+         automatically, so the fixed nav never covers the section header. */
+      anchors: true,
     });
 
     const raf = (time) => {

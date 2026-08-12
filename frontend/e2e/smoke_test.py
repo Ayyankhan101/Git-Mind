@@ -245,6 +245,40 @@ def main():
             section_reveals(".lp-how-step", "how-it-works steps reveal (lp-visible, opacity 1)")
             page.screenshot(path=str(shot_dir / "01b-sections.png"))
 
+            # ── Nav anchors scroll to sections ──────────────────────────────
+            # Lenis anchors: true should scroll each nav link's target into
+            # view with the 80px scroll-margin offset respected.
+            print("\n== nav anchor navigation ==")
+            for name, sel in [
+                ("Features", "#features"),
+                ("Stats", "#stats"),
+                ("How it works", "#how-it-works"),
+            ]:
+                page.evaluate("window.scrollTo(0, 0)")
+                page.wait_for_timeout(600)
+                page.get_by_role("link", name=name).first.click()
+                # Lenis duration is 1.2s; poll until the target position is
+                # stable across two samples (robust against slow CI where rAF
+                # may be throttled). Stops at the true resting position.
+                stable = False
+                prev = -1
+                deadline = time.time() + 8
+                while time.time() < deadline:
+                    cur = page.evaluate(
+                        """(sel) => Math.round(document.querySelector(sel).getBoundingClientRect().top)""",
+                        sel,
+                    )
+                    if abs(cur - prev) <= 1:
+                        stable = True
+                        break
+                    prev = cur
+                    time.sleep(0.15)
+                landed = page.evaluate(
+                    """(sel) => Math.round(document.querySelector(sel).getBoundingClientRect().top)""",
+                    sel,
+                )
+                check(stable and 0 <= landed <= 90, f"'{name}' anchor lands near section (top={landed})")
+
             # ── Dashboard + theme switcher ──────────────────────────────────
             print("\n== dashboard + theme switcher ==")
             page.goto(base + "/dashboard", wait_until="networkidle", timeout=60000)
