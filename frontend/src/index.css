@@ -302,21 +302,22 @@ a:hover { text-decoration: underline; }
   background: var(--surface);
   color: var(--text-2);
   cursor: pointer;
-  transition: background var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast);
+  transition: background var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast), transform var(--duration-fast), box-shadow var(--duration-fast);
   white-space: nowrap;
 }
-.btn:hover { background: var(--hover); color: var(--text-1); }
+.btn:hover { background: var(--hover); color: var(--text-1); border-color: var(--border-h); }
+.btn:active:not(:disabled) { transform: scale(0.98); }
 .btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .btn-primary {
   background: var(--accent);
   color: var(--text-on-primary);
   border-color: var(--accent);
 }
-.btn-primary:hover { background: var(--accent-hover); }
+.btn-primary:hover { background: var(--accent-hover); box-shadow: 0 2px 8px var(--accent-dim); }
 .btn-ghost { background: transparent; border-color: transparent; }
 .btn-ghost:hover { background: var(--hover); }
-.btn-text { background: transparent; border: none; color: var(--text-2); padding: 4px 8px; }
-.btn-text:hover { color: var(--text-1); }
+.btn-text { background: transparent; border: none; color: var(--text-2); padding: 4px 8px; border-radius: var(--radius-sm); }
+.btn-text:hover { color: var(--text-1); background: var(--hover); }
 .btn-icon {
   display: inline-flex;
   align-items: center;
@@ -328,8 +329,10 @@ a:hover { text-decoration: underline; }
   color: var(--text-3);
   cursor: pointer;
   border-radius: var(--radius-md);
+  transition: color var(--duration-fast), background var(--duration-fast), transform var(--duration-fast);
 }
 .btn-icon:hover { color: var(--text-1); background: var(--hover); }
+.btn-icon:active { transform: scale(0.95); }
 
 /* ── Cards ────────────────────────────────────────────────────── */
 .card {
@@ -337,7 +340,9 @@ a:hover { text-decoration: underline; }
   border: 1px solid var(--border-s);
   border-radius: var(--radius-lg);
   padding: 16px;
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
 }
+.card:hover { border-color: var(--border-m); }
 .card-header {
   display: flex;
   align-items: center;
@@ -354,8 +359,9 @@ a:hover { text-decoration: underline; }
   border-radius: var(--radius-md);
   color: var(--text-1);
   outline: none;
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
 }
-.input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); }
+.input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
 .input::placeholder { color: var(--text-3); }
 
 /* ── Tabs (in-content) ────────────────────────────────────────── */
@@ -379,10 +385,22 @@ a:hover { text-decoration: underline; }
   border-top: none;
   border-left: none;
   border-right: none;
-  transition: color var(--duration-fast);
+  transition: color var(--duration-fast), border-color var(--duration-fast);
+  position: relative;
 }
 .tab:hover { color: var(--text-2); }
 .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 14px;
+  right: 14px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px 1px 0 0;
+  box-shadow: 0 0 8px var(--accent-dim);
+}
 
 /* ── Severity Pills ───────────────────────────────────────────── */
 .sev-pill {
