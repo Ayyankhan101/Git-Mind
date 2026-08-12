@@ -1493,3 +1493,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .onboarding-examples { grid-template-columns: 1fr; }
   .stat-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Architecture diagram edge strokes ───────────────────────── */
+.edge-stroke-base { stroke: var(--text-3); }
+.edge-stroke-glow { stroke: var(--info); stroke-opacity: 0.5; }

@@ -28,7 +28,21 @@ export default function FilePreviewDrawer({
   const [fetchLoading, setFetchLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
   const [lang, setLang] = useState("");
+  const [defaultBranch, setDefaultBranch] = useState("main");
   const trapRef = useFocusTrap(!!path);
+
+  useEffect(() => {
+    if (!repoUrl) return;
+    const ghMatch = repoUrl.match(/github\.com\/([^/?#]+\/[^/?#]+)/);
+    if (!ghMatch) return;
+    const ownerRepo = ghMatch[1].replace(/\.git$/, "");
+    const headers = { Accept: "application/vnd.github.v3+json" };
+    if (ghToken) headers["Authorization"] = `Bearer ${ghToken}`;
+    fetch(`https://api.github.com/repos/${ownerRepo}`, { headers })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data?.default_branch) setDefaultBranch(data.default_branch); })
+      .catch(() => {});
+  }, [repoUrl, ghToken]);
 
   useEffect(() => {
     if (!path) return;
@@ -97,7 +111,7 @@ export default function FilePreviewDrawer({
     if (!repoUrl || !path) return null;
     const m = repoUrl.match(/github\.com\/([^/?#]+\/[^/?#]+)/);
     if (!m) return null;
-    return `https://github.com/${m[1].replace(/\.git$/, "")}/blob/main/${path}${line ? `#L${line}` : ""}`;
+    return `https://github.com/${m[1].replace(/\.git$/, "")}/blob/${defaultBranch}/${path}${line ? `#L${line}` : ""}`;
   }, [repoUrl, path, line]);
 
   if (!path) return null;

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useCallback } from "react";
 import { Search, FolderOpen, Share2, Download, Check, Lock } from "lucide-react";
 import ThemeSwitcher from "./ThemeSwitcher";
 import { isValidGhToken } from "../api";
@@ -20,6 +20,11 @@ export default function CommandBar({
   handleExport,
   theme,
 }) {
+  const tokenSaveTimer = useRef(null);
+  const debouncedTokenSave = useCallback((value) => {
+    clearTimeout(tokenSaveTimer.current);
+    tokenSaveTimer.current = setTimeout(() => tokenManager.set(value), 500);
+  }, []);
   return (
     <div className="command-bar">
       <span className="cb-wordmark">GitMind</span>
@@ -75,7 +80,7 @@ export default function CommandBar({
           value={ghToken}
           onChange={(e) => {
             dispatch({ type: "SET_GH_TOKEN", value: e.target.value });
-            tokenManager.set(e.target.value);
+            debouncedTokenSave(e.target.value);
           }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !reposLoading && !isAnalyzing)

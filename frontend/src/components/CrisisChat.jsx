@@ -202,6 +202,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
             ["CEO", ROLE_COLOR.CEO],
             ["Legal", ROLE_COLOR.Legal],
             ["Engineering", ROLE_COLOR.Engineering],
+            ["Reporter", ROLE_COLOR.Reporter],
           ].map(([role, color]) => (
             <div
               key={role}

@@ -183,10 +183,23 @@ function ContractList({ contracts }) {
 
 export default function SolidityTab({
   solAudit,
+  isAnalyzing,
   onFix,
   fixLoading,
   fixResult,
 }) {
+  if (!solAudit && isAnalyzing) {
+    return (
+      <div className="tab-content-inner">
+        <div className="skeleton-card" style={{ padding: 24 }}>
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="sk" style={{ height: 60, marginBottom: 8, borderRadius: 8 }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (!solAudit) {
     return (
       <div className="tab-content-inner">

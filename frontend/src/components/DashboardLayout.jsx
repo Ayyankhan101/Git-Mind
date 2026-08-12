@@ -335,6 +335,7 @@ export default function DashboardLayout({
               {activeTab === "solidity" && (
                 <SolidityTab
                   solAudit={solidityAudit}
+                  isAnalyzing={isAnalyzing}
                   onFix={handleFix}
                   fixLoading={fixLoading}
                   fixResult={fixResult}

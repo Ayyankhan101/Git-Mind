@@ -48,8 +48,8 @@ export default function AnimatedEdge({
   const styleConfig = buildStyleDefs(kind);
   const opacity = isDimmed ? 0.12 : 1;
 
-  const baseStroke = "stroke-slate-500";
-  const glowStroke = "stroke-cyan-400/50";
+  const baseStroke = "edge-stroke-base";
+  const glowStroke = "edge-stroke-glow";
 
   return (
     <g
@@ -116,7 +116,12 @@ export default function AnimatedEdge({
               opacity,
               transition: "opacity 0.25s ease",
             }}
-            className="px-2 py-0.5 rounded text-[11px] font-mono tracking-wide font-medium bg-slate-950/70 border border-slate-800/60 text-slate-400 backdrop-blur-sm shadow-md whitespace-nowrap"
+            className="px-2 py-0.5 rounded text-[11px] font-mono tracking-wide font-medium backdrop-blur-sm shadow-md whitespace-nowrap"
+            style={{
+              background: "color-mix(in srgb, var(--surface-0) 70%, transparent)",
+              border: "1px solid var(--border-m)",
+              color: "var(--text-2)",
+            }}
           >
             {label}
           </div>

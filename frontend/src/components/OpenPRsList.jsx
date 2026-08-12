@@ -75,7 +75,7 @@ export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impac
                   borderRadius: 8,
                   textAlign: "left",
                   cursor: "pointer",
-                  background: active ? "var(--primary)10" : "var(--surface-2)",
+                  background: active ? "color-mix(in srgb, var(--primary) 10%, transparent)" : "var(--surface-2)",
                   border: `1px solid ${active ? "var(--primary)" : "var(--border)"}`,
                   transition: "border-color .15s, background .15s",
                 }}
