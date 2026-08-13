@@ -14,9 +14,8 @@ import {
   BarChart3,
   ShieldCheck,
   CheckCircle2,
-  FileDown,
   ShieldAlert,
-} from "lucide-react";
+} from "../icons";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
@@ -166,70 +165,6 @@ const REPORT_FINDINGS = [
   },
 ];
 
-/* ── Floating Particles ──────────────────────────────────────── */
-function Particles() {
-  const canvasRef = useRef(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    let ctx;
-    try {
-      ctx = canvas.getContext("2d");
-    } catch (e) {
-      // jsdom (Jest) doesn't implement getContext; bail out gracefully
-      return;
-    }
-    if (!ctx) return;
-    let raf;
-    const particles = [];
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    resize();
-    window.addEventListener("resize", resize);
-    /* Fewer particles on small screens keeps the hero smooth on mobile */
-    const count = window.innerWidth < 480 ? 20 : 50;
-    for (let i = 0; i < count; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        r: Math.random() * 1.5 + 0.5,
-        dx: (Math.random() - 0.5) * 0.2,
-        dy: (Math.random() - 0.5) * 0.2,
-        o: Math.random() * 0.4 + 0.1,
-      });
-    }
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach((p) => {
-        p.x += p.dx;
-        p.y += p.dy;
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height;
-        if (p.y > canvas.height) p.y = 0;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(96, 165, 250, ${p.o})`;
-        ctx.fill();
-      });
-      raf = requestAnimationFrame(draw);
-    };
-    draw();
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
-    };
-  }, []);
-  return <canvas ref={canvasRef} className="lp-particles" />;
-}
-
-/* ── Gradient Orbs ───────────────────────────────────────────── */
-function GradientOrb({ className }) {
-  return <div className={`lp-orb ${className || ""}`} />;
-}
-
 /* ── useScrollReveal ─────────────────────────────────────────── */
 function useScrollReveal(threshold = 0.15) {
   const ref = useRef(null);
@@ -310,7 +245,7 @@ function StatItem({ value, label, Icon, delay }) {
 }
 
 /* ── How Step ────────────────────────────────────────────────── */
-function HowStep({ num, title, desc, delay }) {
+function HowStep({ title, desc, delay }) {
   const ref = useScrollReveal();
   return (
     <div
@@ -318,84 +253,9 @@ function HowStep({ num, title, desc, delay }) {
       className="lp-how-step"
       style={{ "--reveal-delay": `${delay}s` }}
     >
-      <div className="lp-how-step-num">{num}</div>
       <h3 className="lp-how-step-title">{title}</h3>
       <p className="lp-how-step-desc">{desc}</p>
     </div>
-  );
-}
-
-/* ── Report Preview ──────────────────────────────────────────── */
-/* A real component preview: the actual HealthCard component plus
-   finding rows mirroring the product's Summary tab, filled with
-   explicitly-labeled sample data. */
-function ReportPreview() {
-  const copyRef = useScrollReveal();
-  const panelRef = useScrollReveal();
-  return (
-    <section className="lp-report">
-      <GradientOrb className="lp-orb-6" />
-      <div className="lp-section-inner lp-report-grid">
-        <div ref={copyRef} className="lp-report-copy">
-          <span className="lp-section-label">The report</span>
-          <h2 className="lp-section-title">
-            Every finding, ranked and explained
-          </h2>
-          <p className="lp-report-lead">
-            GitMind turns any repository into a senior engineer's write-up:
-            findings ranked by severity, CVEs matched against every dependency,
-            and a health score you can export.
-          </p>
-          <ul className="lp-report-points">
-            <li>
-              <CheckCircle2 size={15} />
-              Findings ranked by severity, with fix suggestions
-            </li>
-            <li>
-              <ShieldAlert size={15} />
-              CVE matches on every dependency
-            </li>
-            <li>
-              <FileDown size={15} />
-              One-click PDF report export
-            </li>
-          </ul>
-        </div>
-
-        <div
-          ref={panelRef}
-          className="lp-report-panel"
-          style={{ "--reveal-delay": "0.12s" }}
-        >
-          <div className="lp-report-panel-head">
-            <span className="lp-report-repo">facebook/react</span>
-            <span className="lp-report-tag">Sample output</span>
-          </div>
-          <HealthCard health={SAMPLE_HEALTH} />
-          <div className="lp-report-stats">
-            {REPORT_STATS.map(({ value, label, Icon }) => (
-              <div key={label} className="lp-report-stat">
-                <span className="lp-report-stat-icon">
-                  <Icon size={14} />
-                </span>
-                <span className="lp-report-stat-value">{value}</span>
-                <span className="lp-report-stat-label">{label}</span>
-              </div>
-            ))}
-          </div>
-          <div className="lp-report-findings">
-            {REPORT_FINDINGS.map((f) => (
-              <div key={f.title} className={`finding-card ${f.sev}`}>
-                <div>
-                  <div className="finding-title">{f.title}</div>
-                  <div className="finding-path">{f.path}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -441,137 +301,7 @@ function HeroForm({ onLoad, onAnalyzeUrl, inputRef }) {
           <ArrowRight size={14} />
         </button>
       </form>
-      <p className="lp-hero-hint">
-        Try <span>facebook/react</span> or paste a repo URL
-      </p>
     </>
-  );
-}
-
-/* ── Hero Product Preview ───────────────────────────────────── */
-/* A tasteful agent-scan radar that shows GitMind in action — 6
-   agents sweeping a repository in parallel. Kept decorative
-   (aria-hidden) since the real product is one click away. */
-
-const SCAN_AGENTS = [
-  { code: "SCAN", angle: 0 },
-  { code: "SEC", angle: 60 },
-  { code: "CVE", angle: 120 },
-  { code: "ARCH", angle: 180 },
-  { code: "DOCS", angle: 240 },
-  { code: "GIT", angle: 300 },
-];
-
-function HeroPreview() {
-  return (
-    <div className="lp-preview" aria-hidden="true">
-      {/* Window chrome */}
-      <div className="lp-preview-chrome">
-        <span className="lp-preview-dots">
-          <i />
-          <i />
-          <i />
-        </span>
-        <span className="lp-preview-title">gitmind · facebook/react</span>
-        <span className="lp-preview-badge">
-          <span className="lp-preview-pulse" />6 AGENTS · SWEEPING
-        </span>
-      </div>
-
-      <div className="lp-preview-body">
-        {/* File tree sidebar */}
-        <div className="lp-preview-sidebar">
-          {[
-            "src/",
-            "  components/",
-            "  hooks/",
-            "  utils/",
-            "  App.js",
-            "  index.js",
-            "package.json",
-            "webpack.config.js",
-          ].map((line, i) => (
-            <div
-              key={i}
-              className={`lp-preview-tree${line.startsWith("  ") ? " indent" : ""}${i === 2 ? " active" : ""}`}
-            >
-              {line.trim()}
-            </div>
-          ))}
-        </div>
-
-        {/* Agent-scan radar */}
-        <div className="lp-radar">
-          {/* Orbit rings */}
-          <span className="lp-radar-ring r1" />
-          <span className="lp-radar-ring r2" />
-          <span className="lp-radar-ring r3" />
-          <span className="lp-radar-ring r4" />
-          {/* Rotating sweep beam */}
-          <span className="lp-radar-sweep" />
-          {/* Crosshair ticks */}
-          <span className="lp-radar-tick t0" />
-          <span className="lp-radar-tick t60" />
-          <span className="lp-radar-tick t120" />
-
-          {/* Central repository node */}
-          <div className="lp-radar-core">
-            <span className="lp-radar-core-mark">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-                <path d="M2 12l10 5 10-5" />
-              </svg>
-            </span>
-            <span className="lp-radar-core-label">repo</span>
-          </div>
-
-          {/* Six orbiting agent nodes */}
-          {SCAN_AGENTS.map(({ code, angle }, i) => (
-            <div
-              key={code}
-              className="lp-radar-orbit"
-              style={{
-                transform: `rotate(${angle}deg) translateX(var(--radar-r))`,
-              }}
-            >
-              <div
-                className="lp-radar-agent"
-                style={{
-                  transform: `translate(-50%, -50%) rotate(${-angle}deg)`,
-                }}
-              >
-                <span
-                  className="lp-radar-agent-dot"
-                  style={{ animationDelay: `${i * 0.32}s` }}
-                />
-                <span className="lp-radar-agent-code">{code}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Terminal footer */}
-      <div className="lp-preview-terminal">
-        <span className="lp-preview-prompt">$</span>
-        <span className="lp-preview-cmd">gitmind analyze facebook/react</span>
-        <span className="lp-preview-cursor" />
-        <span className="lp-preview-ok">
-          <span className="lp-preview-ok-check">✓</span>
-          <span className="lp-preview-ok-text">
-            3 findings · grade A · 48 endpoints
-          </span>
-        </span>
-      </div>
-    </div>
   );
 }
 
@@ -703,8 +433,6 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
 
   return (
     <div className="lp">
-      <Particles />
-
       {/* ── Nav ──────────────────────────────────────────────── */}
       <nav className="lp-nav">
         <div className="lp-nav-inner">
@@ -750,33 +478,59 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
 
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="lp-hero" ref={heroRef}>
-        <GradientOrb className="lp-orb-1" />
-        <GradientOrb className="lp-orb-2" />
-        <div className="lp-hero-content">
-          <div className="lp-badge">AI-Powered Code Intelligence</div>
-          <h1 className="lp-hero-title">
-            <span className="lp-title-line">Understand your code.</span>
-            <br />
-            <span className="lp-title-line lp-title-accent">
-              Ship with confidence.
-            </span>
-          </h1>
-          <p className="lp-hero-sub">
-            Analyze repositories for vulnerabilities, architecture patterns, and
-            code quality — powered by 6 AI agents working in parallel.
-          </p>
-          <HeroForm
-            onLoad={onLoad}
-            onAnalyzeUrl={onAnalyzeUrl}
-            inputRef={heroInputRef}
-          />
-          <HeroPreview />
+        <div className="lp-hero-inner">
+          <div className="lp-hero-copy">
+            <div className="lp-badge">AI-Powered Code Intelligence</div>
+            <h1 className="lp-hero-title">
+              <span className="lp-title-line">Understand code.</span>
+              <br />
+              <span className="lp-title-line lp-title-accent">
+                Ship confidence.
+              </span>
+            </h1>
+            <p className="lp-hero-sub">
+              Analyze repositories for vulnerabilities, architecture patterns,
+              and code quality — powered by 6 AI agents working in parallel.
+            </p>
+            <HeroForm
+              onLoad={onLoad}
+              onAnalyzeUrl={onAnalyzeUrl}
+              inputRef={heroInputRef}
+            />
+          </div>
+          <div className="lp-hero-preview">
+            <div className="lp-hero-preview-window">
+              <div className="lp-hero-preview-head">
+                <span className="lp-hero-preview-repo">facebook/react</span>
+                <span className="lp-hero-preview-tag">Sample output</span>
+              </div>
+              <HealthCard health={SAMPLE_HEALTH} />
+              <div className="lp-hero-preview-stats">
+                {REPORT_STATS.map(({ value, label, Icon }) => (
+                  <div key={label} className="lp-hero-preview-stat">
+                    <Icon size={13} />
+                    <span className="lp-hero-preview-stat-value">{value}</span>
+                    <span className="lp-hero-preview-stat-label">{label}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="lp-hero-preview-findings">
+                {REPORT_FINDINGS.slice(0, 2).map((f) => (
+                  <div key={f.title} className={`finding-card ${f.sev}`}>
+                    <div className="finding-body">
+                      <div className="finding-title">{f.title}</div>
+                      <div className="finding-path">{f.path}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ── Features ─────────────────────────────────────────── */}
       <section id="features" className="lp-features" ref={featuresRef}>
-        <GradientOrb className="lp-orb-3" />
         <div className="lp-section-inner">
           <div className="lp-section-header">
             <div>
@@ -843,7 +597,6 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
 
       {/* ── How It Works ─────────────────────────────────────── */}
       <section id="how-it-works" className="lp-how" ref={howRef}>
-        <GradientOrb className="lp-orb-4" />
         <div className="lp-section-inner">
           <div className="lp-section-header">
             <div>
@@ -855,19 +608,16 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
           </div>
           <div className="lp-how-steps">
             <HowStep
-              num="01"
               title="Enter a repo"
               desc="Paste a GitHub URL or type a username to browse repos."
               delay={0}
             />
             <HowStep
-              num="02"
               title="AI analyzes"
               desc="Six agents scan security, architecture, docs, CVEs, and code quality in parallel."
               delay={0.12}
             />
             <HowStep
-              num="03"
               title="Get results"
               desc="Interactive reports with severity-ranked findings, fix suggestions, and exportable PDFs."
               delay={0.24}
@@ -876,12 +626,8 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
         </div>
       </section>
 
-      {/* ── Report Preview ───────────────────────────────────── */}
-      <ReportPreview />
-
       {/* ── CTA ──────────────────────────────────────────────── */}
       <section className="lp-cta" ref={ctaRef}>
-        <GradientOrb className="lp-orb-5" />
         <div className="lp-section-inner">
           <h2 className="lp-cta-title">Ready to analyze your code?</h2>
           <p className="lp-cta-sub">
