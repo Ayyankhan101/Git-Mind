@@ -185,24 +185,33 @@
   max-width: 1100px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* Editorial stagger: copy ~58% left, preview ~42% right. */
+  grid-template-columns: minmax(0, 1.38fr) minmax(0, 1fr);
   gap: 48px;
-  align-items: center;
+  align-items: start;
+  /* Above the radar sweep (z-index 1) behind the copy. */
+  position: relative;
+  z-index: 2;
 }
 
 .lp-hero-copy {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  /* Stacking context: keeps the radar's z-index -1 behind the copy text
+     without letting it fall behind the page background. */
+  position: relative;
+  z-index: 1;
 }
 
 .lp-badge {
   display: inline-flex;
   align-items: center;
   padding: 5px 14px;
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.14em;
   color: var(--accent);
   background: var(--accent-dim);
   border: 1px solid var(--border-accent);
@@ -213,10 +222,11 @@
 }
 
 .lp-hero-title {
-  font-size: clamp(32px, 5vw, 52px);
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.04em;
+  /* Oversized editorial display: tight tracking, magazine-spread scale. */
+  font-size: clamp(40px, 6.5vw, 76px);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
   color: var(--text-1);
   margin: 0;
 }
@@ -246,10 +256,12 @@
   animation: fadeSlideUp 0.5s ease-out 0.15s both;
 }
 
-/* Hero preview panel */
+/* Hero preview panel — dropped ~48px below the copy baseline for the
+   staggered magazine-spread composition. */
 .lp-hero-preview {
   display: flex;
   justify-content: flex-end;
+  margin-top: 48px;
 }
 
 .lp-hero-preview-window {
@@ -427,6 +439,74 @@
   }
 }
 
+/* ── Agent radar sweep (signature moment) ─────────────────────── */
+/* Concentric rings + a rotating conic sweep behind the hero copy,
+   echoing the AgentPipeline motif from the flagship bento tile.
+   Rings sit at an exact ~8% primary tint (spec); the sweep's leading
+   edge is brighter (~18%) with a soft tail so the rotation reads as
+   the signature moment without fighting the text. Anchored to the
+   copy block via translate(-50%, -50%), sweep animates on ::after. */
+.lp-hero-radar {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 560px;
+  height: 560px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--primary) 8%, transparent);
+  background: repeating-radial-gradient(
+    circle at center,
+    transparent 0,
+    transparent 88px,
+    color-mix(in srgb, var(--primary) 8%, transparent) 88px,
+    color-mix(in srgb, var(--primary) 8%, transparent) 89px,
+    transparent 89px,
+    transparent 172px,
+    color-mix(in srgb, var(--primary) 8%, transparent) 172px,
+    color-mix(in srgb, var(--primary) 8%, transparent) 173px,
+    transparent 173px
+  );
+  transform: translate(-50%, -50%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.lp-hero-radar::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 16px var(--primary-glow);
+}
+
+.lp-hero-radar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  /* Soft-edged wedge: bright leading edge fading to nothing by 90°.
+     color-mix keeps it theme-aware in all 13 themes. */
+  background: conic-gradient(
+    from 0deg,
+    color-mix(in srgb, var(--primary) 18%, transparent) 0deg,
+    color-mix(in srgb, var(--primary) 9%, transparent) 45deg,
+    transparent 90deg,
+    transparent 360deg
+  );
+  animation: lpRadarSweep 9s linear infinite;
+}
+
+@keyframes lpRadarSweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ── Sections shared ─────────────────────────────────────────── */
 .lp-section-inner {
   max-width: 1100px;
@@ -527,6 +607,13 @@
   transition-delay: 0s;
 }
 
+.lp-feature-card--xl {
+  /* Flagship tile: spans the full 6-column grid. */
+  grid-column: span 6;
+  padding: 32px;
+  background: var(--lp-glass-bg);
+}
+
 .lp-feature-card--lg {
   grid-column: span 4;
   padding: 32px;
@@ -537,11 +624,13 @@
   grid-column: span 2;
 }
 
-.lp-feature-card--lg .lp-feature-title {
+.lp-feature-card--lg .lp-feature-title,
+.lp-feature-card--xl .lp-feature-title {
   font-size: 17px;
 }
 
-.lp-feature-card--lg .lp-feature-desc {
+.lp-feature-card--lg .lp-feature-desc,
+.lp-feature-card--xl .lp-feature-desc {
   max-width: 52ch;
 }
 
@@ -634,8 +723,13 @@
 }
 
 /* ── Stats ───────────────────────────────────────────────────── */
+/* Stats — full-bleed color-blocked band with the largest numerals on
+   the page. Tokens only: --primary-strong + --text-on-primary stay
+   accessible in all 13 themes (verified in Daylight and the dark set). */
 .lp-stats {
-  padding: 60px 0;
+  padding: 56px 0;
+  background: var(--primary-strong);
+  color: var(--text-on-primary);
   position: relative;
   z-index: 2;
   scroll-margin-top: 80px;
@@ -645,13 +739,11 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0;
-  border-top: 1px solid var(--lp-glass-border);
-  border-bottom: 1px solid var(--lp-glass-border);
 }
 
 .lp-stat-item {
   text-align: center;
-  padding: 40px 20px;
+  padding: 24px 20px;
   opacity: 0;
   transform: translateY(16px);
   transition:
@@ -660,7 +752,8 @@
 }
 
 .lp-stat-item:not(:last-child) {
-  border-right: 1px solid var(--lp-glass-border);
+  border-right: 1px solid
+    color-mix(in srgb, var(--text-on-primary) 14%, transparent);
 }
 
 .lp-stat-item.lp-visible {
@@ -675,23 +768,27 @@
   width: 44px;
   height: 44px;
   border-radius: var(--radius-md);
-  background: var(--accent-dim);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--text-on-primary) 12%, transparent);
+  color: var(--text-on-primary);
   margin-bottom: 12px;
 }
 
 .lp-stat-value {
-  font-size: 42px;
+  font-size: 64px;
   font-weight: 800;
-  letter-spacing: -0.03em;
-  color: var(--text-1);
+  letter-spacing: -0.04em;
+  color: var(--text-on-primary);
   font-variant-numeric: tabular-nums;
+  line-height: 1;
   margin-bottom: 4px;
 }
 
 .lp-stat-label {
   font-size: 13px;
-  color: var(--text-2);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--text-on-primary) 72%, transparent);
 }
 
 /* ── How It Works ────────────────────────────────────────────── */
@@ -774,6 +871,8 @@
 }
 
 .lp-how-step-title {
+  position: relative;
+  z-index: 1;
   font-size: 16px;
   font-weight: 600;
   color: var(--text-1);
@@ -781,25 +880,30 @@
 }
 
 .lp-how-step-desc {
+  position: relative;
+  z-index: 1;
   font-size: 13px;
   line-height: 1.5;
   color: var(--text-2);
   margin: 0;
 }
 
+/* Oversized ghost numeral behind each step card — the only numbered
+   sequence on the page (01/02/03 = a genuine 3-step flow). Features
+   deliberately do NOT get fake numbering. */
 .lp-how-step-num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--accent-dim);
-  color: var(--accent);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   font-family: var(--font-mono);
-  font-size: 14px;
-  font-weight: 700;
-  margin-bottom: 16px;
+  font-size: 96px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent);
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* ── Report Preview ──────────────────────────────────────────── */
@@ -1152,7 +1256,7 @@
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .lp-hero-title {
-    font-size: 36px;
+    font-size: 42px;
   }
 
   .lp-hero-sub {
@@ -1163,12 +1267,13 @@
     max-width: 460px;
   }
 
-  /* Bento collapses to 2-up: lg tiles become full-width rows, sm tiles
-     pair up — no orphaned spans at tablet width. */
+  /* Bento collapses to 2-up: lg/xl tiles become full-width rows, sm
+     tiles pair up — no orphaned spans at tablet width. */
   .lp-features-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  .lp-feature-card--lg {
+  .lp-feature-card--lg,
+  .lp-feature-card--xl {
     grid-column: span 2;
   }
   .lp-feature-card--sm {
@@ -1186,11 +1291,12 @@
 
   .lp-stat-item:nth-child(1),
   .lp-stat-item:nth-child(2) {
-    border-bottom: 1px solid var(--lp-glass-border);
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--text-on-primary) 14%, transparent);
   }
 
   .lp-stat-value {
-    font-size: 32px;
+    font-size: 40px;
   }
 
   .lp-how-steps {
@@ -1239,7 +1345,7 @@
   }
 
   .lp-hero-title {
-    font-size: 30px;
+    font-size: 34px;
   }
 
   .lp-hero-sub {
@@ -1275,7 +1381,8 @@
     grid-template-columns: 1fr;
   }
   .lp-feature-card--lg,
-  .lp-feature-card--sm {
+  .lp-feature-card--sm,
+  .lp-feature-card--xl {
     grid-column: span 1;
   }
 
@@ -1289,7 +1396,7 @@
   }
 
   .lp-stat-value {
-    font-size: 24px;
+    font-size: 32px;
   }
 
   /* Report preview: stats stack, panel padding tightens */
@@ -1430,6 +1537,9 @@
   .lp-hero-preview {
     display: none;
   }
+  .lp-hero-radar {
+    display: none;
+  }
   .lp-hero-sub {
     max-width: 100%;
   }
@@ -1439,6 +1549,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Radar sweep is pure decoration — remove entirely under reduced
+     motion (the AgentPipeline echo already goes static too). */
+  .lp-hero-radar {
+    display: none;
+  }
   /* Marquee collapses to a static wrapped list under reduced motion */
   .lp-langs-track {
     animation: none;

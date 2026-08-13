@@ -121,6 +121,14 @@ describe("LandingPage", () => {
     expect(container.querySelector(".lp-radar")).toBeNull();
   });
 
+  it("renders the signature radar sweep in the hero", () => {
+    const { container } = render(
+      <LandingPage onLoad={() => {}} onAnalyzeUrl={() => {}} />,
+    );
+    // Editorial signature moment: pure-CSS agent radar behind the copy.
+    expect(container.querySelector(".lp-hero-radar")).toBeTruthy();
+  });
+
   it("renders how-it-works with flow layout", () => {
     const { container } = render(
       <LandingPage onLoad={() => {}} onAnalyzeUrl={() => {}} />,

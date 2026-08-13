@@ -25,14 +25,15 @@ import ThemeSwitcher from "./ThemeSwitcher";
 gsap.registerPlugin(ScrollTrigger);
 
 /* ── Data ─────────────────────────────────────────────────────── */
-/* `span` drives the bento rhythm: lg tiles span 4 of 6 columns, sm tiles
-   span 2. Order is the 4-row layout — never a 3-equal-columns grid. */
+/* `span` drives the bento rhythm: xl tiles span all 6 columns (flagship),
+   lg tiles span 4, sm tiles span 2. Order is the 4-row layout — never a
+   3-equal-columns grid. */
 const FEATURES = [
   {
     Icon: Zap,
     title: "6 AI Agents in Parallel",
     desc: "Architecture mapper, API surface analyzer, security auditor, dependency tracker, code quality scorer, and documentation reviewer — all running simultaneously.",
-    span: "lg",
+    span: "xl",
     visual: "agents",
   },
   {
@@ -196,7 +197,7 @@ function FeatureCard({ Icon, title, desc, span, children, delay }) {
       style={{ "--reveal-delay": `${delay}s` }}
     >
       <div className="lp-feature-icon">
-        <Icon size={span === "lg" ? 22 : 20} />
+        <Icon size={span === "lg" || span === "xl" ? 22 : 20} />
       </div>
       <h3 className="lp-feature-title">{title}</h3>
       <p className="lp-feature-desc">{desc}</p>
@@ -521,6 +522,11 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
       <section className="lp-hero" ref={heroRef}>
         <div className="lp-hero-inner">
           <div className="lp-hero-copy">
+            {/* Signature moment: agent radar sweep behind the copy — pure
+                CSS rings + rotating conic sweep echoing the AgentPipeline
+                motif. Anchored to the copy block so it always sits behind
+                the text column, whatever the viewport. */}
+            <div className="lp-hero-radar" aria-hidden="true" />
             <div className="lp-badge">AI-Powered Code Intelligence</div>
             <h1 className="lp-hero-title">
               <span className="lp-title-line">Understand code.</span>
@@ -649,19 +655,19 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
           </div>
           <div className="lp-how-steps">
             <HowStep
-              step="1"
+              step="01"
               title="Enter a repo"
               desc="Paste a GitHub URL or type a username to browse repos."
               delay={0}
             />
             <HowStep
-              step="2"
+              step="02"
               title="AI analyzes"
               desc="Six agents scan security, architecture, docs, CVEs, and code quality in parallel."
               delay={0.12}
             />
             <HowStep
-              step="3"
+              step="03"
               title="Get results"
               desc="Interactive reports with severity-ranked findings, fix suggestions, and exportable PDFs."
               delay={0.24}
