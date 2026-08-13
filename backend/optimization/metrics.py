@@ -73,6 +73,7 @@ def make_metric(agent: str) -> Callable:
     spec = get_spec(agent)
     scorer = _SCORERS.get(agent)
     if scorer is None:  # findings agents — bind the agent for the location field
+
         def scorer(g, p, _a=agent):
             return _score_findings(_a, g, p)
 

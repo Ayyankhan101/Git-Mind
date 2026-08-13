@@ -179,7 +179,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     _register_agents()  # CLI runs standalone — nothing else imports the agents
     ap = argparse.ArgumentParser(description="MIPROv2 self-optimization for one agent")
     target = ap.add_mutually_exclusive_group(required=True)
-    target.add_argument("--agent", choices=registry.agent_names(), help="which program to optimize (compile + gate + promote)")
+    target.add_argument(
+        "--agent", choices=registry.agent_names(), help="which program to optimize (compile + gate + promote)"
+    )
     target.add_argument(
         "--rollback",
         metavar="AGENT",

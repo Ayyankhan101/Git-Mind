@@ -428,6 +428,7 @@ def verify_optimize(agent: str, min_gold: int | None = None) -> None:
         assert isinstance(prog, dspy.Module), "promoted program is not a dspy module"
         assert getattr(prog, "_opt_version", ""), "promoted program lost its cache-key version stamp"
         from dspy import BaseLM as _BaseLM
+
         from llm_cache import run_dspy_cached as _run_cached
         from optimization.metrics import validate_output as _validate_output
         from optimization.registry import get_spec as _get_spec
@@ -440,11 +441,17 @@ def verify_optimize(agent: str, min_gold: int | None = None) -> None:
             def __init__(self):
                 super().__init__(model="fake/promoted-check", model_type="chat", temperature=0.0)
 
-            def __call__(self, *args, **kwargs):
+            def __call__(self, *_args, **_kwargs):
                 return [known_good]
 
-        with patch("llm_cache.get_cached", return_value=None), patch("llm_cache.set_cached"), patch("llm_cache._record_harvest"):
-            payload = _run_cached(prog, f"optimize-e2e:{agent}", lm=_FakeLM(), output_field=field, **dict(telemetry.inputs()))
+        with (
+            patch("llm_cache.get_cached", return_value=None),
+            patch("llm_cache.set_cached"),
+            patch("llm_cache._record_harvest"),
+        ):
+            payload = _run_cached(
+                prog, f"optimize-e2e:{agent}", lm=_FakeLM(), output_field=field, **dict(telemetry.inputs())
+            )
         assert _validate_output(agent, payload), f"promoted {agent} output failed the typed contract"
         record("optimize", "live_ok", f"{agent} promoted -> {out} (typed output verified)")
 

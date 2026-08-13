@@ -79,11 +79,17 @@ def main() -> int:
         if used is not None:
             avail = _TPD_LIMIT - used
             wait = re.findall(r"try again in ([\d.]+)m", text)
-            note(f"[{attempt}] still capped: Used={used}, avail≈{avail} (retry-in {wait[0] if wait else '?'}m) — waiting {args.poll}s")
+            note(
+                f"[{attempt}] still capped: Used={used}, avail≈{avail} "
+                f"(retry-in {wait[0] if wait else '?'}m) — waiting {args.poll}s"
+            )
             if avail >= args.target_free:
                 note(f"[{attempt}] NOTE: avail {avail} ≥ target {args.target_free} but e2e failed — inspect {e2e_log}")
         else:
-            note(f"[{attempt}] e2e failed without a TPD Used figure (rc={proc.returncode}) — inspect {e2e_log}; waiting {args.poll}s")
+            note(
+                f"[{attempt}] e2e failed without a TPD Used figure "
+                f"(rc={proc.returncode}) — inspect {e2e_log}; waiting {args.poll}s"
+            )
         time.sleep(args.poll)
 
     note("watcher gave up — max attempts reached")

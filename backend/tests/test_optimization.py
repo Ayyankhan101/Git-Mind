@@ -275,7 +275,10 @@ def test_cli_demos_zero_disables_demos():
 
     with (
         patch("optimization.run._register_agents"),
-        patch("optimization.run.harvest", return_value=[dspy.Example(raw_findings="[]", findings=[]).with_inputs("raw_findings")]),
+        patch(
+            "optimization.run.harvest",
+            return_value=[dspy.Example(raw_findings="[]", findings=[]).with_inputs("raw_findings")],
+        ),
         patch("optimization.run.load_gold", return_value=trainsets.load_gold("security")),
         patch("optimization.run.compile_agent", side_effect=fake_compile_agent),
     ):
@@ -293,7 +296,10 @@ def test_cli_demos_unset_uses_default():
 
     with (
         patch("optimization.run._register_agents"),
-        patch("optimization.run.harvest", return_value=[dspy.Example(raw_findings="[]", findings=[]).with_inputs("raw_findings")]),
+        patch(
+            "optimization.run.harvest",
+            return_value=[dspy.Example(raw_findings="[]", findings=[]).with_inputs("raw_findings")],
+        ),
         patch("optimization.run.load_gold", return_value=trainsets.load_gold("security")),
         patch("optimization.run.compile_agent", side_effect=fake_compile_agent),
     ):
