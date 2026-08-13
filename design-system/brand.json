@@ -67,9 +67,8 @@
     "2xl": "48px",
     "3xl": "64px"
   },
-  "typography": {
-    "sans": "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-    "mono": "'JetBrains Mono', 'SF Mono', monospace",
+  "typography": {"sans": "'Geist', -apple-system, BlinkMacSystemFont, sans-serif",
+     "mono": "'Geist Mono', 'SF Mono', monospace",
     "scale": {
       "display": { "weight": 700, "size": "48px", "tracking": "-0.025em" },
       "h1": { "weight": 600, "size": "36px", "tracking": "-0.02em" },

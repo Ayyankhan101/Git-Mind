@@ -222,7 +222,7 @@ function FindingRow({
                   background: "var(--surface)",
                   borderRadius: 4,
                   padding: "2px 6px",
-                  fontFamily: "monospace",
+                  fontFamily: "var(--font-mono)",
                 }}
               >
                 {finding.blame.commit_hash}

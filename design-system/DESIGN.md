@@ -13,7 +13,7 @@
 | Linked Dirs | `/Users/mac/projects/Git-Mind/frontend`, `/Users/mac/projects/Git-Mind` |
 | Evidence Files | `brand-spec.md`, `gitmind-design-system.html`, `gitmind-redesign-summary.md` |
 | Token Provenance | All hex values from `brand-spec.md` palette + `gitmind-design-system.html` `:root` |
-| Typography Source | Google Fonts: Inter (300–700), JetBrains Mono (400–500) |
+| Typography Source | Google Fonts: Geist (300–700), Geist Mono (400–500) |
 | Theme Count | 9 (Obsidian default, Default, Amber, Verdant, Glacier, Aurora, Spatial, Daylight, Mist) |
 | Product | Code intelligence — repo analysis, security, architecture, code quality |
 | Surface | Desktop web app with nav rail, dashboard, code blocks, stat tiles |
@@ -90,8 +90,8 @@ Each semantic color has a `-bg` variant at 8% opacity for fills.
 
 ### Font Stacks
 
-- **Sans**: `'Inter', -apple-system, BlinkMacSystemFont, sans-serif`
-- **Mono**: `'JetBrains Mono', 'SF Mono', monospace`
+- **Sans**: `'Geist', -apple-system, BlinkMacSystemFont, sans-serif`
+- **Mono**: `'Geist Mono', 'SF Mono', monospace`
 
 ### Type Scale
 
@@ -215,7 +215,7 @@ Compact data cards. Large value (2rem, 600), label, optional change badge (posit
 
 ### Code Block
 
-`--surface-0` background, `--radius-md`, JetBrains Mono 13px. Syntax colors: keyword `#c4b5fd`, string `#a5d6a7`, comment `--text-tertiary`, function `#93c5fd`, number `--warning`.
+`--surface-0` background, `--radius-md`, Geist Mono 13px. Syntax colors: keyword `#c4b5fd`, string `#a5d6a7`, comment `--text-tertiary`, function `#93c5fd`, number `--warning`.
 
 ## 7. Motion & Interaction
 

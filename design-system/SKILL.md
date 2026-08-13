@@ -44,7 +44,7 @@ Follows the Midnight Studio design system.
 ## How to Use
 
 1. Copy `colors_and_type.css` into your project's first `<style>` block
-2. Import Inter (300–700) and JetBrains Mono (400–500) from Google Fonts
+2. Import Geist (300–700) and Geist Mono (400–500) from Google Fonts
 3. Follow component patterns in `DESIGN.md` section 6
 4. Reference preview cards in `preview/` for visual spec
 5. Use `ui_kits/app/index.html` as reference for full layout patterns
@@ -63,10 +63,10 @@ All values use CSS custom properties in `:root`.
 - Text: `--text-primary` (#f0eff4), `--text-secondary` (#a8a7b3), `--text-tertiary` (#6d6c7a)
 
 **Typography:**
-- Display: Inter 700, 48px, -0.025em
-- H1: Inter 600, 36px, -0.02em
-- Body: Inter 400, 16px, 1.55 line-height
-- Code: JetBrains Mono 400, 15px
+- Display: Geist 700, 48px, -0.025em
+- H1: Geist 600, 36px, -0.02em
+- Body: Geist 400, 16px, 1.55 line-height
+- Code: Geist Mono 400, 15px
 
 **Spacing:**
 7-step scale: 4 · 8 · 16 · 24 · 32 · 48 · 64px. Never use arbitrary values.

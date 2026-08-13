@@ -25,14 +25,14 @@
 
 | Role | Font | Weight | Size | Tracking |
 |------|------|--------|------|----------|
-| Display | Inter | 700 | 48px | -0.03em |
-| H1 | Inter | 600 | 36px | -0.02em |
-| H2 | Inter | 600 | 28px | -0.01em |
-| H3 | Inter | 500 | 20px | normal |
-| Body | Inter | 400 | 16px | -0.006em |
-| Small | Inter | 400 | 14px | normal |
-| Caption | Inter | 400 | 12px | 0.06em (uppercase) |
-| Mono | JetBrains Mono | 400 | 15px | normal |
+| Display | Geist | 700 | 48px | -0.03em |
+| H1 | Geist | 600 | 36px | -0.02em |
+| H2 | Geist | 600 | 28px | -0.01em |
+| H3 | Geist | 500 | 20px | normal |
+| Body | Geist | 400 | 16px | -0.006em |
+| Small | Geist | 400 | 14px | normal |
+| Caption | Geist | 400 | 12px | 0.06em (uppercase) |
+| Mono | Geist Mono | 400 | 15px | normal |
 
 ## Spacing Scale
 

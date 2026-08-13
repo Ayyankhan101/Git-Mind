@@ -197,9 +197,11 @@ def main():
                 body and body["background-color"] == "rgb(9, 10, 15)",
                 f"dark canvas #090a0f (got {body and body['background-color']})",
             )
+            # Verify the font actually downloaded (fonts.check) rather than
+            # just being declared in the CSS font-family stack.
             check(
-                body and "Inter" in (body.get("font-family") or ""),
-                "Inter font loaded",
+                page.evaluate("document.fonts.check('16px Geist')"),
+                "Geist font loaded",
             )
             title = grab_style(page, ".lp-title-accent", ["background-image"])
             check(

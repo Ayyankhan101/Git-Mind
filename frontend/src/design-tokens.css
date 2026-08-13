@@ -54,11 +54,15 @@
   --glass-bg: rgba(9, 10, 15, 0.7);
   --glass-border: rgba(255, 255, 255, 0.06);
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-accent: 0 4px 20px rgba(59, 130, 246, 0.2);
+  /* Shadows — tinted toward the midnight-blue canvas: no pure-black
+     drop shadows on dark surfaces, the faint blue cast keeps depth. */
+  --shadow-sm: 0 1px 2px rgba(2, 6, 18, 0.4);
+  --shadow-md: 0 4px 12px rgba(2, 6, 18, 0.5);
+  --shadow-lg: 0 8px 32px rgba(2, 6, 18, 0.55);
+  --shadow-accent: 0 4px 20px rgba(59, 130, 246, 0.22);
+
+  /* 1px inner top highlight — machined edge for elevated surfaces */
+  --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 
   /* Radii */
   --radius-sm: 6px;
@@ -67,9 +71,10 @@
   --radius-xl: 24px;
   --radius-full: 999px;
 
-  /* Typography */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: "JetBrains Mono", "SF Mono", monospace;
+  /* Typography — Geist (Vercel's typeface) replaces Inter for a
+     machine-tooled, developer-native voice. Geist Mono covers code. */
+  --font-sans: "Geist", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", "SF Mono", monospace;
 
   /* Type scale — single source of truth for font sizes.
      Reference from JSX via the `fs` helper in src/typeScale.js. */

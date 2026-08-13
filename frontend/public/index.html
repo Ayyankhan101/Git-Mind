@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -6,23 +6,28 @@
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#090a0f" />
-    <meta name="description" content="GitMind — Drop a GitHub URL. Get a senior engineer's understanding of that codebase in 60 seconds." />
+    <meta
+      name="description"
+      content="GitMind — Drop a GitHub URL. Get a senior engineer's understanding of that codebase in 60 seconds."
+    />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- Fonts load async (non-render-blocking) via the print-media swap trick.
          display=swap means text paints immediately with the fallback face and
-         swaps once Inter/JetBrains Mono arrive. -->
+         swaps once Geist/Geist Mono arrive. Geist gives the app a
+         machine-tooled, developer-native voice (Vercel's own typeface)
+         instead of the generic Inter default. -->
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"
       media="print"
-      onload="this.media='all'"
+      onload="this.media = 'all'"
     />
     <noscript>
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"
       />
     </noscript>
     <title>GitMind</title>

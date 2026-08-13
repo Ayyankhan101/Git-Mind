@@ -78,7 +78,7 @@ GitMind is a code intelligence platform that analyzes Git repositories to surfac
 ## Preserved Assets
 
 No runtime/build assets or font files were present in the source project.
-Typography loads from Google Fonts at runtime (Inter 300–700, JetBrains Mono 400–500).
+Typography loads from Google Fonts at runtime (Geist 300–700, Geist Mono 400–500).
 The full source design system reference is preserved at `gitmind-design-system.html`.
 
 ## UI Kit
@@ -126,7 +126,7 @@ Context and provenance:
 ### Preserved Assets, Fonts, and Build Artifacts
 
 No runtime/build assets or font files were present in the source project.
-Typography loads from Google Fonts at runtime (Inter 300–700, JetBrains Mono 400–500).
+Typography loads from Google Fonts at runtime (Geist 300–700, Geist Mono 400–500).
 The full source design system reference is preserved at `gitmind-design-system.html`.
 
 ### UI Kit
@@ -139,7 +139,7 @@ See `ui_kits/app/README.md` for component inventory, layout architecture, and re
 ### Concrete Reuse Steps
 
 1. Copy `colors_and_type.css` into your project's first `<style>` block
-2. Import Inter (300–700) and JetBrains Mono (400–500) from Google Fonts
+2. Import Geist (300–700) and Geist Mono (400–500) from Google Fonts
 3. Follow component patterns in `DESIGN.md` section 6
 4. Reference preview cards in `preview/` for visual spec
 5. Use `ui_kits/app/index.html` as reference for full layout patterns
