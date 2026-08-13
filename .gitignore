@@ -16,17 +16,6 @@ backend/gitmind.db
 graphify-out/
 graphify-out.zip
 
-# Obsidian vault (tracked separately)
-.obsidian-vault/
-
-# Obsidian config in vault
-Git-Mind-vault/.obsidian/
-
-# Auto-generated semantic/edge notes
-Git-Mind-vault/_SEMANTIC_*.md
-Git-Mind-vault/_EDGE_*.md
-Git-Mind-vault/graph.json
-
 # Opencode context (internal)
 .opencode/
 

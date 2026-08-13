@@ -149,17 +149,27 @@ Set these in **Settings → Variables and secrets**:
 | Name                          | Default                            | Description                                                                   |
 | ----------------------------- | ---------------------------------- | ----------------------------------------------------------------------------- |
 | `GITHUB_TOKEN`                | —                                  | GitHub PAT — raises API rate limits for repo cloning (60 → 5 000 req/hr)      |
-| `DATABASE_URL`                | `sqlite+aiosqlite:///./gitmind.db` | Production: `postgresql+asyncpg://user:pass@host:5432/gitmind`                |
+| `DATABASE_URL`                | `sqlite+aiosqlite:////tmp/gitmind.db` | Production: `postgresql+asyncpg://user:pass@host:5432/gitmind`            |
 | `REDIS_URL`                   | —                                  | Redis connection — enables persistent rate-limiter, session cache, task queue |
 | `SENTRY_DSN`                  | —                                  | Sentry DSN for error tracking                                                 |
 | `ENVIRONMENT`                 | —                                  | Environment tag for Sentry (`production`, `staging`)                          |
 | `GITMIND_SERVICE_KEY`         | —                                  | CI/CD auth key — bypasses rate limits                                         |
+| `GITHUB_APP_ID`               | —                                  | GitHub App credentials (webhook flows)                                        |
+| `GITHUB_APP_PRIVATE_KEY`      | —                                  | GitHub App private key (webhook flows)                                        |
+| `GITHUB_APP_INSTALLATION_ID`  | —                                  | GitHub App installation ID (webhook flows)                                    |
+| `GITHUB_APP_WEBHOOK_SECRET`   | —                                  | GitHub App webhook HMAC secret                                                |
 | `GROQ_DAILY_REMAINING`        | —                                  | Remaining daily Groq token window for the MIPROv2 budget guard (`optimization.run` aborts before a compile exceeds it; unset/0 disables the guard) |
-| `WS_AUTH_SECRET`              | —                                  | WebSocket auth secret (clients must send matching `ws_auth_secret`)           |
-| `REQUIRE_WS_AUTH`             | —                                  | When `true`, reject WS connections without valid auth                         |
+| `WS_AUTH_SECRET`              | —                                  | WebSocket auth — when set, clients must send matching `ws_auth_secret` + `ws_auth_ts` |
 | `SIDECAR_URL`                 | `http://127.0.0.1:8003`            | Solidity parser sidecar endpoint                                              |
 | `TASK_WORKERS`                | `3`                                | Background queue worker count                                                 |
 | `MONITOR_INTERVAL_SECONDS`    | `3600`                             | Repo monitoring loop interval                                                 |
+| `REPORTER_INTERVAL_SEC`       | `45`                               | Crisis Mode reporter check interval                                           |
+| `MAX_REQUEST_BODY_BYTES`      | `5242880` (5 MB)                   | Max request body size                                                         |
+| `RERANKER_MODEL`              | `cross-encoder/ms-marco-MiniLM-L-6-v2` | Cross-encoder reranker model                                             |
+| `LLM_MODEL`                   | `llama-3.3-70b-versatile`          | Override Groq model for all agents                                            |
+| `SMTP_HOST` / `SMTP_PORT`     | `587`                              | SMTP server for monitoring email alerts                                       |
+| `SMTP_USER` / `SMTP_PASSWORD` | —                                  | SMTP credentials                                                              |
+| `SMTP_FROM`                   | —                                  | SMTP sender address                                                           |
 | `JSON_LOGS`                   | —                                  | Enable JSON structured logging                                                |
 | `LOG_LEVEL`                   | `INFO`                             | Logging level                                                                 |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | —                                  | OpenTelemetry OTLP gRPC endpoint                                              |
