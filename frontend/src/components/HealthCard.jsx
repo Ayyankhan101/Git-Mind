@@ -63,7 +63,10 @@ export default function HealthCard({ health }) {
       <div
         className="health-card-glow"
         style={{
-          background: `radial-gradient(circle at 30% 50%, ${gradeColor}18, transparent 60%)`,
+          // `var(--x)18` alpha-suffix is invalid CSS (dropped -> glow never
+          // painted); use color-mix so the glow is theme-aware like the
+          // float shapes.
+          background: `radial-gradient(circle at 30% 50%, color-mix(in srgb, ${gradeColor} 10%, transparent), transparent 60%)`,
         }}
       />
 
