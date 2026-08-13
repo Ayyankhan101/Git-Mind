@@ -5,6 +5,7 @@ build
 backend/venv/
 backend/__pycache__/
 backend/.chroma/
+backend/.chroma_registry.json
 backend/.llm_cache/
 backend/analyses/
 backend/gitmind.db
