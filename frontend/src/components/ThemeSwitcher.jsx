@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Palette, Check } from "lucide-react";
+import { Palette, Check } from "../icons";
 
 const THEMES = [
   {
@@ -161,29 +161,28 @@ export default function ThemeSwitcher({ theme, dispatch }) {
           aria-label="Theme picker"
           ref={listRef}
         >
-          {THEMES.map((t, i) => (
-            <div
-              key={t.id}
-              className={`theme-opt${theme === t.id ? " active" : ""}`}
-              role="option"
-              tabIndex={focusIdx === i ? 0 : -1}
-              aria-selected={theme === t.id}
-              onClick={() => selectTheme(t)}
-              onFocus={() => setFocusIdx(i)}
-            >
-              <div className="theme-opt-swatch">
-                <span style={{ background: t.swatches[0] }} />
-                <span style={{ background: t.swatches[1] }} />
+          <div className="theme-grid">
+            {THEMES.map((t, i) => (
+              <div
+                key={t.id}
+                className={`theme-grid-item${theme === t.id ? " active" : ""}`}
+                role="option"
+                tabIndex={focusIdx === i ? 0 : -1}
+                aria-selected={theme === t.id}
+                onClick={() => selectTheme(t)}
+                onFocus={() => setFocusIdx(i)}
+              >
+                <div className="theme-grid-swatch">
+                  <span style={{ background: t.swatches[0] }} />
+                  <span style={{ background: t.swatches[1] }} />
+                </div>
+                <div className="theme-grid-info">
+                  <div className="theme-grid-name">{t.name}</div>
+                  <div className="theme-grid-sub">{t.sub}</div>
+                </div>
               </div>
-              <div>
-                <div className="theme-opt-name">{t.name}</div>
-                <div className="theme-opt-sub">{t.sub}</div>
-              </div>
-              {theme === t.id && (
-                <Check size={14} className="theme-opt-check" />
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>

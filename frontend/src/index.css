@@ -5065,3 +5065,98 @@ button:disabled {
   font-weight: 600;
   white-space: nowrap;
 }
+
+/* ── Token Popover ──────────────────────────────────────────── */
+.token-popover-wrap {
+  position: relative;
+}
+
+.token-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 200;
+  width: 280px;
+  padding: 16px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-m);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.token-popover-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.token-popover .cb-input {
+  max-width: 100%;
+  flex: 1;
+}
+
+/* ── Theme Grid Picker ──────────────────────────────────────── */
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  padding: 6px;
+}
+
+.theme-grid-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition:
+    background var(--duration-fast),
+    border-color var(--duration-fast);
+}
+
+.theme-grid-item:hover {
+  background: var(--hover);
+}
+
+.theme-grid-item.active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.theme-grid-swatch {
+  display: flex;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid var(--border-s);
+}
+
+.theme-grid-swatch span {
+  flex: 1;
+}
+
+.theme-grid-info {
+  min-width: 0;
+}
+
+.theme-grid-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theme-grid-sub {
+  font-size: 10px;
+  color: var(--text-3);
+}
