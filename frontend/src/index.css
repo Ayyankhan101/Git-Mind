@@ -4564,7 +4564,13 @@ h3,
   background: linear-gradient(90deg, var(--accent), var(--info));
   transform-origin: 0 50%;
   transform: scaleX(0);
-  animation: progressFill linear both;
+  /* Explicit longhands — the `animation` shorthand gets reordered after
+     animation-timeline by the CSS minifier and resets it to `auto`,
+     silently breaking the scroll-driven fill. */
+  animation-name: progressFill;
+  animation-duration: auto;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
   animation-timeline: scroll(root);
 }
 

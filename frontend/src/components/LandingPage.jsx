@@ -266,6 +266,8 @@ function HowStep({ title, desc, delay, step }) {
    not the whole landing page (feature grid, stats, steps, etc.). */
 function HeroForm({ onLoad, onAnalyzeUrl, inputRef }) {
   const [input, setInput] = useState("");
+  const [token, setToken] = useState("");
+  const [tokenOpen, setTokenOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -273,8 +275,14 @@ function HeroForm({ onLoad, onAnalyzeUrl, inputRef }) {
     if (!input.trim()) return;
     setSubmitting(true);
     try {
+      const ghToken = token.trim();
+      /* Pass the token through only when actually provided, so the
+         one-argument handlers keep working for public repos. */
       if (input.includes("github.com")) {
-        onAnalyzeUrl(input.trim());
+        if (ghToken) onAnalyzeUrl(input.trim(), ghToken);
+        else onAnalyzeUrl(input.trim());
+      } else if (ghToken) {
+        onLoad(input.trim(), ghToken);
       } else {
         onLoad(input.trim());
       }
@@ -318,6 +326,39 @@ function HeroForm({ onLoad, onAnalyzeUrl, inputRef }) {
           )}
         </button>
       </form>
+
+      {/* Optional GitHub token — for private repos & higher rate limits.
+         Collapsed by default so the hero stays clean; submits alongside
+         the username/URL above. */}
+      <div className="lp-token-row">
+        <button
+          type="button"
+          className={`lp-token-toggle${tokenOpen ? " open" : ""}`}
+          onClick={() => setTokenOpen((o) => !o)}
+          aria-expanded={tokenOpen}
+          aria-controls="lp-token-field"
+        >
+          <Lock size={12} />
+          {tokenOpen ? "Hide token" : "Use GitHub token"}
+        </button>
+        {tokenOpen && (
+          <div className="lp-token-field" id="lp-token-field">
+            <input
+              type="password"
+              className="lp-token-input"
+              placeholder="Personal access token (optional)"
+              aria-label="GitHub personal access token"
+              autoComplete="off"
+              spellCheck={false}
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+            />
+            <span className="lp-token-hint">
+              Enables private repos &amp; higher rate limits
+            </span>
+          </div>
+        )}
+      </div>
     </>
   );
 }
@@ -460,6 +501,10 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
 
   return (
     <div className="lp">
+      {/* Scroll-driven animation: a fixed progress bar that fills as you
+         scroll down the page (CSS scroll-timeline, same as the dashboard). */}
+      <div className="lp-scroll-progress" aria-hidden="true" />
+
       {/* ── Nav ──────────────────────────────────────────────── */}
       <nav className="lp-nav">
         <div className="lp-nav-inner">
@@ -480,40 +525,43 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
             </div>
             <span>GitMind</span>
           </div>
-          <button
-            className="lp-nav-hamburger"
-            onClick={() => setMobileMenuOpen((o) => !o)}
-            aria-label="Toggle menu"
-            aria-expanded={mobileMenuOpen}
-          >
-            <span
-              className={`lp-nav-hamburger-line${mobileMenuOpen ? " open" : ""}`}
-            />
-            <span
-              className={`lp-nav-hamburger-line${mobileMenuOpen ? " open" : ""}`}
-            />
-          </button>
-          <div
-            className={`lp-nav-links${mobileMenuOpen ? " mobile-open" : ""}`}
-          >
-            <a
-              href="#features"
-              className={`lp-nav-link${activeSection === "features" ? " lp-nav-link--active" : ""}`}
+          <div className="lp-nav-right">
+            <div
+              className={`lp-nav-links${mobileMenuOpen ? " mobile-open" : ""}`}
             >
-              Features
-            </a>
-            <a
-              href="#stats"
-              className={`lp-nav-link${activeSection === "stats" ? " lp-nav-link--active" : ""}`}
+              <a
+                href="#features"
+                className={`lp-nav-link${activeSection === "features" ? " lp-nav-link--active" : ""}`}
+              >
+                Features
+              </a>
+              <a
+                href="#stats"
+                className={`lp-nav-link${activeSection === "stats" ? " lp-nav-link--active" : ""}`}
+              >
+                Stats
+              </a>
+              <a
+                href="#how-it-works"
+                className={`lp-nav-link${activeSection === "how-it-works" ? " lp-nav-link--active" : ""}`}
+              >
+                How it works
+              </a>
+            </div>
+            <ThemeSwitcher theme={landingTheme} dispatch={landingDispatch} />
+            <button
+              className="lp-nav-hamburger"
+              onClick={() => setMobileMenuOpen((o) => !o)}
+              aria-label="Toggle menu"
+              aria-expanded={mobileMenuOpen}
             >
-              Stats
-            </a>
-            <a
-              href="#how-it-works"
-              className={`lp-nav-link${activeSection === "how-it-works" ? " lp-nav-link--active" : ""}`}
-            >
-              How it works
-            </a>
+              <span
+                className={`lp-nav-hamburger-line${mobileMenuOpen ? " open" : ""}`}
+              />
+              <span
+                className={`lp-nav-hamburger-line${mobileMenuOpen ? " open" : ""}`}
+              />
+            </button>
           </div>
         </div>
       </nav>

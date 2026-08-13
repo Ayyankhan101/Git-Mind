@@ -103,6 +103,21 @@ describe("LandingPage", () => {
     );
   });
 
+  it("passes a GitHub token through when provided", () => {
+    const onLoad = jest.fn();
+    render(<LandingPage onLoad={onLoad} onAnalyzeUrl={jest.fn()} />);
+    fireEvent.click(screen.getByText("Use GitHub token"));
+    fireEvent.change(screen.getByLabelText("GitHub personal access token"), {
+      target: { value: "ghp_test123" },
+    });
+    const input = screen.getByPlaceholderText("GitHub username or repo URL");
+    fireEvent.change(input, { target: { value: "facebook" } });
+    fireEvent.submit(
+      screen.getByRole("form", { name: "Analyze a GitHub repository" }),
+    );
+    expect(onLoad).toHaveBeenCalledWith("facebook", "ghp_test123");
+  });
+
   it("submits empty input without calling onLoad", () => {
     const onLoad = jest.fn();
     render(<LandingPage onLoad={onLoad} onAnalyzeUrl={jest.fn()} />);

@@ -109,6 +109,19 @@
   color: var(--text-on-primary);
 }
 
+.lp-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+/* The global .theme-switcher carries margin-left:auto for the CommandBar;
+   inside the nav cluster the group handles spacing. */
+.lp-nav .theme-switcher {
+  margin-left: 0;
+}
+
 .lp-nav-links {
   display: flex;
   gap: 8px;
@@ -170,6 +183,37 @@
 .lp-hero-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* ── Scroll progress bar ──────────────────────────────────────── */
+/* Scroll-driven animation: fills 0→100% as the page scrolls. Same
+   technique as the dashboard's reading-progress (CSS scroll-timeline,
+   zero JS, compositor-friendly). */
+.lp-scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 200;
+  background: linear-gradient(90deg, var(--primary), var(--accent-2));
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  /* Explicit longhands — NOT the `animation` shorthand: the CSS minifier
+     reorders declarations, and the shorthand resets animation-timeline
+     back to `auto`, silently breaking scroll-driven animations. */
+  animation-name: lpProgressFill;
+  animation-duration: auto;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+  animation-timeline: scroll(root);
+  pointer-events: none;
+}
+
+@keyframes lpProgressFill {
+  to {
+    transform: scaleX(1);
+  }
 }
 
 /* ── Hero ────────────────────────────────────────────────────── */
@@ -437,6 +481,86 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ── Optional GitHub token ────────────────────────────────────── */
+/* Collapsed by default; expands inline under the hero form. The token
+   is passed through to the dashboard session (private repos + higher
+   GitHub rate limits). */
+.lp-token-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.lp-token-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition:
+    color var(--duration-fast),
+    border-color var(--duration-fast),
+    background var(--duration-fast);
+}
+
+.lp-token-toggle:hover {
+  color: var(--text-1);
+  border-color: var(--lp-glass-border);
+  background: var(--lp-glass-bg);
+}
+
+.lp-token-toggle.open {
+  color: var(--accent);
+  border-color: var(--border-accent);
+  background: var(--accent-dim);
+}
+
+.lp-token-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: fadeSlideUp 0.25s ease-out both;
+}
+
+.lp-token-input {
+  width: 250px;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-1);
+  background: var(--surface-0);
+  border: 1px solid var(--border-m);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition:
+    border-color var(--duration-normal),
+    box-shadow var(--duration-normal);
+}
+
+.lp-token-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.lp-token-input::placeholder {
+  color: var(--text-3);
+}
+
+.lp-token-hint {
+  font-size: 11px;
+  color: var(--text-3);
 }
 
 /* ── Agent radar sweep (signature moment) ─────────────────────── */
@@ -1332,6 +1456,20 @@
     padding: 0 16px;
   }
 
+  .lp-token-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .lp-token-field {
+    flex-wrap: wrap;
+  }
+
+  .lp-token-input {
+    width: 100%;
+  }
+
   .lp-hero {
     /* Non-env fallback first, then the safe-area enhanced value */
     padding: 88px 20px 48px;
@@ -1549,6 +1687,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Scroll progress bar is continuous scroll-linked motion — disable
+     under reduced motion (the reveals already snap to visible). */
+  .lp-scroll-progress {
+    display: none;
+  }
   /* Radar sweep is pure decoration — remove entirely under reduced
      motion (the AgentPipeline echo already goes static too). */
   .lp-hero-radar {
