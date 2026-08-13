@@ -89,7 +89,7 @@ def scanner_node(state: RepoState) -> dict:
             "file_contents": {},
             "repo_name": "unknown",
             "_scanner_failed": True,
-            "events": [_event("scanner", "error", str(exc)[:200])],
+            "events": [_event("scanner", "error", str(exc)[:500])],
         }
 
 
@@ -112,7 +112,7 @@ def architecture_node(state: RepoState) -> dict:
         return {
             "architecture_diagram": "graph TD\n    A[Architecture Analysis Failed]",
             "architecture_graph": {"nodes": [], "edges": []},
-            "events": [_event("architecture", "error", str(exc)[:200])],
+            "events": [_event("architecture", "error", str(exc)[:500])],
         }
 
 
@@ -128,7 +128,7 @@ def api_doc_node(state: RepoState) -> dict:
     except Exception as exc:
         _record_circuit_failure()
         logger.error("api_doc_node failed: %s", exc)
-        return {"api_docs": [], "events": [_event("api_docs", "error", str(exc)[:200])]}
+        return {"api_docs": [], "events": [_event("api_docs", "error", str(exc)[:500])]}
 
 
 def security_node(state: RepoState) -> dict:
@@ -145,7 +145,7 @@ def security_node(state: RepoState) -> dict:
         logger.error("security_node failed: %s", exc)
         return {
             "security_findings": _synthetic_finding(),
-            "events": [_event("security", "error", str(exc)[:200])],
+            "events": [_event("security", "error", str(exc)[:500])],
         }
 
 
@@ -163,7 +163,7 @@ def rag_setup_node(state: RepoState) -> dict:
         logger.error("rag_setup_node failed: %s", exc)
         return {
             "chroma_collection_name": None,
-            "events": [_event("chat", "error", str(exc)[:200])],
+            "events": [_event("chat", "error", str(exc)[:500])],
         }
 
 
@@ -179,7 +179,7 @@ def cve_node(state: RepoState) -> dict:
     except Exception as exc:
         _record_circuit_failure()
         logger.error("cve_node failed: %s", exc)
-        return {"cve_findings": [], "events": [_event("cve_scanner", "error", str(exc)[:200])]}
+        return {"cve_findings": [], "events": [_event("cve_scanner", "error", str(exc)[:500])]}
 
 
 def sol_node(state: RepoState) -> dict:
@@ -194,7 +194,7 @@ def sol_node(state: RepoState) -> dict:
     except Exception as exc:
         _record_circuit_failure()
         logger.error("sol_node failed: %s", exc)
-        return {"solidity_audit": None, "events": [_event("solidity", "error", str(exc)[:200])]}
+        return {"solidity_audit": None, "events": [_event("solidity", "error", str(exc)[:500])]}
 
 
 def code_audit_node(state: RepoState) -> dict:
@@ -209,7 +209,7 @@ def code_audit_node(state: RepoState) -> dict:
     except Exception as exc:
         _record_circuit_failure()
         logger.error("code_audit_node failed: %s", exc)
-        return {"code_audit": None, "events": [_event("code_audit", "error", str(exc)[:200])]}
+        return {"code_audit": None, "events": [_event("code_audit", "error", str(exc)[:500])]}
 
 
 def git_audit_node(state: RepoState) -> dict:
@@ -229,7 +229,7 @@ def git_audit_node(state: RepoState) -> dict:
     except Exception as exc:
         _record_circuit_failure()
         logger.error("git_audit_node failed: %s", exc)
-        return {"git_audit": None, "events": [_event("git_audit", "error", str(exc)[:200])]}
+        return {"git_audit": None, "events": [_event("git_audit", "error", str(exc)[:500])]}
 
 
 # ── Graph definition ───────────────────────────────────────────────────────────
