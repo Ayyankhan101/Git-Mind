@@ -121,7 +121,7 @@ async def unsubscribe_repo(monitor_id: str, request: Request):
         )
         await session.commit()
 
-    if result.rowcount == 0:
+    if result.rowcount == 0:  # type: ignore[attr-defined]
         return error_response("Monitor not found or not owned by you", 404)
 
     logger.info("Repo unsubscribed from monitoring", monitor_id=monitor_id)

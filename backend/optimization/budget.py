@@ -20,7 +20,7 @@ DEFAULT_AVG_INPUT_TOKENS = 2_000
 def estimate_compile_tokens(
     trainset_size: int,
     *,
-    auto: str = "light",
+    auto: str | None = "light",
     max_bootstrapped_demos: int = 4,
     max_labeled_demos: int = 4,
     avg_input_tokens: int = DEFAULT_AVG_INPUT_TOKENS,

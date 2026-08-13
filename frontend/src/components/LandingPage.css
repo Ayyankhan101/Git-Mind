@@ -1313,9 +1313,11 @@
 .lp-footer {
   /* Generous bottom padding: after the CTA section was removed, the page
      ended right below #how-it-works — too little scrollable room for the
-     anchor to land at its 80px scroll-margin (browser hit max scroll ~105px
-     short). Extra bottom padding restores the scroll runway. */
-  padding: 32px 0 256px;
+     anchor to land at its 80px scroll-margin (browser hit max scroll,
+     leaving #how-it-works ~113px below the viewport top instead of 80px).
+     320px bottom padding restores enough scroll runway for Lenis to land
+     exactly on the 80px scroll-margin. */
+  padding: 32px 0 320px;
   border-top: 1px solid var(--lp-glass-border);
   background: var(--lp-glass-bg);
 }

@@ -396,6 +396,7 @@ def test_verify_optimize_min_gold_caps_valset(tmp_path):
 
     with (
         patch.object(e2e, "record"),
+        patch("optimization.trainsets.harvest", return_value=[object()]),
         patch("optimization.run.compile_agent", side_effect=fake_compile),
     ):
         e2e.verify_optimize("security", min_gold=2)

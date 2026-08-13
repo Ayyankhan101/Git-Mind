@@ -76,7 +76,7 @@ def compile_agent(
     trainset,
     valset,
     remaining_budget: int | None = None,
-    auto: str = "light",
+    auto: str | None = "light",
     margin: float = DEFAULT_MARGIN,
     max_bootstrapped_demos: int = DEFAULT_MAX_BOOTSTRAPPED_DEMOS,
     max_labeled_demos: int = DEFAULT_MAX_LABELED_DEMOS,
