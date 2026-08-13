@@ -245,7 +245,7 @@ function StatItem({ value, label, Icon, delay }) {
 }
 
 /* ── How Step ────────────────────────────────────────────────── */
-function HowStep({ title, desc, delay }) {
+function HowStep({ title, desc, delay, step }) {
   const ref = useScrollReveal();
   return (
     <div
@@ -253,6 +253,7 @@ function HowStep({ title, desc, delay }) {
       className="lp-how-step"
       style={{ "--reveal-delay": `${delay}s` }}
     >
+      <div className="lp-how-step-num">{step}</div>
       <h3 className="lp-how-step-title">{title}</h3>
       <p className="lp-how-step-desc">{desc}</p>
     </div>
@@ -326,7 +327,6 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
   const featuresRef = useRef(null);
   const statsRef = useRef(null);
   const howRef = useRef(null);
-  const ctaRef = useRef(null);
 
   /* Lenis smooth scroll + GSAP ticker */
   useEffect(() => {
@@ -608,45 +608,24 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
           </div>
           <div className="lp-how-steps">
             <HowStep
+              step="1"
               title="Enter a repo"
               desc="Paste a GitHub URL or type a username to browse repos."
               delay={0}
             />
             <HowStep
+              step="2"
               title="AI analyzes"
               desc="Six agents scan security, architecture, docs, CVEs, and code quality in parallel."
               delay={0.12}
             />
             <HowStep
+              step="3"
               title="Get results"
               desc="Interactive reports with severity-ranked findings, fix suggestions, and exportable PDFs."
               delay={0.24}
             />
           </div>
-        </div>
-      </section>
-
-      {/* ── CTA ──────────────────────────────────────────────── */}
-      <section className="lp-cta" ref={ctaRef}>
-        <div className="lp-section-inner">
-          <h2 className="lp-cta-title">Ready to analyze your code?</h2>
-          <p className="lp-cta-sub">
-            Start with a public repository or connect your GitHub token for
-            private repos.
-          </p>
-          <button
-            className="lp-cta-btn"
-            onClick={() => {
-              heroInputRef.current?.focus({ preventScroll: true });
-              heroInputRef.current?.scrollIntoView({
-                behavior: "smooth",
-                block: "center",
-              });
-            }}
-          >
-            Get started
-            <ArrowRight size={16} />
-          </button>
         </div>
       </section>
 

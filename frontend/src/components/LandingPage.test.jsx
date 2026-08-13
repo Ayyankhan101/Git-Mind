@@ -103,40 +103,33 @@ describe("LandingPage", () => {
     );
   });
 
-  it("focuses the hero input when Get Started button is clicked", () => {
+  it("submits empty input without calling onLoad", () => {
     const onLoad = jest.fn();
     render(<LandingPage onLoad={onLoad} onAnalyzeUrl={jest.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Get started" }));
-    expect(
-      screen.getByPlaceholderText("GitHub username or repo URL"),
-    ).toHaveFocus();
+    fireEvent.submit(
+      screen.getByRole("form", { name: "Analyze a GitHub repository" }),
+    );
     expect(onLoad).not.toHaveBeenCalled();
   });
 
-  it("renders the agent-scan radar preview with six orbiting agents", () => {
+  it("renders the hero without fake product chrome", () => {
     const { container } = render(
       <LandingPage onLoad={jest.fn()} onAnalyzeUrl={jest.fn()} />,
     );
-    expect(container.querySelector(".lp-radar")).toBeInTheDocument();
-    expect(container.querySelector(".lp-radar-sweep")).toBeInTheDocument();
-    expect(container.querySelector(".lp-radar-core")).toBeInTheDocument();
-    // The six agents that sweep the repo in parallel
-    expect(container.querySelectorAll(".lp-radar-agent")).toHaveLength(6);
-    const codes = [...container.querySelectorAll(".lp-radar-agent-code")].map(
-      (el) => el.textContent,
-    );
-    expect(codes).toEqual(["SCAN", "SEC", "CVE", "ARCH", "DOCS", "GIT"]);
+    // The fake window/radar preview was stripped — the hero is typographic.
+    expect(container.querySelector(".lp-preview")).toBeNull();
+    expect(container.querySelector(".lp-radar")).toBeNull();
   });
 
-  it("keeps the product preview hidden from assistive tech", () => {
+  it("renders how-it-works with flow layout", () => {
     const { container } = render(
-      <LandingPage onLoad={jest.fn()} onAnalyzeUrl={jest.fn()} />,
+      <LandingPage onLoad={() => {}} onAnalyzeUrl={() => {}} />,
     );
-    // The preview is decorative: the real product is one click away, so
-    // screen readers must skip the mock entirely.
-    expect(container.querySelector(".lp-preview")).toHaveAttribute(
-      "aria-hidden",
-      "true",
-    );
+    const how = container.querySelector("#how-it-works");
+    expect(how).toBeTruthy();
+    const steps = how.querySelectorAll(".lp-how-step");
+    expect(steps.length).toBe(3);
+    const nums = how.querySelectorAll(".lp-how-step-num");
+    expect(nums.length).toBe(3);
   });
 });
