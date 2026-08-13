@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   Search,
   ArrowRight,
@@ -21,6 +21,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import "./LandingPage.css";
 import HealthCard from "./HealthCard";
+import ThemeSwitcher from "./ThemeSwitcher";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -310,6 +311,17 @@ function HeroForm({ onLoad, onAnalyzeUrl, inputRef }) {
 export default function LandingPage({ onLoad, onAnalyzeUrl }) {
   const [activeSection, setActiveSection] = useState("");
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [landingTheme, setLandingTheme] = useState(
+    () => localStorage.getItem("gm-theme") || "default"
+  );
+  const landingDispatch = useCallback((action) => {
+    if (action.type === "SET_THEME") {
+      setLandingTheme(action.theme);
+      document.documentElement.setAttribute("data-theme", action.theme);
+      localStorage.setItem("gm-theme", action.theme);
+    }
+  }, []);
 
   /* Respect prefers-reduced-motion: the marquee renders a single
      (non-duplicated) copy, so the wrapped static list never repeats
@@ -453,7 +465,16 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
             </div>
             <span>GitMind</span>
           </div>
-          <div className="lp-nav-links">
+          <button
+            className="lp-nav-hamburger"
+            onClick={() => setMobileMenuOpen((o) => !o)}
+            aria-label="Toggle menu"
+            aria-expanded={mobileMenuOpen}
+          >
+            <span className={`lp-nav-hamburger-line${mobileMenuOpen ? " open" : ""}`} />
+            <span className={`lp-nav-hamburger-line${mobileMenuOpen ? " open" : ""}`} />
+          </button>
+          <div className={`lp-nav-links${mobileMenuOpen ? " mobile-open" : ""}`}>
             <a
               href="#features"
               className={`lp-nav-link${activeSection === "features" ? " lp-nav-link--active" : ""}`}
@@ -632,22 +653,36 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
       {/* ── Footer ───────────────────────────────────────────── */}
       <footer className="lp-footer">
         <div className="lp-footer-inner">
-          <div className="lp-footer-brand">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
-            </svg>
-            <span>GitMind</span>
+          <div className="lp-footer-left">
+            <div className="lp-footer-brand">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+              <span>GitMind</span>
+            </div>
+            <span className="lp-footer-sep">·</span>
+            <span className="lp-footer-copy">Built with AI</span>
           </div>
-          <p className="lp-footer-copy">Built with AI. Open source.</p>
+          <div className="lp-footer-right">
+            <ThemeSwitcher theme={landingTheme} dispatch={landingDispatch} />
+            <a
+              href="https://github.com/your-org/gitmind"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="lp-footer-link"
+            >
+              GitHub
+            </a>
+          </div>
         </div>
       </footer>
     </div>

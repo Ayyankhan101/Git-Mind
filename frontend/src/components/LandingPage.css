@@ -136,9 +136,36 @@
   background: var(--accent-dim);
 }
 
+/* Hamburger — hidden on desktop */
+.lp-nav-hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.lp-nav-hamburger-line {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--text-1);
+  border-radius: 1px;
+  transition: transform var(--duration-normal), opacity var(--duration-normal);
+}
+
+.lp-nav-hamburger-line.open:first-child {
+  transform: translateY(3.5px) rotate(45deg);
+}
+
+.lp-nav-hamburger-line.open:last-child {
+  transform: translateY(-3.5px) rotate(-45deg);
+}
+
 .lp-nav-link:focus-visible,
-.lp-hero-btn:focus-visible,
-.lp-cta-btn:focus-visible {
+.lp-hero-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -1087,10 +1114,38 @@
   color: var(--text-2);
 }
 
+.lp-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lp-footer-sep {
+  color: var(--text-3);
+  font-size: 12px;
+}
+
 .lp-footer-copy {
   font-size: 12px;
   color: var(--text-2);
   margin: 0;
+}
+
+.lp-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.lp-footer-link {
+  font-size: 12px;
+  color: var(--text-3);
+  text-decoration: none;
+  transition: color var(--duration-fast);
+}
+
+.lp-footer-link:hover {
+  color: var(--text-1);
 }
 
 /* ── Responsive ──────────────────────────────────────────────── */
@@ -1319,6 +1374,34 @@
 /* ── Reduced Motion ──────────────────────────────────────────── */
 /* ── Hero responsive ──────────────────────────────────────── */
 @media (max-width: 768px) {
+  .lp-nav-hamburger {
+    display: flex;
+  }
+
+  .lp-nav-links {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    padding: 12px 32px;
+    background: var(--lp-glass-bg);
+    backdrop-filter: var(--lp-glass-blur) saturate(1.4);
+    border-bottom: 1px solid var(--lp-glass-border);
+    transform: translateY(-10px);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      transform var(--duration-normal),
+      opacity var(--duration-normal);
+  }
+
+  .lp-nav-links.mobile-open {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
   .lp-hero {
     padding: 72px 20px 48px;
   }
