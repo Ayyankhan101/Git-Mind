@@ -137,7 +137,7 @@ export default function DocsTab({ docs, isAnalyzing, analyzed, onPickFile }) {
       <div className="empty">
         <FileCode2 size={20} className="empty-icon" />
         <div className="empty-title">API Docs not available</div>
-        <div className="empty-sub">Analyze a repository to get started</div>
+        <div className="empty-sub">Load a repository to run an analysis</div>
       </div>
     );
   }
@@ -165,6 +165,7 @@ export default function DocsTab({ docs, isAnalyzing, analyzed, onPickFile }) {
             <FileCode2 size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">03 — API Docs</div>
             <div className="tab-header-title">API Endpoints</div>
             <div className="tab-header-sub">
               {docs?.length || 0} endpoints discovered

@@ -154,7 +154,7 @@ export default function CveTab({ findings, isAnalyzing, analyzed }) {
       <div className="empty">
         <Lock size={20} className="empty-icon" />
         <div className="empty-title">CVE Scanner not available</div>
-        <div className="empty-sub">Analyze a repository to get started</div>
+        <div className="empty-sub">Load a repository to run an analysis</div>
       </div>
     );
   }
@@ -188,6 +188,7 @@ export default function CveTab({ findings, isAnalyzing, analyzed }) {
             <Lock size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">05 — CVE</div>
             <div className="tab-header-title">CVE Scanner</div>
             <div className="tab-header-sub">
               {findings?.length || 0} vulnerable packages

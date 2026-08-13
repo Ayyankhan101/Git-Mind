@@ -431,7 +431,7 @@ export default function SecurityTab({
       <div className="empty">
         <ShieldAlert size={20} className="empty-icon" />
         <div className="empty-title">Security not available</div>
-        <div className="empty-sub">Analyze a repository to get started</div>
+        <div className="empty-sub">Load a repository to run an analysis</div>
       </div>
     );
   }
@@ -465,6 +465,7 @@ export default function SecurityTab({
             <ShieldAlert size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">04 — Security</div>
             <div className="tab-header-title">Security</div>
             <div className="tab-header-sub">
               {findings?.length || 0} findings

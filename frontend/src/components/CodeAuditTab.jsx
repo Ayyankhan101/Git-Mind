@@ -294,6 +294,7 @@ export default function CodeAuditTab({
             <Code size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">08 — Code Audit</div>
             <div className="tab-header-title">Code Audit</div>
             <div className="tab-header-sub">
               {totalFindings} finding{totalFindings !== 1 ? "s" : ""} across{" "}

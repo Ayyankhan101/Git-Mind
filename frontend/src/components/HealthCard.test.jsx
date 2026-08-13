@@ -39,3 +39,21 @@ test("renders F grade", () => {
   render(<HealthCard health={{ grade: "F", score: 15, breakdown: {} }} />);
   expect(screen.getByText("F")).toBeInTheDocument();
 });
+
+test("band variant applies the editorial band class", () => {
+  const { container } = render(
+    <HealthCard
+      health={{ grade: "A", score: 92, breakdown: {} }}
+      variant="band"
+    />,
+  );
+  expect(container.querySelector(".health-card--band")).toBeTruthy();
+  expect(container.querySelector(".health-card")).toBeTruthy();
+});
+
+test("default variant has no band class", () => {
+  const { container } = render(
+    <HealthCard health={{ grade: "A", score: 92, breakdown: {} }} />,
+  );
+  expect(container.querySelector(".health-card--band")).toBeNull();
+});

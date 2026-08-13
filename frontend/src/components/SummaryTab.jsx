@@ -299,7 +299,7 @@ export default function SummaryTab({
       <div className="empty">
         <BarChart3 size={20} className="empty-icon" />
         <div className="empty-title">Summary not available</div>
-        <div className="empty-sub">Analyze a repository to get started</div>
+        <div className="empty-sub">Load a repository to run an analysis</div>
       </div>
     );
   }
@@ -391,13 +391,16 @@ export default function SummaryTab({
             <BarChart3 size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">01 — Summary</div>
             <div className="tab-header-title">Executive Summary</div>
             <div className="tab-header-sub">{repoName}</div>
           </div>
         </div>
       </div>
 
-      <HealthCard health={health} />
+      {/* Editorial band variant: the grade card mirrors the landing
+          stats-band treatment (--primary-strong fill, on-primary type). */}
+      <HealthCard health={health} variant="band" />
 
       {enabled && repoUrl && (
         <div className="summary-watch">

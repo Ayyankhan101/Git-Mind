@@ -14,6 +14,7 @@ function ChatHeader({ enabled }) {
           <MessageSquare size={15} />
         </span>
         <div className="tab-header-text">
+          <div className="tab-header-eyebrow">11 — Chat</div>
           <div className="tab-header-title">Chat</div>
           <div className="tab-header-sub">
             {enabled

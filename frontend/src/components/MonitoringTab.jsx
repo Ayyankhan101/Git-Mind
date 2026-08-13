@@ -162,6 +162,7 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
             <Activity size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">10 — Watch</div>
             <div className="tab-header-title">Watch</div>
             <div className="tab-header-sub">
               Monitor repos for security changes and health regressions

@@ -252,7 +252,7 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
       <div className="empty">
         <GitCommit size={20} className="empty-icon" />
         <div className="empty-title">Git Audit not available</div>
-        <div className="empty-sub">Analyze a repository to get started</div>
+        <div className="empty-sub">Load a repository to run an analysis</div>
       </div>
     );
   }
@@ -280,6 +280,7 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
             <GitCommit size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">06 — Git Audit</div>
             <div className="tab-header-title">Git Audit</div>
             <div className="tab-header-sub">
               {stats.total || 0} commits · {totalIssues} issue

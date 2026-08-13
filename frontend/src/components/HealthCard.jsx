@@ -32,7 +32,9 @@ function MiniBar({ value, color, delay = 0 }) {
   return (
     <div
       style={{
-        background: "var(--border-s)",
+        /* --health-track lets the editorial band variant retune the
+           track to on-primary without touching the default surface. */
+        background: "var(--health-track, var(--border-s))",
         borderRadius: 4,
         height: 8,
         width: "100%",
@@ -58,12 +60,18 @@ function MiniBar({ value, color, delay = 0 }) {
   );
 }
 
-export default function HealthCard({ health }) {
+export default function HealthCard({ health, variant }) {
   if (!health) return null;
   const gradeColor = GRADE_COLOR[health.grade] || "var(--text-3)";
+  /* "band": the editorial stats-band treatment (--primary-strong fill,
+     on-primary type) used on the dashboard grade card. */
+  const isBand = variant === "band";
 
   return (
-    <div className="health-card" data-testid="health-card">
+    <div
+      className={`health-card${isBand ? " health-card--band" : ""}`}
+      data-testid="health-card"
+    >
       {/* Glow backdrop */}
       <div
         className="health-card-glow"
@@ -95,7 +103,7 @@ export default function HealthCard({ health }) {
               cy="48"
               r="42"
               fill="none"
-              stroke="var(--border-s)"
+              stroke="var(--health-track, var(--border-s))"
               strokeWidth="4"
             />
             <circle
@@ -112,7 +120,14 @@ export default function HealthCard({ health }) {
             />
           </svg>
           <div className="health-grade-text">
-            <span className="health-grade-letter" style={{ color: gradeColor }}>
+            <span
+              className="health-grade-letter"
+              style={{
+                /* Band mode drops the semantic grade color for on-primary
+                   (the ring arc still carries the grade color). */
+                color: isBand ? "var(--text-on-primary)" : gradeColor,
+              }}
+            >
               {health.grade}
             </span>
             <span className="health-grade-score">{health.score}/100</span>

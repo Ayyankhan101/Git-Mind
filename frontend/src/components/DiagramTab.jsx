@@ -40,6 +40,7 @@ function DiagramShell({ sub, children }) {
             <GitBranch size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">02 — Architecture</div>
             <div className="tab-header-title">Architecture</div>
             <div className="tab-header-sub">{sub}</div>
           </div>

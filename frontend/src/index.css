@@ -417,9 +417,11 @@ h3,
   left: 0;
   top: 8px;
   bottom: 8px;
-  width: 2px;
-  border-radius: 0 2px 2px 0;
-  background: var(--accent);
+  /* 3px --primary left-edge indicator (upgraded from 2px accent):
+     reads as the active page marker against the primary-muted bg. */
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--primary);
 }
 .nav-item:disabled {
   opacity: 0.3;
@@ -1114,18 +1116,26 @@ h3,
 .meta-strip {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding: 8px 0;
   font-size: 12px;
   color: var(--text-3);
   border-bottom: 1px solid var(--border-s);
   margin-bottom: 16px;
+  /* Stars, dates and counts stay aligned as numerals. */
+  font-variant-numeric: tabular-nums;
 }
 .meta-strip a {
   color: var(--text-2);
+  /* Repo path in mono — the editorial meta-line treatment. */
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.01em;
 }
 .meta-sep {
   color: var(--border-m);
+  font-size: 11px;
+  line-height: 1;
 }
 
 /* ── Repo Drawer ──────────────────────────────────────────────── */
@@ -1391,6 +1401,18 @@ h3,
   font-weight: 600;
   color: var(--text-1);
 }
+/* Numeral eyebrow above every section title — the "01 — Palette"
+   pattern: mono, uppercase, wide-tracked, accent-tinted. Numbered in
+   the dashboard's canonical tab order (01 Summary … 11 Chat). */
+.tab-header-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 2px;
+}
 .tab-header-sub {
   font-size: var(--text-sm);
   color: var(--text-3);
@@ -1487,8 +1509,9 @@ h3,
   color: var(--success);
 }
 .stat-value {
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--text-1);
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -1553,15 +1576,17 @@ h3,
   justify-content: center;
 }
 .health-grade-letter {
-  font-size: 30px;
+  font-size: 34px;
   font-weight: 700;
   line-height: 1;
+  letter-spacing: -0.02em;
 }
 .health-grade-score {
   font-size: var(--text-xs);
   color: var(--text-3);
   letter-spacing: 0.06em;
   margin-top: 2px;
+  font-variant-numeric: tabular-nums;
 }
 .health-breakdown {
   flex: 1;
@@ -1580,6 +1605,35 @@ h3,
 }
 .health-bar-value {
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Health Card: editorial band variant ──────────────────────── */
+/* The dashboard grade card inherits the landing stats-band treatment:
+   full --primary-strong fill, on-primary type, tabular numerals.
+   --health-track retunes the ring + mini-bar tracks to on-primary.
+   Sits after the base rules so it wins at equal specificity. */
+.health-card--band {
+  background: var(--primary-strong);
+  border-color: color-mix(in srgb, var(--text-on-primary) 14%, transparent);
+  box-shadow: var(--shadow-md);
+  color: var(--text-on-primary);
+  --health-track: color-mix(in srgb, var(--text-on-primary) 18%, transparent);
+}
+.health-card--band:hover {
+  border-color: color-mix(in srgb, var(--text-on-primary) 28%, transparent);
+  box-shadow: var(--shadow-lg);
+}
+.health-card--band .health-grade-letter {
+  /* Editorial scale: the grade is the card's hero numeral. */
+  font-size: 42px;
+  font-weight: 800;
+}
+.health-card--band .health-grade-score {
+  color: color-mix(in srgb, var(--text-on-primary) 72%, transparent);
+}
+.health-card--band .health-bar-label {
+  color: color-mix(in srgb, var(--text-on-primary) 72%, transparent);
 }
 /* ── API Docs ─────────────────────────────────────────────────── */
 .endpoint {

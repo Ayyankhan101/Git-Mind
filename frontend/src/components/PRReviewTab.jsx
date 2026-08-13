@@ -777,6 +777,7 @@ export default function PRReviewTab({
             <GitPullRequest size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">09 — PR Review</div>
             <div className="tab-header-title">PR Review</div>
             <div className="tab-header-sub">
               AI-powered pull request analysis

@@ -236,6 +236,7 @@ export default function SolidityTab({
             <ShieldAlert size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">07 — Solidity</div>
             <div className="tab-header-title">Solidity Audit</div>
             <div className="tab-header-sub">
               {sorted.length} finding{sorted.length !== 1 ? "s" : ""}
