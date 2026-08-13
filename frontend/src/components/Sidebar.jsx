@@ -17,7 +17,7 @@ import {
   Bookmark,
   Lock,
   ExternalLink,
-} from "lucide-react";
+} from "../icons";
 import { fs } from "../typeScale";
 import AgentPipeline from "./AgentPipeline";
 import { LANG_COLOR } from "../constants";
@@ -82,17 +82,13 @@ const RepoCard = memo(function RepoCard({
           style={{ display: "flex", alignItems: "center", gap: 4 }}
         >
           {repo.private && (
-            <Lock
-              size={10}
-              strokeWidth={1.5}
-              style={{ color: "var(--text-3)", flexShrink: 0 }}
-            />
+            <Lock size={10} style={{ color: "var(--text-3)", flexShrink: 0 }} />
           )}
           {repo.name}
         </span>
         {repo.stars > 0 && (
           <span className="repo-stars">
-            <Star size={11} strokeWidth={1.5} />
+            <Star size={11} />
             {fmtStars(repo.stars)}
           </span>
         )}
@@ -105,7 +101,7 @@ const RepoCard = memo(function RepoCard({
             window.open(repo.url, "_blank", "noopener,noreferrer");
           }}
         >
-          <ExternalLink size={11} strokeWidth={1.5} />
+          <ExternalLink size={11} />
         </button>
       </div>
       {repo.description && <div className="repo-desc">{repo.description}</div>}
@@ -337,14 +333,7 @@ export default function Sidebar({
       </div>
 
       {error && (
-        <div
-          style={{
-            padding: "8px 14px",
-            fontSize: fs.sm,
-            color: "var(--danger)",
-            borderBottom: "1px solid var(--border)",
-          }}
-        >
+        <div className="sidebar-error">
           {error}
         </div>
       )}
@@ -367,12 +356,11 @@ export default function Sidebar({
                   gap: 6,
                 }}
               >
-                <Bookmark size={11} strokeWidth={1.5} />
+                <Bookmark size={11} />
                 SAVED VIEWS
               </span>
               <ChevronDown
                 size={12}
-                strokeWidth={1.5}
                 className="chevron"
                 style={{
                   transform: showSavedViews ? "none" : "rotate(-90deg)",
@@ -409,7 +397,7 @@ export default function Sidebar({
                       role="option"
                       aria-selected={savedView === v.id}
                     >
-                      <Filter size={12} strokeWidth={1.5} />
+                      <Filter size={12} />
                       <span className="label">{v.label}</span>
                       <span className="count">{count}</span>
                     </div>
@@ -433,7 +421,7 @@ export default function Sidebar({
               <span className="t-label" style={{ fontSize: fs.xs }}>
                 RECENT
               </span>
-              <ChevronDown size={12} strokeWidth={1.5} className="chevron" />
+              <ChevronDown size={12} className="chevron" />
             </button>
             <div className="sb-section-body">
               {history.map((h) => (
@@ -462,15 +450,11 @@ export default function Sidebar({
                         fontSize: fs.md,
                       }}
                     >
-                      <Clock
-                        size={11}
-                        strokeWidth={1.5}
-                        style={{ color: "var(--text-3)" }}
-                      />
+                      <Clock size={11} style={{ color: "var(--text-3)" }} />
                       {h.name}
                     </span>
                   </div>
-                  <div className="repo-meta" style={{ marginTop: 2 }}>
+                  <div className="repo-meta sidebar-history-meta">
                     {new Date(h.ts).toLocaleDateString()}
                   </div>
                 </div>
@@ -493,12 +477,12 @@ export default function Sidebar({
                   ? ` · ${filtered.length}${filtered.length !== repos.length ? `/${repos.length}` : ""}`
                   : ""}
               </span>
-              <ChevronDown size={12} strokeWidth={1.5} className="chevron" />
+              <ChevronDown size={12} className="chevron" />
             </button>
             <div className="sb-section-body">
               {repos.length > 4 && (
                 <div className="sb-filter">
-                  <Search size={12} strokeWidth={1.5} />
+                  <Search size={12} />
                   <input
                     ref={filterRef}
                     placeholder="Filter repos…"
@@ -580,8 +564,8 @@ export default function Sidebar({
 
         {/* Empty state */}
         {!loading && repos.length === 0 && history.length === 0 && (
-          <div className="empty" style={{ padding: "40px 16px" }}>
-            <FolderOpen size={18} strokeWidth={1.5} className="empty-icon" />
+          <div className="empty sidebar-empty">
+            <FolderOpen size={18} className="empty-icon" />
             <div className="empty-title" style={{ fontSize: fs.md }}>
               No repositories
             </div>
@@ -619,13 +603,7 @@ function RepoHoverPreview({ repo, anchorRect }) {
         className="name"
         style={{ display: "flex", alignItems: "center", gap: 6 }}
       >
-        {repo.private && (
-          <Lock
-            size={11}
-            strokeWidth={1.5}
-            style={{ color: "var(--text-3)" }}
-          />
-        )}
+        {repo.private && <Lock size={11} style={{ color: "var(--text-3)" }} />}
         {repo.full_name || repo.name}
         {repo.private && (
           <span
@@ -644,7 +622,7 @@ function RepoHoverPreview({ repo, anchorRect }) {
       {repo.description && <div className="desc">{repo.description}</div>}
       <div className="row-stats">
         <span>
-          <Star size={11} strokeWidth={1.5} /> {repo.stars || 0}
+          <Star size={11} /> {repo.stars || 0}
         </span>
         {repo.language && (
           <span>
@@ -659,7 +637,7 @@ function RepoHoverPreview({ repo, anchorRect }) {
         )}
         {(repo.pushed_at || repo.updated_at) && (
           <span>
-            <Clock size={11} strokeWidth={1.5} />
+            <Clock size={11} />
             {new Date(repo.pushed_at || repo.updated_at).toLocaleDateString(
               undefined,
               { month: "short", day: "numeric" },

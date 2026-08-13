@@ -5010,3 +5010,58 @@ button:disabled {
 .btn-text.primary:hover {
   color: var(--text-1);
 }
+
+/* ── Extracted Inline Style Classes ─────────────────────────────
+   These replace hardcoded style={{}} blocks so themes work correctly. */
+
+/* Error/warning banners */
+.error-banner-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  border: 1px solid;
+  margin-bottom: 8px;
+}
+
+.error-banner-inline--danger {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.error-banner-inline--warning {
+  border-color: var(--warning-border);
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+/* Sidebar error display */
+.sidebar-error {
+  padding: 8px 14px;
+  font-size: var(--fs-sm);
+  color: var(--danger);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Sidebar history card meta */
+.sidebar-history-meta {
+  margin-top: 2px;
+}
+
+/* Sidebar empty state */
+.sidebar-empty {
+  padding: 40px 16px;
+  text-align: center;
+}
+
+/* Button text primary color */
+.btn-text-primary {
+  color: var(--primary);
+  flex-shrink: 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
