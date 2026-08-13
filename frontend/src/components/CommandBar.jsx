@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useState } from "react";
+import React, { useRef, useCallback, useState, useEffect } from "react";
 import { Search, FolderOpen, Share2, Download, Check, Lock } from "../icons";
 import ThemeSwitcher from "./ThemeSwitcher";
 import { isValidGhToken } from "../api";
@@ -22,10 +22,31 @@ export default function CommandBar({
 }) {
   const tokenSaveTimer = useRef(null);
   const [tokenOpen, setTokenOpen] = useState(false);
+  const tokenPopRef = useRef(null);
   const debouncedTokenSave = useCallback((value) => {
     clearTimeout(tokenSaveTimer.current);
     tokenSaveTimer.current = setTimeout(() => tokenManager.set(value), 500);
   }, []);
+
+  /* Close the token popover on outside click (mousedown, like
+     ThemeSwitcher) or Escape. Enter inside the input also closes it. */
+  useEffect(() => {
+    if (!tokenOpen) return;
+    const onMouseDown = (e) => {
+      if (tokenPopRef.current && !tokenPopRef.current.contains(e.target)) {
+        setTokenOpen(false);
+      }
+    };
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setTokenOpen(false);
+    };
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [tokenOpen]);
   return (
     <div className="command-bar">
       <span className="cb-wordmark">GitMind</span>
@@ -60,7 +81,7 @@ export default function CommandBar({
         />
       </div>
 
-      <div className="token-popover-wrap">
+      <div className="token-popover-wrap" ref={tokenPopRef}>
         <button
           className="btn-icon"
           onClick={() => setTokenOpen((o) => !o)}
