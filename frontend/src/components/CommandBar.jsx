@@ -52,6 +52,7 @@ export default function CommandBar({
       <span className="cb-wordmark">GitMind</span>
 
       <div
+        className="cb-divider"
         style={{
           width: 1,
           height: 20,
@@ -143,7 +144,7 @@ export default function CommandBar({
         {reposLoading ? "Loading…" : "Load Repos"}
       </button>
 
-      <span style={{ flex: 1 }} />
+      <span className="cb-spacer" />
 
       {(isAnalyzing || analyzed) && (
         <span className={`cb-status ${statusClass}`} role="status">

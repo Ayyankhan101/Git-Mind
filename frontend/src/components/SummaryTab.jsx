@@ -445,15 +445,7 @@ export default function SummaryTab({
         </p>
       )}
       {/* Two-column grid: graph/bar (left) + summary (right) */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "24px",
-          width: "100%",
-          alignItems: "start",
-        }}
-      >
+      <div className="summary-grid">
         {/* Left Card — Findings & Metrics (graph/bar) */}
         <div className="summary-card">
           {/* FINDINGS BY SEVERITY */}

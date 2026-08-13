@@ -291,14 +291,7 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
       </div>
 
       {/* Stats row */}
-      <div
-        style={{
-          display: "flex",
-          gap: 10,
-          padding: "16px 28px",
-          flexWrap: "wrap",
-        }}
-      >
+      <div className="git-stats">
         <StatPill label="Commits" value={stats.total || 0} />
         <StatPill
           label="Poor msgs"

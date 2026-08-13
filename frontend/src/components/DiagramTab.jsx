@@ -269,10 +269,14 @@ export default function DiagramTab({
   }, [hoveredNode, setNodes, setEdges]);
 
   useEffect(() => {
-    if (nodes.length > 0 && reactFlowInstance.current) {
-      reactFlowInstance.current.fitView({ padding: 0.2 });
-    }
-  }, [nodes.length]);
+    if (!reactFlowInstance.current || nodes.length === 0) return;
+    // The node panel changes the canvas width on open/close, so re-fit
+    // once the canvas has re-measured after the layout shift.
+    const id = setTimeout(() => {
+      reactFlowInstance.current?.fitView({ padding: 0.2 });
+    }, 80);
+    return () => clearTimeout(id);
+  }, [nodes.length, selectedNode]);
 
   const onMove = useCallback((_event, viewport) => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -460,15 +464,11 @@ export default function DiagramTab({
             position: "relative",
           }}
         >
-          {/* Canvas Area Container */}
+          {/* Canvas Area Container — flex sibling of the node panel, so
+              opening the panel narrows the graph instead of overlaying it. */}
           <div
             className="diagram-canvas"
-            style={{
-              width: "100%",
-              height: "100%",
-              position: "relative",
-              boxShadow: "none",
-            }}
+            style={{ position: "relative", boxShadow: "none" }}
             ref={reactFlowWrapper}
           >
             <ReactFlow
@@ -534,11 +534,12 @@ export default function DiagramTab({
             />
           )}
 
-          {/* Centered Floating Control Dock */}
+          {/* Centered Floating Control Dock — shifts left of the node
+              panel when it opens so the controls stay reachable. */}
           <div
+            className={`diagram-dock${selectedNode ? " diagram-dock--panel" : ""}`}
             style={{
               position: "absolute",
-              right: 16,
               top: "50%",
               transform: "translateY(-50%)",
               display: "flex",

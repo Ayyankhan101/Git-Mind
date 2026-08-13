@@ -318,6 +318,13 @@ h3,
   max-width: 190px;
 }
 
+/* ── Command bar: flexible spacer ────────────────────────────── */
+/* Pushes the trailing actions right on desktop; on mobile the username
+   input claims the freed space instead (see the responsive block). */
+.cb-spacer {
+  flex: 1;
+}
+
 /* ── Command Bar: status ────────────────────────────────────── */
 .cb-status {
   display: inline-flex;
@@ -1435,7 +1442,7 @@ h3,
 
 /* ── Summary ──────────────────────────────────────────────────── */
 .summary {
-  padding: 0 0 32px;
+  padding: 0 0 40px;
   position: relative;
   overflow: visible;
   min-height: 100%;
@@ -1453,14 +1460,26 @@ h3,
   margin: 0 0 28px;
   max-width: 72ch;
 }
+/* Inside a card the lead paragraph is the block content — the card's
+   own padding owns the edge spacing, so drop the standalone margin. */
+.summary .summary-card p.lead {
+  margin: 0;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  width: 100%;
+  align-items: start;
+}
 .summary-card {
-  padding: 16px 20px;
+  padding: 20px 24px;
   background: var(--surface);
   border: 1px solid var(--border-s);
   border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
   box-shadow: var(--shadow-md), var(--inner-highlight);
 }
 
@@ -1468,8 +1487,8 @@ h3,
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin-bottom: 28px;
+  gap: 16px;
+  margin-bottom: 0;
 }
 .stat {
   display: flex;
@@ -1700,6 +1719,16 @@ h3,
 /* ── Severity Rows ────────────────────────────────────────────── */
 .row-list {
   padding: 8px 0;
+}
+/* Git Audit stats strip: the first body block, so it carries the same
+   bottom hairline as sev-filter / endpoint, and the stat pills use the
+   same gap scale as the Summary stat grid. */
+.git-stats {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--border-s);
 }
 .row {
   position: relative;
@@ -2814,11 +2843,12 @@ h3,
 }
 
 /* ── Node Panel ───────────────────────────────────────────────── */
+/* In normal flow next to the canvas (desktop) the panel pushes the
+   graph instead of covering it; on small screens it overlays again
+   (see the mobile override below). */
 .node-panel {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
+  position: relative;
+  flex-shrink: 0;
   width: 320px;
   max-width: 92vw;
   background: var(--surface);
@@ -3452,15 +3482,15 @@ h3,
 /* Filter/toolbar strip used between a tab-header and the row list
    (e.g. Git Audit section pills). Sticky like .tab-header so the
    filter stays reachable while scrolling; 28px gutter aligns with
-   the .row text column. */
+   the .row text column. Vertical padding matches the other body
+   blocks (sev-filter / endpoint / stats row all sit at 16px). */
 .sec-toolbar {
   position: sticky;
   top: 0;
   z-index: 5;
   display: flex;
   align-items: center;
-  padding: 12px 28px;
-  border-top: 1px solid var(--border-s);
+  padding: 16px 28px;
   background: var(--surface);
 }
 .sec-section {
@@ -3833,6 +3863,10 @@ h3,
   position: relative;
   width: 100%;
   height: 100%;
+  /* Flex sibling of .node-panel: the panel's width is reserved instead
+     of overlaying the graph. */
+  flex: 1 1 auto;
+  min-width: 0;
 }
 /* Blueprint registration crosshairs at the canvas corners. */
 .diagram-canvas::before,
@@ -3855,6 +3889,15 @@ h3,
   content: "+";
   bottom: 10px;
   right: 10px;
+}
+/* Floating zoom/recenter dock — default right edge, and shifted left
+   of the node panel (320px + 16px gutter) when a node is selected. */
+.diagram-dock {
+  right: 16px;
+  transition: right 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.diagram-dock--panel {
+  right: 336px;
 }
 .diagram-control-btn {
   display: flex;
@@ -4151,6 +4194,9 @@ h3,
   border: 1px solid var(--border-s);
   border-radius: var(--radius-md);
   font-size: 12px;
+  /* The watch bar is a separate block above the findings grid — keep it
+     off the cards below instead of sitting flush against them. */
+  margin-bottom: 20px;
 }
 .summary-watch-badge {
   display: inline-flex;
@@ -4703,18 +4749,33 @@ button:disabled {
     right: 0;
     height: 56px;
     flex-direction: row;
-    justify-content: space-around;
+    justify-content: flex-start;
     align-items: center;
     border-right: none;
     border-top: 1px solid var(--border-s);
     padding: 0 8px;
-    gap: 0;
+    gap: 4px;
     z-index: 50;
     display: flex;
     background: var(--surface);
+    /* 14 items x 44px > any phone width: scroll the rail instead of
+       clipping the last tabs off-screen. */
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .nav-rail::-webkit-scrollbar {
+    display: none;
   }
   .nav-rail:hover {
     width: 100%;
+  }
+  /* The desktop hover-expand must not fire on mobile — the rail is a
+     fixed bottom bar, and the 180px column would squash the content.
+     Same specificity as the base :has() rule so this wins on phones. */
+  .app:has(.nav-rail:hover):not(:has(> .lp)) {
+    grid-template-columns: 1fr;
   }
   .nav-divider {
     width: 1px;
@@ -4733,6 +4794,7 @@ button:disabled {
     height: 44px;
     padding: 0;
     gap: 0;
+    flex-shrink: 0;
   }
   .nav-item.active::before {
     display: none;
@@ -4762,27 +4824,38 @@ button:disabled {
     grid-row: 1;
     gap: 6px;
     padding: 0 10px;
+    /* Grid items stretch tracks to their min-content width by default;
+       with the full desktop control set that is ~500px, which pushes
+       .main (and every tab) off-screen. Allow the track to stay put. */
+    min-width: 0;
   }
   .cb-wordmark {
     display: none;
   }
+  .cb-divider {
+    display: none;
+  }
+  .cb-input {
+    min-width: 64px;
+  }
+  /* The desktop spacer pushes the trailing actions right; on mobile the
+     username input should claim the freed space instead. */
+  .cb-spacer {
+    flex: 0 0 8px;
+  }
   .command-bar .btn-ghost {
-    font-size: 11px;
-    padding: 6px 8px;
+    font-size: 0;
+    width: 32px;
+    padding: 6px;
+  }
+  .cb-status {
+    display: none;
   }
   .theme-btn span {
     display: none;
   }
   .theme-btn {
     padding: 6px 8px;
-  }
-  .cb-status {
-    font-size: 10px;
-    padding: 3px 8px;
-  }
-  .cb-status.done::before,
-  .cb-status.running::before {
-    display: none;
   }
   .stat-grid {
     grid-template-columns: 1fr;
@@ -4813,8 +4886,53 @@ button:disabled {
   .summary {
     padding: 16px !important;
   }
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
   .summary-card {
     padding: 12px 16px;
+  }
+  /* Row-based tabs: 100px + 1fr + auto with nowrap paths overflows a
+     phone. Shrink the severity column, let the middle column compress
+     below min-content, and ellipsize the trailing path/file. */
+  .row-line {
+    grid-template-columns: 84px minmax(0, 1fr) auto;
+    gap: 12px;
+  }
+  .row-line .row-path,
+  .row-line .row-file {
+    max-width: 88px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* Severity filter pills: wrap to a second line instead of pushing
+     past the viewport. */
+  .sev-filter {
+    flex-wrap: wrap;
+  }
+  /* PR Review input row: URL input on its own line, actions below. */
+  .pr-input {
+    flex-wrap: wrap;
+  }
+  .pr-input .pr-url {
+    flex: 1 1 100%;
+  }
+  /* Diagram: the node panel overlays the canvas on small screens (a
+     320px squeeze would leave only a sliver of graph); the dock returns
+     to the corner since the panel no longer reserves layout space. */
+  .diagram-canvas {
+    flex: none;
+  }
+  .node-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(320px, 92vw);
+  }
+  .diagram-dock--panel {
+    right: 16px;
   }
 }
 @media (max-width: 480px) {
