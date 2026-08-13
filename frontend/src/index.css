@@ -32,6 +32,12 @@
   /* Backward-compat aliases */
   --primary-dim: var(--primary-subtle);
   --primary-glow: var(--primary-muted);
+
+  /* Node glow bloom (used by ArchNode layer colors). Theme-aware:
+     derived from the semantic tokens so every theme gets a matching
+     soft halo instead of a hardcoded hue. */
+  --bloom-2: color-mix(in srgb, var(--success) 55%, transparent);
+  --bloom-3: color-mix(in srgb, var(--info) 55%, transparent);
   --surface-0: var(--bg);
   --surface-2: var(--elevated);
   --surface-3: var(--hover);
@@ -615,6 +621,9 @@ h3,
   border: 1px solid var(--border-s);
   border-radius: var(--radius-lg);
   padding: 16px;
+  /* 1px inner top highlight — machined edge, keeps dark cards from
+     reading as flat cutouts on the canvas. */
+  box-shadow: var(--inner-highlight);
   transition:
     border-color var(--duration-fast),
     box-shadow var(--duration-fast);
@@ -675,7 +684,8 @@ h3,
   border-right: none;
   transition:
     color var(--duration-fast),
-    border-color var(--duration-fast);
+    border-color var(--duration-fast),
+    background var(--duration-fast);
   position: relative;
 }
 .tab:hover {
@@ -707,6 +717,13 @@ h3,
   font-weight: 600;
   border-radius: var(--radius-full);
   border: 1px solid;
+  cursor: pointer;
+  transition:
+    box-shadow var(--duration-fast),
+    transform var(--duration-fast);
+}
+.sev-pill:hover {
+  transform: translateY(-1px);
 }
 .sev-pill.critical {
   color: var(--sev-critical);
@@ -757,6 +774,15 @@ h3,
   border: 1px solid var(--border-s);
   border-radius: var(--radius-md);
   border-left: 3px solid var(--border-m);
+  box-shadow: var(--inner-highlight);
+  transition:
+    border-left-color var(--duration-fast),
+    border-color var(--duration-fast),
+    box-shadow var(--duration-fast);
+}
+.finding-card:hover {
+  border-color: var(--border-m);
+  box-shadow: var(--shadow-sm), var(--inner-highlight);
 }
 .finding-card.critical {
   border-left-color: var(--sev-critical);
@@ -804,9 +830,14 @@ h3,
 }
 .chat-msg.user {
   align-self: flex-end;
-  background: var(--accent);
+  /* Same-hue depth gradient (accent → stronger) keeps the bubble on-brand
+     in every theme, echoing the CTA treatment without a second accent. */
+  background: linear-gradient(135deg, var(--accent), var(--primary-strong));
   color: var(--text-on-primary);
   border-bottom-right-radius: 4px;
+  box-shadow:
+    0 4px 14px var(--accent-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 .chat-msg.system,
 .chat-msg.assistant {
@@ -815,6 +846,7 @@ h3,
   border: 1px solid var(--border-s);
   color: var(--text-2);
   border-bottom-left-radius: 4px;
+  box-shadow: var(--shadow-sm), var(--inner-highlight);
 }
 .chat-input-bar {
   display: flex;
@@ -1332,7 +1364,7 @@ h3,
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-md), var(--inner-highlight);
 }
 
 /* ── Stat Grid ────────────────────────────────────────────────── */
@@ -1352,12 +1384,14 @@ h3,
   border-radius: var(--radius-lg);
   transition:
     border-color var(--duration-normal),
-    box-shadow var(--duration-normal);
-  box-shadow: var(--shadow-sm);
+    box-shadow var(--duration-normal),
+    transform var(--duration-normal) var(--ease-out);
+  box-shadow: var(--shadow-sm), var(--inner-highlight);
 }
 .stat:hover {
   border-color: var(--border-m);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-md), var(--inner-highlight);
+  transform: translateY(-1px);
 }
 .stat-icon-wrap {
   width: 36px;
@@ -1403,15 +1437,16 @@ h3,
   transition:
     border-color var(--duration-normal),
     box-shadow var(--duration-normal);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-md), var(--inner-highlight);
   max-width: 740px;
 }
 .health-card:hover {
   border-color: var(--border-m);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-lg), var(--inner-highlight);
 }
 .health-card-inner {
   position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 28px;
@@ -1542,7 +1577,9 @@ h3,
   padding: 16px 24px 16px 28px;
   border-bottom: 1px solid var(--border-s);
   cursor: pointer;
-  transition: background var(--duration-fast);
+  transition:
+    background var(--duration-fast),
+    box-shadow var(--duration-fast);
 }
 .row::before {
   content: "";
@@ -1568,6 +1605,22 @@ h3,
 }
 .row:hover {
   background: var(--surface-hover);
+}
+/* On hover the severity strip emits a soft, tone-matched glow. */
+.row:hover::before {
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+.row.critical:hover::before {
+  box-shadow: 0 0 12px var(--sev-critical);
+}
+.row.high:hover::before {
+  box-shadow: 0 0 12px var(--sev-high);
+}
+.row.medium:hover::before {
+  box-shadow: 0 0 12px var(--sev-medium);
+}
+.row.low:hover::before {
+  box-shadow: 0 0 12px var(--sev-low);
 }
 .row-line {
   display: grid;
@@ -1651,6 +1704,7 @@ h3,
   color: var(--text-2);
   display: grid;
   gap: 16px;
+  box-shadow: var(--inner-highlight);
   animation: fadeSlideUp 200ms ease-out;
 }
 .row-expand .label {
@@ -1773,7 +1827,7 @@ h3,
   flex-direction: column;
   gap: 18px;
   transition: border-color var(--duration-normal);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-sm), var(--inner-highlight);
 }
 .chart-card:hover {
   border-color: var(--border-m);
@@ -1846,8 +1900,16 @@ h3,
   text-align: center;
 }
 .empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg);
+  background: var(--accent-dim);
+  border: 1px solid var(--border-accent);
   color: var(--accent);
-  opacity: 0.4;
+  box-shadow: var(--inner-highlight);
 }
 .empty-title {
   color: var(--text-2);
@@ -1871,8 +1933,14 @@ h3,
 .sk-block,
 .sk-card {
   border-radius: var(--radius-md);
-  background: var(--elevated);
-  animation: pulse 1.5s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    var(--border-s) 25%,
+    var(--elevated) 50%,
+    var(--border-s) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
 }
 .sk-card {
   padding: 14px;
@@ -2032,7 +2100,7 @@ h3,
   background: var(--surface);
   border: 1px solid var(--border-s);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-lg), var(--inner-highlight);
   overflow: hidden;
   animation: scaleIn 200ms ease-out;
 }
@@ -2451,7 +2519,8 @@ h3,
   height: 52px;
   border-radius: var(--radius-lg);
   margin: 0 auto 20px;
-  background: var(--accent);
+  /* Same-hue depth gradient — stays on-brand in every theme. */
+  background: linear-gradient(135deg, var(--accent), var(--primary-strong));
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2459,6 +2528,9 @@ h3,
   font-family: var(--font-mono);
   font-weight: 700;
   font-size: 20px;
+  box-shadow:
+    0 6px 18px var(--accent-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 .onboarding h1 {
   font-size: 26px;
@@ -2975,9 +3047,6 @@ h3,
   display: inline-block;
 }
 
-.finding-card {
-  transition: border-left-color var(--duration-fast);
-}
 .row:focus-visible,
 .saved-view:focus-visible,
 .endpoint:focus-visible {
@@ -3012,6 +3081,7 @@ h3,
   font-size: 12px;
   color: var(--text-2);
   cursor: pointer;
+  box-shadow: var(--inner-highlight);
   transition:
     border-color var(--duration-fast),
     background var(--duration-fast),
@@ -3054,6 +3124,7 @@ h3,
   gap: 4px;
   padding: 2px 6px;
   background: var(--accent-dim);
+  border: 1px solid var(--border-accent);
   border-radius: var(--radius-sm);
   font-size: 10px;
   color: var(--accent);
@@ -3123,6 +3194,7 @@ h3,
   background: var(--surface);
   border: 1px solid var(--border-s);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm), var(--inner-highlight);
 }
 .pr-meta {
   display: flex;
@@ -3163,6 +3235,7 @@ h3,
   border: 1px solid var(--border-s);
   border-radius: var(--radius-md);
   margin-top: 12px;
+  box-shadow: var(--inner-highlight);
 }
 .pr-verdict.approve {
   border-color: var(--success);
@@ -3378,6 +3451,16 @@ h3,
   background: var(--success-bg);
   color: var(--success);
 }
+/* Live semantic state: a monitored repo that has been checked at least
+   once shows a soft pulsing indicator (real state, not decoration). */
+.mon-badge.active::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--success);
+  animation: pulse 1.6s ease-in-out infinite;
+}
 .mon-form {
   display: flex;
   flex-direction: column;
@@ -3387,6 +3470,7 @@ h3,
   background: var(--surface);
   border: 1px solid var(--border-s);
   border-radius: var(--radius-lg);
+  box-shadow: var(--inner-highlight);
 }
 .mon-form-row {
   display: flex;
@@ -3442,13 +3526,16 @@ h3,
   background: var(--surface);
   border: 1px solid var(--border-s);
   border-radius: var(--radius-lg);
+  box-shadow: var(--inner-highlight);
   transition:
     border-color var(--duration-fast),
-    box-shadow var(--duration-fast);
+    box-shadow var(--duration-fast),
+    transform var(--duration-fast) var(--ease-out);
 }
 .mon-row:hover {
   border-color: var(--border-m);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md), var(--inner-highlight);
+  transform: translateY(-1px);
 }
 .mon-row-main {
   flex: 1;
@@ -3589,6 +3676,15 @@ h3,
 .diagram-control-btn:active {
   transform: scale(0.95);
 }
+.diagram-control-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.diagram-control-btn:disabled:hover {
+  background: var(--surface);
+  color: var(--text-2);
+  transform: none;
+}
 .diagram-control-btn-active {
   background: var(--accent-dim) !important;
   color: var(--accent) !important;
@@ -3618,6 +3714,220 @@ h3,
   height: 200px;
   color: var(--text-3);
   font-size: 13px;
+}
+
+/* ── Architecture node cards ────────────────────────────────────
+   Real styles for .arch-node-card. The component previously relied
+   on Tailwind utilities (flex, px-4 py-3, truncate, rounded-xl,
+   backdrop-blur-xl, text-[12px]…) but index.css no longer imports
+   Tailwind, so none of those classes compile — the cards rendered
+   with no border, no padding, no flex layout. These rules restore
+   the intended machined-glass node look in plain CSS. */
+.arch-node-card {
+  position: relative;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-s);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  transition:
+    border-color var(--duration-normal),
+    box-shadow var(--duration-normal),
+    transform var(--duration-normal) var(--ease-out);
+  user-select: none;
+  cursor: pointer;
+  /* No overflow clipping: the border-radius already clips the card's own
+     background, and React Flow's source/target handles are deliberately
+     positioned half-outside the node (edge anchor points). Clipping here
+     cut those connection dots in half. */
+}
+
+.arch-node-card:hover {
+  transform: translateY(-1px);
+}
+
+.arch-node-body {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.arch-node-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.arch-node-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.arch-node-head-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.arch-node-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.arch-node-label {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arch-node-type {
+  font-size: 12px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.arch-node-meta {
+  font-size: 11px;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arch-node-endpoints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.arch-node-endpoint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  line-height: 1;
+  max-width: 100%;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.arch-node-endpoint-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.arch-node-endpoint-more {
+  font-size: 10px;
+  padding: 0 4px;
+  color: var(--text-3);
+}
+
+.arch-node-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.arch-node-imports {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.arch-node-imports-in {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.arch-node-imports-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.arch-node-apis {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+/* Node entrance + edge entrance animations (previously referenced
+   but never defined, so they silently no-op'd). */
+@keyframes nodeFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes edgeFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Animated-edge dash sweep. Mirrors @xyflow/react's built-in `dash`
+   keyframe (same stroke-dashoffset) so the sweep keeps the same
+   cadence even though we no longer compile Tailwind arbitrary
+   animation classes; kept identical so both defs stay interchangeable. */
+@keyframes dash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+.edge-dash-anim {
+  animation: dash 2s linear infinite;
+}
+
+/* Edge label pill (replaces dead Tailwind utilities) */
+.edge-label {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.025em;
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow: var(--shadow-md);
+  white-space: nowrap;
 }
 
 /* ── Summary Extras ──────────────────────────────────────────── */
@@ -4028,18 +4338,9 @@ h3,
 }
 
 /* ── Skeleton Shimmer Upgrade ─────────────────────────────────── */
-.sk-line,
-.sk-block,
-.sk-card {
-  background: linear-gradient(
-    90deg,
-    var(--border-s) 25%,
-    var(--elevated) 50%,
-    var(--border-s) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
-}
+/* (background + shimmer merged into the base .sk-line/.sk-block/.sk-card
+   rule so there is a single definition — the earlier pulse variant was dead
+   code the duplicate-selector audit flagged.) */
 
 /* ── Reading Progress Bar ─────────────────────────────────────── */
 .reading-progress {
@@ -4149,12 +4450,10 @@ button:disabled {
 }
 
 /* ── Tab Interactive States ──────────────────────────────────── */
-.tab {
-  cursor: pointer;
-  transition:
-    color var(--duration-fast),
-    background var(--duration-fast);
-}
+/* cursor + color/background transition merged into the base .tab rule.
+   Intentional: the merged transition now lists color, border-color AND
+   background, so .tab.active's border-bottom-color animates smoothly — the
+   old duplicate definition had dropped border-color from the transition. */
 .tab:hover {
   color: var(--text-1);
 }
@@ -4333,4 +4632,261 @@ button:disabled {
 .edge-stroke-glow {
   stroke: var(--info);
   stroke-opacity: 0.5;
+}
+
+/* ── Orphaned class styles (dead-class audit) ────────────────── */
+/* Classes referenced by components but never defined in CSS;      */
+/* restored so every className in src resolves to real styling.    */
+
+/* ── Sidebar: collapsible section headers & bodies ──────────── */
+.sb-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-2);
+  transition:
+    color var(--duration-fast),
+    background var(--duration-fast);
+}
+.sb-section-header:hover,
+.sb-section-header:focus-visible {
+  color: var(--text-1);
+  background: var(--hover);
+}
+.sb-section-header .chevron {
+  flex-shrink: 0;
+  color: var(--text-3);
+  transition: transform var(--duration-fast);
+}
+.sb-section.collapsed .sb-section-header .chevron {
+  transform: rotate(-90deg);
+}
+.sb-section-body {
+  min-height: 0;
+  overflow-y: auto;
+}
+.sb-section.collapsed .sb-section-body {
+  display: none;
+}
+.saved-views-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 10px 8px;
+}
+.repo-card-gh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-3);
+  cursor: pointer;
+  transition:
+    color var(--duration-fast),
+    background var(--duration-fast);
+}
+.repo-card-gh:hover,
+.repo-card-gh:focus-visible {
+  color: var(--text-1);
+  background: var(--hover);
+}
+.workspace-switcher {
+  position: relative;
+  min-width: 0;
+}
+.ws-meta {
+  font-size: 10px;
+  line-height: 1.3;
+  color: var(--text-3);
+}
+
+/* ── Agent pipeline: collapse toggle & mini summary ─────────── */
+.pipeline-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color var(--duration-fast),
+    background var(--duration-fast);
+}
+.pipeline-toggle:hover,
+.pipeline-toggle:focus-visible {
+  color: var(--text-1);
+  background: var(--hover);
+}
+.pipeline-mini-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  font-size: 11px;
+  color: var(--text-2);
+}
+.pipeline-mini-summary .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  flex-shrink: 0;
+}
+
+/* ── HealthCard: glow backdrop ───────────────────────────────── */
+.health-card-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.9;
+  z-index: 0;
+}
+
+/* ── Summary: floating 3D geometric shapes ───────────────────── */
+/* Decorative shapes animated by GSAP (rotationX/rotationY); the  */
+/* CSS below gives them real geometry so the animation is visible.*/
+.float-shapes-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  perspective: 900px;
+}
+.float-shape {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  transform-style: preserve-3d;
+  opacity: 0.55;
+}
+.float-shape-inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.float-face {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary) 16%, transparent),
+    color-mix(in srgb, var(--primary) 4%, transparent)
+  );
+  border: 1px solid color-mix(in srgb, var(--primary) 42%, transparent);
+  border-radius: 4px;
+  backface-visibility: hidden;
+}
+/* Octahedron: four diamond faces, 90° apart around X */
+.float-octahedron .float-face {
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  border-radius: 0;
+}
+.float-octahedron .float-face-1 {
+  transform: translateZ(22px) rotateX(0deg);
+}
+.float-octahedron .float-face-2 {
+  transform: translateZ(22px) rotateX(90deg);
+}
+.float-octahedron .float-face-3 {
+  transform: translateZ(22px) rotateX(180deg);
+}
+.float-octahedron .float-face-4 {
+  transform: translateZ(22px) rotateX(270deg);
+}
+/* Cube: six faces around the axes */
+.float-cube .float-face-front {
+  transform: translateZ(22px);
+}
+.float-cube .float-face-back {
+  transform: rotateY(180deg) translateZ(22px);
+}
+.float-cube .float-face-right {
+  transform: rotateY(90deg) translateZ(22px);
+}
+.float-cube .float-face-left {
+  transform: rotateY(-90deg) translateZ(22px);
+}
+.float-cube .float-face-top {
+  transform: rotateX(90deg) translateZ(22px);
+}
+.float-cube .float-face-bottom {
+  transform: rotateX(-90deg) translateZ(22px);
+}
+/* Ring: glowing torus, no faces */
+.float-ring .float-shape-inner {
+  border: 2px solid color-mix(in srgb, var(--info) 55%, transparent);
+  border-radius: 50%;
+  box-shadow:
+    0 0 20px color-mix(in srgb, var(--info) 30%, transparent),
+    inset 0 0 12px color-mix(in srgb, var(--info) 20%, transparent);
+}
+/* Pyramid: square base + four triangular sides */
+.float-pyramid .float-face {
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  border-radius: 0;
+}
+.float-pyramid .float-pyr-base {
+  clip-path: none;
+  transform: rotateX(90deg) translateZ(22px);
+}
+.float-pyramid .float-pyr-side-1 {
+  transform: translateZ(22px) rotateX(52deg);
+}
+.float-pyramid .float-pyr-side-2 {
+  transform: translateZ(22px) rotateY(90deg) rotateX(52deg);
+}
+.float-pyramid .float-pyr-side-3 {
+  transform: translateZ(22px) rotateY(180deg) rotateX(52deg);
+}
+.float-pyramid .float-pyr-side-4 {
+  transform: translateZ(22px) rotateY(270deg) rotateX(52deg);
+}
+/* Keep summary content above the floating decoration */
+.summary > *:not(.float-shapes-container) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Summary: stat trend color modifiers ─────────────────────── */
+.stat-trend--danger {
+  color: var(--danger);
+}
+.stat-trend--ok {
+  color: var(--success);
+}
+
+/* ── Monitoring: tab root ────────────────────────────────────── */
+.monitor-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Security: primary text button ───────────────────────────── */
+.btn-text.primary {
+  color: var(--primary);
+}
+.btn-text.primary:hover {
+  color: var(--text-1);
 }

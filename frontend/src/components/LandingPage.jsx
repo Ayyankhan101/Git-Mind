@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Search,
   ArrowRight,
-  ChevronDown,
   Zap,
   FileCode2,
   Lock,
@@ -14,60 +13,76 @@ import {
   Gauge,
   BarChart3,
   ShieldCheck,
+  CheckCircle2,
+  FileDown,
+  ShieldAlert,
 } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import "./LandingPage.css";
+import HealthCard from "./HealthCard";
 
 gsap.registerPlugin(ScrollTrigger);
 
 /* ── Data ─────────────────────────────────────────────────────── */
+/* `span` drives the bento rhythm: lg tiles span 4 of 6 columns, sm tiles
+   span 2. Order is the 4-row layout — never a 3-equal-columns grid. */
 const FEATURES = [
   {
     Icon: Zap,
     title: "6 AI Agents in Parallel",
     desc: "Architecture mapper, API surface analyzer, security auditor, dependency tracker, code quality scorer, and documentation reviewer — all running simultaneously.",
+    span: "lg",
+    visual: "agents",
   },
   {
     Icon: Shield,
     title: "Security & CVE Scanning",
     desc: "Automatic CVE matching against every dependency. Exploit scenario generation, CVSS scoring, and one-click crisis simulation.",
+    span: "sm",
   },
   {
     Icon: Layers,
     title: "Architecture Visualization",
     desc: "Auto-generated dependency graphs, module boundaries, and call chains. Understand data flow at a glance.",
+    span: "sm",
   },
   {
     Icon: FileCode2,
     title: "Deep Code Understanding",
     desc: "Goes beyond syntax. Understands business logic, design patterns, architectural decisions, and tech debt hotspots.",
+    span: "sm",
   },
   {
     Icon: Globe,
     title: "GitHub URL Analysis",
     desc: "Paste any public GitHub URL. GitMind clones, parses, and produces a senior-engineer-level report in under 60 seconds.",
+    span: "sm",
   },
   {
     Icon: ShieldCheck,
     title: "Zero Setup Required",
     desc: "No config files, no SDK, no boilerplate. Point at a repo and get results. Works with any language or framework.",
+    span: "sm",
   },
   {
     Icon: BrainCircuit,
     title: "AI-Powered Insights",
     desc: "Reasons about your code like a senior engineer — suggesting refactors, flagging anti-patterns, predicting failure points.",
+    span: "lg",
   },
   {
     Icon: Workflow,
     title: "Dependency Risk Mapping",
     desc: "Maps the full dependency tree and highlights vulnerable, outdated, or abandoned packages.",
+    span: "sm",
   },
   {
     Icon: Gauge,
     title: "Performance Profiling",
     desc: "Identifies hot paths, N+1 queries, unnecessary re-renders, and memory leaks ranked by impact.",
+    span: "lg",
   },
 ];
 
@@ -76,6 +91,79 @@ const STATS = [
   { value: "<60s", label: "Full Analysis", Icon: BarChart3 },
   { value: "30+", label: "Languages", Icon: Globe },
   { value: "0", label: "Config Required", Icon: Lock },
+];
+
+/* The 30+ language marquee strip (one marquee per page, real content). */
+const LANGUAGES = [
+  "JavaScript",
+  "TypeScript",
+  "Python",
+  "Rust",
+  "Go",
+  "Java",
+  "C++",
+  "C#",
+  "Ruby",
+  "PHP",
+  "Swift",
+  "Kotlin",
+  "Solidity",
+  "SQL",
+  "HTML/CSS",
+  "Bash",
+  "Dockerfile",
+  "YAML",
+  "JSON",
+  "GraphQL",
+  "Terraform",
+  "Scala",
+  "Elixir",
+  "Zig",
+  "Haskell",
+  "R",
+  "Lua",
+  "Dart",
+  "Objective-C",
+  "Assembly",
+];
+
+/* Sample report data — rendered through the REAL HealthCard component
+   and the dashboard's finding-card classes, explicitly labeled as
+   sample output in the panel header. */
+const SAMPLE_HEALTH = {
+  grade: "A",
+  score: 92,
+  breakdown: {
+    security: 88,
+    documentation: 94,
+    api_coverage: 91,
+    dependency_freshness: 96,
+    code_quality: 89,
+  },
+};
+
+const REPORT_STATS = [
+  { value: "3", label: "Findings", Icon: ShieldAlert },
+  { value: "48", label: "Endpoints", Icon: Globe },
+  { value: "214", label: "Files", Icon: FileCode2 },
+];
+
+const REPORT_FINDINGS = [
+  {
+    sev: "critical",
+    title: "Dependency with critical CVE in production path",
+    path: "requirements.txt:14",
+  },
+  {
+    sev: "high",
+    title: "Hardcoded secret in version-controlled file",
+    path: "src/config.py:31",
+  },
+  {
+    sev: "medium",
+    title: "Broad CORS policy on all API routes",
+    path: "src/main.py:88",
+  },
 ];
 
 /* ── Floating Particles ──────────────────────────────────────── */
@@ -163,20 +251,42 @@ function useScrollReveal(threshold = 0.15) {
   return ref;
 }
 
-/* ── Feature Card ────────────────────────────────────────────── */
-function FeatureCard({ Icon, title, desc, delay }) {
+/* ── Bento Feature Card ──────────────────────────────────────── */
+function FeatureCard({ Icon, title, desc, span, children, delay }) {
   const ref = useScrollReveal();
   return (
     <div
       ref={ref}
-      className="lp-feature-card"
-      style={{ transitionDelay: `${delay}s` }}
+      className={`lp-feature-card lp-feature-card--${span}`}
+      style={{ "--reveal-delay": `${delay}s` }}
     >
       <div className="lp-feature-icon">
-        <Icon size={20} />
+        <Icon size={span === "lg" ? 22 : 20} />
       </div>
       <h3 className="lp-feature-title">{title}</h3>
       <p className="lp-feature-desc">{desc}</p>
+      {children}
+    </div>
+  );
+}
+
+/* ── Mini agent pipeline (flagship tile) ─────────────────────── */
+/* Decorative echo of the hero radar: six agents sweeping in
+   parallel, animated via transform/opacity only. */
+function AgentPipeline() {
+  const agents = ["SCAN", "SEC", "CVE", "ARCH", "DOCS", "GIT"];
+  return (
+    <div className="lp-bento-agents" aria-hidden="true">
+      {agents.map((code, i) => (
+        <span
+          key={code}
+          className="lp-bento-agent"
+          style={{ animationDelay: `${i * 0.18}s` }}
+        >
+          <i />
+          {code}
+        </span>
+      ))}
     </div>
   );
 }
@@ -188,7 +298,7 @@ function StatItem({ value, label, Icon, delay }) {
     <div
       ref={ref}
       className="lp-stat-item"
-      style={{ transitionDelay: `${delay}s` }}
+      style={{ "--reveal-delay": `${delay}s` }}
     >
       <div className="lp-stat-icon">
         <Icon size={20} />
@@ -206,12 +316,86 @@ function HowStep({ num, title, desc, delay }) {
     <div
       ref={ref}
       className="lp-how-step"
-      style={{ transitionDelay: `${delay}s` }}
+      style={{ "--reveal-delay": `${delay}s` }}
     >
       <div className="lp-how-step-num">{num}</div>
       <h3 className="lp-how-step-title">{title}</h3>
       <p className="lp-how-step-desc">{desc}</p>
     </div>
+  );
+}
+
+/* ── Report Preview ──────────────────────────────────────────── */
+/* A real component preview: the actual HealthCard component plus
+   finding rows mirroring the product's Summary tab, filled with
+   explicitly-labeled sample data. */
+function ReportPreview() {
+  const copyRef = useScrollReveal();
+  const panelRef = useScrollReveal();
+  return (
+    <section className="lp-report">
+      <GradientOrb className="lp-orb-6" />
+      <div className="lp-section-inner lp-report-grid">
+        <div ref={copyRef} className="lp-report-copy">
+          <span className="lp-section-label">The report</span>
+          <h2 className="lp-section-title">
+            Every finding, ranked and explained
+          </h2>
+          <p className="lp-report-lead">
+            GitMind turns any repository into a senior engineer's write-up:
+            findings ranked by severity, CVEs matched against every dependency,
+            and a health score you can export.
+          </p>
+          <ul className="lp-report-points">
+            <li>
+              <CheckCircle2 size={15} />
+              Findings ranked by severity, with fix suggestions
+            </li>
+            <li>
+              <ShieldAlert size={15} />
+              CVE matches on every dependency
+            </li>
+            <li>
+              <FileDown size={15} />
+              One-click PDF report export
+            </li>
+          </ul>
+        </div>
+
+        <div
+          ref={panelRef}
+          className="lp-report-panel"
+          style={{ "--reveal-delay": "0.12s" }}
+        >
+          <div className="lp-report-panel-head">
+            <span className="lp-report-repo">facebook/react</span>
+            <span className="lp-report-tag">Sample output</span>
+          </div>
+          <HealthCard health={SAMPLE_HEALTH} />
+          <div className="lp-report-stats">
+            {REPORT_STATS.map(({ value, label, Icon }) => (
+              <div key={label} className="lp-report-stat">
+                <span className="lp-report-stat-icon">
+                  <Icon size={14} />
+                </span>
+                <span className="lp-report-stat-value">{value}</span>
+                <span className="lp-report-stat-label">{label}</span>
+              </div>
+            ))}
+          </div>
+          <div className="lp-report-findings">
+            {REPORT_FINDINGS.map((f) => (
+              <div key={f.title} className={`finding-card ${f.sev}`}>
+                <div>
+                  <div className="finding-title">{f.title}</div>
+                  <div className="finding-path">{f.path}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -243,6 +427,7 @@ function HeroForm({ onLoad, onAnalyzeUrl, inputRef }) {
           <input
             ref={inputRef}
             className="lp-hero-input"
+            name="github-repo"
             placeholder="GitHub username or repo URL"
             aria-label="GitHub username or repository URL"
             autoComplete="off"
@@ -392,8 +577,20 @@ function HeroPreview() {
 
 /* ── Main Landing Page ───────────────────────────────────────── */
 export default function LandingPage({ onLoad, onAnalyzeUrl }) {
-  const [scrollY, setScrollY] = useState(0);
   const [activeSection, setActiveSection] = useState("");
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  /* Respect prefers-reduced-motion: the marquee renders a single
+     (non-duplicated) copy, so the wrapped static list never repeats
+     every language twice. */
+  useEffect(() => {
+    if (!window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mq.matches);
+    const onChange = (e) => setReducedMotion(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
   const heroInputRef = useRef(null);
   const heroRef = useRef(null);
   const featuresRef = useRef(null);
@@ -483,14 +680,6 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
     });
 
     return () => ctx.revert();
-  }, []);
-
-  /* Scroll position tracking — the landing page scrolls with the window */
-  useEffect(() => {
-    const onScroll = () => setScrollY(window.scrollY);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   /* Nav active section observer */
@@ -583,12 +772,6 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
           />
           <HeroPreview />
         </div>
-        <div
-          className="lp-scroll-hint"
-          style={{ opacity: Math.max(0, 1 - scrollY * 0.005) }}
-        >
-          <ChevronDown size={20} />
-        </div>
       </section>
 
       {/* ── Features ─────────────────────────────────────────── */}
@@ -608,14 +791,17 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
             </div>
           </div>
           <div className="lp-features-grid">
-            {FEATURES.map(({ Icon, title, desc }, i) => (
+            {FEATURES.map(({ Icon, title, desc, span, visual }, i) => (
               <FeatureCard
                 key={title}
                 Icon={Icon}
                 title={title}
                 desc={desc}
+                span={span}
                 delay={i * 0.06}
-              />
+              >
+                {visual === "agents" && <AgentPipeline />}
+              </FeatureCard>
             ))}
           </div>
         </div>
@@ -638,13 +824,29 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
         </div>
       </section>
 
+      {/* ── Languages marquee ─────────────────────────────────── */}
+      {/* The track duplicates the list only for the seamless loop.
+         Decorative (aria-hidden): "30+ Languages" is already surfaced
+         in the stats section, and reduced-motion users get one copy. */}
+      <section className="lp-langs">
+        <div className="lp-langs-track" aria-hidden="true">
+          {(reducedMotion ? LANGUAGES : [...LANGUAGES, ...LANGUAGES]).map(
+            (lang, i) => (
+              <span key={`${lang}-${i}`} className="lp-langs-item">
+                <span className="lp-langs-sep" aria-hidden="true" />
+                {lang}
+              </span>
+            ),
+          )}
+        </div>
+      </section>
+
       {/* ── How It Works ─────────────────────────────────────── */}
       <section id="how-it-works" className="lp-how" ref={howRef}>
         <GradientOrb className="lp-orb-4" />
         <div className="lp-section-inner">
           <div className="lp-section-header">
             <div>
-              <span className="lp-section-label">How It Works</span>
               <h2 className="lp-section-title">Three steps to insight</h2>
               <p className="lp-section-sub">
                 No configuration. No setup. Just paste and go.
@@ -673,6 +875,9 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
           </div>
         </div>
       </section>
+
+      {/* ── Report Preview ───────────────────────────────────── */}
+      <ReportPreview />
 
       {/* ── CTA ──────────────────────────────────────────────── */}
       <section className="lp-cta" ref={ctaRef}>

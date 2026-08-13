@@ -17,6 +17,9 @@
   min-height: 100dvh;
   width: 100%;
   background: var(--bg);
+  /* Fixed film-grain overlay: breaks digital flatness without any
+     scrolling-container repaint cost (fixed + pointer-events-none). */
+  position: relative;
   /* clip (not hidden): overflow-x:hidden would make .lp a scroll
      container, which — combined with Lenis/ScrollTrigger targeting the
      window — froze scrolling and hid below-fold sections. Requires
@@ -29,6 +32,22 @@
      clipped their content with overflow:hidden — hiding the whole
      features/stats/how sections. */
   flex: 0 0 auto;
+}
+
+/* ── Film Grain (fixed, pointer-events-none) ─────────────────── */
+.lp::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.02;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+[data-theme="daylight"] .lp::before {
+  opacity: 0.03;
 }
 
 /* ── Particles Canvas ────────────────────────────────────────── */
@@ -238,7 +257,9 @@
   justify-content: center;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 100px 32px 80px;
+  /* Top padding stays within the pt-24 cap so the hero content sits
+     high in the viewport instead of floating halfway down. */
+  padding: 88px 32px 72px;
   overflow: hidden;
 }
 
@@ -273,7 +294,7 @@
   font-size: clamp(36px, 6vw, 60px);
   font-weight: 700;
   line-height: 1.08;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.04em;
   color: var(--text-1);
   margin: 0;
 }
@@ -811,26 +832,6 @@
   color: var(--text-2);
 }
 
-.lp-scroll-hint {
-  position: absolute;
-  bottom: 32px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: var(--text-3);
-  animation: bounce 2s ease-in-out infinite;
-  z-index: 2;
-}
-
-@keyframes bounce {
-  0%,
-  100% {
-    transform: translateX(-50%) translateY(0);
-  }
-  50% {
-    transform: translateX(-50%) translateY(8px);
-  }
-}
-
 @keyframes fadeSlideUp {
   from {
     opacity: 0;
@@ -908,36 +909,69 @@
   pointer-events: none;
 }
 
+/* ── Bento grid: 6 columns, lg tiles span 4, sm tiles span 2. The
+   row rhythm is 4+2 / 2+2+2 / 2+4 / 2+4 — never three equal cards. */
 .lp-features-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 16px;
   position: relative;
   z-index: 2;
 }
 
 .lp-feature-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
   padding: 28px 24px;
   background: var(--lp-glass-bg);
   border: 1px solid var(--lp-glass-border);
   border-radius: var(--radius-lg);
+  /* The reveal delay lives ONLY on the opacity/transform pair via
+     --reveal-delay, so hover micro-interactions stay instant. */
   transition:
     border-color var(--duration-normal),
     box-shadow var(--duration-normal),
-    opacity 0.5s ease-out,
-    transform 0.5s ease-out;
+    opacity 0.5s ease-out var(--reveal-delay, 0s),
+    transform 0.5s ease-out var(--reveal-delay, 0s);
   opacity: 0;
   transform: translateY(16px);
+}
+
+.lp-feature-card:hover {
+  transition-delay: 0s;
+}
+
+.lp-feature-card--lg {
+  grid-column: span 4;
+  padding: 32px;
+  /* Tinted radial wash gives the hero tiles real surface variation
+     (bento diversity) while staying inside the single blue accent. */
+  background:
+    radial-gradient(
+      130% 130% at 100% 0%,
+      rgba(59, 130, 246, 0.1) 0%,
+      transparent 55%
+    ),
+    var(--lp-glass-bg);
+}
+
+.lp-feature-card--sm {
+  grid-column: span 2;
+}
+
+.lp-feature-card--lg .lp-feature-title {
+  font-size: 17px;
+}
+
+.lp-feature-card--lg .lp-feature-desc {
+  max-width: 52ch;
 }
 
 .lp-feature-card.lp-visible {
   opacity: 1;
   transform: translateY(0);
-  transition:
-    opacity 0.5s ease-out,
-    transform 0.5s ease-out,
-    border-color var(--duration-normal),
-    box-shadow var(--duration-normal);
 }
 
 .lp-feature-card:hover {
@@ -957,8 +991,53 @@
   border-radius: var(--radius-md);
   background: var(--accent-dim);
   color: var(--accent);
-  margin-bottom: 16px;
+  margin-bottom: 10px;
   transition: transform var(--duration-fast);
+}
+
+/* ── Mini agent pipeline (flagship tile) ─────────────────────── */
+.lp-bento-agents {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.lp-bento-agent {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--accent-dim);
+  border: 1px solid var(--border-accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-2);
+  animation: lpAgentPulse 2.4s ease-in-out infinite;
+}
+
+.lp-bento-agent i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+@keyframes lpAgentPulse {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-1px);
+  }
 }
 
 .lp-feature-card:hover .lp-feature-icon {
@@ -1001,14 +1080,14 @@
   border: 1px solid var(--lp-glass-border);
   opacity: 0;
   transform: translateY(16px);
+  transition:
+    opacity 0.5s ease-out var(--reveal-delay, 0s),
+    transform 0.5s ease-out var(--reveal-delay, 0s);
 }
 
 .lp-stat-item.lp-visible {
   opacity: 1;
   transform: translateY(0);
-  transition:
-    opacity 0.5s ease-out,
-    transform 0.5s ease-out;
 }
 
 .lp-stat-icon {
@@ -1028,6 +1107,7 @@
   font-weight: 700;
   color: var(--text-1);
   letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
   margin-bottom: 4px;
 }
 
@@ -1078,25 +1158,35 @@
   border: 1px solid var(--lp-glass-border);
   opacity: 0;
   transform: translateY(16px);
+  transition:
+    border-color var(--duration-normal),
+    opacity 0.5s ease-out var(--reveal-delay, 0s),
+    transform 0.5s ease-out var(--reveal-delay, 0s);
 }
 
 .lp-how-step.lp-visible {
   opacity: 1;
   transform: translateY(0);
-  transition:
-    opacity 0.5s ease-out,
-    transform 0.5s ease-out,
-    border-color var(--duration-normal);
 }
 
 .lp-how-step:hover {
   border-color: var(--lp-glass-border-bright);
   transform: translateY(-2px);
+  transition-delay: 0s;
 }
 
 .lp-how-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--radius-full);
+  background: var(--accent-dim);
+  border: 1px solid var(--border-accent);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--accent);
   letter-spacing: 0.06em;
@@ -1115,6 +1205,298 @@
   line-height: 1.5;
   color: var(--text-2);
   margin: 0;
+}
+
+/* ── Report Preview ──────────────────────────────────────────── */
+/* A real component preview: the actual HealthCard + finding rows
+   rendered inside a machined app window, labeled as sample output. */
+.lp-report {
+  padding: 100px 0;
+  border-top: 1px solid var(--lp-glass-border);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  z-index: 2;
+}
+
+.lp-report::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(5, 5, 16, 0.3) 20%,
+    rgba(5, 5, 16, 0.4) 50%,
+    rgba(5, 5, 16, 0.3) 80%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.lp-orb-6 {
+  width: 420px;
+  height: 420px;
+  top: 30%;
+  right: -140px;
+  background: radial-gradient(
+    circle,
+    rgba(59, 130, 246, 0.12) 0%,
+    transparent 70%
+  );
+  animation: orbFloat1 15s ease-in-out infinite reverse;
+}
+
+.lp-report-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 48px;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+
+.lp-report-copy {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.5s ease-out var(--reveal-delay, 0s),
+    transform 0.5s ease-out var(--reveal-delay, 0s);
+}
+
+.lp-report-copy.lp-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.lp-report-lead {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-2);
+  margin: 0 0 24px;
+  max-width: 46ch;
+}
+
+.lp-report-points {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.lp-report-points li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.lp-report-points svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* Machined app window framing the live HealthCard + findings */
+.lp-report-panel {
+  position: relative;
+  border-radius: var(--radius-lg);
+  background: var(--surface-0);
+  border: 1px solid var(--lp-glass-border-bright);
+  padding: 20px;
+  /* The 1px dark ring deepens the window edge on dark themes; the
+     daylight override below retunes it for light backgrounds. */
+  box-shadow:
+    var(--shadow-lg),
+    var(--inner-highlight),
+    0 0 0 1px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.5s ease-out var(--reveal-delay, 0s),
+    transform 0.5s ease-out var(--reveal-delay, 0s);
+}
+
+.lp-report-panel.lp-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.lp-report-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 2px 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border-s);
+}
+
+.lp-report-repo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.lp-report-repo::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.lp-report-tag {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--lp-glass-border);
+  background: var(--surface-1);
+  white-space: nowrap;
+}
+
+/* The live HealthCard adapts to the panel width */
+.lp-report-panel .health-card {
+  max-width: none;
+  margin-bottom: 14px;
+}
+
+.lp-report-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.lp-report-stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--surface-1);
+  border: 1px solid var(--border-s);
+  box-shadow: var(--inner-highlight);
+  min-width: 0;
+}
+
+.lp-report-stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.lp-report-stat-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.lp-report-stat-label {
+  font-size: 11px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lp-report-findings {
+  display: grid;
+  gap: 8px;
+}
+
+/* Reset the shared finding-card margin inside the stacked list */
+.lp-report-findings .finding-card {
+  margin: 0;
+}
+
+.lp-langs {
+  position: relative;
+  z-index: 2;
+  padding: 30px 0;
+  overflow: hidden;
+  border-top: 1px solid var(--lp-glass-border);
+  border-bottom: 1px solid var(--lp-glass-border);
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(5, 5, 16, 0.35) 50%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
+}
+
+.lp-langs-track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  animation: lpMarquee 42s linear infinite;
+  will-change: transform;
+}
+
+/* The track holds the language list twice; a -50% translation loops
+   seamlessly. Transform-only, compositor-friendly. */
+@keyframes lpMarquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.lp-langs-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding-right: 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  /* text-2 clears WCAG AA at 12px on the near-black canvas */
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.lp-langs-sep {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.5;
 }
 
 /* ── CTA ─────────────────────────────────────────────────────── */
@@ -1247,8 +1629,16 @@
     max-width: 460px;
   }
 
+  /* Bento collapses to 2-up: lg tiles become full-width rows, sm tiles
+     pair up — no orphaned spans at tablet width. */
   .lp-features-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .lp-feature-card--lg {
+    grid-column: span 2;
+  }
+  .lp-feature-card--sm {
+    grid-column: span 1;
   }
 
   .lp-stats-grid {
@@ -1259,6 +1649,15 @@
   .lp-how-steps {
     grid-template-columns: 1fr;
     gap: 24px;
+  }
+
+  /* Report preview stacks: copy above the live panel */
+  .lp-report-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .lp-report {
+    padding: 64px 0;
   }
 
   .lp-nav-links {
@@ -1324,6 +1723,10 @@
   .lp-features-grid {
     grid-template-columns: 1fr;
   }
+  .lp-feature-card--lg,
+  .lp-feature-card--sm {
+    grid-column: span 1;
+  }
 
   .lp-stats-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1336,6 +1739,15 @@
 
   .lp-stat-value {
     font-size: 24px;
+  }
+
+  /* Report preview: stats stack, panel padding tightens */
+  .lp-report-stats {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .lp-report-panel {
+    padding: 14px;
   }
 
   .lp-section-inner {
@@ -1352,7 +1764,8 @@
   .lp-orb-2,
   .lp-orb-3,
   .lp-orb-4,
-  .lp-orb-5 {
+  .lp-orb-5,
+  .lp-orb-6 {
     display: none;
   }
 
@@ -1362,11 +1775,6 @@
     top: -60px;
     right: -120px;
     opacity: 0.85;
-  }
-
-  /* The scroll hint overlaps the stacked form on small screens */
-  .lp-scroll-hint {
-    display: none;
   }
 } /* Touch-first input sizing: >= 16px prevents iOS auto-zoom on focus.
      Covers portrait phones (<480), landscape phones, and tablets up to
@@ -1406,10 +1814,6 @@
   .lp-hero-hint {
     display: none;
   }
-
-  .lp-scroll-hint {
-    display: none;
-  }
 }
 
 /* ── Daylight (light mode) overrides ────────────────────────── */
@@ -1435,8 +1839,25 @@
 }
 
 /* Soften the dark section overlays on light backgrounds */
+[data-theme="daylight"] .lp-report-panel {
+  box-shadow:
+    var(--shadow-lg),
+    var(--inner-highlight),
+    0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="daylight"] .lp-langs {
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(15, 23, 42, 0.04) 50%,
+    transparent
+  );
+}
+
 [data-theme="daylight"] .lp-features::before,
-[data-theme="daylight"] .lp-how::before {
+[data-theme="daylight"] .lp-how::before,
+[data-theme="daylight"] .lp-report::before {
   background: linear-gradient(
     180deg,
     transparent 0%,
@@ -1455,12 +1876,27 @@
 /* ── Reduced Motion ──────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .lp-orb,
-  .lp-scroll-hint,
   .lp-preview {
     animation: none;
   }
+  /* Marquee collapses to a static wrapped list under reduced motion */
+  .lp-langs-track {
+    animation: none;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+  .lp-langs-item {
+    padding-right: 0;
+  }
+  .lp-bento-agent {
+    animation: none;
+    opacity: 1;
+  }
   .lp-feature-card,
   .lp-how-step,
+  .lp-report-copy,
+  .lp-report-panel,
   .lp-badge {
     animation: none;
     opacity: 1;
