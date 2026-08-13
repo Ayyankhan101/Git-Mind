@@ -419,6 +419,26 @@
   transform: translateY(-1px);
 }
 
+.lp-hero-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.lp-hero-btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 @keyframes fadeSlideUp {
   from {
     opacity: 0;
@@ -1176,12 +1196,29 @@
 
   .lp-stats-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
+    gap: 0;
+  }
+
+  .lp-stat-item:nth-child(2) {
+    border-right: none;
+  }
+
+  .lp-stat-item:nth-child(1),
+  .lp-stat-item:nth-child(2) {
+    border-bottom: 1px solid var(--lp-glass-border);
+  }
+
+  .lp-stat-value {
+    font-size: 32px;
   }
 
   .lp-how-steps {
     grid-template-columns: 1fr;
     gap: 24px;
+  }
+
+  .lp-how-steps::before {
+    display: none;
   }
 
   /* Report preview stacks: copy above the live panel */

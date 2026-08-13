@@ -266,14 +266,20 @@ function HowStep({ title, desc, delay, step }) {
    not the whole landing page (feature grid, stats, steps, etc.). */
 function HeroForm({ onLoad, onAnalyzeUrl, inputRef }) {
   const [input, setInput] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
-    if (input.includes("github.com")) {
-      onAnalyzeUrl(input.trim());
-    } else {
-      onLoad(input.trim());
+    setSubmitting(true);
+    try {
+      if (input.includes("github.com")) {
+        onAnalyzeUrl(input.trim());
+      } else {
+        onLoad(input.trim());
+      }
+    } finally {
+      setTimeout(() => setSubmitting(false), 2000);
     }
   };
 
@@ -298,9 +304,22 @@ function HeroForm({ onLoad, onAnalyzeUrl, inputRef }) {
             onChange={(e) => setInput(e.target.value)}
           />
         </div>
-        <button type="submit" className="lp-hero-btn">
-          Analyze
-          <ArrowRight size={14} />
+        <button
+          type="submit"
+          className="lp-hero-btn"
+          disabled={submitting}
+        >
+          {submitting ? (
+            <>
+              <span className="lp-hero-btn-spinner" />
+              Analyzing…
+            </>
+          ) : (
+            <>
+              Analyze
+              <ArrowRight size={14} />
+            </>
+          )}
         </button>
       </form>
     </>
