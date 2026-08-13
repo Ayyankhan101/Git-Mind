@@ -41,6 +41,12 @@ jobs:
       - name: Prettier check
         working-directory: frontend
         run: npx prettier --check "src/**/*.{js,jsx,ts,tsx,css,json}"
+      # Dead-class gate: every className in src must resolve to a CSS rule.
+      # Catches orphaned classes (Tailwind utilities after the import was
+      # dropped, unshipped component classes) before they reach the build.
+      - name: Classname audit (dead-class gate)
+        working-directory: frontend
+        run: python3 e2e/classname_audit.py --check
 
   backend-tests:
     runs-on: ubuntu-latest

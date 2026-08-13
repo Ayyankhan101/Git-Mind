@@ -39,6 +39,9 @@ rust-sidecar/target/
 # Frontend build output
 frontend/dist/
 
+# Lighthouse CI artifacts
+frontend/.lighthouseci/
+
 # OS files
 .DS_Store
 

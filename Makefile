@@ -53,3 +53,6 @@ smoke:
 
 smoke-frontend:
 	cd frontend && python3 e2e/smoke_test.py --browser auto
+
+check-classnames:
+	cd frontend && python3 e2e/classname_audit.py --check

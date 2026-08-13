@@ -31,7 +31,9 @@
     "eject": "react-scripts eject",
     "prepare": "husky",
     "size": "size-limit",
-    "size:why": "size-limit --why"
+    "size:why": "size-limit --why",
+    "check:classnames": "python3 e2e/classname_audit.py --check",
+    "e2e:visual": "python3 e2e/visual_probe.py"
   },
   "eslintConfig": {
     "extends": [
