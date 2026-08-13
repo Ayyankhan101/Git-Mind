@@ -116,8 +116,7 @@ export default function AnimatedEdge({
               pointerEvents: "none",
               opacity,
               transition: "opacity 0.25s ease",
-              background:
-                "color-mix(in srgb, var(--surface-0) 70%, transparent)",
+              background: "var(--surface-0)",
               border: "1px solid var(--border-m)",
               color: "var(--text-2)",
             }}

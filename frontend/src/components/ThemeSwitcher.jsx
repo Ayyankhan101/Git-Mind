@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Palette, Check } from "../icons";
+import { Palette } from "../icons";
 
 const THEMES = [
   {

@@ -153,7 +153,9 @@
   height: 2px;
   background: var(--text-1);
   border-radius: 1px;
-  transition: transform var(--duration-normal), opacity var(--duration-normal);
+  transition:
+    transform var(--duration-normal),
+    opacity var(--duration-normal);
 }
 
 .lp-nav-hamburger-line.open:first-child {
@@ -348,33 +350,6 @@
 
 .lp-hero-input {
   flex: 1;
-
-.lp-hero-input-wrapper {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 14px;
-  background: var(--surface-0);
-  border: 1px solid var(--border-m);
-  border-radius: var(--radius-md);
-  transition:
-    border-color var(--duration-normal),
-    box-shadow var(--duration-normal);
-}
-
-.lp-hero-input-wrapper:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-dim);
-}
-
-.lp-hero-input-icon {
-  color: var(--text-3);
-  flex-shrink: 0;
-}
-
-.lp-hero-input {
-  flex: 1;
   padding: 12px 0;
   background: transparent;
   border: none;
@@ -436,7 +411,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes fadeSlideUp {
@@ -1106,7 +1083,11 @@
 
 /* ── Footer ──────────────────────────────────────────────────── */
 .lp-footer {
-  padding: 32px 0;
+  /* Generous bottom padding: after the CTA section was removed, the page
+     ended right below #how-it-works — too little scrollable room for the
+     anchor to land at its 80px scroll-margin (browser hit max scroll ~105px
+     short). Extra bottom padding restores the scroll runway. */
+  padding: 32px 0 256px;
   border-top: 1px solid var(--lp-glass-border);
   background: var(--lp-glass-bg);
 }
@@ -1253,7 +1234,7 @@
     min-height: 100svh;
   }
 
-  .lp-hero-content {
+  .lp-hero-copy {
     gap: 18px;
   }
 
@@ -1351,7 +1332,7 @@
     padding-bottom: 32px;
   }
 
-  .lp-hero-content {
+  .lp-hero-copy {
     gap: 12px;
   }
 

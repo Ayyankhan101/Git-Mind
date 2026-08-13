@@ -81,9 +81,14 @@ export default function CommandBar({
         </button>
         {tokenOpen && (
           <div className="token-popover">
-            <label className="token-popover-label">GitHub Token (optional)</label>
+            <label className="token-popover-label">
+              GitHub Token (optional)
+            </label>
             <div className="cb-input">
-              <Lock size={14} style={{ color: "var(--text-3)", flexShrink: 0 }} />
+              <Lock
+                size={14}
+                style={{ color: "var(--text-3)", flexShrink: 0 }}
+              />
               <input
                 type="password"
                 placeholder={

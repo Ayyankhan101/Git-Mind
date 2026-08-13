@@ -14,7 +14,7 @@ import {
   AlertCircle,
   GitMerge,
   XCircle,
-} from "lucide-react";
+} from "../icons";
 import { fs } from "../typeScale";
 import { reviewPR, prImpact, fetchOpenPRs } from "../api";
 import * as tokenManager from "../tokenManager";
@@ -147,9 +147,9 @@ const RISK_META = {
 };
 
 const REC_ICON = {
-  "Safe to merge": <GitMerge size={13} strokeWidth={1.5} />,
-  "Merge with caution": <AlertCircle size={13} strokeWidth={1.5} />,
-  "Block — requires changes": <XCircle size={13} strokeWidth={1.5} />,
+  "Safe to merge": <GitMerge size={13} />,
+  "Merge with caution": <AlertCircle size={13} />,
+  "Block — requires changes": <XCircle size={13} />,
 };
 
 function ImpactPanel({ impact, loading, error }) {
@@ -169,7 +169,7 @@ function ImpactPanel({ impact, loading, error }) {
   if (error)
     return (
       <div className="error-banner" style={{ marginTop: 12, borderRadius: 6 }}>
-        <AlertTriangle size={13} strokeWidth={1.5} />
+        <AlertTriangle size={13} />
         <span>{error}</span>
       </div>
     );
@@ -201,7 +201,7 @@ function ImpactPanel({ impact, loading, error }) {
         style={{
           padding: "12px 16px",
           background: riskMeta.bg,
-          border: `1px solid ${riskMeta.color}40`,
+          border: `1px solid color-mix(in srgb, ${riskMeta.color} 25%, transparent)`,
           borderRadius: 10,
           display: "flex",
           alignItems: "flex-start",
@@ -219,7 +219,7 @@ function ImpactPanel({ impact, loading, error }) {
                 letterSpacing: ".06em",
                 color: riskMeta.color,
                 padding: "2px 8px",
-                background: `${riskMeta.color}20`,
+                background: `color-mix(in srgb, ${riskMeta.color} 12%, transparent)`,
                 borderRadius: 4,
               }}
             >
@@ -255,12 +255,12 @@ function ImpactPanel({ impact, loading, error }) {
               color: riskMeta.color,
               whiteSpace: "nowrap",
               padding: "4px 10px",
-              border: `1px solid ${riskMeta.color}40`,
+              border: `1px solid color-mix(in srgb, ${riskMeta.color} 25%, transparent)`,
               borderRadius: 6,
               flexShrink: 0,
             }}
           >
-            {REC_ICON[rec] || <Zap size={13} strokeWidth={1.5} />}
+            {REC_ICON[rec] || <Zap size={13} />}
             {rec}
           </div>
         )}
@@ -327,7 +327,6 @@ function ImpactPanel({ impact, loading, error }) {
                   >
                     <XCircle
                       size={11}
-                      strokeWidth={1.5}
                       style={{
                         color: "var(--danger)",
                         flexShrink: 0,
@@ -364,7 +363,7 @@ function ImpactPanel({ impact, loading, error }) {
               gap: 5,
             }}
           >
-            <Zap size={10} strokeWidth={1.5} /> MERGE IMPACT ANALYSIS
+            <Zap size={10} /> MERGE IMPACT ANALYSIS
           </div>
           <div
             style={{
@@ -413,7 +412,7 @@ function ImpactPanel({ impact, loading, error }) {
               marginBottom: 10,
             }}
           >
-            <AlertTriangle size={11} strokeWidth={1.5} />
+            <AlertTriangle size={11} />
             Base session has no health score — re-analyze the repo for an
             accurate delta
           </div>
@@ -500,7 +499,7 @@ function ImpactPanel({ impact, loading, error }) {
               padding: "8px 12px",
               background: "var(--surface)",
               borderRadius: 7,
-              border: `1px solid ${deltaColor}40`,
+              border: `1px solid color-mix(in srgb, ${deltaColor} 25%, transparent)`,
             }}
           >
             <div
@@ -523,7 +522,7 @@ function ImpactPanel({ impact, loading, error }) {
                 gap: 5,
               }}
             >
-              <DeltaIcon size={16} strokeWidth={2} />
+              <DeltaIcon size={16} />
               {delta > 0 ? `+${delta}` : delta}
             </div>
           </div>
@@ -544,8 +543,7 @@ function ImpactPanel({ impact, loading, error }) {
                 borderRadius: 5,
               }}
             >
-              <ShieldAlert size={10} strokeWidth={1.5} />+
-              {impact.new_findings.length} finding
+              <ShieldAlert size={10} />+{impact.new_findings.length} finding
               {impact.new_findings.length !== 1 ? "s" : ""}
             </span>
           )}
@@ -562,7 +560,7 @@ function ImpactPanel({ impact, loading, error }) {
                 borderRadius: 5,
               }}
             >
-              <Check size={10} strokeWidth={2} />
+              <Check size={10} />
               {impact.fixed_findings.length} fixed
             </span>
           )}
@@ -579,8 +577,8 @@ function ImpactPanel({ impact, loading, error }) {
                 borderRadius: 5,
               }}
             >
-              <Package size={10} strokeWidth={1.5} />+{impact.new_cves.length}{" "}
-              CVE{impact.new_cves.length !== 1 ? "s" : ""}
+              <Package size={10} />+{impact.new_cves.length} CVE
+              {impact.new_cves.length !== 1 ? "s" : ""}
             </span>
           )}
           {impact.fixed_cves?.length > 0 && (
@@ -596,7 +594,7 @@ function ImpactPanel({ impact, loading, error }) {
                 borderRadius: 5,
               }}
             >
-              <Check size={10} strokeWidth={2} />
+              <Check size={10} />
               {impact.fixed_cves.length} CVE
               {impact.fixed_cves.length !== 1 ? "s" : ""} resolved
             </span>
@@ -776,7 +774,7 @@ export default function PRReviewTab({
       >
         <div className="tab-header-main">
           <span className="tab-header-icon">
-            <GitPullRequest size={15} strokeWidth={1.5} />
+            <GitPullRequest size={15} />
           </span>
           <div className="tab-header-text">
             <div className="tab-header-title">PR Review</div>
@@ -846,7 +844,7 @@ export default function PRReviewTab({
               </>
             ) : (
               <>
-                <TrendingUp size={13} strokeWidth={1.5} /> Predict Impact
+                <TrendingUp size={13} /> Predict Impact
               </>
             )}
           </button>
@@ -861,7 +859,6 @@ export default function PRReviewTab({
       >
         <ChevronDown
           size={12}
-          strokeWidth={1.5}
           style={{
             transform: showAdvanced ? "none" : "rotate(-90deg)",
             transition: "transform 0.15s",
@@ -889,7 +886,7 @@ export default function PRReviewTab({
           className="error-banner"
           style={{ marginBottom: 16, marginTop: 8, borderRadius: 6 }}
         >
-          <AlertTriangle size={13} strokeWidth={1.5} />
+          <AlertTriangle size={13} />
           <span>{error}</span>
         </div>
       )}
@@ -950,15 +947,9 @@ export default function PRReviewTab({
                     <span className="t-label">VERDICT</span>
                   </div>
                   <div className="verdict-line">
-                    {verdictClass === "approve" && (
-                      <Check size={24} strokeWidth={2} />
-                    )}
-                    {verdictClass === "changes" && (
-                      <AlertTriangle size={24} strokeWidth={2} />
-                    )}
-                    {verdictClass === "discuss" && (
-                      <MessageSquare size={24} strokeWidth={2} />
-                    )}
+                    {verdictClass === "approve" && <Check size={24} />}
+                    {verdictClass === "changes" && <AlertTriangle size={24} />}
+                    {verdictClass === "discuss" && <MessageSquare size={24} />}
                     {parsed.verdict}
                   </div>
                   {parsed.verdictLine &&

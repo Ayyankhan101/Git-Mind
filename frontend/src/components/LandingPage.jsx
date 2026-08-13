@@ -13,7 +13,6 @@ import {
   Gauge,
   BarChart3,
   ShieldCheck,
-  CheckCircle2,
   ShieldAlert,
 } from "../icons";
 import { gsap } from "gsap";
@@ -304,11 +303,7 @@ function HeroForm({ onLoad, onAnalyzeUrl, inputRef }) {
             onChange={(e) => setInput(e.target.value)}
           />
         </div>
-        <button
-          type="submit"
-          className="lp-hero-btn"
-          disabled={submitting}
-        >
+        <button type="submit" className="lp-hero-btn" disabled={submitting}>
           {submitting ? (
             <>
               <span className="lp-hero-btn-spinner" />
@@ -332,7 +327,7 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [landingTheme, setLandingTheme] = useState(
-    () => localStorage.getItem("gm-theme") || "default"
+    () => localStorage.getItem("gm-theme") || "default",
   );
   const landingDispatch = useCallback((action) => {
     if (action.type === "SET_THEME") {
@@ -407,7 +402,7 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
     const ctx = gsap.context(() => {
       /* Hero parallax */
       if (heroRef.current) {
-        gsap.to(".lp-hero-content", {
+        gsap.to(".lp-hero-inner", {
           y: -80,
           opacity: 0,
           ease: "none",
@@ -490,10 +485,16 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
             aria-label="Toggle menu"
             aria-expanded={mobileMenuOpen}
           >
-            <span className={`lp-nav-hamburger-line${mobileMenuOpen ? " open" : ""}`} />
-            <span className={`lp-nav-hamburger-line${mobileMenuOpen ? " open" : ""}`} />
+            <span
+              className={`lp-nav-hamburger-line${mobileMenuOpen ? " open" : ""}`}
+            />
+            <span
+              className={`lp-nav-hamburger-line${mobileMenuOpen ? " open" : ""}`}
+            />
           </button>
-          <div className={`lp-nav-links${mobileMenuOpen ? " mobile-open" : ""}`}>
+          <div
+            className={`lp-nav-links${mobileMenuOpen ? " mobile-open" : ""}`}
+          >
             <a
               href="#features"
               className={`lp-nav-link${activeSection === "features" ? " lp-nav-link--active" : ""}`}
@@ -694,7 +695,7 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
           <div className="lp-footer-right">
             <ThemeSwitcher theme={landingTheme} dispatch={landingDispatch} />
             <a
-              href="https://github.com/your-org/gitmind"
+              href="https://github.com/Ayyankhan101/Git-Mind"
               target="_blank"
               rel="noopener noreferrer"
               className="lp-footer-link"

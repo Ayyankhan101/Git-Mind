@@ -1,5 +1,5 @@
 import React from "react";
-import { GitPullRequest, GitBranch } from "lucide-react";
+import { GitPullRequest, GitBranch } from "../icons";
 import { fs } from "../typeScale";
 import { relativeTime } from "./PRReviewTab";
 
@@ -25,7 +25,7 @@ export default function OpenPRsList({
             letterSpacing: ".05em",
           }}
         >
-          <GitPullRequest size={11} strokeWidth={1.5} />
+          <GitPullRequest size={11} />
           OPEN PULL REQUESTS (0)
         </div>
         <div
@@ -49,7 +49,7 @@ export default function OpenPRsList({
           letterSpacing: ".05em",
         }}
       >
-        <GitPullRequest size={11} strokeWidth={1.5} />
+        <GitPullRequest size={11} />
         OPEN PULL REQUESTS {!prsLoading && `(${openPRs.length})`}
       </div>
       {prsLoading ? (
@@ -150,7 +150,7 @@ export default function OpenPRsList({
                         gap: 3,
                       }}
                     >
-                      <GitBranch size={10} strokeWidth={1.5} />
+                      <GitBranch size={10} />
                       {pr.head_ref} → {pr.base_ref}
                     </span>
                     <span style={{ fontSize: fs.xs, color: "var(--text-3)" }}>

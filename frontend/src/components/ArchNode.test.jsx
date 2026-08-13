@@ -110,7 +110,7 @@ describe("ArchNode", () => {
   it("applies the glow shadow when selected and staggers by layerRank", () => {
     const { container, rerender } = render(<ArchNode data={baseData} />);
     const card = container.querySelector(".arch-node-card");
-    expect(card.style.boxShadow).toContain("0 6px 24px");
+    expect(card.style.boxShadow).toContain("3px 3px 0");
     rerender(<ArchNode data={{ ...baseData, layerRank: 2 }} selected />);
     const selectedCard = container.querySelector(".arch-node-card");
     expect(selectedCard.style.boxShadow).toContain("0 0 30px");

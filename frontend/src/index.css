@@ -445,16 +445,36 @@ h3,
 }
 
 /* Staggered reveal: each nav item gets increasing delay */
-.nav-item:nth-child(1) .nav-label { transition-delay: 0ms; }
-.nav-item:nth-child(2) .nav-label { transition-delay: 30ms; }
-.nav-item:nth-child(3) .nav-label { transition-delay: 60ms; }
-.nav-item:nth-child(4) .nav-label { transition-delay: 90ms; }
-.nav-item:nth-child(5) .nav-label { transition-delay: 120ms; }
-.nav-item:nth-child(6) .nav-label { transition-delay: 150ms; }
-.nav-item:nth-child(7) .nav-label { transition-delay: 180ms; }
-.nav-item:nth-child(8) .nav-label { transition-delay: 210ms; }
-.nav-item:nth-child(9) .nav-label { transition-delay: 240ms; }
-.nav-item:nth-child(10) .nav-label { transition-delay: 270ms; }
+.nav-item:nth-child(1) .nav-label {
+  transition-delay: 0ms;
+}
+.nav-item:nth-child(2) .nav-label {
+  transition-delay: 30ms;
+}
+.nav-item:nth-child(3) .nav-label {
+  transition-delay: 60ms;
+}
+.nav-item:nth-child(4) .nav-label {
+  transition-delay: 90ms;
+}
+.nav-item:nth-child(5) .nav-label {
+  transition-delay: 120ms;
+}
+.nav-item:nth-child(6) .nav-label {
+  transition-delay: 150ms;
+}
+.nav-item:nth-child(7) .nav-label {
+  transition-delay: 180ms;
+}
+.nav-item:nth-child(8) .nav-label {
+  transition-delay: 210ms;
+}
+.nav-item:nth-child(9) .nav-label {
+  transition-delay: 240ms;
+}
+.nav-item:nth-child(10) .nav-label {
+  transition-delay: 270ms;
+}
 
 .nav-divider {
   width: 32px;
@@ -671,9 +691,7 @@ h3,
 }
 .card:hover {
   border-color: var(--border-m);
-  box-shadow:
-    var(--shadow-sm),
-    var(--inner-highlight);
+  box-shadow: var(--shadow-sm), var(--inner-highlight);
   transform: translateY(-1px);
 }
 .card:active:not(:disabled) {
@@ -846,6 +864,12 @@ h3,
 }
 .finding-card.low {
   border-left-color: var(--sev-low);
+}
+.finding-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 .finding-title {
   font-size: 13px;

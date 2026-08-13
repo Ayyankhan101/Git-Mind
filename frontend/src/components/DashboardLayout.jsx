@@ -14,7 +14,6 @@ import {
   Binary,
   Activity,
 } from "../icons";
-import { fs } from "../typeScale";
 import CommandBar from "./CommandBar";
 import NavRail from "./NavRail";
 import Sidebar from "./Sidebar";
@@ -206,7 +205,10 @@ export default function DashboardLayout({
 
       <div className="main">
         {globalError && (
-          <div className="error-banner-inline error-banner-inline--danger" role="alert">
+          <div
+            className="error-banner-inline error-banner-inline--danger"
+            role="alert"
+          >
             <AlertTriangle size={14} style={{ flexShrink: 0 }} />
             <span style={{ flex: 1, whiteSpace: "pre-wrap" }}>
               {globalError}

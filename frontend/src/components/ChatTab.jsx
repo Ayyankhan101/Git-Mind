@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare } from "../icons";
 import { fs } from "../typeScale";
 import { postChatStream } from "../api";
 
@@ -11,7 +11,7 @@ function ChatHeader({ enabled }) {
     <div className="tab-header">
       <div className="tab-header-main">
         <span className="tab-header-icon">
-          <MessageSquare size={15} strokeWidth={1.5} />
+          <MessageSquare size={15} />
         </span>
         <div className="tab-header-text">
           <div className="tab-header-title">Chat</div>

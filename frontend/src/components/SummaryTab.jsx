@@ -6,7 +6,7 @@ import {
   Zap,
   Activity,
   ArrowUpRight,
-} from "lucide-react";
+} from "../icons";
 import gsap from "gsap";
 import { fs } from "../typeScale";
 import { fetchSummary, subscribeMonitor, fetchMonitorStatus } from "../api";
@@ -297,7 +297,7 @@ export default function SummaryTab({
   if (!enabled && !isAnalyzing) {
     return (
       <div className="empty">
-        <BarChart3 size={20} className="empty-icon" strokeWidth={1.5} />
+        <BarChart3 size={20} className="empty-icon" />
         <div className="empty-title">Summary not available</div>
         <div className="empty-sub">Analyze a repository to get started</div>
       </div>
@@ -388,7 +388,7 @@ export default function SummaryTab({
       <div className="tab-header">
         <div className="tab-header-main">
           <span className="tab-header-icon">
-            <BarChart3 size={15} strokeWidth={1.5} />
+            <BarChart3 size={15} />
           </span>
           <div className="tab-header-text">
             <div className="tab-header-title">Executive Summary</div>
@@ -522,7 +522,7 @@ export default function SummaryTab({
           <div className="stat-grid" ref={statsRef}>
             <div className="stat">
               <div className="stat-icon-wrap">
-                <FileCode2 size={20} strokeWidth={1.5} />
+                <FileCode2 size={20} />
               </div>
               <span className="stat-value">{apiDocs.length || 0}</span>
               <span className="stat-label">ENDPOINTS</span>
@@ -532,7 +532,7 @@ export default function SummaryTab({
             </div>
             <div className="stat">
               <div className="stat-icon-wrap stat-icon--warn">
-                <ShieldAlert size={20} strokeWidth={1.5} />
+                <ShieldAlert size={20} />
               </div>
               <span className="stat-value">{findings.length || 0}</span>
               <span className="stat-label">FINDINGS</span>
@@ -542,7 +542,7 @@ export default function SummaryTab({
             </div>
             <div className="stat">
               <div className="stat-icon-wrap stat-icon--ok">
-                <Zap size={20} strokeWidth={1.5} />
+                <Zap size={20} />
               </div>
               <span className="stat-value">
                 {elapsedSec > 0 ? `${elapsedSec}s` : "—"}

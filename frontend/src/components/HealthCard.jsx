@@ -22,9 +22,9 @@ function MiniBar({ value, color, delay = 0 }) {
   useEffect(() => {
     if (!ref.current) return;
     const el = ref.current;
-    el.style.width = "0%";
+    el.style.transform = "scaleX(0)";
     const timer = setTimeout(() => {
-      el.style.width = `${value}%`;
+      el.style.transform = `scaleX(${value / 100})`;
     }, 100 + delay);
     return () => clearTimeout(timer);
   }, [value, delay]);
@@ -42,11 +42,16 @@ function MiniBar({ value, color, delay = 0 }) {
       <div
         ref={ref}
         style={{
-          background: `linear-gradient(90deg, ${color}, ${color}dd)`,
+          // Fill spans the full track; the visible portion is driven by
+          // transform scaleX (compositor-friendly) instead of width.
+          background: `linear-gradient(90deg, ${color}, color-mix(in srgb, ${color} 85%, #000))`,
+          width: "100%",
           height: "100%",
+          transformOrigin: "left center",
+          transform: "scaleX(0)",
           borderRadius: 4,
-          transition: "width 0.8s cubic-bezier(0.22, 1, 0.36, 1)",
-          boxShadow: `0 0 8px ${color}44`,
+          transition: "transform 0.8s cubic-bezier(0.22, 1, 0.36, 1)",
+          boxShadow: `0 0 8px color-mix(in srgb, ${color} 30%, transparent)`,
         }}
       />
     </div>

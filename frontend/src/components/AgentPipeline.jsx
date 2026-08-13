@@ -8,7 +8,7 @@ import {
   Brain,
   GitCommit,
   ChevronDown,
-} from "lucide-react";
+} from "../icons";
 import { fs } from "../typeScale";
 
 const AGENTS = [
@@ -72,7 +72,6 @@ export default function AgentPipeline({
             {expanded ? "collapse" : "expand"}
             <ChevronDown
               size={10}
-              strokeWidth={1.5}
               style={{
                 transform: expanded ? "none" : "rotate(-90deg)",
                 transition: "transform 0.15s",

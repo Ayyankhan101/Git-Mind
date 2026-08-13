@@ -332,11 +332,7 @@ export default function Sidebar({
         )}
       </div>
 
-      {error && (
-        <div className="sidebar-error">
-          {error}
-        </div>
-      )}
+      {error && <div className="sidebar-error">{error}</div>}
 
       <div className="sb-list">
         {/* Saved views toggle */}

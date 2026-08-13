@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Keyboard, X } from "lucide-react";
+import { Keyboard, X } from "../icons";
 
 const isMac =
   typeof navigator !== "undefined" && /Mac/.test(navigator.platform);
@@ -72,7 +72,7 @@ export default function KeyboardHelp({ open, onClose }) {
       >
         <div className="kbhelp-header">
           <span className="kbhelp-icon">
-            <Keyboard size={15} strokeWidth={1.5} />
+            <Keyboard size={15} />
           </span>
           <span className="kbhelp-title">Keyboard shortcuts</span>
           <span style={{ flex: 1 }} />
@@ -81,7 +81,7 @@ export default function KeyboardHelp({ open, onClose }) {
             onClick={onClose}
             aria-label="Close help"
           >
-            <X size={13} strokeWidth={1.5} />
+            <X size={13} />
           </button>
         </div>
         <div className="kbhelp-body">
