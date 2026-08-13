@@ -48,3 +48,6 @@ frontend/.lighthouseci/
 
 # Backup files
 *.bak
+
+# Local LLM model files (large, downloaded locally)
+*.gguf
