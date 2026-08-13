@@ -15,7 +15,6 @@ import {
   Server,
   Globe,
 } from "lucide-react";
-import { fs } from "../typeScale";
 
 const ICON_MAP = {
   Shield,
@@ -186,7 +185,7 @@ export default function ArchNode({ data, selected }) {
 
   return (
     <div
-      className="group rounded-xl border backdrop-blur-xl transition-all duration-300 select-none cursor-pointer overflow-hidden arch-node-card"
+      className="arch-node-card"
       style={{
         ...cardStyle,
         animation: "nodeFadeIn 0.4s ease-out both",
@@ -195,32 +194,25 @@ export default function ArchNode({ data, selected }) {
     >
       <Handle type="target" position={Position.Top} style={handleCommon} />
 
-      <div
-        className="px-4 py-3 flex flex-col gap-2 pointer-events-none"
-        style={{ minWidth: 200, maxWidth: 300 }}
-      >
+      <div className="arch-node-body">
         {/* Icon + Title row */}
-        <div className="flex items-center gap-2.5">
+        <div className="arch-node-head">
           <div
-            className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+            className="arch-node-icon"
             style={{ background: colors.bg, color: colors.text }}
           >
             <IconComp size={18} strokeWidth={1.5} />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+          <div className="arch-node-head-main">
+            <div className="arch-node-title-row">
               <h4
-                className="truncate"
-                style={{
-                  fontSize: fs.xl,
-                  fontWeight: 700,
-                  color: "var(--text-1)",
-                }}
+                className="arch-node-label"
+                style={{ color: "var(--text-1)" }}
               >
                 {data.label}
               </h4>
               <span
-                className="text-[12px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-widest shrink-0 leading-none"
+                className="arch-node-type"
                 style={{
                   background: colors.border
                     .replace("0.5)", "0.25)")
@@ -234,7 +226,7 @@ export default function ArchNode({ data, selected }) {
             </div>
             {(language || framework) && (
               <div
-                className="text-[11px] mt-0.5 truncate"
+                className="arch-node-meta"
                 style={{ color: "var(--text-2)" }}
               >
                 {language}
@@ -246,14 +238,14 @@ export default function ArchNode({ data, selected }) {
 
         {/* Endpoint pills */}
         {endpoints.length > 0 && (
-          <div className="flex flex-wrap gap-1">
+          <div className="arch-node-endpoints">
             {endpoints.slice(0, 4).map((ep, i) => {
               const methodColor =
                 HTTP_METHOD_COLORS[ep.method] || "var(--text-3)";
               return (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono leading-none truncate max-w-full"
+                  className="arch-node-endpoint"
                   style={{
                     background: `${methodColor}15`,
                     border: `1px solid ${methodColor}30`,
@@ -263,17 +255,17 @@ export default function ArchNode({ data, selected }) {
                   <span style={{ color: methodColor, fontWeight: 700 }}>
                     {ep.method}
                   </span>
-                  <span className="truncate" style={{ color: "var(--text-2)" }}>
+                  <span
+                    className="arch-node-endpoint-path"
+                    style={{ color: "var(--text-2)" }}
+                  >
                     {ep.path}
                   </span>
                 </span>
               );
             })}
             {endpoints.length > 4 && (
-              <span
-                className="text-[10px] px-1"
-                style={{ color: "var(--text-3)" }}
-              >
+              <span className="arch-node-endpoint-more">
                 +{endpoints.length - 4}
               </span>
             )}
@@ -281,20 +273,19 @@ export default function ArchNode({ data, selected }) {
         )}
 
         {/* Imports / Export chips */}
-        <div
-          className="flex items-center gap-2 text-[11px]"
-          style={{ color: "var(--text-3)" }}
-        >
+        <div className="arch-node-footer">
           {imports.length > 0 && (
-            <div className="flex items-center gap-1 truncate min-w-0">
-              <span className="shrink-0 opacity-60">in</span>
-              <span className="truncate">{imports.slice(0, 4).join(", ")}</span>
+            <div className="arch-node-imports">
+              <span className="arch-node-imports-in">in</span>
+              <span className="arch-node-imports-text">
+                {imports.slice(0, 4).join(", ")}
+              </span>
               {imports.length > 4 && <span>+{imports.length - 4}</span>}
             </div>
           )}
           {endpoints.length > 0 && (
             <span
-              className="shrink-0 ml-auto text-[11px] font-mono"
+              className="arch-node-apis"
               style={{ color: colors.text, opacity: 0.6 }}
             >
               {endpoints.length > 1 ? `${endpoints.length} APIs` : "1 API"}

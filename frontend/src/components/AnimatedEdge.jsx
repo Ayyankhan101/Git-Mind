@@ -16,7 +16,7 @@ function buildStyleDefs(kind) {
   if (kind === "dotted") return { strokeDasharray: "2, 4", className: "" };
   return {
     strokeDasharray: "10, 10",
-    className: "animate-[dash_2s_linear_infinite]",
+    className: "edge-dash-anim",
   };
 }
 
@@ -109,6 +109,7 @@ export default function AnimatedEdge({
       {label && (
         <EdgeLabelRenderer>
           <div
+            className="edge-label"
             style={{
               position: "absolute",
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY + labelYOffset}px)`,
@@ -120,7 +121,6 @@ export default function AnimatedEdge({
               border: "1px solid var(--border-m)",
               color: "var(--text-2)",
             }}
-            className="px-2 py-0.5 rounded text-[11px] font-mono tracking-wide font-medium backdrop-blur-sm shadow-md whitespace-nowrap"
           >
             {label}
           </div>

@@ -114,14 +114,19 @@ export default function DiagramTab({
     edgesRef.current = edges;
   });
 
+  // Single source of truth for "is there diagram input yet". Shared by the
+  // render gates below AND the parse effect so the two can never disagree
+  // (gate says render, effect clears nodes → blank canvas).
+  const hasGraphInput = !!archGraph?.nodes?.length;
+  const hasMermaidInput =
+    !!diagram && typeof diagram === "string" && diagram.startsWith("graph");
+
   useEffect(() => {
     try {
       setParseError(null);
       // Determine input type: rich JSON graph vs Mermaid string
-      const hasGraph =
-        archGraph && archGraph.nodes && archGraph.nodes.length > 0;
-      const hasMermaid =
-        diagram && typeof diagram === "string" && diagram.startsWith("graph");
+      const hasGraph = hasGraphInput;
+      const hasMermaid = hasMermaidInput;
 
       if (hasGraph) {
         const { nodes: parsedNodes, edges: parsedEdges } =
@@ -226,7 +231,7 @@ export default function DiagramTab({
       setNodes([]);
       setEdges([]);
     }
-  }, [diagram, archGraph, setNodes, setEdges]);
+  }, [diagram, archGraph, hasGraphInput, hasMermaidInput, setNodes, setEdges]);
 
   useEffect(() => {
     if (!hoveredNode) {
@@ -315,7 +320,11 @@ export default function DiagramTab({
   }, []);
 
   // ── Loading State ──
-  if (isAnalyzing && !diagram) {
+  // Both input forms count: the Mermaid string (diagram) and the rich JSON
+  // graph (archGraph). Show the spinner until either arrives. Uses the same
+  // validity predicate as the parser so a non-graph string (e.g. a
+  // sequenceDiagram) still shows the spinner instead of a blank canvas.
+  if (isAnalyzing && !hasMermaidInput && !hasGraphInput) {
     return (
       <DiagramShell sub="Generating diagram…">
         <div
@@ -393,7 +402,7 @@ export default function DiagramTab({
   }
 
   // ── Empty State Panel (With layout alignments fixed) ──
-  if (!diagram && !isAnalyzing) {
+  if (!hasMermaidInput && !hasGraphInput && !isAnalyzing) {
     return (
       <DiagramShell sub="System architecture">
         <div
@@ -551,7 +560,7 @@ export default function DiagramTab({
             <span
               style={{
                 fontSize: fs.micro,
-                fontFamily: "monospace",
+                fontFamily: "var(--font-mono)",
                 fontWeight: 700,
                 color: "var(--text-2)",
                 userSelect: "none",
@@ -559,7 +568,6 @@ export default function DiagramTab({
             >
               {displayScale}%
             </span>
-
             <div
               style={{
                 width: 20,
@@ -567,7 +575,6 @@ export default function DiagramTab({
                 background: "var(--border-m)",
               }}
             />
-
             <button
               onClick={() => reactFlowInstance.current?.zoomIn()}
               className="diagram-control-btn"
@@ -576,7 +583,6 @@ export default function DiagramTab({
             >
               <ZoomIn size={15} />
             </button>
-
             <button
               onClick={() => reactFlowInstance.current?.zoomOut()}
               className="diagram-control-btn"
@@ -585,7 +591,6 @@ export default function DiagramTab({
             >
               <ZoomOut size={15} />
             </button>
-
             <div
               style={{
                 width: 20,
@@ -593,7 +598,6 @@ export default function DiagramTab({
                 background: "var(--border-s)",
               }}
             />
-
             <button
               onClick={() =>
                 reactFlowInstance.current?.fitView({ padding: 0.2 })
@@ -604,7 +608,6 @@ export default function DiagramTab({
             >
               <Scan size={14} />
             </button>
-
             <button
               onClick={handleFullscreen}
               className="diagram-control-btn"
@@ -612,13 +615,13 @@ export default function DiagramTab({
               aria-label="Toggle fullscreen"
             >
               <Expand size={14} />
-            </button>
-
+            </button>{" "}
             <button
               onClick={handleCopy}
               className={`diagram-control-btn${copied ? " diagram-control-btn-active" : ""}`}
-              title="Copy diagram"
-              aria-label="Copy diagram"
+              title={diagram ? "Copy diagram" : "No Mermaid source to copy"}
+              aria-label={diagram ? "Copy diagram" : "Copy diagram unavailable"}
+              disabled={!diagram}
             >
               {copied ? <Check size={14} /> : <Copy size={14} />}
             </button>
