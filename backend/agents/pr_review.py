@@ -2,15 +2,67 @@ import re
 
 import httpx
 import structlog
+from pydantic import BaseModel
 
-from llm_cache import get_cached, invoke_with_retry, set_cached
-from settings import LLM_MODEL, get_llm
+from dspy_setup import dspy
+from llm_cache import run_dspy_cached
+from optimization.registry import define_program
+from settings import LLM_MODEL, get_dspy_lm
 
 logger = structlog.get_logger(__name__)
 
 _MAX_DIFF_CHARS = 14_000
 _CACHE_NAMESPACE = f"{LLM_MODEL}:pr_review"
-_LLM = get_llm(temperature_key="pr_review")
+_LM = get_dspy_lm(temperature_key="pr_review")
+
+_VERDICT_LABELS = {
+    "APPROVE": "✅ APPROVE",
+    "REQUEST CHANGES": "⚠️ REQUEST CHANGES",
+    "NEEDS DISCUSSION": "💬 NEEDS DISCUSSION",
+}
+
+
+class ReviewIssue(BaseModel):
+    """Single review issue — rendered back into the markdown contract verbatim."""
+
+    file: str
+    line: int | None = None
+    severity: str
+    title: str
+    explanation: str
+
+
+class PRReviewOutput(BaseModel):
+    """Structured PR review — rendered back into the exact markdown contract."""
+
+    summary: str
+    issues: list[ReviewIssue]
+    verdict: str
+    verdict_justification: str
+
+
+class PRReviewSignature(dspy.Signature):
+    """You are a senior engineer performing a thorough code review.
+
+    Rules:
+    - Be specific — cite real file paths and line numbers from the diff.
+    - Do not invent issues. Do not pad. Only flag things that matter.
+    - verdict: one of APPROVE, REQUEST CHANGES, NEEDS DISCUSSION.
+    - issue severity: CRITICAL (security/data-loss), HIGH (bug/crash), MEDIUM (logic/perf), LOW (style/naming).
+    - issues: empty list when there are no significant issues."""
+
+    pr_context: str = dspy.InputField(desc="Repository, PR metadata, and the diff to review")
+    review: PRReviewOutput = dspy.OutputField(desc="Structured PR review")
+
+
+_predictor = define_program(
+    "pr_review",
+    PRReviewSignature,
+    output_field="review",
+    input_fields=("pr_context",),
+    output_model=PRReviewOutput,
+    cot=True,
+)
 
 
 def _parse_pr_url(pr_url: str) -> tuple[str, str, str]:
@@ -67,39 +119,41 @@ def fetch_pr_data(pr_url: str, token: str | None = None) -> dict:
 def run_pr_review(pr_url: str, token: str | None = None) -> dict:
     pr = fetch_pr_data(pr_url, token)
 
-    prompt = (
-        f"You are a senior engineer performing a thorough code review.\n\n"
+    context = (
         f"Repository: {pr['owner']}/{pr['repo']}\n"
         f"PR #{pr['pr_num']}: {pr['title']}\n"
         f"Author: {pr['author']}  →  merging into {pr['base_branch']}\n"
         f"Stats: +{pr['additions']} -{pr['deletions']} across {pr['changed_files']} file(s)\n"
         f"Description: {pr['body'] or 'None provided'}\n"
         + ("\n⚠ Diff was truncated to first 14 000 chars.\n" if pr["diff_truncated"] else "")
-        + f"\nDiff:\n{pr['diff']}\n\n"
-        "Provide a structured review in **exactly** this format:\n\n"
-        "## Summary\n"
-        "[2-3 sentences: what this PR does and your overall impression]\n\n"
-        "## Issues\n"
-        "[Each issue on its own line: `path/to/file.ext:LINE — [SEVERITY] "
-        "Short title — Explanation and concrete suggestion`]\n"
-        "[SEVERITY options: CRITICAL (security/data-loss), HIGH (bug/crash), MEDIUM (logic/perf), LOW (style/naming)]\n"
-        "[If no issues: write exactly: No significant issues found.]\n\n"
-        "## Verdict\n"
-        "[✅ APPROVE | ⚠️ REQUEST CHANGES | 💬 NEEDS DISCUSSION]\n"
-        "[One sentence justification]\n\n"
-        "Rules: be specific — cite real file paths and line numbers from the diff. "
-        "Do not invent issues. Do not pad. Only flag things that matter."
+        + f"\nDiff:\n{pr['diff']}"
     )
 
-    cache_key = f"{pr['owner']}/{pr['repo']}#{pr['pr_num']}:{pr.get('head_sha', '')}"
-    cached = get_cached(_CACHE_NAMESPACE, cache_key)
-    if cached:
-        logger.debug("PR review: cache hit for %s/%s#%s", pr["owner"], pr["repo"], pr["pr_num"])
-        review = cached
-    else:
-        review = invoke_with_retry(_LLM, prompt).content.strip()
-        set_cached(_CACHE_NAMESPACE, cache_key, review)
-        logger.info("PR review complete for %s/%s#%s", pr["owner"], pr["repo"], pr["pr_num"])
+    try:
+        review_data = run_dspy_cached(
+            _predictor,
+            _CACHE_NAMESPACE,
+            lm=_LM,
+            output_field="review",
+            pr_context=context,
+        )
+    except Exception as exc:
+        logger.error(
+            "PR review LLM failed for %s/%s#%s: %s",
+            pr["owner"],
+            pr["repo"],
+            pr["pr_num"],
+            exc,
+        )
+        review_data = {
+            "summary": "Automatic review could not be generated — please review the diff manually.",
+            "issues": [],
+            "verdict": "NEEDS DISCUSSION",
+            "verdict_justification": "The automated review failed; human review required.",
+        }
+
+    review = _render_review(review_data)
+    logger.info("PR review complete for %s/%s#%s", pr["owner"], pr["repo"], pr["pr_num"])
 
     return {
         "pr_url": pr_url,
@@ -112,3 +166,31 @@ def run_pr_review(pr_url: str, token: str | None = None) -> dict:
         "changed_files": pr["changed_files"],
         "review": review,
     }
+
+
+def _render_review(r: dict) -> str:
+    """Render the typed review back into the exact markdown contract the frontend parses."""
+    lines = ["## Summary", (r.get("summary") or "").strip(), "", "## Issues"]
+
+    issues = r.get("issues") or []
+    if issues:
+        for it in issues:
+            file = (it.get("file") or "").strip()
+            line = it.get("line")
+            sev = (it.get("severity") or "LOW").strip().upper()
+            title = (it.get("title") or "").strip()
+            explanation = (it.get("explanation") or "").strip()
+            loc = f"{file}:{line}" if line else file
+            lines.append(f"{loc} — [{sev}] {title} — {explanation}")
+    else:
+        lines.append("No significant issues found.")
+
+    verdict = (r.get("verdict") or "NEEDS DISCUSSION").strip().upper()
+    justification = (r.get("verdict_justification") or "").strip()
+    lines.append("")
+    lines.append("## Verdict")
+    lines.append(_VERDICT_LABELS.get(verdict, verdict))
+    if justification:
+        lines.append(justification)
+
+    return "\n".join(lines)

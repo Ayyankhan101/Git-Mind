@@ -6,8 +6,10 @@ import structlog
 import tiktoken
 
 from agents.graph_builder import build_architecture_graph
-from llm_cache import get_cached, invoke_with_retry, set_cached
-from settings import LLM_MODEL, get_llm
+from dspy_setup import dspy
+from llm_cache import run_dspy_cached
+from optimization.registry import define_program
+from settings import LLM_MODEL, get_dspy_lm
 
 logger = structlog.get_logger(__name__)
 
@@ -100,12 +102,18 @@ def run_architecture_agent(file_tree: list[str], file_contents: dict[str, str]) 
     primary_lang = _detect_primary_language(file_tree)
     prompt = _build_prompt(file_tree, file_contents, primary_lang)
 
-    cached = get_cached(f"{LLM_MODEL}:arch", prompt)
-    if cached:
-        logger.debug("Architecture agent: cache hit")
-        return cached
+    try:
+        result = run_dspy_cached(
+            _predictor,
+            f"{LLM_MODEL}:arch",
+            lm=_LM,
+            output_field="diagram",
+            context=prompt,
+        )
+    except Exception as exc:
+        logger.warning("Architecture agent: LLM failed — %s; using fallback diagram", exc)
+        result = "graph TD\n    A[Analysis Incomplete]"
 
-    result = invoke_with_retry(_LLM, prompt).content.strip()
     result = _strip_fences(result)
     result = _sanitize_mermaid(result)
 
@@ -113,7 +121,6 @@ def run_architecture_agent(file_tree: list[str], file_contents: dict[str, str]) 
         logger.warning("Architecture agent: unexpected LLM output — using fallback diagram")
         result = "graph TD\n    A[Analysis Incomplete]"
 
-    set_cached(f"{LLM_MODEL}:arch", prompt, result)
     return result
 
 
@@ -130,7 +137,33 @@ def run_with_graph(file_tree: list[str], file_contents: dict[str, str]) -> dict:
 # ── Private helpers ────────────────────────────────────────────────────────────
 
 _ENC = tiktoken.get_encoding("cl100k_base")  # load once at import time
-_LLM = get_llm(temperature=0)
+_LM = get_dspy_lm(temperature=0)
+
+
+class ArchitectureSignature(dspy.Signature):
+    """You are an expert software architect. Produce a Mermaid flowchart diagram of the codebase.
+
+    STRICT RULES — any violation breaks the frontend renderer:
+    - Output ONLY valid Mermaid syntax. No explanation. No markdown fences.
+    - First line must be exactly: graph TD
+    - Node IDs must be descriptive camelCase names (e.g. frontend, backend, database) — NOT single letters like A, B, C
+    - Node labels: only letters, numbers, and spaces inside square brackets [Like This]
+    - NO parentheses inside labels — they crash the parser
+    - NO quotes inside labels
+    - Maximum 15 nodes — fewer clean nodes beats many messy ones
+    - Edge labels syntax: -->|short label|"""
+
+    context: str = dspy.InputField(desc="Primary language, file tree, and key file contents")
+    diagram: str = dspy.OutputField(desc="Mermaid flowchart diagram whose first line is exactly 'graph TD'")
+
+
+_predictor = define_program(
+    "architecture",
+    ArchitectureSignature,
+    output_field="diagram",
+    input_fields=("context",),
+    output_model=None,  # plain Mermaid string — structural checks are string-level
+)
 
 
 def _build_prompt(file_tree: list[str], file_contents: dict[str, str], primary_lang: str = "Unknown") -> str:

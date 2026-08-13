@@ -1,15 +1,57 @@
-import json
-
 import structlog
+from pydantic import BaseModel
 
-from llm_cache import get_cached, invoke_with_retry, set_cached
-from settings import LLM_MODEL, get_llm
+from dspy_setup import dspy
+from llm_cache import run_dspy_cached
+from optimization.registry import define_program
+from settings import LLM_MODEL, get_dspy_lm
 
 logger = structlog.get_logger(__name__)
 
 _CACHE_NAMESPACE = f"{LLM_MODEL}:merge_prediction"
 _MAX_DIFF_CHARS = 10_000
-_LLM = get_llm(temperature_key="impact")
+_LM = get_dspy_lm(temperature_key="impact")
+
+
+class MergePrediction(BaseModel):
+    """Merge impact prediction — shape matches the frontend contract exactly."""
+
+    merge_risk: str
+    recommendation: str
+    one_liner: str
+    affected_areas: list[str]
+    breaking_changes: list[str]
+    narrative: str
+    confidence: str
+
+
+class MergePredictionSignature(dspy.Signature):
+    """You are a senior tech lead evaluating whether to merge a pull request.
+
+    Rules:
+    - merge_risk reflects the COMBINED risk: code quality + security delta + breaking changes.
+    - breaking_changes: only include ACTUAL breaking changes (renamed endpoints, removed exports,
+      changed function signatures, DB migrations). Empty array if none.
+    - affected_areas: max 5 short labels (e.g. "Auth", "API routes", "Database", "Frontend", "CI/CD").
+    - narrative: 2-3 paragraph plain-English explanation of what happens to the software if this PR
+      is approved and merged — what changes, what improves, what regresses, and any risks. No bullet
+      points, no markdown inside the string. Be specific — reference actual file names or functions
+      from the diff.
+    - confidence: "low" if the diff was truncated or the PR is very large, "high" if the full diff
+      was available and the analysis is clear."""
+
+    context: str = dspy.InputField(desc="PR metadata, computed health metrics, and the diff to evaluate")
+    prediction: MergePrediction = dspy.OutputField(desc="Merge impact prediction")
+
+
+_predictor = define_program(
+    "impact",
+    MergePredictionSignature,
+    output_field="prediction",
+    input_fields=("context",),
+    output_model=MergePrediction,
+    cot=True,
+)
 
 
 def compute_impact(base: dict, pr: dict) -> dict:
@@ -72,16 +114,6 @@ def run_merge_prediction(
     pr_meta keys: title, owner, repo, pr_num, base_branch,
                   additions, deletions, changed_files, diff_truncated
     """
-    head_sha = pr_meta.get("head_sha", "")
-    cache_key = f"{pr_meta.get('owner')}/{pr_meta.get('repo')}#{pr_meta.get('pr_num')}:{head_sha}:predict"
-    cached = get_cached(_CACHE_NAMESPACE, cache_key)
-    if cached:
-        logger.debug("merge_prediction: cache hit %s", cache_key)
-        try:
-            return json.loads(cached)
-        except Exception as exc:
-            logger.debug("merge_prediction: cache decode failed: %s", exc)
-
     truncated_diff = diff[:_MAX_DIFF_CHARS]
     diff_note = "⚠ Diff truncated to first 10 000 chars.\n" if len(diff) > _MAX_DIFF_CHARS else ""
 
@@ -100,9 +132,8 @@ def run_merge_prediction(
         f"Score breakdown deltas: {delta.get('breakdown_delta', {})}\n"
     )
 
-    prompt = (
-        f"You are a senior tech lead evaluating whether to merge a pull request "
-        f"into {pr_meta.get('base_branch', 'main')}.\n\n"
+    context = (
+        f"Merging into {pr_meta.get('base_branch', 'main')}\n\n"
         f"PR: {pr_meta.get('owner')}/{pr_meta.get('repo')} #{pr_meta.get('pr_num')} — "
         f'"{pr_meta.get("title", "")}"\n'
         f"Stats: +{pr_meta.get('additions', 0)} / -{pr_meta.get('deletions', 0)} across "
@@ -111,61 +142,30 @@ def run_merge_prediction(
         "=== COMPUTED METRICS ===\n"
         f"{metrics_summary}\n"
         "=== DIFF ===\n"
-        f"{truncated_diff}\n\n"
-        "Based on the diff and metrics above, produce a merge impact prediction "
-        "as valid JSON (no markdown, no explanation outside the JSON):\n\n"
-        "{{\n"
-        '  "merge_risk": "<low|medium|high|critical>",\n'
-        '  "recommendation": "<Safe to merge|Merge with caution|Block — requires changes>",\n'
-        '  "one_liner": "<One sentence describing the net effect if this PR is merged>",\n'
-        '  "affected_areas": ["<area1>", "<area2>"],\n'
-        '  "breaking_changes": ["<change1>"],\n'
-        '  "narrative": "<2-3 paragraph plain-English explanation of what happens '
-        "to the software if this PR is approved and merged. Cover: what changes, "
-        'what improves, what regresses, and any risks the team should know.>",\n'
-        '  "confidence": "<high|medium|low>"\n'
-        "}}\n\n"
-        "Rules:\n"
-        "- merge_risk reflects the COMBINED risk: code quality + security delta "
-        "+ breaking changes.\n"
-        "- breaking_changes: only include ACTUAL breaking changes "
-        "(renamed endpoints, removed exports, changed function signatures, "
-        "DB migrations). Empty array if none.\n"
-        '- affected_areas: max 5 short labels (e.g. "Auth", "API routes", '
-        '"Database", "Frontend", "CI/CD").\n'
-        "- narrative: plain English, no bullet points, no markdown inside "
-        "the string. Be specific — reference actual file names or functions "
-        "from the diff.\n"
-        '- confidence: "low" if diff was truncated or PR is very large. '
-        '"high" if full diff was available and analysis is clear.\n'
-        "- Output ONLY the JSON object. No preamble."
+        f"{truncated_diff}\n"
     )
 
-    raw = invoke_with_retry(_LLM, prompt).content.strip()
-
-    # Strip markdown code fences if model wrapped it
-    if raw.startswith("```"):
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-        raw = raw.strip()
-
     try:
-        result = json.loads(raw)
-    except Exception:
+        result = run_dspy_cached(
+            _predictor,
+            _CACHE_NAMESPACE,
+            lm=_LM,
+            output_field="prediction",
+            context=context,
+        )
+    except Exception as exc:
         # Graceful fallback — still useful partial data
-        logger.warning("merge_prediction: JSON parse failed, returning raw")
+        logger.warning("merge_prediction: LLM failed — %s", exc)
         result = {
             "merge_risk": "medium",
             "recommendation": "Merge with caution",
-            "one_liner": "Impact prediction available — see narrative below.",
+            "one_liner": "Impact prediction unavailable — see narrative below.",
             "affected_areas": [],
             "breaking_changes": [],
-            "narrative": raw,
+            "narrative": f"Impact prediction could not be generated ({exc}).",
             "confidence": "low",
         }
 
-    set_cached(_CACHE_NAMESPACE, cache_key, json.dumps(result))
     logger.info(
         "merge_prediction done: risk=%s rec=%s",
         result.get("merge_risk"),

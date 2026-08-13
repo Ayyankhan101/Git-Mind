@@ -7,6 +7,8 @@ backend/__pycache__/
 backend/.chroma/
 backend/.chroma_registry.json
 backend/.llm_cache/
+backend/.dspy_harvest/
+backend/optimized/
 backend/analyses/
 backend/gitmind.db
 *.pyc

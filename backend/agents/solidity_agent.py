@@ -6,9 +6,12 @@ from pathlib import Path
 
 import httpx
 import structlog
+from pydantic import BaseModel
 
-from llm_cache import get_cached, invoke_with_retry, set_cached
-from settings import LLM_MODEL, get_llm
+from dspy_setup import dspy
+from llm_cache import run_dspy_cached
+from optimization.registry import define_program
+from settings import LLM_MODEL, get_dspy_lm
 
 # ML classifier path
 _ML_DIR = Path(__file__).parent.parent.parent / "ml" / "solidity_classifier"
@@ -18,9 +21,52 @@ if _ML_DIR.exists():
 logger = structlog.get_logger(__name__)
 
 _SIDECAR_BASE = os.getenv("SIDECAR_URL", "http://127.0.0.1:8003")
-_LLM = get_llm(temperature_key="security", json_mode=True)
+_LM = get_dspy_lm(temperature_key="security")
 _CACHE_NS = f"{LLM_MODEL}:solidity:json"
 _MAX_FINDINGS = 40
+
+
+class SolidityFinding(BaseModel):
+    """Solidity audit finding — shape matches the frontend contract exactly."""
+
+    id: str
+    contract: str
+    function: str
+    severity: str
+    title: str
+    description: str
+    remediation: str
+    swc: str | None = None
+
+
+class SolidityTriage(dspy.Signature):
+    """You are a senior Solidity security auditor.
+
+    Analyze the contracts below for: re-entrancy vulnerabilities, unchecked external calls,
+    integer overflow / underflow, access control issues (tx.origin, missing onlyOwner),
+    uninitialized storage pointers, front-running / race conditions, gas griefing, and
+    logic errors in function visibility. If no issues are found, return an empty list."""
+
+    contracts_json: str = dspy.InputField(
+        desc="Structured AST dump: contracts, functions, state variables, modifiers, events"
+    )
+    findings: list[SolidityFinding] = dspy.OutputField(
+        desc=(
+            "Audit findings. Each has: id (short unique id), contract (name), function "
+            "(name or 'constructor' / 'fallback'), severity (critical|high|medium|low), "
+            "title (max 10 words), description (one sentence explaining the bug), "
+            "remediation (one concrete fix sentence), swc (SWC identifier e.g. 'SWC-107' or null)."
+        )
+    )
+
+
+_predictor = define_program(
+    "solidity",
+    SolidityTriage,
+    output_field="findings",
+    input_fields=("contracts_json",),
+    output_model=SolidityFinding,
+)
 
 # ML classifier (lazy load)
 _ml_clf = None
@@ -139,51 +185,19 @@ def solidity_agent(state: dict) -> dict:
 
 
 def _triage_with_llm(contracts: list) -> list:
-    prompt = f"{_TRIAGE_PROMPT}\n\nContracts:\n{json.dumps(contracts, indent=2)}"
-    cached = get_cached(_CACHE_NS, prompt)
-
-    if cached:
-        logger.debug("Solidity agent: cache hit")
-        findings = json.loads(cached).get("findings", [])
-    else:
-        try:
-            raw = invoke_with_retry(_LLM, prompt).content
-            findings = json.loads(raw).get("findings", [])
-            set_cached(_CACHE_NS, prompt, raw)
-        except (json.JSONDecodeError, Exception) as exc:
-            logger.error("Solidity triage LLM failed: %s", exc)
-            return []
+    try:
+        findings = run_dspy_cached(
+            _predictor,
+            _CACHE_NS,
+            lm=_LM,
+            output_field="findings",
+            contracts_json=json.dumps(contracts, indent=2),
+        )
+    except Exception as exc:
+        logger.error("Solidity triage LLM failed: %s", exc)
+        return []
 
     for f in findings:
         f.setdefault("id", uuid.uuid4().hex[:8])
 
     return findings[:_MAX_FINDINGS]
-
-
-_TRIAGE_PROMPT = """\
-You are a senior Solidity security auditor. Below is a structured AST dump
-of a Solidity project: contracts, functions, state variables, modifiers, events.
-
-Analyze each contract for:
-- Re-entrancy vulnerabilities
-- Unchecked external calls
-- Integer overflow / underflow
-- Access control issues (tx.origin, missing onlyOwner)
-- Uninitialized storage pointers
-- Front-running / race conditions
-- Gas griefing
-- Logic errors in function visibility
-
-Return a JSON object with key "findings" containing an array.
-Each item must have:
-  "id"           — short unique id
-  "contract"     — contract name
-  "function"     — function name (or "constructor" / "fallback")
-  "severity"     — critical / high / medium / low
-  "title"        — short title (max 10 words)
-  "description"  — one sentence explaining the bug
-  "remediation"  — one concrete fix sentence
-  "swc"          — SWC identifier if applicable (e.g. "SWC-107"), or null
-
-If no issues found, return {"findings": []}.
-"""

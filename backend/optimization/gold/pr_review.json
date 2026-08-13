@@ -1,0 +1,152 @@
+[
+  {
+    "inputs": {
+      "pr_context": "Repository: acme/docs/website\nPR #101: Update README\nAuthor: dev  →  merging into main\nStats: +85 -12 across 4 file(s)\nDescription: Adds setup instructions.\n\nDiff:\ndiff --git a/README.md b/README.md\n+## Setup\n+git clone ...\n"
+    },
+    "output": {
+      "summary": "Low-risk documentation change with no code impact.",
+      "issues": [],
+      "verdict": "APPROVE",
+      "verdict_justification": "Only markdown changes; nothing behavioral."
+    }
+  },
+  {
+    "inputs": {
+      "pr_context": "Repository: acme/api/server\nPR #42: Add user signup\nAuthor: dev  →  merging into main\nStats: +120 -30 across 5 file(s)\nDescription: Implements signup endpoint.\n\nDiff:\ndiff --git a/app/routes/auth.py b/app/routes/auth.py\n+@router.post('/signup')\n+def signup(email: str, password: str):\n+    user = db.create(email=email, password=password)\n"
+    },
+    "output": {
+      "summary": "New signup endpoint, but the password is stored in plaintext.",
+      "issues": [
+        {
+          "file": "app/routes/auth.py",
+          "line": 4,
+          "severity": "CRITICAL",
+          "title": "Password stored in plaintext",
+          "explanation": "Passwords must be hashed with a slow KDF before storage."
+        }
+      ],
+      "verdict": "REQUEST CHANGES",
+      "verdict_justification": "Plaintext password storage is a release blocker."
+    }
+  },
+  {
+    "inputs": {
+      "pr_context": "Repository: acme/lib/core\nPR #7: Refactor event loop\nAuthor: dev  →  merging into main\nStats: +1500 -1400 across 60 file(s)\nDescription: Large internal refactor.\n\nDiff:\ndiff --git a/src/loop.rs b/src/loop.rs\n-    poll_events(events)\n+    poll_events_async(events).await\n"
+    },
+    "output": {
+      "summary": "Broad refactor of the event loop; hard to fully audit in one pass.",
+      "issues": [],
+      "verdict": "NEEDS DISCUSSION",
+      "verdict_justification": "The refactor touches timing-critical paths — worth a design review before merge."
+    }
+  },
+  {
+    "inputs": {
+      "pr_context": "Repository: acme/api/server\nPR #43: Fix auth bypass\nAuthor: dev  →  merging into main\nStats: +15 -8 across 2 file(s)\nDescription: Closes a session bypass.\n\nDiff:\ndiff --git a/app/auth.py b/app/auth.py\n-    if not token:\n+    if not token or not verify(token):\n"
+    },
+    "output": {
+      "summary": "Correctly closes the reported session bypass with a focused fix.",
+      "issues": [],
+      "verdict": "APPROVE",
+      "verdict_justification": "Targeted security fix with clear intent."
+    }
+  },
+  {
+    "inputs": {
+      "pr_context": "Repository: acme/api/server\nPR #44: Rename user route\nAuthor: dev  →  merging into main\nStats: +30 -25 across 3 file(s)\nDescription: Renames /users/{uid}.\n\nDiff:\ndiff --git a/app/routes/users.py b/app/routes/users.py\n-@router.get('/users/{uid}')\n+@router.get('/users/:id')\n"
+    },
+    "output": {
+      "summary": "Renames a public route, breaking existing API consumers.",
+      "issues": [
+        {
+          "file": "app/routes/users.py",
+          "line": 5,
+          "severity": "HIGH",
+          "title": "Breaking endpoint rename",
+          "explanation": "Existing clients calling GET /users/{uid} will break; coordinate or keep a redirect."
+        }
+      ],
+      "verdict": "REQUEST CHANGES",
+      "verdict_justification": "The route rename is a breaking change needing a migration plan."
+    }
+  },
+  {
+    "inputs": {
+      "pr_context": "Repository: acme/web/frontend\nPR #88: Add component tests\nAuthor: dev  →  merging into main\nStats: +210 -0 across 8 file(s)\nDescription: Test-only changes.\n\nDiff:\ndiff --git a/tests/Button.test.tsx b/tests/Button.test.tsx\n+it('renders label', () => {\n+  render(<Button label=\"Hi\" />);\n+});\n"
+    },
+    "output": {
+      "summary": "Test-only addition with no production impact.",
+      "issues": [],
+      "verdict": "APPROVE",
+      "verdict_justification": "Pure test coverage; nothing to risk."
+    }
+  },
+  {
+    "inputs": {
+      "pr_context": "Repository: acme/api/server\nPR #45: Add query caching\nAuthor: dev  →  merging into main\nStats: +60 -20 across 6 file(s)\nDescription: Caches stats queries.\n\nDiff:\ndiff --git a/app/queries.py b/app/queries.py\n+@lru_cache\n+def get_stats():\n+    return compute_stats()\n"
+    },
+    "output": {
+      "summary": "Caching improves latency but risks serving stale data.",
+      "issues": [
+        {
+          "file": "app/queries.py",
+          "line": 3,
+          "severity": "MEDIUM",
+          "title": "Stale cache risk",
+          "explanation": "Writes must invalidate the cache or users see stale stats."
+        }
+      ],
+      "verdict": "NEEDS DISCUSSION",
+      "verdict_justification": "Cache invalidation semantics should be agreed before merge."
+    }
+  },
+  {
+    "inputs": {
+      "pr_context": "Repository: acme/api/server\nPR #46: Add API key logging\nAuthor: dev  →  merging into main\nStats: +8 -3 across 2 file(s)\nDescription: Logs request API keys.\n\nDiff:\ndiff --git a/app/middleware.py b/app/middleware.py\n+    log.info('api_key=%s', request.headers['X-Api-Key'])\n"
+    },
+    "output": {
+      "summary": "Logging API keys leaks credentials into log aggregation.",
+      "issues": [
+        {
+          "file": "app/middleware.py",
+          "line": 2,
+          "severity": "CRITICAL",
+          "title": "Secrets in logs",
+          "explanation": "API keys are secrets; mask them before logging."
+        }
+      ],
+      "verdict": "REQUEST CHANGES",
+      "verdict_justification": "Credential leakage into logs is a security incident waiting to happen."
+    }
+  },
+  {
+    "inputs": {
+      "pr_context": "Repository: acme/lib/sdk\nPR #8: Format code with prettier\nAuthor: dev  →  merging into main\nStats: +300 -300 across 40 file(s)\nDescription: Style-only cleanup.\n\nDiff:\ndiff --git a/src/index.ts b/src/index.ts\n-  const x=1;\n+  const x = 1;\n"
+    },
+    "output": {
+      "summary": "Style-only formatting pass; no logic changed.",
+      "issues": [],
+      "verdict": "APPROVE",
+      "verdict_justification": "Formatting-only diff with no behavioral risk."
+    }
+  },
+  {
+    "inputs": {
+      "pr_context": "Repository: acme/db/migrations\nPR #12: Add users.plan column\nAuthor: dev  →  merging into main\nStats: +45 -3 across 4 file(s)\nDescription: Adds plan column.\n\nDiff:\ndiff --git a/migrations/0042_add_plan.sql b/migrations/0042_add_plan.sql\n+ALTER TABLE users ADD COLUMN plan TEXT NOT NULL DEFAULT 'free';\n"
+    },
+    "output": {
+      "summary": "Adds a NOT NULL column that locks the table during migration.",
+      "issues": [
+        {
+          "file": "migrations/0042_add_plan.sql",
+          "line": 1,
+          "severity": "MEDIUM",
+          "title": "Table lock during migration",
+          "explanation": "NOT NULL with DEFAULT locks the table on large installs; schedule during low traffic."
+        }
+      ],
+      "verdict": "NEEDS DISCUSSION",
+      "verdict_justification": "Migration locking strategy should be confirmed for production data size."
+    }
+  }
+]

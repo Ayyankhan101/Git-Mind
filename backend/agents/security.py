@@ -5,40 +5,62 @@ import uuid
 from pathlib import Path
 
 import structlog
+from pydantic import BaseModel
 
 _SEMGREP = shutil.which("semgrep") or "semgrep"  # fallback for type narrowing
 
-from llm_cache import get_cached, invoke_with_retry, set_cached  # noqa: E402
-from settings import LLM_MODEL, get_llm  # noqa: E402
+from dspy_setup import dspy  # noqa: E402
+from llm_cache import run_dspy_cached  # noqa: E402
+from optimization.registry import define_program  # noqa: E402
+from settings import LLM_MODEL, get_dspy_lm  # noqa: E402
 
 logger = structlog.get_logger(__name__)
 
-_LLM = get_llm(temperature_key="security", json_mode=True)
+_LM = get_dspy_lm(temperature_key="security")
 _CACHE_NAMESPACE = f"{LLM_MODEL}:security:json"
 _MAX_FINDINGS = 40
 _MAX_MSG_CHARS = 300
 _VALID_SEVERITIES = frozenset({"low", "medium", "high", "critical"})
 
-_TRIAGE_PROMPT = """\
-You are a senior application security engineer preparing an executive briefing.
-Below is a list of raw semgrep findings from a static code scan.
 
-For each finding, produce a concise, actionable summary.
-Return a JSON object with a single key "findings" containing an array.
-Each item must have exactly these keys:
-  "id"           — short unique identifier (use the check_id tail, e.g. "sql-injection")
-  "file"         — relative file path where the issue was found
-  "line_start"   — integer line number where the issue starts
-  "line_end"     — integer line number where the issue ends
-  "severity"     — one of: low, medium, high, critical
-  "title"        — short title (max 10 words)
-  "exploit_story"— one sentence, non-technical, describing real-world business impact
-  "remediation"  — one concrete fix sentence (e.g. "Use parameterized queries instead of string concatenation")
-  "cwe"          — CWE identifier if applicable (e.g. "CWE-89"), or null
+class SecurityFinding(BaseModel):
+    """Triaged semgrep finding — shape matches the frontend contract exactly."""
 
-If there are no findings, return {"findings": []}.
-Do NOT include any explanation outside the JSON object.\
-"""
+    id: str
+    file: str
+    line_start: int
+    line_end: int
+    severity: str
+    title: str
+    exploit_story: str
+    remediation: str
+    cwe: str | None = None
+
+
+class SecurityTriage(dspy.Signature):
+    """You are a senior application security engineer preparing an executive briefing.
+
+    For each raw semgrep finding, produce a concise, actionable summary.
+    If there are no findings, return an empty list."""
+
+    raw_findings: str = dspy.InputField(desc="JSON array of raw semgrep findings from a static code scan")
+    findings: list[SecurityFinding] = dspy.OutputField(
+        desc=(
+            "Triaged findings. Each has: id (short, use the check_id tail e.g. 'sql-injection'), "
+            "file (relative path), line_start (int), line_end (int), severity (low|medium|high|critical), "
+            "title (max 10 words), exploit_story (one non-technical sentence on real-world business impact), "
+            "remediation (one concrete fix sentence), cwe (CWE identifier or null)."
+        )
+    )
+
+
+_predictor = define_program(
+    "security",
+    SecurityTriage,
+    output_field="findings",
+    input_fields=("raw_findings",),
+    output_model=SecurityFinding,
+)
 
 
 def run_security_agent(local_path: str) -> list[dict]:
@@ -116,24 +138,21 @@ def _triage_with_llm(raw_results: list[dict]) -> list[dict]:
         for r in raw_results[:_MAX_FINDINGS]
     ]
 
-    prompt = f"{_TRIAGE_PROMPT}\n\nFindings:\n{json.dumps(truncated, indent=2)}"
-    cached = get_cached(_CACHE_NAMESPACE, prompt)
-
-    if cached:
-        logger.debug("Security agent: cache hit")
-        findings = json.loads(cached).get("findings", [])
-    else:
-        try:
-            raw = invoke_with_retry(_LLM, prompt).content
-            findings = json.loads(raw).get("findings", [])
-            set_cached(_CACHE_NAMESPACE, prompt, raw)
-        except (json.JSONDecodeError, Exception) as exc:
-            logger.error(
-                "Security triage LLM failed: %s — dropping %d semgrep findings, using demo fallback",
-                exc,
-                len(raw_results),
-            )
-            return _synthetic_finding()
+    try:
+        findings = run_dspy_cached(
+            _predictor,
+            _CACHE_NAMESPACE,
+            lm=_LM,
+            output_field="findings",
+            raw_findings=json.dumps(truncated, indent=2),
+        )
+    except Exception as exc:
+        logger.error(
+            "Security triage LLM failed: %s — dropping %d semgrep findings, using demo fallback",
+            exc,
+            len(raw_results),
+        )
+        return _synthetic_finding()
 
     # Guarantee every finding has a valid id and normalized severity
     for f in findings:

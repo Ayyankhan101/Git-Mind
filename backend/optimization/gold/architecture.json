@@ -1,0 +1,62 @@
+[
+  {
+    "inputs": {
+      "context": "PRIMARY LANGUAGE: Python\n\nFILE TREE:\napp/main.py\napp/routes/users.py\napp/models/user.py\ndb.py\n\nKEY FILES:"
+    },
+    "output": "graph TD\n    client[Client] -->|HTTP| api[FastAPI App]\n    api -->|queries| database[PostgreSQL]"
+  },
+  {
+    "inputs": {
+      "context": "PRIMARY LANGUAGE: JavaScript\n\nFILE TREE:\nserver.js\nroutes/products.js\nmodels/product.js\nredis.js\n\nKEY FILES:"
+    },
+    "output": "graph TD\n    web[Express Server] -->|REST| routes[Products Routes]\n    routes -->|lookup| cache[Redis]\n    routes -->|persist| db[MongoDB]"
+  },
+  {
+    "inputs": {
+      "context": "PRIMARY LANGUAGE: Go\n\nFILE TREE:\ncmd/api/main.go\ninternal/handlers/user.go\ninternal/store/postgres.go\n\nKEY FILES:"
+    },
+    "output": "graph TD\n    api[Go API] -->|HTTP| handlers[User Handlers]\n    handlers -->|queries| store[Postgres Store]\n    store -->|SQL| postgres[PostgreSQL]"
+  },
+  {
+    "inputs": {
+      "context": "PRIMARY LANGUAGE: Rust\n\nFILE TREE:\nsrc/main.rs\nsrc/parser.rs\nsrc/engine.rs\nsrc/render.rs\n\nKEY FILES:"
+    },
+    "output": "graph TD\n    cli[CLI Entry] -->|parses| parser[Parser]\n    parser -->|tree| engine[Template Engine]\n    engine -->|html| render[Renderer]"
+  },
+  {
+    "inputs": {
+      "context": "PRIMARY LANGUAGE: Python\n\nFILE TREE:\nmanage.py\naccounts/models.py\naccounts/views.py\nbilling/models.py\nbilling/views.py\n\nKEY FILES:"
+    },
+    "output": "graph TD\n    wsgi[Django WSGI] -->|routes| accounts[Accounts App]\n    wsgi -->|routes| billing[Billing App]\n    accounts -->|ORM| db[Database]\n    billing -->|ORM| db"
+  },
+  {
+    "inputs": {
+      "context": "PRIMARY LANGUAGE: TypeScript\n\nFILE TREE:\nsrc/App.tsx\nsrc/api/client.ts\nsrc/components/UserList.tsx\nserver/index.ts\n\nKEY FILES:"
+    },
+    "output": "graph TD\n    react[React Frontend] -->|fetch| client[API Client]\n    client -->|REST| server[Express Backend]\n    server -->|queries| db[Database]"
+  },
+  {
+    "inputs": {
+      "context": "PRIMARY LANGUAGE: Python\n\nFILE TREE:\napp.py\nmodels.py\nstatic/\nqueries.sql\n\nKEY FILES:"
+    },
+    "output": "graph TD\n    flask[Flask App] -->|templates| views[Views]\n    flask -->|SQL| db[SQLite]\n    flask -->|static| static[Static Assets]"
+  },
+  {
+    "inputs": {
+      "context": "PRIMARY LANGUAGE: Go\n\nFILE TREE:\ncmd/gateway/main.go\ninternal/auth/jwt.go\ninternal/proxy/balancer.go\ninternal/service/catalog.go\n\nKEY FILES:"
+    },
+    "output": "graph TD\n    gw[API Gateway] -->|auth| auth[JWT Auth]\n    gw -->|balance| lb[Load Balancer]\n    lb -->|forward| svc[Catalog Service]"
+  },
+  {
+    "inputs": {
+      "context": "PRIMARY LANGUAGE: Java\n\nFILE TREE:\nsrc/main/java/com/acme/Main.java\nsrc/main/java/com/acme/controller/OrderController.java\nsrc/main/java/com/acme/service/OrderService.java\n\nKEY FILES:"
+    },
+    "output": "graph TD\n    app[Spring Boot] -->|controllers| orders[Order Controller]\n    orders -->|service| svc[Order Service]\n    svc -->|repository| repo[Order Repository]"
+  },
+  {
+    "inputs": {
+      "context": "PRIMARY LANGUAGE: Python\n\nFILE TREE:\ningest/main.py\ningest/transform.py\ningest/load.py\nscheduler.py\n\nKEY FILES:"
+    },
+    "output": "graph TD\n    cron[Scheduler] -->|triggers| ingest[Ingest Pipeline]\n    ingest -->|raw| transform[Transform]\n    transform -->|load| warehouse[Warehouse]"
+  }
+]

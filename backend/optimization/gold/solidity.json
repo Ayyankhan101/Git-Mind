@@ -1,0 +1,172 @@
+[
+  {
+    "inputs": {
+      "contracts_json": "[{\"name\": \"Token\", \"functions\": [{\"name\": \"transfer\", \"visibility\": \"public\", \"parameters\": [{\"name\": \"to\", \"type\": \"address\"}, {\"name\": \"amount\", \"type\": \"uint256\"}], \"body\": \"balances[msg.sender] -= amount; balances[to] += amount;\", \"modifiers\": []}], \"state_variables\": [{\"name\": \"balances\", \"type\": \"mapping(address => uint256)\"}], \"modifiers\": [], \"events\": []}]"
+    },
+    "output": [
+      {
+        "id": "reentrancy",
+        "contract": "Token",
+        "function": "transfer",
+        "severity": "high",
+        "title": "Reentrancy in transfer",
+        "description": "State updates follow the arithmetic without reentrancy guards on external calls.",
+        "remediation": "Apply checks-effects-interactions and add a nonReentrant modifier.",
+        "swc": "SWC-107"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "contracts_json": "[{\"name\": \"Wallet\", \"functions\": [{\"name\": \"withdraw\", \"visibility\": \"public\", \"parameters\": [{\"name\": \"to\", \"type\": \"address\"}, {\"name\": \"amount\", \"type\": \"uint256\"}], \"body\": \"if (msg.sender == tx.origin) { payable(msg.sender).transfer(1 ether); }\", \"modifiers\": []}], \"state_variables\": [], \"modifiers\": [], \"events\": []}]"
+    },
+    "output": [
+      {
+        "id": "tx-origin",
+        "contract": "Wallet",
+        "function": "withdraw",
+        "severity": "high",
+        "title": "tx.origin authorization",
+        "description": "Authorization relies on tx.origin, which can be phished through a middle contract.",
+        "remediation": "Use msg.sender instead of tx.origin for authorization.",
+        "swc": "SWC-115"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "contracts_json": "[{\"name\": \"EtherBank\", \"functions\": [{\"name\": \"sendEth\", \"visibility\": \"public\", \"parameters\": [{\"name\": \"to\", \"type\": \"address\"}, {\"name\": \"amount\", \"type\": \"uint256\"}], \"body\": \"to.call{value: amount}(\\\"\\\");\", \"modifiers\": []}], \"state_variables\": [{\"name\": \"balances\", \"type\": \"mapping(address => uint256)\"}], \"modifiers\": [], \"events\": []}]"
+    },
+    "output": [
+      {
+        "id": "unchecked-call",
+        "contract": "EtherBank",
+        "function": "sendEth",
+        "severity": "medium",
+        "title": "Unchecked low-level call",
+        "description": "The return value of the low-level call is ignored, so failures are silent.",
+        "remediation": "Check the call's success value and revert on failure.",
+        "swc": "SWC-104"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "contracts_json": "[{\"name\": \"Vault\", \"functions\": [{\"name\": \"add\", \"visibility\": \"public\", \"parameters\": [{\"name\": \"to\", \"type\": \"address\"}, {\"name\": \"amount\", \"type\": \"uint256\"}], \"body\": \"total = total + amount;\", \"modifiers\": []}], \"state_variables\": [{\"name\": \"total\", \"type\": \"uint256\"}], \"modifiers\": [], \"events\": []}]"
+    },
+    "output": [
+      {
+        "id": "overflow",
+        "contract": "Vault",
+        "function": "add",
+        "severity": "medium",
+        "title": "Unchecked integer overflow",
+        "description": "Arithmetic can overflow before Solidity 0.8 or when unchecked is used.",
+        "remediation": "Use Solidity 0.8+ or an overflow-safe math library.",
+        "swc": "SWC-101"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "contracts_json": "[{\"name\": \"Admin\", \"functions\": [{\"name\": \"setOwner\", \"visibility\": \"public\", \"parameters\": [{\"name\": \"newOwner\", \"type\": \"address\"}], \"body\": \"owner = newOwner;\", \"modifiers\": []}], \"state_variables\": [{\"name\": \"owner\", \"type\": \"address\"}], \"modifiers\": [{\"name\": \"onlyOwner\", \"body\": \"require(msg.sender == owner)\"}], \"events\": []}]"
+    },
+    "output": [
+      {
+        "id": "missing-auth",
+        "contract": "Admin",
+        "function": "setOwner",
+        "severity": "high",
+        "title": "Missing onlyOwner access control",
+        "description": "setOwner is callable by anyone because the onlyOwner modifier is not applied.",
+        "remediation": "Apply the onlyOwner modifier to privileged functions.",
+        "swc": "SWC-105"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "contracts_json": "[{\"name\": \"Lottery\", \"functions\": [{\"name\": \"pickWinner\", \"visibility\": \"public\", \"parameters\": [{\"name\": \"to\", \"type\": \"address\"}, {\"name\": \"amount\", \"type\": \"uint256\"}], \"body\": \"winner = players[block.timestamp % players.length];\", \"modifiers\": []}], \"state_variables\": [{\"name\": \"players\", \"type\": \"address[]\"}], \"modifiers\": [], \"events\": []}]"
+    },
+    "output": [
+      {
+        "id": "weak-randomness",
+        "contract": "Lottery",
+        "function": "pickWinner",
+        "severity": "high",
+        "title": "Predictable randomness",
+        "description": "block.timestamp is predictable, letting miners manipulate the winner.",
+        "remediation": "Use a commit-reveal scheme or a verifiable random function.",
+        "swc": "SWC-120"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "contracts_json": "[{\"name\": \"Auction\", \"functions\": [{\"name\": \"bid\", \"visibility\": \"public\", \"parameters\": [{\"name\": \"to\", \"type\": \"address\"}, {\"name\": \"amount\", \"type\": \"uint256\"}], \"body\": \"require(msg.value > highestBid); highestBid = msg.value;\", \"modifiers\": []}], \"state_variables\": [{\"name\": \"highestBid\", \"type\": \"uint256\"}], \"modifiers\": [], \"events\": []}]"
+    },
+    "output": [
+      {
+        "id": "front-running",
+        "contract": "Auction",
+        "function": "bid",
+        "severity": "medium",
+        "title": "Front-running in auction",
+        "description": "Bids are visible in the mempool, so watchers can outbid at the last moment.",
+        "remediation": "Use a commit-reveal bid scheme or a sealed-bid design.",
+        "swc": "SWC-114"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "contracts_json": "[{\"name\": \"MultiSig\", \"functions\": [{\"name\": \"execute\", \"visibility\": \"public\", \"parameters\": [{\"name\": \"target\", \"type\": \"address\"}, {\"name\": \"data\", \"type\": \"bytes\"}], \"body\": \"require(signatures >= threshold); target.call(data);\", \"modifiers\": []}], \"state_variables\": [{\"name\": \"signatures\", \"type\": \"uint256\"}], \"modifiers\": [], \"events\": []}]"
+    },
+    "output": [
+      {
+        "id": "unchecked-external",
+        "contract": "MultiSig",
+        "function": "execute",
+        "severity": "medium",
+        "title": "Unchecked external call",
+        "description": "The transaction call's return value is not checked, hiding failures.",
+        "remediation": "Require the call to succeed or record the failure explicitly.",
+        "swc": "SWC-104"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "contracts_json": "[{\"name\": \"Escrow\", \"functions\": [{\"name\": \"release\", \"visibility\": \"public\", \"parameters\": [{\"name\": \"to\", \"type\": \"address\"}, {\"name\": \"amount\", \"type\": \"uint256\"}], \"body\": \"payable(payee).transfer(amount);\", \"modifiers\": []}], \"state_variables\": [{\"name\": \"payee\", \"type\": \"address\"}], \"modifiers\": [], \"events\": []}]"
+    },
+    "output": [
+      {
+        "id": "dos-transfer",
+        "contract": "Escrow",
+        "function": "release",
+        "severity": "medium",
+        "title": "Potential denial of service via transfer",
+        "description": "A contract payee that reverts on receive blocks the transfer and freezes funds.",
+        "remediation": "Use a pull-based withdrawal pattern instead of push payments.",
+        "swc": "SWC-113"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "contracts_json": "[{\"name\": \"Owned\", \"functions\": [{\"name\": \"kill\", \"visibility\": \"public\", \"parameters\": [{\"name\": \"to\", \"type\": \"address\"}, {\"name\": \"amount\", \"type\": \"uint256\"}], \"body\": \"selfdestruct(payable(msg.sender));\", \"modifiers\": []}], \"state_variables\": [], \"modifiers\": [{\"name\": \"onlyOwner\", \"body\": \"require(msg.sender == owner)\"}], \"events\": []}]"
+    },
+    "output": [
+      {
+        "id": "unprotected-selfdestruct",
+        "contract": "Owned",
+        "function": "kill",
+        "severity": "high",
+        "title": "Public selfdestruct",
+        "description": "selfdestruct is public and can destroy the contract and its funds.",
+        "remediation": "Restrict kill to onlyOwner and prefer an upgrade pattern.",
+        "swc": "SWC-106"
+      }
+    ]
+  }
+]

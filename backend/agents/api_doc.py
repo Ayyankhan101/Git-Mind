@@ -1,32 +1,55 @@
-import json
-
 import structlog
 from gitmind_core import scan_route_files
+from pydantic import BaseModel
 
-from llm_cache import get_cached, invoke_with_retry, set_cached
-from settings import LLM_MODEL, get_llm
+from dspy_setup import dspy
+from llm_cache import run_dspy_cached
+from optimization.registry import define_program
+from settings import LLM_MODEL, get_dspy_lm
 
 logger = structlog.get_logger(__name__)
 
 _MAX_FILES = 10
 _MAX_FILE_CHARS = 6_000
 _CACHE_NAMESPACE = f"{LLM_MODEL}:api_doc:json"
-_LLM = get_llm(temperature=0, json_mode=True)
+_LM = get_dspy_lm(temperature=0)
 
-_PROMPT = """\
-You are a senior API documentation engineer. Extract every HTTP API endpoint from the code below.
-Return a JSON object with a single key "endpoints" containing an array.
-Each item must have exactly these keys:
-  "method"        — HTTP verb in uppercase (GET, POST, PUT, DELETE, PATCH)
-  "route"         — the URL path string (e.g. "/api/users/:id")
-  "description"   — one clear sentence explaining what this endpoint does and what it returns
-  "parameters"    — comma-separated list of path/query params with types, or "none"
-  "auth_required" — true if authentication/authorization is required, false otherwise, null if unclear
 
-Be precise: only include endpoints that are clearly defined in this file.
-If no endpoints are found, return {"endpoints": []}.
-Do NOT include any explanation outside the JSON object.\
-"""
+class ApiEndpoint(BaseModel):
+    """Extracted HTTP endpoint — shape matches the frontend contract exactly."""
+
+    method: str
+    route: str
+    description: str
+    parameters: str
+    auth_required: bool | None = None
+
+
+class ApiDocSignature(dspy.Signature):
+    """You are a senior API documentation engineer.
+
+    Extract every HTTP API endpoint clearly defined in the code below. Be precise:
+    only include endpoints that are clearly defined in this file. If no endpoints
+    are found, return an empty list."""
+
+    source_code: str = dspy.InputField(desc="File path and source code of one API route file")
+    endpoints: list[ApiEndpoint] = dspy.OutputField(
+        desc=(
+            "Extracted endpoints. Each has: method (uppercase HTTP verb: GET, POST, PUT, DELETE, PATCH), "
+            "route (URL path string e.g. '/api/users/:id'), description (one clear sentence on what it does "
+            "and returns), parameters (comma-separated list of path/query params with types, or 'none'), "
+            "auth_required (true/false, or null if unclear)."
+        )
+    )
+
+
+_predictor = define_program(
+    "api_doc",
+    ApiDocSignature,
+    output_field="endpoints",
+    input_fields=("source_code",),
+    output_model=ApiEndpoint,
+)
 
 
 def run_api_doc_agent(file_contents: dict[str, str]) -> list[dict]:
@@ -40,20 +63,17 @@ def run_api_doc_agent(file_contents: dict[str, str]) -> list[dict]:
     seen: set[tuple[str, str]] = set()  # dedup on (METHOD, route)
 
     for fp, content in list(api_files.items())[:_MAX_FILES]:
-        prompt = f"{_PROMPT}\n\nFile: {fp}\n\n{content[:_MAX_FILE_CHARS]}"
-
-        cached = get_cached(_CACHE_NAMESPACE, prompt)
-        if cached:
-            endpoints = json.loads(cached).get("endpoints", [])
-            logger.debug("API doc agent: cache hit for %s", fp)
-        else:
-            try:
-                raw = invoke_with_retry(_LLM, prompt).content
-                endpoints = json.loads(raw).get("endpoints", [])
-                set_cached(_CACHE_NAMESPACE, prompt, raw)
-            except (json.JSONDecodeError, Exception) as exc:
-                logger.warning("API doc agent: parse failed for %s — %s", fp, exc)
-                endpoints = []
+        try:
+            endpoints = run_dspy_cached(
+                _predictor,
+                _CACHE_NAMESPACE,
+                lm=_LM,
+                output_field="endpoints",
+                source_code=f"File: {fp}\n\n{content[:_MAX_FILE_CHARS]}",
+            )
+        except Exception as exc:
+            logger.warning("API doc agent: parse failed for %s — %s", fp, exc)
+            endpoints = []
 
         for item in endpoints:
             key = (item.get("method", "").upper(), item.get("route", ""))
