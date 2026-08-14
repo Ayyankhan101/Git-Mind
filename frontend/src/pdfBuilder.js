@@ -301,9 +301,38 @@ const _KW = {
 
 const _STR_RE = /(["'`])(?:(?!\1|\\).|\\.)*\1/g;
 const _COMMENT_RE = /(\/\/.*$|#.*$|\/\*[\s\S]*?\*\/)/gm;
-const _NUM_RE = /\b\d+(\.\d+)?\b/g;
 
-function highlightCode(code, lang) {
+// ── Text safety (pdfmake/Geist glyph coverage) ───────────────────────────────
+export function safeText(s) {
+  if (s == null) return "";
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    // Emoji + dingbats + variation selectors + ZWJ sequences
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, "")
+    // Control characters (keeps \n and \t)
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
+}
+
+// Long unbroken tokens (URLs, file paths) overflow fixed table widths; chunk them.
+export function wrapLong(s, maxLen = 40) {
+  if (s == null) return s;
+  const str = String(s);
+  if (str.length <= maxLen) return str;
+  return str.replace(/[^\s]{40,}/g, (m) => m.match(/.{1,40}/g).join("\n"));
+}
+
+export function sanitizeFilename(name) {
+  return String(name || "gitmind-report")
+    .replace(/[\/\\:*?"<>|]/g, "-")
+    .replace(/[\u0000-\u001F\u007F]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 120);
+}
+
+export function highlightCode(code, lang) {
   if (!code) return [];
   const keywords = _KW[lang] || _KW.javascript;
   const lines = code.split("\n");
@@ -341,7 +370,7 @@ function highlightCode(code, lang) {
         tokens.push({ text: comments[idx], color: "#6c7086", italics: true }); // gray = comment
       } else if (keywords.has(part)) {
         tokens.push({ text: part, color: "#6366f1", bold: true }); // indigo = keyword
-      } else if (_NUM_RE.test(part)) {
+      } else if (/^\d+(\.\d+)?$/.test(part)) {
         tokens.push({ text: part, color: "#ea580c" }); // orange = number
       } else {
         tokens.push({ text: part });
