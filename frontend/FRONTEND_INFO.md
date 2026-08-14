@@ -65,11 +65,25 @@ body 15px/400 sans | .t-label 11px/600 0.12em uppercase | .t-mono 13px mono | st
 
 ### Nav rail
 
-52px wide, vertical icon bar with tooltips (11px/500), `.nav-item` active state uses primary color, `.nav-badge` for counts; expands to 180px on hover
+52px wide, vertical icon bar with tooltips (11px/500), `.nav-item` active state uses primary color, `.nav-badge` for counts; expands to 180px on hover, labels stagger in (transition-delay per item)
+
+### Landing page
+
+`src/components/LandingPage.jsx` + `LandingPage.css` — editorial marketing page shown pre-analysis.
+
+- Hero: split-screen — left: headline (`lp-hero-title`), subcopy (`lp-hero-sub`), CTA (`lp-cta-btn`); right: live health-grade preview card (`lp-hero-preview`) + decorative agent radar (`lp-bento-agents`, `.lp-bento-agent`)
+- `lp-stats` strip: value/label pairs
+- `lp-how-steps` (how-it-works): numbered step cards (`lp-how-step`, `lp-how-step-num`) with connecting line
+- Mobile: `.lp-nav-hamburger` (3-line hamburger → X when open), collapsible mobile menu
+- Footer `lp-footer`: brand, theme switcher, GitHub link
+
+### Theme switcher
+
+`src/components/ThemeSwitcher.jsx` — grid of 13 theme swatches, rendered in the command bar's token popover AND the landing footer. `src/themeLoader.js` lazy-loads per-theme CSS from `src/themes/*.css`.
 
 ### Command bar
 
-48px tall, contains wordmark (14px/700) + chrome UI items, `.cb-input` (13px), `.cb-status` (12px)
+48px tall, contains wordmark (14px/700) + chrome UI items, `.cb-input` (13px), `.cb-status` (12px); hosts the token popover (theme grid + density control) opened from the wordmark/chrome area
 
 ### Tabs
 

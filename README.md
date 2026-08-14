@@ -174,6 +174,8 @@ flowchart TB
 | 📄 **Shareable links**      | Analysis snapshots saved server-side; share via `?share=SESSION_ID` URL                                             |
 | ⬇️ **Export report**        | Full analysis as PDF with syntax-highlighted code blocks, cached by session for instant re-download                 |
 | 📊 **Live health score**    | Incremental health grade streams during analysis — see score update in real-time as agents complete                 |
+| 🎨 **13 themes + 3 density modes** | Theme switcher in the command bar (`⌘K` → token popover) with 13 curated themes (obsidian default, daylight light, matrix, neon, plasma, circuit, …); comfortable/compact/spacious density modes; token-based design system (`design-tokens.css`); respects `prefers-reduced-motion` |
+| 🖥️ **Editorial landing page** | Split-screen hero with live health-grade preview, "how it works" steps, stats strip, and a themed footer with GitHub link; responsive with mobile hamburger menu |
 
 ### 🏢 Enterprise / Ops
 
