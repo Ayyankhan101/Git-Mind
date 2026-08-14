@@ -1,7 +1,21 @@
 import pdfMake from "pdfmake/build/pdfmake";
-import pdfFonts from "pdfmake/build/vfs_fonts";
+import pdfFonts from "./pdfFonts";
 
 pdfMake.vfs = pdfFonts;
+pdfMake.fonts = {
+  Geist: {
+    normal: "Geist-Regular",
+    bold: "Geist-Bold",
+    italics: "Geist-Regular",
+    bolditalics: "Geist-Bold",
+  },
+  GeistMono: {
+    normal: "GeistMono-Regular",
+    bold: "GeistMono-Bold",
+    italics: "GeistMono-Regular",
+    bolditalics: "GeistMono-Bold",
+  },
+};
 
 // ── PDF Cache (Phase 3a) ─────────────────────────────────────────────────────
 // Keyed by `${session_id}:${report_type}` → docDefinition.
