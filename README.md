@@ -550,7 +550,6 @@ Rate-limited requests return HTTP 429 with `Retry-After` header.
 | ---------------------- | -------------------- | ---------------------------------------------------------------- |
 | `build.yml`            | Push/PR to any branch| Frontend production build                                        |
 | `ci.yml`               | Push/PR to `main`    | Ruff/mypy/Prettier lint, backend tests + Rust build, frontend tests + build, smoke + layout audits, deploy to HF |
-| `gitmind-analysis.yml` | PR open/sync         | Auto-comment with health score + top findings                    |
 | `gitmind-monitor.yml`  | Weekly (Mon 8am UTC) | Re-analyze, health delta, Slack alert + GitHub issue             |
 
 ---
