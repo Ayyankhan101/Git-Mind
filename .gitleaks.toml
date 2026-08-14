@@ -1,0 +1,18 @@
+# Gitleaks config: extends the default rule set and allowlists known
+# false positives.
+#
+# Allowlisted commit: `t2.FourKeyMap = t2.TwoKeyMap` inside the minified
+# third-party Obsidian plugin `opencode/main.js`, committed once in
+# 8328f8c (vault: add remote colors for graph groups...). The
+# generic-api-key rule matched the high-entropy-looking variable
+# assignment; the file is no longer present in the tree and no real
+# secret is involved.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "False positives from minified third-party code"
+commits = [
+  "8328f8ccb50d751bf26f07c169f52c917be4fed6",
+]

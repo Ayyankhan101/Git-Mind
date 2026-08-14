@@ -217,8 +217,10 @@ jobs:
         run: |
           npm ci --legacy-peer-deps
           npm audit --omit=dev --audit-level=high
+      # .gitleaks.toml extends the default rules and allowlists the known
+      # false positive from a minified third-party Obsidian plugin commit.
       - name: Gitleaks secret scan (full history)
-        run: gitleaks detect --source . --no-banner
+        run: gitleaks detect --source . --no-banner --config .gitleaks.toml
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
