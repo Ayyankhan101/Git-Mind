@@ -24,6 +24,7 @@ const KeyboardHelp = lazy(() => import("./components/KeyboardHelp"));
 const FilePreviewDrawer = lazy(() => import("./components/FilePreviewDrawer"));
 const OrgAuditModal = lazy(() => import("./components/OrgAuditModal"));
 const CommandPalette = lazy(() => import("./components/CommandPalette"));
+const ShareErrorOverlay = lazy(() => import("./components/ShareErrorOverlay"));
 
 const IS_MAC = /Mac/i.test(
   navigator.userAgentData?.platform ?? navigator.platform,
@@ -38,6 +39,37 @@ const SESSION_ID =
   })();
 const WS_URL = `${WS_BASE}/ws/analyze`;
 const TIMEOUT_MS = 180_000;
+
+function classifyShareError(err) {
+  const status = err?.status;
+  if (status === 404)
+    return {
+      kind: "not_found",
+      message:
+        "This analysis link has expired or the analysis was never saved.",
+    };
+  if (status === 401)
+    return {
+      kind: "locked",
+      message:
+        "This analysis is locked. Add your GitHub token to unlock it — analyses older than 24 hours require authentication.",
+    };
+  if (status === 429)
+    return {
+      kind: "rate_limited",
+      message: "Too many requests. Please wait a moment and try again.",
+    };
+  if (status === 0 || status === undefined)
+    return {
+      kind: "network",
+      message:
+        "Cannot reach the GitMind backend. Check your connection and try again.",
+    };
+  return {
+    kind: "generic",
+    message: err?.message || "Could not load the shared analysis.",
+  };
+}
 
 export default function App() {
   const location = useLocation();
@@ -68,6 +100,7 @@ export default function App() {
     showPalette,
     filePreview,
     showOrgAudit,
+    shareError,
     recents,
   } = state;
 
@@ -151,17 +184,43 @@ export default function App() {
   useEffect(() => () => cleanup(), [cleanup]);
 
   // ── Load shared analysis ──────────────────────────────────
+  const runSharedLoad = useCallback(
+    (shareId, token) => {
+      loadSharedAnalysis(shareId, token)
+        .then((data) => {
+          dispatch({ type: "LOAD_SHARED_ANALYSIS", data });
+          dispatch({ type: "CLEAR_SHARE_ERROR" });
+          navigate("/dashboard", { replace: true });
+        })
+        .catch((err) => {
+          dispatch({ type: "SET_SHARE_ERROR", error: classifyShareError(err) });
+        });
+    },
+    [navigate, dispatch],
+  );
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const shareId = params.get("share");
     if (!shareId) return;
-    loadSharedAnalysis(shareId)
-      .then((data) => {
-        dispatch({ type: "LOAD_SHARED_ANALYSIS", data });
-        navigate("/dashboard", { replace: true });
-      })
-      .catch(() => {});
-  }, [location.search, navigate]); // eslint-disable-line react-hooks/exhaustive-deps
+    runSharedLoad(shareId);
+  }, [location.search, runSharedLoad]);
+
+  const handleShareRetry = useCallback(() => {
+    dispatch({ type: "CLEAR_SHARE_ERROR" });
+    const params = new URLSearchParams(location.search);
+    const shareId = params.get("share");
+    if (shareId) runSharedLoad(shareId);
+  }, [location.search, runSharedLoad, dispatch]);
+
+  const handleShareUnlock = useCallback(
+    (token) => {
+      dispatch({ type: "SET_GH_TOKEN", value: token });
+      tokenManager.set(token);
+      handleShareRetry();
+    },
+    [handleShareRetry, dispatch],
+  );
 
   // ── Global paste → PR auto-load ──────────────────────────
   useEffect(() => {
@@ -617,7 +676,7 @@ export default function App() {
 
   // ── Share ─────────────────────────────────────────────────
   const handleShare = useCallback(() => {
-    const url = `${window.location.origin}${window.location.pathname}?share=${SESSION_ID}`;
+    const url = `${window.location.origin}/?share=${SESSION_ID}`;
     navigator.clipboard
       .writeText(url)
       .then(() => {
@@ -749,6 +808,14 @@ export default function App() {
               onClose={() =>
                 dispatch({ type: "SET_CRISIS_FINDING", finding: null })
               }
+            />
+          )}
+          {shareError && (
+            <ShareErrorOverlay
+              error={shareError}
+              onRetry={handleShareRetry}
+              onUnlock={handleShareUnlock}
+              onClose={() => dispatch({ type: "CLEAR_SHARE_ERROR" })}
             />
           )}
           <KeyboardHelp
