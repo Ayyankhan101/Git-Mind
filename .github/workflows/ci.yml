@@ -145,10 +145,18 @@ jobs:
       # script runs locally (macOS/Linux) or via $BRAVE_PATH / --browser brave.
       - name: Install Playwright (bundled Chromium fallback)
         run: |
-          pip install playwright --break-system-packages
+          pip install playwright pymupdf --break-system-packages
           python -m playwright install chromium --with-deps
       - name: Run frontend smoke test
         run: python e2e/smoke_test.py --browser auto
+      # PDF export regression gate: the three exports (analysis / summary /
+      # incident) are generated through the real app and inspected with
+      # pymupdf — every text span and drawing must stay inside the printable
+      # content area (catches pdfmake tables that render wider than their
+      # declared widths), Geist fonts must be embedded, and the brand accent /
+      # severity chips must paint. Any drift fails the build.
+      - name: Run PDF layout audit (export regression gate)
+        run: python e2e/pdf_layout_audit.py --check
       # Spacing regression gate: every tab must keep its standard tab-header
       # (32px icon / 12px sub) and the shared 28px content gutter. Any drift
       # (e.g. someone reverts .sev-filter to 24px) fails the build here.
