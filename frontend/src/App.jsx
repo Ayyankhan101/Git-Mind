@@ -528,25 +528,31 @@ export default function App() {
   const handleExport = useCallback(async () => {
     if (!analyzed) return;
     try {
-      const { buildAnalysisPdf, downloadPdf } = await import("./pdfBuilder");
-      const docDef = buildAnalysisPdf({
-        repoName,
-        diagram,
-        archGraph,
-        apiDocs,
-        findings,
-        cveFindings,
-        gitAudit,
-        solidityAudit,
-        codeAudit,
-        health,
-        elapsedSec,
-      });
-      downloadPdf(docDef, `gitmind-${repoName}-${Date.now()}.pdf`);
+      const { buildAnalysisPdf, downloadPdf, getCachedPdf, sanitizeFilename } =
+        await import("./pdfBuilder");
+      const cacheKey = `gm:${SESSION_ID}:analysis`;
+      const cached = getCachedPdf(cacheKey);
+      const docDef =
+        cached ||
+        buildAnalysisPdf({
+          repoName,
+          diagram,
+          archGraph,
+          apiDocs,
+          findings,
+          cveFindings,
+          gitAudit,
+          solidityAudit,
+          codeAudit,
+          health,
+          elapsedSec,
+        });
+      const safeName = sanitizeFilename(repoName);
+      downloadPdf(docDef, `gitmind-${safeName}-${Date.now()}.pdf`, cacheKey);
       addToast({
         kind: "success",
         title: "Report exported",
-        sub: `${repoName}.pdf`,
+        sub: `${safeName}.pdf`,
       });
       dispatch({
         type: "ADD_RECENT",
