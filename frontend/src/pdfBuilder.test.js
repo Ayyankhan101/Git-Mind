@@ -224,6 +224,9 @@ describe("buildAnalysisPdf", () => {
     expect(doc.content.length).toBeGreaterThan(10);
     expect(JSON.stringify(doc.content)).toContain("Repository Analysis Report");
     expect(doc.styles.th.fillColor).toBe("#08090e");
+    // Accent follows the web palette: electric blue, not the old indigo.
+    expect(JSON.stringify(doc.content)).toContain("#3b82f6");
+    expect(JSON.stringify(doc.content)).not.toContain("#7c6fe0");
   });
 });
 

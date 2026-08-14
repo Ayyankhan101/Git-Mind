@@ -423,8 +423,8 @@ function codeBlockWithHighlight(code, lang) {
 
 // ── Color palette ──────────────────────────────────────────────────────────────
 const C = {
-  primary: "#7c6fe0", // brand indigo accent
-  primaryDark: "#5b4fd8",
+  primary: "#3b82f6", // electric blue (web --primary)
+  primaryDark: "#2f6fe4", // deeper blue for small mono text (web --primary-strong)
   ink: "#08090e",
   text1: "#1c1c1e",
   text2: "#3d3d40",
