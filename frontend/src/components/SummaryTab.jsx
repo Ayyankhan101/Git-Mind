@@ -6,6 +6,7 @@ import {
   Zap,
   Activity,
   ArrowUpRight,
+  Download,
 } from "../icons";
 import gsap from "gsap";
 import { fs } from "../typeScale";
@@ -275,6 +276,22 @@ export default function SummaryTab({
     );
   }, [enabled]);
 
+  const handleExportPdf = async () => {
+    try {
+      const { buildSummaryPdf, downloadPdf } = await import("../pdfBuilder");
+      const docDef = buildSummaryPdf({
+        repoName,
+        summary: data?.summary,
+        stats: data?.stats,
+        health,
+        elapsedSec,
+      });
+      downloadPdf(docDef, `gitmind-summary-${repoName}-${Date.now()}.pdf`);
+    } catch (err) {
+      console.error("Summary export failed", err);
+    }
+  };
+
   const handleWatch = async () => {
     if (!repoUrl) return;
     const token = ghToken || tokenManager.get() || null;
@@ -396,6 +413,16 @@ export default function SummaryTab({
             <div className="tab-header-sub">{repoName}</div>
           </div>
         </div>
+        <button
+          className="btn btn-ghost"
+          onClick={handleExportPdf}
+          disabled={!data}
+          style={{ marginLeft: "auto", alignSelf: "center" }}
+          title="Export summary PDF"
+          aria-label="Export summary PDF"
+        >
+          <Download size={13} /> Export PDF
+        </button>
       </div>
 
       {/* Editorial band variant: the grade card mirrors the landing
