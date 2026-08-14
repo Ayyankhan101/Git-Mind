@@ -29,6 +29,12 @@ repos:
         args: [--severity=warning]
         files: \.(sh|bash)$
 
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.0
+    hooks:
+      - id: gitleaks
+        entry: gitleaks protect --staged
+
   - repo: local
     hooks:
       - id: classname-audit

@@ -110,6 +110,10 @@ async def handle_analyze(ws: WebSocket) -> None:
         await ws.send_json({"error": "Rate limit exceeded", "retry_after": 60})
         await ws.close()
         return
+    if not (await check_rate_limit("analyze_chat_burst", client_ip))[0]:
+        await ws.send_json({"error": "Rate limit exceeded — too many analyze/chat requests", "retry_after": 60})
+        await ws.close()
+        return
 
     logger.info("Analysis started", session=session_id, repo=repo_url, auth=bool(gh_token))
     init = initial_state(repo_url, gh_token)

@@ -1,13 +1,23 @@
 version: 2
 updates:
-  - package-ecosystem: pip
-    directory: /backend
+  - package-ecosystem: "pip"
+    directory: "/backend"
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: "monthly"
+    open-pull-requests-limit: 10
+    groups:
+      runtime-deps:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["patch", "minor"]
 
-  - package-ecosystem: npm
-    directory: /frontend
+  - package-ecosystem: "npm"
+    directory: "/frontend"
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: "monthly"
+    open-pull-requests-limit: 10
+    groups:
+      frontend-deps:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: ["patch", "minor"]

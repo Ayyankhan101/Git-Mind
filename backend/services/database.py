@@ -63,6 +63,7 @@ def _analysis_row_to_dict(row) -> dict:
         "repo_url": row.repo_url,
         "chat_history": row.chat_history or [],
         "owner_hash": row.owner_hash,
+        "saved_at": row.saved_at,
     }
 
 

@@ -28,8 +28,10 @@ _RATE_WINDOWS: dict[str, tuple[int, int]] = {
     "pr": (60, 5),
     "pr_impact": (60, 3),
     "org_audit": (60, 3),
-    "analyze": (60, 3),
+    "analyze": (60, 2),
     "analyze_rest": (60, 30),
+    # Cross-endpoint burst guard: analyze + chat combined per IP.
+    "analyze_chat_burst": (60, 10),
     "repos": (60, 20),
     "webhook": (60, 60),
     "webhook_notify": (60, 10),

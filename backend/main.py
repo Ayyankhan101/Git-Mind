@@ -38,6 +38,7 @@ from routes.webhook import router as webhook_router  # noqa: E402
 from services.auth import AuthMiddleware  # noqa: E402
 from services.body_limit import BodyLimitMiddleware  # noqa: E402
 from services.correlation import CorrelationMiddleware  # noqa: E402
+from services.security_headers import SecurityHeadersMiddleware  # noqa: E402
 from services.telemetry import setup_logging, setup_metrics, setup_tracing  # noqa: E402
 from ws.analyze import handle_analyze  # noqa: E402
 from ws.crisis import handle_crisis  # noqa: E402
@@ -301,6 +302,8 @@ app.add_middleware(
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type", "X-GH-Token", "X-Request-ID", "Authorization"],
 )
+# Outermost middleware: security headers on every response, incl. errors/metrics/health.
+app.add_middleware(SecurityHeadersMiddleware)
 
 # ── Telemetry ───────────────────────────────────────────────────────────────
 

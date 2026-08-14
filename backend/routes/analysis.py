@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 import structlog
 from fastapi import APIRouter, Request
@@ -16,6 +17,26 @@ logger = structlog.get_logger(__name__)
 router = APIRouter()
 
 _LLM = get_llm(temperature_key="analysis")
+
+_PUBLIC_ANALYSIS_KEYS = (
+    "repo_name",
+    "repo_url",
+    "architecture_diagram",
+    "api_docs",
+    "security_findings",
+    "cve_findings",
+    "git_audit",
+    "solidity_audit",
+    "code_audit",
+    "health",
+    "head_sha",
+    "saved_at",
+)
+
+
+def _trim_analysis(snap: dict) -> dict:
+    """Strip internal fields (owner_hash, chroma_collection_name, chat_history)."""
+    return {k: snap.get(k) for k in _PUBLIC_ANALYSIS_KEYS if k in snap}
 
 
 def _count_by_severity(findings: list[dict]) -> tuple[int, int]:
@@ -169,10 +190,13 @@ async def get_analysis(session_id: str, request: Request):
     snap = await get_analysis_db(session_id)
     if snap is None:
         return error_response("Analysis not found or has expired", 404)
-    try:
-        return snap
-    except Exception:
-        return error_response("Analysis file corrupted", 500)
+    # Hybrid access: fresh analyses (≤24h) are public share-by-URL links;
+    # older snapshots require authentication.
+    if time.time() - (snap.get("saved_at") or 0) > 86400:
+        from services.auth import require_gh_token_or_service_key
+
+        require_gh_token_or_service_key(request)
+    return _trim_analysis(snap)
 
 
 @router.get("/analysis/previous")
@@ -192,7 +216,7 @@ async def get_previous_analysis(repo_url: str, exclude_session: str | None = Non
     snap = await get_previous_analysis_db(repo_url, exclude_session)
     if snap is None:
         return error_response("No previous analysis found", 404)
-    return snap
+    return _trim_analysis(snap)
 
 
 @router.get("/analysis/history")
