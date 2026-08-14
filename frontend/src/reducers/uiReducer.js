@@ -6,6 +6,7 @@ export const uiInitialState = {
   showPalette: false,
   filePreview: null,
   shareCopied: false,
+  shareError: null,
   prAutoUrl: null,
   showOrgAudit: false,
   drawerOpen: false,
@@ -38,6 +39,10 @@ export function uiReducer(state, action) {
       return { ...state, filePreview: action.preview };
     case "SET_SHARE_COPIED":
       return { ...state, shareCopied: action.copied };
+    case "SET_SHARE_ERROR":
+      return { ...state, shareError: action.error };
+    case "CLEAR_SHARE_ERROR":
+      return { ...state, shareError: null };
     case "SET_PR_AUTO_URL":
       return { ...state, prAutoUrl: action.url };
     case "SET_SHOW_ORG_AUDIT":

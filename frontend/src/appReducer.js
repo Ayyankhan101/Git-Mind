@@ -54,6 +54,7 @@ export function appReducer(state, action) {
         showPalette: state.showPalette,
         filePreview: state.filePreview,
         shareCopied: state.shareCopied,
+        shareError: state.shareError,
         prAutoUrl: state.prAutoUrl,
         showOrgAudit: state.showOrgAudit,
         drawerOpen: state.drawerOpen,
