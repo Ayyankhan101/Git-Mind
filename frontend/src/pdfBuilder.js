@@ -449,6 +449,12 @@ const SEVERITY_COLORS = {
   info: C.info,
 };
 
+// Progress-bar width for the health breakdown table. The bar lives in a
+// star column of a table nested in a `columns` wrapper (grade numeral takes
+// 120pt), so the column only gets ~140pt. A fixed 200pt canvas makes
+// pdfmake expand the table past the right page edge — keep it well under.
+const HEALTH_BAR_W = 120;
+
 // ── Brutalist layout primitives ────────────────────────────────────────────────
 function sectionHeader(num, title) {
   return [
@@ -720,7 +726,7 @@ export function buildAnalysisPdf({
           wrapLong(safeText(e.route || "")),
           wrapLong(safeText(e.description || "")),
         ]),
-        [60, 190, 265],
+        [60, 190, "*"],
       ),
     );
   }
@@ -754,7 +760,7 @@ export function buildAnalysisPdf({
             ].filter(Boolean),
           },
         ]),
-        [70, 120, 325],
+        [70, 120, "*"],
       ),
     );
   } else {
@@ -803,7 +809,7 @@ export function buildAnalysisPdf({
                 ),
               ),
             ]),
-            [95, 60, 360],
+            [95, 60, "*"],
           ),
         );
       }
@@ -882,7 +888,7 @@ export function buildAnalysisPdf({
               color: C.primaryDark,
             },
           ]),
-          [60, 120, 335],
+          [60, 120, "*"],
         ),
       );
     }
@@ -944,7 +950,7 @@ export function buildAnalysisPdf({
             ].filter(Boolean),
           },
         ]),
-        [60, 90, 120, 245],
+        [60, 90, 120, "*"],
       ),
     );
   } else {
@@ -995,7 +1001,7 @@ export function buildAnalysisPdf({
                 ].filter(Boolean),
               },
             ]),
-            [60, 130, 325],
+            [60, 130, "*"],
           ),
         );
       } else {
@@ -1064,7 +1070,7 @@ export function buildAnalysisPdf({
                       type: "rect",
                       x: 0,
                       y: 2,
-                      w: (v / 100) * 200,
+                      w: (v / 100) * HEALTH_BAR_W,
                       h: 8,
                       r: 4,
                       color:
@@ -1078,14 +1084,14 @@ export function buildAnalysisPdf({
                       type: "rect",
                       x: 0,
                       y: 2,
-                      w: 200,
+                      w: HEALTH_BAR_W,
                       h: 8,
                       r: 4,
                       lineWidth: 0,
                       color: C.surface2,
                     },
                   ],
-                  width: 200,
+                  width: HEALTH_BAR_W,
                 },
               ]),
             ],

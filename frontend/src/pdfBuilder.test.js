@@ -93,6 +93,112 @@ describe("pdf cache", () => {
 });
 
 describe("buildAnalysisPdf", () => {
+  // A4 (595.28pt) minus pageMargins [40, 50, 40, 50] = 515.28pt of content.
+  const CONTENT_WIDTH = 595.28 - 40 - 40;
+
+  // pdfmake adds per-column paddings (6+6) and 1pt vLines on top of fixed
+  // widths: offsets.total = 7 + 13*(n-1) + 7 for a table with n columns
+  // (paddingLeft/Right 6, vLineWidth 1 — the hardTable layout).
+  const offsetsFor = (n) => 7 + 13 * (n - 1) + 7;
+
+  // Walks a docDef node collecting every `table.widths` array.
+  function collectTables(node, out = []) {
+    if (!node || typeof node !== "object") return out;
+    if (Array.isArray(node)) {
+      node.forEach((n) => collectTables(n, out));
+      return out;
+    }
+    if (node.table && Array.isArray(node.table.widths)) {
+      out.push(node.table.widths);
+    }
+    Object.entries(node).forEach(([k, v]) => {
+      if (k.startsWith("_")) return;
+      collectTables(v, out);
+    });
+    return out;
+  }
+
+  it("renders every table inside the printable content area", () => {
+    const doc = buildAnalysisPdf({
+      repoName: "acme/app",
+      diagram: "graph TD; A-->B;",
+      apiDocs: [
+        { method: "GET", route: "/api/v1/x", description: "Fetch x" },
+        { method: "POST", route: "/api/v1/y", description: "Create y" },
+      ],
+      findings: [
+        {
+          severity: "critical",
+          rule: "r1",
+          description: "d1",
+          file: "src/a.py",
+          line_start: 3,
+        },
+        { severity: "low", rule: "r2", description: "d2" },
+      ],
+      cveFindings: [
+        {
+          package: "urllib3",
+          version: "1.26.9",
+          ecosystem: "PyPI",
+          worst_severity: "critical",
+          vulns: [
+            {
+              id: "GHSA-x",
+              severity: "high",
+              summary: "smuggling",
+              fixed_in: "1.26.12",
+            },
+          ],
+        },
+      ],
+      gitAudit: {
+        stats: {
+          total: 1,
+          bad_messages: 1,
+          secrets_found: 1,
+          sensitive_files: 1,
+        },
+        secret_findings: [
+          { severity: "high", type: "AWS Key", path: ".env", line: 3 },
+        ],
+        sensitive_files: [{ path: "config/credentials.json" }],
+      },
+      solidityAudit: {
+        findings: [
+          {
+            severity: "medium",
+            contract: "Token.sol",
+            title: "t",
+            description: "d",
+            remediation: "r",
+          },
+        ],
+      },
+      codeAudit: [
+        {
+          language: "python",
+          findings: [
+            { severity: "low", title: "t", description: "d", file: "a.py" },
+          ],
+        },
+      ],
+      health: { grade: "B", score: 72, breakdown: { security: 60 } },
+      elapsedSec: 42,
+    });
+
+    const tables = collectTables(doc.content);
+    expect(tables.length).toBeGreaterThan(5);
+    for (const widths of tables) {
+      const n = widths.length;
+      const fixed = widths
+        .filter((w) => typeof w === "number")
+        .reduce((a, b) => a + b, 0);
+      const rendered = fixed + offsetsFor(n);
+      expect(rendered).toBeLessThanOrEqual(CONTENT_WIDTH + 0.01);
+    }
+  });
+
   it("returns a docDefinition with brand fonts and a cover", () => {
     const doc = buildAnalysisPdf({
       repoName: "acme/app",
