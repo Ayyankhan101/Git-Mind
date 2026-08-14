@@ -316,6 +316,7 @@ export function safeText(s) {
       // Emoji + dingbats + variation selectors + ZWJ sequences
       .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, "")
       // Control characters (keeps \n and \t)
+      // eslint-disable-next-line no-control-regex
       .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
   );
 }
@@ -329,12 +330,15 @@ export function wrapLong(s, maxLen = 40) {
 }
 
 export function sanitizeFilename(name) {
-  return String(name || "gitmind-report")
-    .replace(/[\/\\:*?"<>|]/g, "-")
-    .replace(/[\u0000-\u001F\u007F]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .slice(0, 120);
+  return (
+    String(name || "gitmind-report")
+      .replace(/[/\\:*?"<>|]/g, "-")
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\u0000-\u001F\u007F]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .slice(0, 120)
+  );
 }
 
 export function highlightCode(code, lang) {

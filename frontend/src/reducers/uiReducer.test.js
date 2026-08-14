@@ -13,7 +13,9 @@ describe("uiReducer shareError", () => {
       ...uiInitialState,
       shareError: { kind: "network", message: "x" },
     };
-    expect(uiReducer(seeded, { type: "CLEAR_SHARE_ERROR" }).shareError).toBeNull();
+    expect(
+      uiReducer(seeded, { type: "CLEAR_SHARE_ERROR" }).shareError,
+    ).toBeNull();
     expect(
       uiReducer(seeded, { type: "SET_SHARE_ERROR", error: null }).shareError,
     ).toBeNull();
