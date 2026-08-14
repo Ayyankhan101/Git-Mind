@@ -3,6 +3,7 @@ import { fs } from "../typeScale";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import { X, FileText, AlertTriangle, Copy, Check as CheckIcon } from "../icons";
 import { WS_BASE, fetchIncidentReport } from "../api";
+import { Download } from "../icons";
 
 const ROLE_COLOR = {
   CEO: "var(--warning)",
@@ -13,7 +14,7 @@ const ROLE_COLOR = {
 const WS_URL = `${WS_BASE}/ws/crisis`;
 const REPORTER_INTERVAL = 45;
 
-export default function CrisisChat({ finding, sessionId, onClose }) {
+export default function CrisisChat({ finding, sessionId, onClose, repoName }) {
   const [messages, setMessages] = useState([]);
   const [countdown, setCountdown] = useState(REPORTER_INTERVAL);
   const [resolved, setResolved] = useState(false);
@@ -148,6 +149,21 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
       setReportError(err.message);
     } finally {
       setReportLoading(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    if (!report) return;
+    try {
+      const { buildIncidentPdf, downloadPdf } = await import("../pdfBuilder");
+      const outcome = resolved ? "resolved" : "leaked";
+      const docDef = buildIncidentPdf({ report, finding, outcome, repoName });
+      downloadPdf(
+        docDef,
+        `gitmind-incident-${repoName || "report"}-${Date.now()}.pdf`,
+      );
+    } catch (err) {
+      setReportError(err.message || "PDF export failed.");
     }
   };
 
@@ -356,6 +372,24 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
               >
                 <FileText size={11} />
                 INCIDENT REPORT
+                <button
+                  onClick={handleExportPdf}
+                  aria-label="Export incident report PDF"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "var(--text-3)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    fontSize: fs.xs,
+                    padding: "2px 6px",
+                    borderRadius: 0,
+                  }}
+                >
+                  <Download size={10} /> Export PDF
+                </button>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(report).then(() => {
