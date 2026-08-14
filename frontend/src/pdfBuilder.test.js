@@ -3,6 +3,8 @@ jest.mock("pdfmake/build/pdfmake", () => ({
   default: {
     vfs: {},
     fonts: {},
+    addVirtualFileSystem: jest.fn(),
+    addFonts: jest.fn(),
     createPdf: jest.fn(() => ({ download: jest.fn() })),
   },
 }));
@@ -24,14 +26,20 @@ import pdfMake from "pdfmake/build/pdfmake";
 describe("highlightCode", () => {
   it("highlights a number in each line (regression: /g regex statefulness)", () => {
     const out = highlightCode("count = 42\ntotal = 7", "javascript");
-    expect(out[0].some((t) => t.text === "42" && t.color === "#ea580c")).toBe(true);
-    expect(out[1].some((t) => t.text === "7" && t.color === "#ea580c")).toBe(true);
+    expect(out[0].some((t) => t.text === "42" && t.color === "#ea580c")).toBe(
+      true,
+    );
+    expect(out[1].some((t) => t.text === "7" && t.color === "#ea580c")).toBe(
+      true,
+    );
   });
   it("highlights keywords, strings and comments", () => {
     const out = highlightCode('const x = "hi"; // note', "javascript");
     const flat = out[0];
     expect(flat.some((t) => t.text === "const" && t.bold)).toBe(true);
-    expect(flat.some((t) => t.text === '"hi"' && t.color === "#16a34a")).toBe(true);
+    expect(flat.some((t) => t.text === '"hi"' && t.color === "#16a34a")).toBe(
+      true,
+    );
     expect(flat.some((t) => t.text === "// note" && t.italics)).toBe(true);
   });
 });
@@ -108,7 +116,7 @@ describe("buildAnalysisPdf", () => {
     });
     expect(doc.defaultStyle.font).toBe("Geist");
     expect(doc.content.length).toBeGreaterThan(10);
-    expect(JSON.stringify(doc.content)).toContain("REPOSITORY ANALYSIS REPORT");
+    expect(JSON.stringify(doc.content)).toContain("Repository Analysis Report");
     expect(doc.styles.th.fillColor).toBe("#08090e");
   });
 });

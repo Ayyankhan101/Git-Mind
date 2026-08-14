@@ -1,8 +1,11 @@
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "./pdfFonts";
 
-pdfMake.vfs = pdfFonts;
-pdfMake.fonts = {
+// pdfmake 0.3.11 registers fonts via the virtual-fs + fonts APIs (plain
+// `vfs`/`fonts` property assignment is ignored and silently falls back to
+// Helvetica). Keep these calls before any createPdf.
+pdfMake.addVirtualFileSystem(pdfFonts);
+pdfMake.addFonts({
   Geist: {
     normal: "Geist-Regular",
     bold: "Geist-Bold",
@@ -15,7 +18,7 @@ pdfMake.fonts = {
     italics: "GeistMono-Regular",
     bolditalics: "GeistMono-Bold",
   },
-};
+});
 
 // ── PDF Cache (Phase 3a) ─────────────────────────────────────────────────────
 // Keyed by `${session_id}:${report_type}` → docDefinition.
@@ -305,14 +308,16 @@ const _COMMENT_RE = /(\/\/.*$|#.*$|\/\*[\s\S]*?\*\/)/gm;
 // ── Text safety (pdfmake/Geist glyph coverage) ───────────────────────────────
 export function safeText(s) {
   if (s == null) return "";
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    // Emoji + dingbats + variation selectors + ZWJ sequences
-    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, "")
-    // Control characters (keeps \n and \t)
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
+  return (
+    String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      // Emoji + dingbats + variation selectors + ZWJ sequences
+      .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, "")
+      // Control characters (keeps \n and \t)
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+  );
 }
 
 // Long unbroken tokens (URLs, file paths) overflow fixed table widths; chunk them.
@@ -414,14 +419,15 @@ function codeBlockWithHighlight(code, lang) {
 
 // ── Color palette ──────────────────────────────────────────────────────────────
 const C = {
-  primary: "#6366f1",
-  primaryDark: "#4f46e5",
-  text1: "#1e1e2e",
-  text2: "#44475a",
-  text3: "#6c7086",
+  primary: "#7c6fe0", // brand indigo accent
+  primaryDark: "#5b4fd8",
+  ink: "#08090e",
+  text1: "#1c1c1e",
+  text2: "#3d3d40",
+  text3: "#73737a",
   surface: "#ffffff",
-  surface2: "#f8f9fa",
-  border: "#dee2e6",
+  surface2: "#f6f5f2",
+  border: "#111113",
   critical: "#dc2626",
   high: "#ea580c",
   medium: "#ca8a04",
@@ -439,21 +445,31 @@ const SEVERITY_COLORS = {
   info: C.info,
 };
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-function severityBadge(text) {
-  const s = (text || "info").toLowerCase();
-  return {
-    text: s.toUpperCase(),
-    style: "badge",
-    color: SEVERITY_COLORS[s] || C.text3,
-  };
-}
-
-function sectionHeading(title) {
+// ── Brutalist layout primitives ────────────────────────────────────────────────
+function sectionHeader(num, title) {
   return [
-    { text: "", margin: [0, 10, 0, 0] },
-    { text: title, style: "sectionTitle" },
+    { text: "", margin: [0, 14, 0, 0] },
+    {
+      columns: [
+        {
+          text: String(num).padStart(2, "0"),
+          width: 28,
+          font: "GeistMono",
+          fontSize: 12,
+          bold: true,
+          color: C.primary,
+        },
+        {
+          text: String(title).toUpperCase(),
+          font: "GeistMono",
+          fontSize: 13,
+          bold: true,
+          letterSpacing: 1.5,
+          color: C.ink,
+        },
+      ],
+      margin: [0, 0, 0, 6],
+    },
     {
       canvas: [
         {
@@ -462,14 +478,73 @@ function sectionHeading(title) {
           y1: 0,
           x2: 515,
           y2: 0,
-          lineWidth: 1,
-          lineColor: C.primary,
+          lineWidth: 2,
+          lineColor: C.ink,
         },
       ],
-      margin: [0, 2, 0, 10],
+      margin: [0, 0, 0, 10],
     },
   ];
 }
+
+function chip(severity) {
+  const s = (severity || "info").toLowerCase();
+  const color = SEVERITY_COLORS[s] || C.text3;
+  return {
+    text: s.toUpperCase(),
+    font: "GeistMono",
+    fontSize: 7.5,
+    bold: true,
+    color: C.white,
+    background: color, // solid block — border on inline text is unreliable in pdfmake
+    margin: [4, 2, 4, 2],
+  };
+}
+
+function _cell(c) {
+  if (c != null && typeof c === "object" && !Array.isArray(c)) {
+    return { ...c, style: "td" };
+  }
+  return { text: c, style: "td" };
+}
+
+function hardTable(headers, rows, widths) {
+  return {
+    table: {
+      widths,
+      headerRows: 1,
+      body: [
+        headers.map((h) => ({ text: String(h).toUpperCase(), style: "th" })),
+        ...rows.map((r) => r.map(_cell)),
+      ],
+    },
+    layout: {
+      hLineWidth: () => 1,
+      vLineWidth: () => 1,
+      hLineColor: () => C.ink,
+      vLineColor: () => C.ink,
+      paddingLeft: () => 6,
+      paddingRight: () => 6,
+      paddingTop: () => 4,
+      paddingBottom: () => 4,
+    },
+    margin: [0, 4, 0, 10],
+  };
+}
+
+function monoLabel(text, opts = {}) {
+  return {
+    text: String(text).toUpperCase(),
+    font: "GeistMono",
+    fontSize: opts.fontSize || 8,
+    bold: opts.bold != null ? opts.bold : true,
+    color: opts.color || C.text3,
+    letterSpacing: opts.letterSpacing != null ? opts.letterSpacing : 0.8,
+    ...(opts.margin ? { margin: opts.margin } : {}),
+  };
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
 
 function emptyState(text) {
   return { text, color: C.text3, margin: [0, 4, 0, 10] };
@@ -511,199 +586,222 @@ export function buildAnalysisPdf({
 
   // ── Cover page ──────────────────────────────────────────────────────────────
   content.push(
-    { text: "", margin: [0, 60, 0, 0] },
+    { text: "", margin: [0, 70, 0, 0] },
     {
-      text: "GITMIND",
-      fontSize: 12,
-      color: C.primary,
-      bold: true,
-      letterSpacing: 4,
-      alignment: "center",
+      columns: [
+        {
+          text: "GITMIND",
+          width: "*",
+          font: "GeistMono",
+          fontSize: 13,
+          bold: true,
+          letterSpacing: 6,
+          color: C.primary,
+        },
+        {
+          text: now.toUpperCase(),
+          font: "GeistMono",
+          fontSize: 8,
+          color: C.text3,
+        },
+      ],
+      margin: [0, 0, 0, 34],
     },
-    { text: "", margin: [0, 20, 0, 0] },
     {
-      text: "Repository Analysis Report",
-      fontSize: 28,
-      bold: true,
-      color: C.text1,
-      alignment: "center",
+      canvas: [{ type: "rect", x: 0, y: 0, w: 96, h: 10, color: C.primary }],
+      margin: [0, 0, 0, 18],
     },
-    { text: "", margin: [0, 12, 0, 0] },
     {
       text: repoName || "Repository",
-      fontSize: 20,
-      color: C.primary,
-      alignment: "center",
+      font: "Geist",
+      fontSize: 34,
+      bold: true,
+      color: C.ink,
     },
-    { text: "", margin: [0, 30, 0, 0] },
+    {
+      text: "Repository Analysis Report",
+      font: "GeistMono",
+      fontSize: 12,
+      letterSpacing: 2,
+      color: C.text3,
+      margin: [0, 8, 0, 26],
+    },
+    {
+      canvas: [
+        {
+          type: "line",
+          x1: 0,
+          y1: 0,
+          x2: 515,
+          y2: 0,
+          lineWidth: 2,
+          lineColor: C.ink,
+        },
+      ],
+      margin: [0, 0, 0, 14],
+    },
     {
       table: {
-        widths: ["auto", "*"],
+        widths: [150, "*"],
         body: [
+          [monoLabel("Date"), { text: now, style: "metaValue" }],
           [
-            { text: "Date:", style: "metaLabel" },
-            { text: now, style: "metaValue" },
-          ],
-          [
-            { text: "Scan Duration:", style: "metaLabel" },
+            monoLabel("Scan Duration"),
             { text: `${elapsedSec || 0}s`, style: "metaValue" },
           ],
           [
-            { text: "Sections:", style: "metaLabel" },
+            monoLabel("Sections"),
             {
               text: [
-                findings?.length ? "Security " : "",
+                findings?.length ? "SECURITY " : "",
                 cveFindings?.length ? "CVE " : "",
-                gitAudit ? "Git Audit " : "",
-                solidityAudit ? "Solidity " : "",
-                codeAudit?.length ? "Code Audit " : "",
-                health ? "Health " : "",
+                gitAudit ? "GIT AUDIT " : "",
+                solidityAudit ? "SOLIDITY " : "",
+                codeAudit?.length ? "CODE AUDIT " : "",
+                health ? "HEALTH " : "",
               ]
                 .filter(Boolean)
                 .join("/ "),
-              style: "metaValue",
+              font: "GeistMono",
+              fontSize: 8,
+              color: C.text2,
             },
           ],
         ],
       },
       layout: "noBorders",
-      margin: [100, 0, 100, 0],
+      margin: [0, 12, 0, 0],
     },
-    { text: "", margin: [0, 40, 0, 0] },
+    { text: "", margin: [0, 44, 0, 0] },
     {
-      text: "Powered by GitMind — AI-powered code analysis",
-      fontSize: 9,
+      text: "POWERED BY GITMIND — AI-POWERED CODE ANALYSIS",
+      font: "GeistMono",
+      fontSize: 8,
+      letterSpacing: 1.5,
       color: C.text3,
       alignment: "center",
-      italics: true,
     },
     { text: "", pageBreak: "after" },
   );
 
   // ── Architecture ─────────────────────────────────────────────────────────────
   if (diagram) {
-    content.push(...sectionHeading("Architecture"));
+    content.push(...sectionHeader(1, "Architecture"));
     content.push({
-      text: diagram,
-      style: "code",
-      margin: [0, 4, 0, 10],
+      text: wrapLong(safeText(diagram)),
+      font: "GeistMono",
+      fontSize: 8,
+      color: C.text2,
+      fillColor: C.surface2,
+      border: [1, 1, 1, 1],
+      borderColor: C.border,
+      margin: [8, 6, 8, 10],
     });
   }
 
   // ── API Endpoints ────────────────────────────────────────────────────────────
   if (apiDocs?.length) {
-    content.push(...sectionHeading("API Endpoints"));
-    content.push({
-      table: {
-        widths: [60, 200, 255],
-        headerRows: 1,
-        body: [
-          [
-            { text: "Method", style: "th" },
-            { text: "Route", style: "th" },
-            { text: "Description", style: "th" },
-          ],
-          ...apiDocs.map((e) => [
-            {
-              text: (e.method || "GET").toUpperCase(),
-              style: "methodCell",
-              color: methodColor(e.method),
-            },
-            { text: e.route || "", style: "codeInline" },
-            { text: e.description || "", style: "td" },
-          ]),
-        ],
-      },
-      layout: "lightTable",
-      margin: [0, 4, 0, 10],
-    });
+    content.push(...sectionHeader(2, "API Endpoints"));
+    content.push(
+      hardTable(
+        ["Method", "Route", "Description"],
+        apiDocs.map((e) => [
+          {
+            text: (e.method || "GET").toUpperCase(),
+            font: "GeistMono",
+            fontSize: 8,
+            bold: true,
+            color: methodColor(e.method),
+          },
+          wrapLong(safeText(e.route || "")),
+          wrapLong(safeText(e.description || "")),
+        ]),
+        [60, 190, 265],
+      ),
+    );
   }
 
   // ── Security Findings ────────────────────────────────────────────────────────
-  content.push(...sectionHeading("Security Findings"));
+  content.push(...sectionHeader(3, "Security Findings"));
   if (findings?.length) {
-    content.push({
-      table: {
-        widths: [60, 100, 355],
-        headerRows: 1,
-        body: [
-          [
-            { text: "Severity", style: "th" },
-            { text: "Rule", style: "th" },
-            { text: "Details", style: "th" },
-          ],
-          ...findings.map((f) => [
-            severityBadge(f.severity),
-            { text: f.rule || f.check || "—", style: "td" },
-            {
-              text: [
-                {
-                  text:
-                    (f.description || f.message || f.exploit_story || "") +
-                    "\n",
-                  fontSize: 9,
-                  color: C.text2,
-                },
-                f.file
-                  ? {
-                      text: `File: ${f.file}${f.line_start ? `:${f.line_start}` : ""}`,
-                      fontSize: 8,
-                      color: C.text3,
-                      italics: true,
-                    }
-                  : "",
-              ].filter(Boolean),
-              style: "td",
-            },
-          ]),
-        ],
-      },
-      layout: "lightTable",
-      margin: [0, 4, 0, 10],
-    });
+    content.push(
+      hardTable(
+        ["Severity", "Rule", "Details"],
+        findings.map((f) => [
+          chip(f.severity),
+          wrapLong(safeText(f.rule || f.check || "—")),
+          {
+            text: [
+              {
+                text: wrapLong(
+                  safeText(f.description || f.message || f.exploit_story || ""),
+                ),
+                fontSize: 9,
+                color: C.text2,
+              },
+              f.file
+                ? {
+                    text: `\nFile: ${wrapLong(safeText(f.file))}${f.line_start ? `:${f.line_start}` : ""}`,
+                    font: "GeistMono",
+                    fontSize: 7,
+                    color: C.text3,
+                  }
+                : "",
+            ].filter(Boolean),
+          },
+        ]),
+        [70, 120, 325],
+      ),
+    );
   } else {
     content.push(emptyState("No security findings detected."));
   }
 
   // ── CVE Vulnerabilities ──────────────────────────────────────────────────────
-  content.push(...sectionHeading("CVE Vulnerabilities"));
+  content.push(...sectionHeader(4, "CVE Vulnerabilities"));
   if (cveFindings?.length) {
     for (const pkg of cveFindings) {
       content.push({
         text: [
-          { text: `${pkg.package} v${pkg.version}`, bold: true },
-          { text: ` (${pkg.ecosystem}) — `, color: C.text3 },
-          severityBadge(pkg.worst_severity),
+          {
+            text: safeText(`${pkg.package} v${pkg.version}`),
+            font: "GeistMono",
+            fontSize: 10,
+            bold: true,
+            color: C.ink,
+          },
+          {
+            text: ` (${safeText(pkg.ecosystem)}) — `,
+            color: C.text3,
+            fontSize: 9,
+          },
+          chip(pkg.worst_severity),
         ],
         margin: [0, 6, 0, 2],
       });
       if (pkg.vulns?.length) {
-        content.push({
-          table: {
-            widths: [90, 55, 370],
-            headerRows: 1,
-            body: [
-              [
-                { text: "CVE ID", style: "th" },
-                { text: "Severity", style: "th" },
-                { text: "Summary / Fix", style: "th" },
-              ],
-              ...pkg.vulns.map((v) => [
-                { text: v.id, style: "codeInline", fontSize: 8 },
-                severityBadge(v.severity),
-                {
-                  text: v.fixed_in
+        content.push(
+          hardTable(
+            ["CVE ID", "Severity", "Summary / Fix"],
+            pkg.vulns.map((v) => [
+              {
+                text: safeText(v.id),
+                font: "GeistMono",
+                fontSize: 7.5,
+                color: C.primaryDark,
+              },
+              chip(v.severity),
+              wrapLong(
+                safeText(
+                  v.fixed_in
                     ? `${v.summary} (fix: ${v.fixed_in})`
                     : v.summary || "",
-                  style: "td",
-                  fontSize: 8,
-                },
-              ]),
-            ],
-          },
-          layout: "lightTable",
-          margin: [0, 2, 0, 6],
-        });
+                ),
+              ),
+            ]),
+            [95, 60, 360],
+          ),
+        );
       }
     }
   } else {
@@ -711,7 +809,7 @@ export function buildAnalysisPdf({
   }
 
   // ── Git Audit ────────────────────────────────────────────────────────────────
-  content.push(...sectionHeading("Git Audit"));
+  content.push(...sectionHeader(5, "Git Audit"));
   if (gitAudit) {
     const stats = gitAudit.stats || {};
     content.push({
@@ -744,155 +842,158 @@ export function buildAnalysisPdf({
           ],
         ],
       },
-      layout: "noBorders",
+      layout: {
+        hLineWidth: () => 1,
+        vLineWidth: () => 1,
+        hLineColor: () => C.ink,
+        vLineColor: () => C.ink,
+        paddingTop: () => 8,
+        paddingBottom: () => 8,
+      },
       margin: [0, 4, 0, 8],
     });
 
     if (gitAudit.secret_findings?.length) {
       content.push({
-        text: "Secret Findings",
+        text: "SECRET FINDINGS",
+        font: "GeistMono",
+        fontSize: 9,
         bold: true,
-        margin: [0, 4, 0, 4],
+        letterSpacing: 1,
+        color: C.ink,
+        margin: [0, 6, 0, 4],
       });
-      content.push({
-        table: {
-          widths: [60, 120, 335],
-          headerRows: 1,
-          body: [
-            [
-              { text: "Severity", style: "th" },
-              { text: "Type", style: "th" },
-              { text: "Location", style: "th" },
-            ],
-            ...gitAudit.secret_findings.map((s) => [
-              severityBadge(s.severity),
-              { text: s.type || "—", style: "td" },
-              {
-                text: `${s.path || ""}${s.line ? `:${s.line}` : ""}`,
-                style: "codeInline",
-                fontSize: 8,
-              },
-            ]),
-          ],
-        },
-        layout: "lightTable",
-        margin: [0, 4, 0, 10],
-      });
+      content.push(
+        hardTable(
+          ["Severity", "Type", "Location"],
+          gitAudit.secret_findings.map((s) => [
+            chip(s.severity),
+            wrapLong(safeText(s.type || "—")),
+            {
+              text: wrapLong(
+                safeText(`${s.path || ""}${s.line ? `:${s.line}` : ""}`),
+              ),
+              font: "GeistMono",
+              fontSize: 7.5,
+              color: C.primaryDark,
+            },
+          ]),
+          [60, 120, 335],
+        ),
+      );
     }
 
     if (gitAudit.sensitive_files?.length) {
       content.push({
-        text: "Sensitive Files",
+        text: "SENSITIVE FILES",
+        font: "GeistMono",
+        fontSize: 9,
         bold: true,
-        margin: [0, 4, 0, 4],
+        letterSpacing: 1,
+        color: C.ink,
+        margin: [0, 6, 0, 4],
       });
-      content.push({
-        table: {
-          widths: ["*"],
-          body: gitAudit.sensitive_files.map((f) => [
-            { text: f.path || f, style: "codeInline", fontSize: 8 },
+      content.push(
+        hardTable(
+          ["File"],
+          gitAudit.sensitive_files.map((f) => [
+            {
+              text: wrapLong(safeText(f.path || f)),
+              font: "GeistMono",
+              fontSize: 7.5,
+              color: C.primaryDark,
+            },
           ]),
-        },
-        layout: "lightTable",
-        margin: [0, 4, 0, 10],
-      });
+          ["*"],
+        ),
+      );
     }
   } else {
     content.push(emptyState("Git audit not available."));
   }
 
   // ── Solidity Audit ───────────────────────────────────────────────────────────
-  content.push(...sectionHeading("Solidity Audit"));
+  content.push(...sectionHeader(6, "Solidity Audit"));
   if (solidityAudit?.findings?.length) {
-    content.push({
-      table: {
-        widths: [60, 90, 120, 245],
-        headerRows: 1,
-        body: [
-          [
-            { text: "Severity", style: "th" },
-            { text: "Contract", style: "th" },
-            { text: "Title", style: "th" },
-            { text: "Description / Remediation", style: "th" },
-          ],
-          ...solidityAudit.findings.map((f) => [
-            severityBadge(f.severity),
-            { text: f.contract || "—", style: "td", fontSize: 8 },
-            { text: f.title || "—", style: "td", bold: true, fontSize: 8 },
-            {
-              text: [
-                { text: (f.description || "") + "\n", fontSize: 8 },
-                f.remediation
-                  ? {
-                      text: `Remediation: ${f.remediation}`,
-                      fontSize: 7,
-                      color: C.text3,
-                      italics: true,
-                    }
-                  : "",
-              ].filter(Boolean),
-              style: "td",
-            },
-          ]),
-        ],
-      },
-      layout: "lightTable",
-      margin: [0, 4, 0, 10],
-    });
+    content.push(
+      hardTable(
+        ["Severity", "Contract", "Title", "Description / Remediation"],
+        solidityAudit.findings.map((f) => [
+          chip(f.severity),
+          wrapLong(safeText(f.contract || "—")),
+          {
+            text: safeText(f.title || "—"),
+            bold: true,
+            fontSize: 8,
+          },
+          {
+            text: [
+              { text: wrapLong(safeText(f.description || "")), fontSize: 8 },
+              f.remediation
+                ? {
+                    text: `\nRemediation: ${wrapLong(safeText(f.remediation))}`,
+                    fontSize: 7,
+                    color: C.text3,
+                    italics: true,
+                  }
+                : "",
+            ].filter(Boolean),
+          },
+        ]),
+        [60, 90, 120, 245],
+      ),
+    );
   } else {
     content.push(emptyState("No Solidity findings."));
   }
 
   // ── Code Audit ───────────────────────────────────────────────────────────────
-  content.push(...sectionHeading("Code Audit"));
+  content.push(...sectionHeader(7, "Code Audit"));
   if (codeAudit?.length) {
     for (const langResult of codeAudit) {
       content.push({
-        text: langResult.language || "Unknown",
+        text: String(langResult.language || "Unknown").toUpperCase(),
+        font: "GeistMono",
+        fontSize: 9,
         bold: true,
+        letterSpacing: 1,
+        color: C.ink,
         margin: [0, 6, 0, 4],
       });
       if (langResult.findings?.length) {
-        content.push({
-          table: {
-            widths: [60, 120, 335],
-            headerRows: 1,
-            body: [
-              [
-                { text: "Severity", style: "th" },
-                { text: "Title", style: "th" },
-                { text: "Details", style: "th" },
-              ],
-              ...langResult.findings.map((f) => [
-                severityBadge(f.severity),
-                { text: f.title || "—", style: "td", bold: true, fontSize: 9 },
-                {
-                  text: [
-                    { text: (f.description || "") + "\n", fontSize: 8 },
-                    f.file
-                      ? {
-                          text: `File: ${f.file}${f.line ? `:${f.line}` : ""}`,
-                          fontSize: 7,
-                          color: C.text3,
-                          italics: true,
-                        }
-                      : "",
-                    f.remediation
-                      ? {
-                          text: `\nRemediation: ${f.remediation}`,
-                          fontSize: 7,
-                          color: C.text3,
-                        }
-                      : "",
-                  ].filter(Boolean),
-                  style: "td",
-                },
-              ]),
-            ],
-          },
-          layout: "lightTable",
-          margin: [0, 2, 0, 10],
-        });
+        content.push(
+          hardTable(
+            ["Severity", "Title", "Details"],
+            langResult.findings.map((f) => [
+              chip(f.severity),
+              { text: safeText(f.title || "—"), bold: true, fontSize: 8.5 },
+              {
+                text: [
+                  {
+                    text: wrapLong(safeText(f.description || "")),
+                    fontSize: 8,
+                  },
+                  f.file
+                    ? {
+                        text: `\nFile: ${wrapLong(safeText(f.file))}${f.line ? `:${f.line}` : ""}`,
+                        font: "GeistMono",
+                        fontSize: 7,
+                        color: C.text3,
+                      }
+                    : "",
+                  f.remediation
+                    ? {
+                        text: `\nRemediation: ${wrapLong(safeText(f.remediation))}`,
+                        fontSize: 7,
+                        color: C.text3,
+                      }
+                    : "",
+                ].filter(Boolean),
+              },
+            ]),
+            [60, 130, 325],
+          ),
+        );
       } else {
         content.push(emptyState(`No findings for ${langResult.language}.`));
       }
@@ -902,7 +1003,7 @@ export function buildAnalysisPdf({
   }
 
   // ── Health Score ─────────────────────────────────────────────────────────────
-  content.push(...sectionHeading("Health Score"));
+  content.push(...sectionHeader(8, "Health Score"));
   if (health) {
     const gradeColors = {
       A: "#16a34a",
@@ -920,6 +1021,7 @@ export function buildAnalysisPdf({
           stack: [
             {
               text: health.grade || "?",
+              font: "GeistMono",
               fontSize: 48,
               bold: true,
               color: gc,
@@ -927,6 +1029,7 @@ export function buildAnalysisPdf({
             },
             {
               text: `${health.score || 0}/100`,
+              font: "GeistMono",
               fontSize: 14,
               color: C.text2,
               alignment: "center",
@@ -983,7 +1086,12 @@ export function buildAnalysisPdf({
               ]),
             ],
           },
-          layout: "lightTable",
+          layout: {
+            hLineWidth: () => 1,
+            vLineWidth: () => 1,
+            hLineColor: () => C.ink,
+            vLineColor: () => C.ink,
+          },
           margin: [0, 0, 0, 10],
         },
       ],
@@ -997,69 +1105,82 @@ export function buildAnalysisPdf({
   const docDef = {
     content,
     defaultStyle: {
-      font: "Roboto",
+      font: "Geist",
       fontSize: 10,
       color: C.text1,
     },
     styles: {
       sectionTitle: {
+        font: "Geist",
         fontSize: 16,
         bold: true,
         color: C.primary,
         margin: [0, 0, 0, 4],
       },
       th: {
+        font: "GeistMono",
         bold: true,
-        fontSize: 9,
+        fontSize: 8,
+        letterSpacing: 1,
         color: C.white,
-        fillColor: C.primary,
+        fillColor: C.ink,
         margin: [6, 5, 6, 5],
       },
       td: {
-        fontSize: 9,
+        font: "Geist",
+        fontSize: 8.5,
         margin: [6, 4, 6, 4],
         color: C.text2,
       },
       badge: {
-        fontSize: 8,
+        font: "GeistMono",
+        fontSize: 7.5,
         bold: true,
-        margin: [6, 3, 6, 3],
+        margin: [4, 2, 4, 2],
       },
       code: {
+        font: "GeistMono",
         fontSize: 8,
         color: C.text2,
         fillColor: C.surface2,
         margin: [8, 6, 8, 6],
       },
       codeInline: {
+        font: "GeistMono",
         fontSize: 8,
         color: C.primaryDark,
       },
       methodCell: {
+        font: "GeistMono",
         bold: true,
-        fontSize: 9,
+        fontSize: 8,
         margin: [6, 3, 6, 3],
       },
       statLabel: {
-        fontSize: 9,
+        font: "GeistMono",
+        fontSize: 8,
         color: C.text3,
         bold: true,
         alignment: "center",
         margin: [4, 2, 4, 2],
       },
       statValue: {
+        font: "GeistMono",
         fontSize: 18,
         bold: true,
         alignment: "center",
         margin: [4, 4, 4, 4],
       },
       metaLabel: {
-        fontSize: 10,
+        font: "GeistMono",
+        fontSize: 8,
         color: C.text3,
         bold: true,
+        letterSpacing: 1,
         margin: [0, 2, 8, 2],
       },
       metaValue: {
+        font: "Geist",
         fontSize: 10,
         color: C.text2,
         margin: [0, 2, 0, 2],
@@ -1072,12 +1193,14 @@ export function buildAnalysisPdf({
         columns: [
           {
             text: `GitMind — ${repoName || "Analysis"}`,
+            font: "GeistMono",
             fontSize: 8,
             color: C.text3,
             margin: [40, 10, 0, 0],
           },
           {
             text: `${currentPage} / ${pageCount}`,
+            font: "GeistMono",
             fontSize: 8,
             color: C.text3,
             alignment: "right",
@@ -1097,7 +1220,7 @@ export function buildAnalysisPdf({
             x2: 555,
             y2: 0,
             lineWidth: 0.5,
-            lineColor: C.border,
+            lineColor: C.ink,
           },
         ],
       };
