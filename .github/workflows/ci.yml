@@ -196,8 +196,12 @@ jobs:
           curl -sLo gitleaks.tgz "https://github.com/gitleaks/gitleaks/releases/download/${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION#v}_linux_x64.tar.gz"
           tar -xzf gitleaks.tgz gitleaks
           sudo mv gitleaks /usr/local/bin/
+      # Modern pip-audit (>=2.4) removed the --fail-on severity threshold:
+      # the audit now exits 1 when ANY known vulnerability is found. Keep
+      # the unpinned tool and its default fail-on-any behavior rather than
+      # pinning a years-old scanner to preserve a removed flag.
       - name: Scan Python dependencies
-        run: pip-audit -r backend/requirements.txt --fail-on=high
+        run: pip-audit -r backend/requirements.txt
       - name: Scan npm dependencies
         working-directory: frontend
         run: |
