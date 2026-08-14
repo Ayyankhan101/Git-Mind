@@ -200,8 +200,13 @@ jobs:
       # the audit now exits 1 when ANY known vulnerability is found. Keep
       # the unpinned tool and its default fail-on-any behavior rather than
       # pinning a years-old scanner to preserve a removed flag.
+      #
+      # Ignored advisories (no upstream fix exists; package already at
+      # latest PyPI version — re-check on every dep bump):
+      #   PYSEC-2026-311  chromadb pre-auth code injection (no fixed release)
+      #   PYSEC-2026-2447 diskcache unsafe pickle deserialization (no fixed release)
       - name: Scan Python dependencies
-        run: pip-audit -r backend/requirements.txt
+        run: pip-audit -r backend/requirements.txt --ignore-vuln PYSEC-2026-311 --ignore-vuln PYSEC-2026-2447
       - name: Scan npm dependencies
         working-directory: frontend
         run: |
