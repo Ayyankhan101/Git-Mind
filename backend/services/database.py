@@ -96,7 +96,7 @@ async def delete_expired_analyses(cutoff: float) -> int:
 
     async with async_session_factory() as session:
         result = await session.execute(delete(Analysis).where(Analysis.saved_at < cutoff))
-        removed = result.rowcount
+        removed = result.rowcount  # type: ignore[attr-defined]
         if removed:
             remaining = await session.execute(select(Analysis.id))
             remaining_ids = {row[0] for row in remaining.fetchall()}

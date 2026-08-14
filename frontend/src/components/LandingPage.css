@@ -50,112 +50,6 @@
   opacity: 0.03;
 }
 
-/* ── Particles Canvas ────────────────────────────────────────── */
-.lp-particles {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* ── Gradient Orbs ───────────────────────────────────────────── */
-.lp-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.lp-orb-1 {
-  width: 500px;
-  height: 500px;
-  top: -100px;
-  right: -100px;
-  background: radial-gradient(
-    circle,
-    rgba(59, 130, 246, 0.16) 0%,
-    transparent 70%
-  );
-  animation: orbFloat1 10s ease-in-out infinite;
-}
-
-.lp-orb-2 {
-  width: 400px;
-  height: 400px;
-  bottom: 10%;
-  left: -80px;
-  background: radial-gradient(
-    circle,
-    rgba(139, 92, 246, 0.14) 0%,
-    transparent 70%
-  );
-  animation: orbFloat2 12s ease-in-out infinite;
-}
-
-.lp-orb-3 {
-  width: 350px;
-  height: 350px;
-  top: 20%;
-  right: -60px;
-  background: radial-gradient(
-    circle,
-    rgba(59, 130, 246, 0.1) 0%,
-    transparent 70%
-  );
-  animation: orbFloat1 14s ease-in-out infinite reverse;
-}
-
-.lp-orb-4 {
-  width: 300px;
-  height: 300px;
-  bottom: 15%;
-  left: 10%;
-  background: radial-gradient(
-    circle,
-    rgba(139, 92, 246, 0.1) 0%,
-    transparent 70%
-  );
-  animation: orbFloat2 11s ease-in-out infinite;
-}
-
-.lp-orb-5 {
-  width: 450px;
-  height: 450px;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(
-    circle,
-    rgba(59, 130, 246, 0.14) 0%,
-    transparent 70%
-  );
-  animation: orbFloat1 13s ease-in-out infinite;
-}
-
-@keyframes orbFloat1 {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(20px, -15px) scale(1.03);
-  }
-  66% {
-    transform: translate(-15px, 10px) scale(0.97);
-  }
-}
-
-@keyframes orbFloat2 {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(-25px, 20px) scale(1.05);
-  }
-}
-
 /* ── Nav ─────────────────────────────────────────────────────── */
 .lp-nav {
   position: fixed;
@@ -215,6 +109,19 @@
   color: var(--text-on-primary);
 }
 
+.lp-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+/* The global .theme-switcher carries margin-left:auto for the CommandBar;
+   inside the nav cluster the group handles spacing. */
+.lp-nav .theme-switcher {
+  margin-left: 0;
+}
+
 .lp-nav-links {
   display: flex;
   gap: 8px;
@@ -242,59 +149,128 @@
   background: var(--accent-dim);
 }
 
+/* Hamburger — hidden on desktop */
+.lp-nav-hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.lp-nav-hamburger-line {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--text-1);
+  border-radius: 1px;
+  transition:
+    transform var(--duration-normal),
+    opacity var(--duration-normal);
+}
+
+.lp-nav-hamburger-line.open:first-child {
+  transform: translateY(3.5px) rotate(45deg);
+}
+
+.lp-nav-hamburger-line.open:last-child {
+  transform: translateY(-3.5px) rotate(-45deg);
+}
+
 .lp-nav-link:focus-visible,
-.lp-hero-btn:focus-visible,
-.lp-cta-btn:focus-visible {
+.lp-hero-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* ── Scroll progress bar ──────────────────────────────────────── */
+/* Scroll-driven animation: fills 0→100% as the page scrolls. Same
+   technique as the dashboard's reading-progress (CSS scroll-timeline,
+   zero JS, compositor-friendly). */
+.lp-scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 200;
+  background: linear-gradient(90deg, var(--primary), var(--accent-2));
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  /* Explicit longhands — NOT the `animation` shorthand: the CSS minifier
+     reorders declarations, and the shorthand resets animation-timeline
+     back to `auto`, silently breaking scroll-driven animations. */
+  animation-name: lpProgressFill;
+  animation-duration: auto;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+  animation-timeline: scroll(root);
+  pointer-events: none;
+}
+
+@keyframes lpProgressFill {
+  to {
+    transform: scaleX(1);
+  }
 }
 
 /* ── Hero ────────────────────────────────────────────────────── */
 .lp-hero {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   min-height: 100vh;
   min-height: 100dvh;
-  /* Top padding stays within the pt-24 cap so the hero content sits
-     high in the viewport instead of floating halfway down. */
   padding: 88px 32px 72px;
   overflow: hidden;
 }
 
-.lp-hero-content {
+.lp-hero-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  /* Editorial stagger: copy ~58% left, preview ~42% right. */
+  grid-template-columns: minmax(0, 1.38fr) minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+  /* Above the radar sweep (z-index 1) behind the copy. */
   position: relative;
   z-index: 2;
+}
+
+.lp-hero-copy {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 24px;
-  max-width: 700px;
-  width: 100%;
-  text-align: center;
+  gap: 20px;
+  /* Stacking context: keeps the radar's z-index -1 behind the copy text
+     without letting it fall behind the page background. */
+  position: relative;
+  z-index: 1;
 }
 
 .lp-badge {
   display: inline-flex;
   align-items: center;
-  padding: 6px 16px;
+  padding: 5px 14px;
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  color: #93c5fd;
+  letter-spacing: 0.14em;
+  color: var(--accent);
   background: var(--accent-dim);
   border: 1px solid var(--border-accent);
   border-radius: var(--radius-full);
   text-transform: uppercase;
-  animation: fadeSlideUp 0.6s ease-out both;
+  width: fit-content;
+  animation: fadeSlideUp 0.5s ease-out both;
 }
 
 .lp-hero-title {
-  font-size: clamp(36px, 6vw, 60px);
-  font-weight: 700;
-  line-height: 1.08;
-  letter-spacing: -0.04em;
+  /* Oversized editorial display: tight tracking, magazine-spread scale. */
+  font-size: clamp(40px, 6.5vw, 76px);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
   color: var(--text-1);
   margin: 0;
 }
@@ -304,32 +280,104 @@
 }
 
 .lp-title-accent {
-  background: linear-gradient(
-    135deg,
-    #ffffff 0%,
-    #93c5fd 45%,
-    var(--accent-2) 100%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent);
 }
 
 .lp-hero-sub {
-  font-size: 17px;
-  line-height: 1.65;
+  font-size: 16px;
+  line-height: 1.6;
   color: var(--text-2);
   margin: 0;
-  max-width: 520px;
+  max-width: 440px;
 }
 
 .lp-hero-input-group {
   display: flex;
   gap: 8px;
   width: 100%;
-  max-width: 520px;
-  margin-top: 8px;
-  animation: fadeSlideUp 0.6s ease-out 0.2s both;
+  max-width: 440px;
+  margin-top: 4px;
+  animation: fadeSlideUp 0.5s ease-out 0.15s both;
+}
+
+/* Hero preview panel — dropped ~48px below the copy baseline for the
+   staggered magazine-spread composition. */
+.lp-hero-preview {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 48px;
+}
+
+.lp-hero-preview-window {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface-0);
+  border: 1px solid var(--border-s);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: fadeSlideUp 0.6s ease-out 0.1s both;
+}
+
+.lp-hero-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-s);
+}
+
+.lp-hero-preview-repo {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.lp-hero-preview-tag {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-3);
+  background: var(--surface-1);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.lp-hero-preview-stats {
+  display: flex;
+  gap: 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-s);
+}
+
+.lp-hero-preview-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.lp-hero-preview-stat-value {
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.lp-hero-preview-stat-label {
+  color: var(--text-3);
+}
+
+.lp-hero-preview-findings {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lp-hero-preview-findings .finding-card {
+  padding: 8px 10px;
+  font-size: 12px;
 }
 
 .lp-hero-input-wrapper {
@@ -348,9 +396,7 @@
 
 .lp-hero-input-wrapper:focus-within {
   border-color: var(--accent);
-  box-shadow:
-    0 0 0 3px var(--accent-dim),
-    0 0 30px var(--accent-dim);
+  box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
 .lp-hero-input-icon {
@@ -379,8 +425,13 @@
   padding: 12px 24px;
   font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
-  background: var(--accent-gradient);
+  /* Theme-aware: light themes (e.g. carbon) define --primary-strong as a
+     light gray with dark --text-on-primary, so the label must not be
+     hardcoded white. */
+  color: var(--text-on-primary);
+  /* Solid darker accent fill: clears WCAG AA in dark themes (--accent-gradient
+     was too light at ~3.7:1 and dragged in the violet partner). */
+  background: var(--primary-strong);
   border: none;
   border-radius: var(--radius-full);
   cursor: pointer;
@@ -388,448 +439,37 @@
   transition:
     box-shadow var(--duration-fast),
     transform var(--duration-fast),
-    opacity var(--duration-fast);
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 2px 12px rgba(59, 130, 246, 0.25);
-}
-
-.lp-hero-btn::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
-  opacity: 0;
-  transition: opacity var(--duration-fast);
+    opacity var(--duration-fast),
+    background var(--duration-fast);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .lp-hero-btn:hover {
-  box-shadow:
-    0 4px 20px rgba(59, 130, 246, 0.4),
-    0 4px 20px rgba(139, 92, 246, 0.25);
+  background: var(--primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   transform: translateY(-1px);
 }
 
-.lp-hero-btn:hover::before {
-  opacity: 1;
+.lp-hero-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
 
-.lp-hero-hint {
-  font-size: 12px;
-  color: var(--text-3);
-  margin: 0;
-  animation: fadeSlideUp 0.6s ease-out 0.4s both;
-}
-
-/* ── Hero Product Preview ────────────────────────────────────── */
-.lp-preview {
-  width: 100%;
-  max-width: 560px;
-  margin-top: 12px;
-  text-align: left;
-  background: var(--lp-glass-bg);
-  border: 1px solid var(--lp-glass-border);
-  border-radius: var(--radius-lg);
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.45),
-    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
-  overflow: hidden;
-  backdrop-filter: var(--lp-glass-blur);
-  animation: fadeSlideUp 0.7s ease-out 0.5s both;
-  transition:
-    border-color var(--duration-normal),
-    transform var(--duration-normal),
-    box-shadow var(--duration-normal);
-}
-
-.lp-preview:hover {
-  border-color: var(--lp-glass-border-bright);
-  transform: translateY(-2px);
-  box-shadow:
-    0 24px 70px rgba(0, 0, 0, 0.5),
-    0 0 40px rgba(59, 130, 246, 0.08);
-}
-
-.lp-preview-chrome {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--lp-glass-border);
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.lp-preview-dots {
-  display: inline-flex;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.lp-preview-dots i {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--border-m);
-}
-
-.lp-preview-dots i:nth-child(1) {
-  background: #f87171;
-  opacity: 0.8;
-}
-.lp-preview-dots i:nth-child(2) {
-  background: #fbbf24;
-  opacity: 0.8;
-}
-.lp-preview-dots i:nth-child(3) {
-  background: #34d399;
-  opacity: 0.8;
-}
-
-.lp-preview-title {
-  flex: 1;
-  min-width: 0;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.lp-preview-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 8px;
-  border-radius: var(--radius-full);
-  background: var(--accent-dim);
-  color: var(--accent);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  flex-shrink: 0;
-}
-
-.lp-preview-pulse {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  animation: pulse 1.6s ease-in-out infinite;
-}
-
-.lp-preview-body {
-  display: flex;
-  height: 150px;
-}
-
-.lp-preview-sidebar {
-  width: 150px;
-  flex-shrink: 0;
-  padding: 12px 0 12px 14px;
-  border-right: 1px solid var(--lp-glass-border);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  line-height: 1.9;
-  color: var(--text-3);
-  overflow: hidden;
-}
-
-.lp-preview-tree {
-  white-space: nowrap;
-}
-.lp-preview-tree.indent {
-  color: var(--text-2);
-}
-.lp-preview-tree.active {
-  color: var(--accent);
-  background: var(--accent-dim);
-  border-radius: 4px;
+.lp-hero-btn-spinner {
   display: inline-block;
-  padding: 0 6px;
-}
-
-/* ── Agent-Scan Radar (hero signature) ────────────────────────── */
-.lp-radar {
-  --radar-r: 54px;
-  position: relative;
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px;
-  overflow: hidden;
-}
-
-.lp-radar-ring {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border: 2px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-top-color: currentColor;
   border-radius: 50%;
-  border: 1px solid var(--border-accent);
-}
-.lp-radar-ring.r1 {
-  width: 108px;
-  height: 108px;
-  opacity: 0.8;
-}
-.lp-radar-ring.r2 {
-  width: 78px;
-  height: 78px;
-  opacity: 0.55;
-}
-.lp-radar-ring.r3 {
-  width: 50px;
-  height: 50px;
-  opacity: 0.4;
-}
-.lp-radar-ring.r4 {
-  width: 130px;
-  height: 130px;
-  opacity: 0.22;
-  border-style: dashed;
+  animation: spin 0.6s linear infinite;
 }
 
-/* Sweep beam — animates transform only (compositor-friendly) */
-.lp-radar-sweep {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 124px;
-  height: 124px;
-  border-radius: 50%;
-  background: conic-gradient(
-    from 0deg,
-    rgba(59, 130, 246, 0.3) 0deg,
-    rgba(59, 130, 246, 0.08) 42deg,
-    transparent 78deg
-  );
-  animation: radarSpin 3.6s linear infinite;
-  pointer-events: none;
-}
-
-@keyframes radarSpin {
-  from {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
+@keyframes spin {
   to {
-    transform: translate(-50%, -50%) rotate(360deg);
+    transform: rotate(360deg);
   }
-}
-
-/* Crosshair ticks */
-.lp-radar-tick {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 1px;
-  height: 66px;
-  background: linear-gradient(transparent, var(--border-accent));
-  opacity: 0.35;
-  pointer-events: none;
-}
-.lp-radar-tick.t0 {
-  transform: translate(-50%, -50%);
-}
-.lp-radar-tick.t60 {
-  transform: translate(-50%, -50%) rotate(60deg);
-}
-.lp-radar-tick.t120 {
-  transform: translate(-50%, -50%) rotate(120deg);
-}
-
-/* Central repository node */
-.lp-radar-core {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  z-index: 2;
-}
-.lp-radar-core-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  background: var(--accent);
-  color: var(--text-on-primary);
-  box-shadow:
-    0 0 12px var(--accent-glow),
-    0 0 24px var(--accent-dim);
-}
-.lp-radar-core-label {
-  font-family: var(--font-mono);
-  font-size: 8px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: var(--text-2);
-}
-.lp-radar-core::before {
-  content: "";
-  position: absolute;
-  inset: -7px;
-  border-radius: 10px;
-  border: 1px solid var(--accent);
-  animation: radarPing 2.4s ease-out infinite;
-}
-@keyframes radarPing {
-  0% {
-    transform: scale(0.85);
-    opacity: 0.9;
-  }
-  70%,
-  100% {
-    transform: scale(1.7);
-    opacity: 0;
-  }
-}
-
-/* Orbiting agent nodes */
-.lp-radar-orbit {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 0;
-  height: 0;
-  z-index: 2;
-}
-.lp-radar-agent {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-.lp-radar-agent-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow:
-    0 0 6px var(--accent-glow),
-    0 0 12px var(--accent-dim);
-  animation: radarPulse 2s ease-in-out infinite;
-}
-.lp-radar-agent-code {
-  font-family: var(--font-mono);
-  font-size: 7px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: var(--text-3);
-  white-space: nowrap;
-}
-@keyframes radarPulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(0.82);
-  }
-}
-
-.lp-preview-terminal {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-top: 1px solid var(--lp-glass-border);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  background: rgba(0, 0, 0, 0.25);
-  color: var(--text-2);
-}
-
-.lp-preview-prompt {
-  color: var(--success);
-  font-weight: 600;
-}
-
-.lp-preview-cmd {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.lp-preview-cursor {
-  width: 7px;
-  height: 13px;
-  background: var(--text-1);
-  animation: blink 1s step-end infinite;
-  flex-shrink: 0;
-}
-
-.lp-preview-ok {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-3);
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.lp-preview-ok-check {
-  color: var(--success);
-  font-weight: 700;
-}
-
-@media (max-width: 480px) {
-  .lp-preview-sidebar {
-    display: none;
-  }
-  .lp-preview-body {
-    height: 120px;
-  }
-  .lp-preview-badge {
-    display: none;
-  }
-  .lp-preview-ok-text {
-    display: none;
-  }
-
-  /* Compact radar for small screens */
-  .lp-radar {
-    --radar-r: 42px;
-  }
-  .lp-radar-ring.r1 {
-    width: 88px;
-    height: 88px;
-  }
-  .lp-radar-ring.r2 {
-    width: 62px;
-    height: 62px;
-  }
-  .lp-radar-ring.r3,
-  .lp-radar-ring.r4 {
-    display: none;
-  }
-  .lp-radar-sweep {
-    width: 100px;
-    height: 100px;
-  }
-  .lp-radar-tick {
-    height: 50px;
-  }
-  .lp-radar-agent-code {
-    display: none;
-  }
-}
-
-.lp-hero-hint span {
-  font-family: var(--font-mono);
-  color: var(--text-2);
 }
 
 @keyframes fadeSlideUp {
@@ -840,6 +480,154 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* ── Optional GitHub token ────────────────────────────────────── */
+/* Collapsed by default; expands inline under the hero form. The token
+   is passed through to the dashboard session (private repos + higher
+   GitHub rate limits). */
+.lp-token-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.lp-token-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition:
+    color var(--duration-fast),
+    border-color var(--duration-fast),
+    background var(--duration-fast);
+}
+
+.lp-token-toggle:hover {
+  color: var(--text-1);
+  border-color: var(--lp-glass-border);
+  background: var(--lp-glass-bg);
+}
+
+.lp-token-toggle.open {
+  color: var(--accent);
+  border-color: var(--border-accent);
+  background: var(--accent-dim);
+}
+
+.lp-token-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: fadeSlideUp 0.25s ease-out both;
+}
+
+.lp-token-input {
+  width: 250px;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-1);
+  background: var(--surface-0);
+  border: 1px solid var(--border-m);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition:
+    border-color var(--duration-normal),
+    box-shadow var(--duration-normal);
+}
+
+.lp-token-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.lp-token-input::placeholder {
+  color: var(--text-3);
+}
+
+.lp-token-hint {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+/* ── Agent radar sweep (signature moment) ─────────────────────── */
+/* Concentric rings + a rotating conic sweep behind the hero copy,
+   echoing the AgentPipeline motif from the flagship bento tile.
+   Rings sit at an exact ~8% primary tint (spec); the sweep's leading
+   edge is brighter (~18%) with a soft tail so the rotation reads as
+   the signature moment without fighting the text. Anchored to the
+   copy block via translate(-50%, -50%), sweep animates on ::after. */
+.lp-hero-radar {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 560px;
+  height: 560px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--primary) 8%, transparent);
+  background: repeating-radial-gradient(
+    circle at center,
+    transparent 0,
+    transparent 88px,
+    color-mix(in srgb, var(--primary) 8%, transparent) 88px,
+    color-mix(in srgb, var(--primary) 8%, transparent) 89px,
+    transparent 89px,
+    transparent 172px,
+    color-mix(in srgb, var(--primary) 8%, transparent) 172px,
+    color-mix(in srgb, var(--primary) 8%, transparent) 173px,
+    transparent 173px
+  );
+  transform: translate(-50%, -50%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.lp-hero-radar::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 16px var(--primary-glow);
+}
+
+.lp-hero-radar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  /* Soft-edged wedge: bright leading edge fading to nothing by 90°.
+     color-mix keeps it theme-aware in all 13 themes. */
+  background: conic-gradient(
+    from 0deg,
+    color-mix(in srgb, var(--primary) 18%, transparent) 0deg,
+    color-mix(in srgb, var(--primary) 9%, transparent) 45deg,
+    transparent 90deg,
+    transparent 360deg
+  );
+  animation: lpRadarSweep 9s linear infinite;
+}
+
+@keyframes lpRadarSweep {
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -943,29 +731,30 @@
   transition-delay: 0s;
 }
 
+.lp-feature-card--xl {
+  /* Flagship tile: spans the full 6-column grid. */
+  grid-column: span 6;
+  padding: 32px;
+  background: var(--lp-glass-bg);
+}
+
 .lp-feature-card--lg {
   grid-column: span 4;
   padding: 32px;
-  /* Tinted radial wash gives the hero tiles real surface variation
-     (bento diversity) while staying inside the single blue accent. */
-  background:
-    radial-gradient(
-      130% 130% at 100% 0%,
-      rgba(59, 130, 246, 0.1) 0%,
-      transparent 55%
-    ),
-    var(--lp-glass-bg);
+  background: var(--lp-glass-bg);
 }
 
 .lp-feature-card--sm {
   grid-column: span 2;
 }
 
-.lp-feature-card--lg .lp-feature-title {
+.lp-feature-card--lg .lp-feature-title,
+.lp-feature-card--xl .lp-feature-title {
   font-size: 17px;
 }
 
-.lp-feature-card--lg .lp-feature-desc {
+.lp-feature-card--lg .lp-feature-desc,
+.lp-feature-card--xl .lp-feature-desc {
   max-width: 52ch;
 }
 
@@ -1025,7 +814,6 @@
   height: 6px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 6px var(--accent-glow);
 }
 
 @keyframes lpAgentPulse {
@@ -1059,8 +847,13 @@
 }
 
 /* ── Stats ───────────────────────────────────────────────────── */
+/* Stats — full-bleed color-blocked band with the largest numerals on
+   the page. Tokens only: --primary-strong + --text-on-primary stay
+   accessible in all 13 themes (verified in Daylight and the dark set). */
 .lp-stats {
-  padding: 60px 0;
+  padding: 56px 0;
+  background: var(--primary-strong);
+  color: var(--text-on-primary);
   position: relative;
   z-index: 2;
   scroll-margin-top: 80px;
@@ -1069,20 +862,22 @@
 .lp-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
+  gap: 0;
 }
 
 .lp-stat-item {
   text-align: center;
-  padding: 28px 20px;
-  border-radius: var(--radius-lg);
-  background: var(--lp-glass-bg);
-  border: 1px solid var(--lp-glass-border);
+  padding: 24px 20px;
   opacity: 0;
   transform: translateY(16px);
   transition:
     opacity 0.5s ease-out var(--reveal-delay, 0s),
     transform 0.5s ease-out var(--reveal-delay, 0s);
+}
+
+.lp-stat-item:not(:last-child) {
+  border-right: 1px solid
+    color-mix(in srgb, var(--text-on-primary) 14%, transparent);
 }
 
 .lp-stat-item.lp-visible {
@@ -1097,23 +892,27 @@
   width: 44px;
   height: 44px;
   border-radius: var(--radius-md);
-  background: var(--accent-dim);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--text-on-primary) 12%, transparent);
+  color: var(--text-on-primary);
   margin-bottom: 12px;
 }
 
 .lp-stat-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--text-1);
-  letter-spacing: -0.02em;
+  font-size: 64px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--text-on-primary);
   font-variant-numeric: tabular-nums;
+  line-height: 1;
   margin-bottom: 4px;
 }
 
 .lp-stat-label {
   font-size: 13px;
-  color: var(--text-2);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--text-on-primary) 72%, transparent);
 }
 
 /* ── How It Works ────────────────────────────────────────────── */
@@ -1150,6 +949,24 @@
   z-index: 2;
 }
 
+/* Connecting line between steps */
+.lp-how-steps::before {
+  content: "";
+  position: absolute;
+  top: 40px;
+  left: calc(16.67% + 16px);
+  right: calc(16.67% + 16px);
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--accent-dim),
+    var(--accent),
+    var(--accent-dim)
+  );
+  opacity: 0.4;
+  z-index: 0;
+}
+
 .lp-how-step {
   text-align: center;
   padding: 32px 24px;
@@ -1162,6 +979,8 @@
     border-color var(--duration-normal),
     opacity 0.5s ease-out var(--reveal-delay, 0s),
     transform 0.5s ease-out var(--reveal-delay, 0s);
+  position: relative;
+  z-index: 1;
 }
 
 .lp-how-step.lp-visible {
@@ -1175,25 +994,9 @@
   transition-delay: 0s;
 }
 
-.lp-how-step-num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 8px;
-  border-radius: var(--radius-full);
-  background: var(--accent-dim);
-  border: 1px solid var(--border-accent);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--accent);
-  letter-spacing: 0.06em;
-  margin-bottom: 16px;
-}
-
 .lp-how-step-title {
+  position: relative;
+  z-index: 1;
   font-size: 16px;
   font-weight: 600;
   color: var(--text-1);
@@ -1201,10 +1004,30 @@
 }
 
 .lp-how-step-desc {
+  position: relative;
+  z-index: 1;
   font-size: 13px;
   line-height: 1.5;
   color: var(--text-2);
   margin: 0;
+}
+
+/* Oversized ghost numeral behind each step card — the only numbered
+   sequence on the page (01/02/03 = a genuine 3-step flow). Features
+   deliberately do NOT get fake numbering. */
+.lp-how-step-num {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  font-size: 96px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent);
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* ── Report Preview ──────────────────────────────────────────── */
@@ -1232,19 +1055,6 @@
     transparent 100%
   );
   pointer-events: none;
-}
-
-.lp-orb-6 {
-  width: 420px;
-  height: 420px;
-  top: 30%;
-  right: -140px;
-  background: radial-gradient(
-    circle,
-    rgba(59, 130, 246, 0.12) 0%,
-    transparent 70%
-  );
-  animation: orbFloat1 15s ease-in-out infinite reverse;
 }
 
 .lp-report-grid {
@@ -1499,89 +1309,15 @@
   opacity: 0.5;
 }
 
-/* ── CTA ─────────────────────────────────────────────────────── */
-.lp-cta {
-  padding: 100px 0;
-  border-top: 1px solid var(--lp-glass-border);
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.lp-cta::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse 60% 50% at 50% 50%,
-    rgba(59, 130, 246, 0.08) 0%,
-    transparent 100%
-  );
-  pointer-events: none;
-}
-
-.lp-cta-title {
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text-1);
-  margin: 0 0 12px;
-  position: relative;
-  z-index: 2;
-}
-
-.lp-cta-sub {
-  font-size: 14px;
-  color: var(--text-2);
-  margin: 0 0 28px;
-  position: relative;
-  z-index: 2;
-}
-
-.lp-cta-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 32px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #ffffff;
-  background: var(--accent-gradient);
-  border: none;
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  transition:
-    box-shadow var(--duration-fast),
-    transform var(--duration-fast),
-    opacity var(--duration-fast);
-  position: relative;
-  z-index: 2;
-  overflow: hidden;
-}
-
-.lp-cta-btn::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), transparent);
-  opacity: 0;
-  transition: opacity var(--duration-fast);
-}
-
-.lp-cta-btn:hover {
-  box-shadow:
-    0 4px 24px rgba(59, 130, 246, 0.35),
-    0 4px 24px rgba(139, 92, 246, 0.2);
-  transform: translateY(-2px);
-}
-
-.lp-cta-btn:hover::before {
-  opacity: 1;
-}
-
 /* ── Footer ──────────────────────────────────────────────────── */
 .lp-footer {
-  padding: 32px 0;
+  /* Generous bottom padding: after the CTA section was removed, the page
+     ended right below #how-it-works — too little scrollable room for the
+     anchor to land at its 80px scroll-margin (browser hit max scroll,
+     leaving #how-it-works ~113px below the viewport top instead of 80px).
+     320px bottom padding restores enough scroll runway for Lenis to land
+     exactly on the 80px scroll-margin. */
+  padding: 32px 0 320px;
   border-top: 1px solid var(--lp-glass-border);
   background: var(--lp-glass-bg);
 }
@@ -1609,16 +1345,44 @@
   color: var(--text-2);
 }
 
+.lp-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lp-footer-sep {
+  color: var(--text-3);
+  font-size: 12px;
+}
+
 .lp-footer-copy {
   font-size: 12px;
   color: var(--text-2);
   margin: 0;
 }
 
+.lp-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.lp-footer-link {
+  font-size: 12px;
+  color: var(--text-3);
+  text-decoration: none;
+  transition: color var(--duration-fast);
+}
+
+.lp-footer-link:hover {
+  color: var(--text-1);
+}
+
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .lp-hero-title {
-    font-size: 36px;
+    font-size: 42px;
   }
 
   .lp-hero-sub {
@@ -1629,12 +1393,13 @@
     max-width: 460px;
   }
 
-  /* Bento collapses to 2-up: lg tiles become full-width rows, sm tiles
-     pair up — no orphaned spans at tablet width. */
+  /* Bento collapses to 2-up: lg/xl tiles become full-width rows, sm
+     tiles pair up — no orphaned spans at tablet width. */
   .lp-features-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  .lp-feature-card--lg {
+  .lp-feature-card--lg,
+  .lp-feature-card--xl {
     grid-column: span 2;
   }
   .lp-feature-card--sm {
@@ -1643,12 +1408,30 @@
 
   .lp-stats-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
+    gap: 0;
+  }
+
+  .lp-stat-item:nth-child(2) {
+    border-right: none;
+  }
+
+  .lp-stat-item:nth-child(1),
+  .lp-stat-item:nth-child(2) {
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--text-on-primary) 14%, transparent);
+  }
+
+  .lp-stat-value {
+    font-size: 40px;
   }
 
   .lp-how-steps {
     grid-template-columns: 1fr;
     gap: 24px;
+  }
+
+  .lp-how-steps::before {
+    display: none;
   }
 
   /* Report preview stacks: copy above the live panel */
@@ -1675,6 +1458,20 @@
     padding: 0 16px;
   }
 
+  .lp-token-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .lp-token-field {
+    flex-wrap: wrap;
+  }
+
+  .lp-token-input {
+    width: 100%;
+  }
+
   .lp-hero {
     /* Non-env fallback first, then the safe-area enhanced value */
     padding: 88px 20px 48px;
@@ -1683,12 +1480,12 @@
     min-height: 100svh;
   }
 
-  .lp-hero-content {
+  .lp-hero-copy {
     gap: 18px;
   }
 
   .lp-hero-title {
-    font-size: 30px;
+    font-size: 34px;
   }
 
   .lp-hero-sub {
@@ -1724,7 +1521,8 @@
     grid-template-columns: 1fr;
   }
   .lp-feature-card--lg,
-  .lp-feature-card--sm {
+  .lp-feature-card--sm,
+  .lp-feature-card--xl {
     grid-column: span 1;
   }
 
@@ -1738,7 +1536,7 @@
   }
 
   .lp-stat-value {
-    font-size: 24px;
+    font-size: 32px;
   }
 
   /* Report preview: stats stack, panel padding tightens */
@@ -1758,23 +1556,6 @@
     flex-direction: column;
     gap: 12px;
     text-align: center;
-  }
-
-  /* Keep one soft orb for depth instead of blanking the hero */
-  .lp-orb-2,
-  .lp-orb-3,
-  .lp-orb-4,
-  .lp-orb-5,
-  .lp-orb-6 {
-    display: none;
-  }
-
-  .lp-orb-1 {
-    width: 300px;
-    height: 300px;
-    top: -60px;
-    right: -120px;
-    opacity: 0.85;
   }
 } /* Touch-first input sizing: >= 16px prevents iOS auto-zoom on focus.
      Covers portrait phones (<480), landscape phones, and tablets up to
@@ -1798,7 +1579,7 @@
     padding-bottom: 32px;
   }
 
-  .lp-hero-content {
+  .lp-hero-copy {
     gap: 12px;
   }
 
@@ -1810,10 +1591,6 @@
     font-size: 14px;
     line-height: 1.5;
   }
-
-  .lp-hero-hint {
-    display: none;
-  }
 }
 
 /* ── Daylight (light mode) overrides ────────────────────────── */
@@ -1821,15 +1598,6 @@
   --lp-glass-bg: rgba(255, 255, 255, 0.75);
   --lp-glass-border: rgba(15, 23, 42, 0.08);
   --lp-glass-border-bright: rgba(15, 23, 42, 0.16);
-}
-
-/* Light mode: gradient headline must be readable on white —
-   blue→violet instead of the dark-mode white→blue fade. */
-[data-theme="daylight"] .lp-title-accent {
-  background: linear-gradient(135deg, #2563eb 0%, var(--accent-2) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 [data-theme="daylight"] .lp-badge {
@@ -1868,16 +1636,68 @@
   );
 }
 
-/* Reduce orb/particle intensity slightly on bright backgrounds */
-[data-theme="daylight"] .lp-orb {
-  opacity: 0.75;
+/* ── Reduced Motion ──────────────────────────────────────────── */
+/* ── Hero responsive ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  .lp-nav-hamburger {
+    display: flex;
+  }
+
+  .lp-nav-links {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    padding: 12px 32px;
+    background: var(--lp-glass-bg);
+    backdrop-filter: var(--lp-glass-blur) saturate(1.4);
+    border-bottom: 1px solid var(--lp-glass-border);
+    transform: translateY(-10px);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      transform var(--duration-normal),
+      opacity var(--duration-normal);
+  }
+
+  .lp-nav-links.mobile-open {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .lp-hero {
+    padding: 72px 20px 48px;
+  }
+  .lp-hero-inner {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .lp-hero-preview {
+    display: none;
+  }
+  .lp-hero-radar {
+    display: none;
+  }
+  .lp-hero-sub {
+    max-width: 100%;
+  }
+  .lp-hero-input-group {
+    max-width: 100%;
+  }
 }
 
-/* ── Reduced Motion ──────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .lp-orb,
-  .lp-preview {
-    animation: none;
+  /* Scroll progress bar is continuous scroll-linked motion — disable
+     under reduced motion (the reveals already snap to visible). */
+  .lp-scroll-progress {
+    display: none;
+  }
+  /* Radar sweep is pure decoration — remove entirely under reduced
+     motion (the AgentPipeline echo already goes static too). */
+  .lp-hero-radar {
+    display: none;
   }
   /* Marquee collapses to a static wrapped list under reduced motion */
   .lp-langs-track {
@@ -1906,17 +1726,5 @@
   .lp-hero-sub {
     transform: none !important;
     opacity: 1 !important;
-  }
-  .lp-preview-pulse,
-  .lp-preview-cursor {
-    animation: none;
-    opacity: 1;
-  }
-  .lp-radar-sweep {
-    display: none;
-  }
-  .lp-radar-core::before,
-  .lp-radar-agent-dot {
-    animation: none;
   }
 }

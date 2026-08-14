@@ -14,7 +14,7 @@ import {
   ShieldCheck,
   Server,
   Globe,
-} from "lucide-react";
+} from "../icons";
 
 const ICON_MAP = {
   Shield,
@@ -168,12 +168,19 @@ export default function ArchNode({ data, selected }) {
   const language = data.language || "";
   const framework = data.framework || "";
 
+  // color-mix() — tint the layer color toward transparent for borders and
+  // badge fills. The old `.replace("0.5)", ...)` string hacks were no-ops on
+  // var() references (and appending alpha suffixes like `${c}15` produces
+  // invalid CSS that browsers silently drop).
+  const mix = (colorVar, pct) =>
+    `color-mix(in srgb, ${colorVar} ${pct}, transparent)`;
+
   const cardStyle = {
     background: `linear-gradient(135deg, ${colors.bg}, var(--surface-1))`,
-    borderColor: colors.border.replace("0.5)", "0.65)"),
+    borderColor: mix(colors.border, "65%"),
     boxShadow: selected
       ? `0 0 30px ${colors.glow}, 0 0 60px ${colors.glow}, inset 0 1px 0 var(--border-s)`
-      : `0 6px 24px rgba(0,0,0,0.4), inset 0 1px 0 var(--border-s)`,
+      : `3px 3px 0 color-mix(in srgb, var(--border-m) 45%, transparent), inset 0 1px 0 var(--border-s)`,
   };
 
   const handleCommon = {
@@ -201,7 +208,7 @@ export default function ArchNode({ data, selected }) {
             className="arch-node-icon"
             style={{ background: colors.bg, color: colors.text }}
           >
-            <IconComp size={18} strokeWidth={1.5} />
+            <IconComp size={18} />
           </div>
           <div className="arch-node-head-main">
             <div className="arch-node-title-row">
@@ -214,11 +221,9 @@ export default function ArchNode({ data, selected }) {
               <span
                 className="arch-node-type"
                 style={{
-                  background: colors.border
-                    .replace("0.5)", "0.25)")
-                    .replace("0.65)", "0.3)"),
+                  background: mix(colors.border, "25%"),
                   color: "var(--text-1)",
-                  border: `1px solid ${colors.border.replace("0.5)", "0.35)").replace("0.65)", "0.4)")}`,
+                  border: `1px solid ${mix(colors.border, "40%")}`,
                 }}
               >
                 {typeLabel}
@@ -247,8 +252,8 @@ export default function ArchNode({ data, selected }) {
                   key={i}
                   className="arch-node-endpoint"
                   style={{
-                    background: `${methodColor}15`,
-                    border: `1px solid ${methodColor}30`,
+                    background: mix(methodColor, "15%"),
+                    border: `1px solid ${mix(methodColor, "30%")}`,
                   }}
                   title={`${ep.method} ${ep.path}`}
                 >

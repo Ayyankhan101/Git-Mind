@@ -26,7 +26,6 @@
 
   /* Gradient partner — violet (freebuff blue→violet) */
   --accent-2: #8b5cf6;
-  --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
 
   /* Semantic */
   --success: #34d399;
@@ -77,9 +76,11 @@
   --font-mono: "Geist Mono", "JetBrains Mono", "SF Mono", monospace;
 
   /* Type scale — single source of truth for font sizes.
-     Reference from JSX via the `fs` helper in src/typeScale.js. */
-  --fs-3xs: 8px;
-  --fs-2xs: 10px;
+     Reference from JSX via the `fs` helper in src/typeScale.js.
+     Floor is 10px: 8px labels were illegible and 8-10px is reserved for
+     decorative marks only; all readable text starts at 11px. */
+  --fs-3xs: 10px;
+  --fs-2xs: 11px;
   --fs-xs: 11px;
   --fs-sm: 12px;
   --fs-md: 13px;

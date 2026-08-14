@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from "react";
-import { Check, AlertTriangle, X, Info } from "lucide-react";
+import { Check, AlertTriangle, X, Info } from "../icons";
 
 const ICON = {
   success: Check,
@@ -36,7 +36,7 @@ export default function ToastSystem({ toasts, onDismiss }) {
             className={`toast${t.kind ? ` ${t.kind}` : ""}${isExiting ? " toast-exit" : ""}`}
           >
             <span className="toast-icon">
-              <Icon size={15} strokeWidth={1.5} />
+              <Icon size={15} />
             </span>
             <div className="toast-body">
               <div className="toast-title">
@@ -50,7 +50,7 @@ export default function ToastSystem({ toasts, onDismiss }) {
               onClick={() => handleDismiss(t.id)}
               aria-label="Dismiss notification"
             >
-              <X size={12} strokeWidth={1.5} />
+              <X size={12} />
             </button>
           </div>
         );

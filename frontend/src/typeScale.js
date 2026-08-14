@@ -6,8 +6,8 @@
  * semantic API for inline styles. Use `fontSize: fs.sm` instead of raw pixels
  * so every component scales from the same tokens.
  *
- *   fs.tiny    → 8px   (--fs-3xs)  SVG chart ticks
- *   fs.micro   → 10px  (--fs-2xs)  tiny meta / chart labels
+ *   fs.tiny    → 10px  (--fs-3xs)  SVG chart ticks / decorative marks
+ *   fs.micro   → 11px  (--fs-2xs)  tiny meta / chart labels
  *   fs.xs      → 11px  (--fs-xs)   labels, meta strips, badges
  *   fs.sm      → 12px  (--fs-sm)   secondary body, table cells
  *   fs.md      → 13px  (--fs-md)   default body text

@@ -208,7 +208,7 @@ export default function App() {
 
   // ── Analyze ──────────────────────────────────────────────
   const handleAnalyze = useCallback(
-    (url) => {
+    (url, tokenOverride) => {
       if (!url) return;
       cleanup();
       dispatch({ type: "START_ANALYSIS", url });
@@ -259,11 +259,12 @@ export default function App() {
       };
 
       ws.onopen = () => {
+        const gh = tokenOverride || ghToken;
         ws.send(
           JSON.stringify({
             repo_url: url,
             session_id: SESSION_ID,
-            ...(ghToken ? { gh_token: ghToken } : {}),
+            ...(gh ? { gh_token: gh } : {}),
           }),
         );
         resetInactivityTimer();
@@ -452,7 +453,7 @@ export default function App() {
 
   // ── Load repos ────────────────────────────────────────────
   const handleLoadRepos = useCallback(
-    async (user) => {
+    async (user, tokenOverride) => {
       const u = (user || githubUser).trim();
       if (!u) {
         dispatch({
@@ -470,7 +471,9 @@ export default function App() {
         cmd: { id: `user:${u}`, label: u, sub: "GitHub user", icon: "user" },
       });
       try {
-        const list = await fetchRepos(u, ghToken || null);
+        // Landing-page submissions can carry their own token (private
+        // repos / higher rate limits) before the dashboard takes over.
+        const list = await fetchRepos(u, tokenOverride || ghToken || null);
         dispatch({ type: "SET_REPOS", repos: list });
         if (list.length === 0)
           dispatch({
@@ -502,11 +505,21 @@ export default function App() {
     [githubUser, ghToken, addToast],
   );
 
+  // ── Apply a token from the landing page ───────────────────
+  // Mirrors the dashboard CommandBar flow: update app state so the
+  // analysis WS payload carries it, and persist for the session.
+  const applyLandingToken = useCallback((token) => {
+    const t = (token || "").trim();
+    if (!t) return;
+    dispatch({ type: "SET_GH_TOKEN", value: t });
+    tokenManager.set(t);
+  }, []);
+
   // ── Select + analyze ──────────────────────────────────────
   const handleSelectRepo = useCallback(
-    (url) => {
+    (url, tokenOverride) => {
       dispatch({ type: "SET_SELECTED_REPO_URL", url });
-      handleAnalyze(url);
+      handleAnalyze(url, tokenOverride);
     },
     [handleAnalyze],
   );
@@ -669,12 +682,14 @@ export default function App() {
     <div className="app">
       {isLanding ? (
         <LandingPage
-          onLoad={(user) => {
-            handleLoadRepos(user);
+          onLoad={(user, token) => {
+            applyLandingToken(token);
+            handleLoadRepos(user, token);
             navigate("/dashboard");
           }}
-          onAnalyzeUrl={(url) => {
-            handleSelectRepo(url);
+          onAnalyzeUrl={(url, token) => {
+            applyLandingToken(token);
+            handleSelectRepo(url, token);
             navigate("/dashboard");
           }}
         />

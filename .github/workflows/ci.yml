@@ -154,6 +154,11 @@ jobs:
       # (e.g. someone reverts .sev-filter to 24px) fails the build here.
       - name: Run spacing audit (gutter/header regression gate)
         run: python e2e/spacing_audit.py --check
+      # Overlap regression gate: clicking a diagram node must push the
+      # canvas (flex sibling) and keep the floating control dock clear — a
+      # revert to absolute overlay, or any panel/dock overlap, fails here.
+      - name: Run overlap audit (node panel / dock regression gate)
+        run: python e2e/overlap_probe.py --check
       - name: Upload smoke screenshots
         if: always()
         uses: actions/upload-artifact@v4

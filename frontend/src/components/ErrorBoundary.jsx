@@ -1,6 +1,6 @@
 import React from "react";
 import * as Sentry from "@sentry/react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "../icons";
 import { fs } from "../typeScale";
 
 export default class ErrorBoundary extends React.Component {
@@ -25,7 +25,6 @@ export default class ErrorBoundary extends React.Component {
           <AlertTriangle
             size={20}
             className="empty-icon"
-            strokeWidth={1.5}
             style={{ color: "var(--danger)" }}
           />
           <div className="empty-title">Something went wrong</div>

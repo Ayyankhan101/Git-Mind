@@ -13,8 +13,7 @@ import {
   GitCommit,
   Binary,
   Activity,
-} from "lucide-react";
-import { fs } from "../typeScale";
+} from "../icons";
 import CommandBar from "./CommandBar";
 import NavRail from "./NavRail";
 import Sidebar from "./Sidebar";
@@ -206,21 +205,17 @@ export default function DashboardLayout({
 
       <div className="main">
         {globalError && (
-          <div className="error-banner" role="alert">
+          <div
+            className="error-banner-inline error-banner-inline--danger"
+            role="alert"
+          >
             <AlertTriangle size={14} style={{ flexShrink: 0 }} />
             <span style={{ flex: 1, whiteSpace: "pre-wrap" }}>
               {globalError}
             </span>
             {retryUrl && (
               <button
-                className="btn-text"
-                style={{
-                  color: "var(--primary)",
-                  flexShrink: 0,
-                  fontSize: fs.sm,
-                  fontWeight: 600,
-                  whiteSpace: "nowrap",
-                }}
+                className="btn-text btn-text-primary"
                 onClick={() => {
                   dispatch({ type: "CLEAR_ERROR" });
                   handleAnalyze(retryUrl);
@@ -241,13 +236,8 @@ export default function DashboardLayout({
         {agentWarnings.map((w, i) => (
           <div
             key={i}
-            className="error-banner"
+            className="error-banner-inline error-banner-inline--warning"
             role="status"
-            style={{
-              borderColor: "var(--warning-border)",
-              background: "var(--warning-bg)",
-              color: "var(--warning)",
-            }}
           >
             <AlertTriangle size={14} style={{ flexShrink: 0 }} />
             <span style={{ flex: 1 }}>{w}</span>

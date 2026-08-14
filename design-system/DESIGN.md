@@ -14,7 +14,7 @@
 | Evidence Files | `brand-spec.md`, `gitmind-design-system.html`, `gitmind-redesign-summary.md` |
 | Token Provenance | All hex values from `brand-spec.md` palette + `gitmind-design-system.html` `:root` |
 | Typography Source | Google Fonts: Geist (300–700), Geist Mono (400–500) |
-| Theme Count | 9 (Obsidian default, Default, Amber, Verdant, Glacier, Aurora, Spatial, Daylight, Mist) |
+| Theme Count | 13 (Obsidian default, Default, Amber, Verdant, Glacier, Aurora, Spatial, Daylight, Matrix, Neon, Carbon, Plasma, Circuit) |
 | Product | Code intelligence — repo analysis, security, architecture, code quality |
 | Surface | Desktop web app with nav rail, dashboard, code blocks, stat tiles |
 

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Lock, ExternalLink } from "lucide-react";
+import { Lock, ExternalLink } from "../icons";
 import { fs } from "../typeScale";
 
 const SEV_ORDER = ["critical", "high", "medium", "low"];
@@ -76,7 +76,7 @@ function PkgRow({ pkg }) {
                       fontSize: fs.xs,
                     }}
                   >
-                    <ExternalLink size={11} strokeWidth={1.5} /> OSV
+                    <ExternalLink size={11} /> OSV
                   </a>
                 )}
                 {v.fixed_in && (
@@ -152,9 +152,9 @@ export default function CveTab({ findings, isAnalyzing, analyzed }) {
   if (!analyzed && !isAnalyzing) {
     return (
       <div className="empty">
-        <Lock size={20} className="empty-icon" strokeWidth={1.5} />
+        <Lock size={20} className="empty-icon" />
         <div className="empty-title">CVE Scanner not available</div>
-        <div className="empty-sub">Analyze a repository to get started</div>
+        <div className="empty-sub">Load a repository to run an analysis</div>
       </div>
     );
   }
@@ -164,7 +164,7 @@ export default function CveTab({ findings, isAnalyzing, analyzed }) {
   if (analyzed && !findings?.length) {
     return (
       <div className="empty">
-        <Lock size={20} className="empty-icon" strokeWidth={1.5} />
+        <Lock size={20} className="empty-icon" />
         <div className="empty-title">No vulnerable dependencies</div>
         <div className="empty-sub">
           No known CVEs found in this repository's dependencies.
@@ -185,9 +185,10 @@ export default function CveTab({ findings, isAnalyzing, analyzed }) {
       <div className="tab-header">
         <div className="tab-header-main">
           <span className="tab-header-icon">
-            <Lock size={15} strokeWidth={1.5} />
+            <Lock size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">05 — CVE</div>
             <div className="tab-header-title">CVE Scanner</div>
             <div className="tab-header-sub">
               {findings?.length || 0} vulnerable packages

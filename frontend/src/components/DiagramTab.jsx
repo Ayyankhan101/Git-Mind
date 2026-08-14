@@ -15,7 +15,7 @@ import {
   Expand,
   Check,
   AlertTriangle,
-} from "lucide-react";
+} from "../icons";
 import { fs } from "../typeScale";
 import { parseMermaidToFlow } from "../utils/parseMermaid";
 import { parseGraphJsonToFlow } from "../utils/parseGraphJson";
@@ -37,9 +37,10 @@ function DiagramShell({ sub, children }) {
       <div className="tab-header">
         <div className="tab-header-main">
           <span className="tab-header-icon">
-            <GitBranch size={15} strokeWidth={1.5} />
+            <GitBranch size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">02 — Architecture</div>
             <div className="tab-header-title">Architecture</div>
             <div className="tab-header-sub">{sub}</div>
           </div>
@@ -268,10 +269,14 @@ export default function DiagramTab({
   }, [hoveredNode, setNodes, setEdges]);
 
   useEffect(() => {
-    if (nodes.length > 0 && reactFlowInstance.current) {
-      reactFlowInstance.current.fitView({ padding: 0.2 });
-    }
-  }, [nodes.length]);
+    if (!reactFlowInstance.current || nodes.length === 0) return;
+    // The node panel changes the canvas width on open/close, so re-fit
+    // once the canvas has re-measured after the layout shift.
+    const id = setTimeout(() => {
+      reactFlowInstance.current?.fitView({ padding: 0.2 });
+    }, 80);
+    return () => clearTimeout(id);
+  }, [nodes.length, selectedNode]);
 
   const onMove = useCallback((_event, viewport) => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -371,11 +376,7 @@ export default function DiagramTab({
               justifyContent: "center",
             }}
           >
-            <AlertTriangle
-              size={24}
-              style={{ color: "var(--danger)" }}
-              strokeWidth={1.5}
-            />
+            <AlertTriangle size={24} style={{ color: "var(--danger)" }} />
           </div>
           <div
             style={{
@@ -427,11 +428,7 @@ export default function DiagramTab({
               boxShadow: "0 0 32px var(--accent-dim)",
             }}
           >
-            <GitBranch
-              size={24}
-              style={{ color: "var(--accent)" }}
-              strokeWidth={1.5}
-            />
+            <GitBranch size={24} style={{ color: "var(--accent)" }} />
           </div>
           <div
             style={{ fontSize: fs.lg, fontWeight: 600, color: "var(--text-1)" }}
@@ -467,15 +464,11 @@ export default function DiagramTab({
             position: "relative",
           }}
         >
-          {/* Canvas Area Container */}
+          {/* Canvas Area Container — flex sibling of the node panel, so
+              opening the panel narrows the graph instead of overlaying it. */}
           <div
             className="diagram-canvas"
-            style={{
-              width: "100%",
-              height: "100%",
-              position: "relative",
-              boxShadow: "none",
-            }}
+            style={{ position: "relative", boxShadow: "none" }}
             ref={reactFlowWrapper}
           >
             <ReactFlow
@@ -512,8 +505,8 @@ export default function DiagramTab({
                   height: 100,
                   display: "block",
                   background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 12,
+                  border: "1px solid var(--border-m)",
+                  borderRadius: 0,
                 }}
                 nodeColor={(n) => {
                   if (n.data?.tier === "frontend") return "var(--info)";
@@ -522,7 +515,12 @@ export default function DiagramTab({
                 }}
                 maskColor="var(--surface)"
               />
-              <Background color="var(--border-s)" gap={24} size={1} />
+              <Background
+                variant="lines"
+                color="var(--border-s)"
+                gap={24}
+                lineWidth={1}
+              />
             </ReactFlow>
           </div>
 
@@ -536,11 +534,12 @@ export default function DiagramTab({
             />
           )}
 
-          {/* Centered Floating Control Dock */}
+          {/* Centered Floating Control Dock — shifts left of the node
+              panel when it opens so the controls stay reachable. */}
           <div
+            className={`diagram-dock${selectedNode ? " diagram-dock--panel" : ""}`}
             style={{
               position: "absolute",
-              right: 16,
               top: "50%",
               transform: "translateY(-50%)",
               display: "flex",
@@ -549,12 +548,10 @@ export default function DiagramTab({
               gap: 12,
               padding: "12px 8px",
               background: "var(--surface)",
-              backdropFilter: "blur(24px)",
-              WebkitBackdropFilter: "blur(24px)",
-              border: "1px solid var(--border)",
-              borderRadius: 12,
+              border: "1px solid var(--border-m)",
+              borderRadius: 0,
               zIndex: 30,
-              boxShadow: "var(--shadow-lg)",
+              boxShadow: "3px 3px 0 var(--border-s)",
             }}
           >
             <span
@@ -562,6 +559,7 @@ export default function DiagramTab({
                 fontSize: fs.micro,
                 fontFamily: "var(--font-mono)",
                 fontWeight: 700,
+                letterSpacing: "0.08em",
                 color: "var(--text-2)",
                 userSelect: "none",
               }}

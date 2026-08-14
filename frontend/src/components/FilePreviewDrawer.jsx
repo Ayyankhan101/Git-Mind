@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FileText, ExternalLink, Copy, X } from "lucide-react";
+import { FileText, ExternalLink, Copy, X } from "../icons";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 
 const LANG_EXT = {
@@ -133,7 +133,7 @@ export default function FilePreviewDrawer({
       >
         <div className="drawer-header">
           <span className="drawer-icon">
-            <FileText size={14} strokeWidth={1.5} />
+            <FileText size={14} />
           </span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="drawer-title">
@@ -157,7 +157,7 @@ export default function FilePreviewDrawer({
               title="Open on GitHub"
               aria-label="Open on GitHub"
             >
-              <ExternalLink size={13} strokeWidth={1.5} />
+              <ExternalLink size={13} />
             </a>
           )}
           <button
@@ -166,14 +166,14 @@ export default function FilePreviewDrawer({
             aria-label="Copy file path"
             onClick={() => navigator.clipboard.writeText(path).catch(() => {})}
           >
-            <Copy size={13} strokeWidth={1.5} />
+            <Copy size={13} />
           </button>
           <button
             className="btn-icon"
             onClick={onClose}
             aria-label="Close file preview"
           >
-            <X size={13} strokeWidth={1.5} />
+            <X size={13} />
           </button>
         </div>
 
@@ -217,7 +217,7 @@ export default function FilePreviewDrawer({
             </div>
           ) : (
             <div className="empty" style={{ padding: "48px 32px" }}>
-              <FileText size={20} className="empty-icon" strokeWidth={1.5} />
+              <FileText size={20} className="empty-icon" />
               <div className="empty-title">Preview not available</div>
               <div className="empty-sub">
                 {fetchError ? `Fetch failed (${fetchError}). ` : ""}

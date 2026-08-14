@@ -1,12 +1,5 @@
-import React, { useRef, useCallback } from "react";
-import {
-  Search,
-  FolderOpen,
-  Share2,
-  Download,
-  Check,
-  Lock,
-} from "lucide-react";
+import React, { useRef, useCallback, useState, useEffect } from "react";
+import { Search, FolderOpen, Share2, Download, Check, Lock } from "../icons";
 import ThemeSwitcher from "./ThemeSwitcher";
 import { isValidGhToken } from "../api";
 import * as tokenManager from "../tokenManager";
@@ -28,15 +21,38 @@ export default function CommandBar({
   theme,
 }) {
   const tokenSaveTimer = useRef(null);
+  const [tokenOpen, setTokenOpen] = useState(false);
+  const tokenPopRef = useRef(null);
   const debouncedTokenSave = useCallback((value) => {
     clearTimeout(tokenSaveTimer.current);
     tokenSaveTimer.current = setTimeout(() => tokenManager.set(value), 500);
   }, []);
+
+  /* Close the token popover on outside click (mousedown, like
+     ThemeSwitcher) or Escape. Enter inside the input also closes it. */
+  useEffect(() => {
+    if (!tokenOpen) return;
+    const onMouseDown = (e) => {
+      if (tokenPopRef.current && !tokenPopRef.current.contains(e.target)) {
+        setTokenOpen(false);
+      }
+    };
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setTokenOpen(false);
+    };
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [tokenOpen]);
   return (
     <div className="command-bar">
       <span className="cb-wordmark">GitMind</span>
 
       <div
+        className="cb-divider"
         style={{
           width: 1,
           height: 20,
@@ -66,40 +82,57 @@ export default function CommandBar({
         />
       </div>
 
-      <div className="cb-input cb-input--token">
-        <Lock
-          size={14}
-          style={{
-            color: ghToken
-              ? isValidGhToken(ghToken)
-                ? "var(--primary)"
-                : "var(--danger)"
-              : "var(--text-3)",
-            flexShrink: 0,
-          }}
-        />
-        <input
-          type="password"
-          placeholder={
-            ghToken && !isValidGhToken(ghToken)
-              ? "unrecognized format"
-              : "token (optional)"
-          }
-          aria-label="GitHub personal access token"
-          autoComplete="off"
-          spellCheck={false}
-          value={ghToken}
-          onChange={(e) => {
-            dispatch({ type: "SET_GH_TOKEN", value: e.target.value });
-            debouncedTokenSave(e.target.value);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !reposLoading && !isAnalyzing)
-              handleLoadRepos();
-          }}
-          disabled={isAnalyzing}
-          style={{ minWidth: 0 }}
-        />
+      <div className="token-popover-wrap" ref={tokenPopRef}>
+        <button
+          className="btn-icon"
+          onClick={() => setTokenOpen((o) => !o)}
+          title="GitHub token settings"
+          aria-label="GitHub token"
+          aria-expanded={tokenOpen}
+        >
+          <Lock
+            size={14}
+            style={{
+              color: ghToken
+                ? isValidGhToken(ghToken)
+                  ? "var(--primary)"
+                  : "var(--danger)"
+                : "var(--text-3)",
+            }}
+          />
+        </button>
+        {tokenOpen && (
+          <div className="token-popover">
+            <label className="token-popover-label">
+              GitHub Token (optional)
+            </label>
+            <div className="cb-input">
+              <Lock
+                size={14}
+                style={{ color: "var(--text-3)", flexShrink: 0 }}
+              />
+              <input
+                type="password"
+                placeholder={
+                  ghToken && !isValidGhToken(ghToken)
+                    ? "unrecognized format"
+                    : "Paste personal access token"
+                }
+                aria-label="GitHub personal access token"
+                autoComplete="off"
+                spellCheck={false}
+                value={ghToken}
+                onChange={(e) => {
+                  dispatch({ type: "SET_GH_TOKEN", value: e.target.value });
+                  debouncedTokenSave(e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") setTokenOpen(false);
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <button
@@ -111,7 +144,7 @@ export default function CommandBar({
         {reposLoading ? "Loading…" : "Load Repos"}
       </button>
 
-      <span style={{ flex: 1 }} />
+      <span className="cb-spacer" />
 
       {(isAnalyzing || analyzed) && (
         <span className={`cb-status ${statusClass}`} role="status">

@@ -22,7 +22,6 @@
 
   /* Gradient partner — violet (freebuff blue→violet) */
   --accent-2: #8b5cf6;
-  --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
 
   --text-primary: #0f172a;
   --text-secondary: #475569;

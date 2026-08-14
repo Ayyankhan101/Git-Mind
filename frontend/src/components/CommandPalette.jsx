@@ -18,7 +18,7 @@ import {
   FolderOpen,
   Clock,
   ChevronRight,
-} from "lucide-react";
+} from "../icons";
 
 const NAV_ITEMS = [
   {
@@ -231,7 +231,7 @@ export default function CommandPalette({
         ref={trapRef}
       >
         <div className="palette-input-row">
-          <Search size={15} strokeWidth={1.5} />
+          <Search size={15} />
           <input
             ref={inputRef}
             className="palette-input"
@@ -276,15 +276,11 @@ export default function CommandPalette({
                     aria-selected={isActive}
                   >
                     <span className="icon-slot">
-                      {IconComp && <IconComp size={14} strokeWidth={1.5} />}
+                      {IconComp && <IconComp size={14} />}
                     </span>
                     <span>{item.label}</span>
                     {item.sub && <span className="meta">{item.sub}</span>}
-                    <ChevronRight
-                      size={12}
-                      strokeWidth={1.5}
-                      className="palette-arrow"
-                    />
+                    <ChevronRight size={12} className="palette-arrow" />
                   </div>
                 );
               })}

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { X, Cpu, Send, MessageSquare } from "lucide-react";
+import { X, Cpu, Send, MessageSquare } from "../icons";
 import { fs } from "../typeScale";
 import { postChatStream } from "../api";
 
@@ -182,11 +182,7 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
     <div className="node-panel" onClick={(e) => e.stopPropagation()}>
       {/* ── Header ─────────────────────────────────────────────── */}
       <div className="node-panel-header">
-        <Cpu
-          size={15}
-          style={{ color: "var(--primary)", flexShrink: 0 }}
-          strokeWidth={1.5}
-        />
+        <Cpu size={15} style={{ color: "var(--primary)", flexShrink: 0 }} />
         <span className="node-panel-title">{node}</span>
         <button
           className="btn-icon"
@@ -194,7 +190,7 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
           title="Close (Esc)"
           aria-label="Close panel"
         >
-          <X size={14} strokeWidth={2} />
+          <X size={14} />
         </button>
       </div>
 
@@ -255,7 +251,7 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
               gap: 5,
             }}
           >
-            <MessageSquare size={11} strokeWidth={1.5} /> Ask about this node
+            <MessageSquare size={11} /> Ask about this node
           </div>
           {SUGGESTIONS(node).map((q) => (
             <button

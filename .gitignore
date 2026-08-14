@@ -7,23 +7,14 @@ backend/__pycache__/
 backend/.chroma/
 backend/.chroma_registry.json
 backend/.llm_cache/
+backend/.dspy_harvest/
+backend/optimized/
 backend/analyses/
 backend/gitmind.db
 *.pyc
 .env
 graphify-out/
 graphify-out.zip
-
-# Obsidian vault (tracked separately)
-.obsidian-vault/
-
-# Obsidian config in vault
-Git-Mind-vault/.obsidian/
-
-# Auto-generated semantic/edge notes
-Git-Mind-vault/_SEMANTIC_*.md
-Git-Mind-vault/_EDGE_*.md
-Git-Mind-vault/graph.json
 
 # Opencode context (internal)
 .opencode/
@@ -48,3 +39,6 @@ frontend/.lighthouseci/
 
 # Backup files
 *.bak
+
+# Local LLM model files (large, downloaded locally)
+*.gguf

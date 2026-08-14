@@ -1,11 +1,5 @@
 import React, { useState, useMemo } from "react";
-import {
-  Code,
-  ExternalLink,
-  Wrench,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { Code, ExternalLink, Wrench, ChevronDown, ChevronUp } from "../icons";
 import { fs } from "../typeScale";
 
 const LANG_COLORS = {
@@ -110,7 +104,7 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
                   gap: 3,
                 }}
               >
-                <ExternalLink size={11} strokeWidth={1.5} /> {finding.cwe}
+                <ExternalLink size={11} /> {finding.cwe}
               </a>
             </div>
           )}
@@ -268,7 +262,7 @@ export default function CodeAuditTab({
   if (!analyzed && !isAnalyzing) {
     return (
       <div className="empty">
-        <Code size={20} className="empty-icon" strokeWidth={1.5} />
+        <Code size={20} className="empty-icon" />
         <div className="empty-title">Code Audit</div>
         <div className="empty-sub">
           Analyze a repository to see per-language code quality and security
@@ -283,7 +277,7 @@ export default function CodeAuditTab({
   if (analyzed && !totalFindings) {
     return (
       <div className="empty">
-        <Code size={20} className="empty-icon" strokeWidth={1.5} />
+        <Code size={20} className="empty-icon" />
         <div className="empty-title">No issues found</div>
         <div className="empty-sub">
           No code quality or security issues detected across all languages.
@@ -297,9 +291,10 @@ export default function CodeAuditTab({
       <div className="tab-header">
         <div className="tab-header-main">
           <span className="tab-header-icon">
-            <Code size={15} strokeWidth={1.5} />
+            <Code size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">08 — Code Audit</div>
             <div className="tab-header-title">Code Audit</div>
             <div className="tab-header-sub">
               {totalFindings} finding{totalFindings !== 1 ? "s" : ""} across{" "}

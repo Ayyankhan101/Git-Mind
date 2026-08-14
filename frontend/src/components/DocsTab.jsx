@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { FileCode2, Lock, LockOpen } from "lucide-react";
+import { FileCode2, Lock, LockOpen } from "../icons";
 import { fs } from "../typeScale";
 
 const METHODS = ["ALL", "GET", "POST", "PUT", "DELETE", "PATCH"];
@@ -23,7 +23,7 @@ function AuthBadge({ authRequired }) {
           flexShrink: 0,
         }}
       >
-        <Lock size={9} strokeWidth={2} /> AUTH
+        <Lock size={9} /> AUTH
       </span>
     );
   if (authRequired === false)
@@ -44,7 +44,7 @@ function AuthBadge({ authRequired }) {
           flexShrink: 0,
         }}
       >
-        <LockOpen size={9} strokeWidth={2} /> PUBLIC
+        <LockOpen size={9} /> PUBLIC
       </span>
     );
   return null;
@@ -135,9 +135,9 @@ export default function DocsTab({ docs, isAnalyzing, analyzed, onPickFile }) {
   if (!analyzed && !isAnalyzing) {
     return (
       <div className="empty">
-        <FileCode2 size={20} className="empty-icon" strokeWidth={1.5} />
+        <FileCode2 size={20} className="empty-icon" />
         <div className="empty-title">API Docs not available</div>
-        <div className="empty-sub">Analyze a repository to get started</div>
+        <div className="empty-sub">Load a repository to run an analysis</div>
       </div>
     );
   }
@@ -147,7 +147,7 @@ export default function DocsTab({ docs, isAnalyzing, analyzed, onPickFile }) {
   if (analyzed && !isAnalyzing && !docs?.length) {
     return (
       <div className="empty">
-        <FileCode2 size={20} className="empty-icon" strokeWidth={1.5} />
+        <FileCode2 size={20} className="empty-icon" />
         <div className="empty-title">No API endpoints detected</div>
         <div className="empty-sub">
           No standard routing patterns found in this codebase
@@ -162,9 +162,10 @@ export default function DocsTab({ docs, isAnalyzing, analyzed, onPickFile }) {
       <div className="tab-header">
         <div className="tab-header-main">
           <span className="tab-header-icon">
-            <FileCode2 size={15} strokeWidth={1.5} />
+            <FileCode2 size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">03 — API Docs</div>
             <div className="tab-header-title">API Endpoints</div>
             <div className="tab-header-sub">
               {docs?.length || 0} endpoints discovered

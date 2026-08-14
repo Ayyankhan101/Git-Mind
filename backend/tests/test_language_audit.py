@@ -11,9 +11,8 @@ class TestRunCodeAudit:
 
     @patch("agents.language_audit.shutil.which")
     @patch("agents.language_audit.subprocess.run")
-    @patch("agents.language_audit.get_cached", return_value=None)
-    @patch("agents.language_audit.invoke_with_retry")
-    def test_python_tool_and_triage(self, mock_invoke, mock_get_cached, mock_run, mock_which):
+    @patch("agents.language_audit.run_dspy_cached")
+    def test_python_tool_and_triage(self, mock_run_cached, mock_run, mock_which):
         mock_which.return_value = "/usr/bin/pylint"
         mock_run.return_value = MagicMock(
             stdout=json.dumps(
@@ -27,23 +26,17 @@ class TestRunCodeAudit:
                 ]
             )
         )
-        mock_invoke.return_value = MagicMock(
-            content=json.dumps(
-                {
-                    "findings": [
-                        {
-                            "id": "f1",
-                            "file": "src/main.py",
-                            "line": 1,
-                            "severity": "medium",
-                            "title": "Unused import",
-                            "description": "Unused import os",
-                            "remediation": "Remove unused import",
-                        }
-                    ]
-                }
-            )
-        )
+        mock_run_cached.return_value = [
+            {
+                "id": "f1",
+                "file": "src/main.py",
+                "line": 1,
+                "severity": "medium",
+                "title": "Unused import",
+                "description": "Unused import os",
+                "remediation": "Remove unused import",
+            }
+        ]
 
         results = run_code_audit(["src/main.py"], {"src/main.py": "import os\n"})
 
@@ -54,26 +47,19 @@ class TestRunCodeAudit:
         assert results[0]["findings"][0]["file"] == "src/main.py"
 
     @patch("agents.language_audit.shutil.which", return_value=None)
-    @patch("agents.language_audit.get_cached", return_value=None)
-    @patch("agents.language_audit.invoke_with_retry")
-    def test_llm_fallback_when_tool_missing(self, mock_invoke, mock_get_cached, mock_which):
-        mock_invoke.return_value = MagicMock(
-            content=json.dumps(
-                {
-                    "findings": [
-                        {
-                            "id": "f1",
-                            "file": "src/main.py",
-                            "line": 5,
-                            "severity": "medium",
-                            "title": "Missing type hints",
-                            "description": "Function lacks type hints",
-                            "remediation": "Add type hints",
-                        }
-                    ]
-                }
-            )
-        )
+    @patch("agents.language_audit.run_dspy_cached")
+    def test_llm_fallback_when_tool_missing(self, mock_run_cached, mock_which):
+        mock_run_cached.return_value = [
+            {
+                "id": "f1",
+                "file": "src/main.py",
+                "line": 5,
+                "severity": "medium",
+                "title": "Missing type hints",
+                "description": "Function lacks type hints",
+                "remediation": "Add type hints",
+            }
+        ]
 
         results = run_code_audit(["src/main.py"], {"src/main.py": "def foo():\n    pass\n"})
 
@@ -83,24 +69,20 @@ class TestRunCodeAudit:
         assert len(results[0]["findings"]) == 1
 
     @patch("agents.language_audit.shutil.which")
-    @patch("agents.language_audit.get_cached")
-    def test_cache_hit_skips_llm(self, mock_get_cached, mock_which):
+    @patch("agents.language_audit.run_dspy_cached")
+    def test_cache_hit_skips_llm(self, mock_run_cached, mock_which):
         mock_which.return_value = "/usr/bin/pylint"
-        mock_get_cached.return_value = json.dumps(
+        mock_run_cached.return_value = [
             {
-                "findings": [
-                    {
-                        "id": "cached1",
-                        "file": "src/main.py",
-                        "line": 1,
-                        "severity": "low",
-                        "title": "Cached finding",
-                        "description": "Found from cache",
-                        "remediation": "Fix it",
-                    }
-                ]
+                "id": "cached1",
+                "file": "src/main.py",
+                "line": 1,
+                "severity": "low",
+                "title": "Cached finding",
+                "description": "Found from cache",
+                "remediation": "Fix it",
             }
-        )
+        ]
 
         with patch("agents.language_audit.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
@@ -122,28 +104,21 @@ class TestRunCodeAudit:
 
     @patch("agents.language_audit.shutil.which")
     @patch("agents.language_audit.subprocess.run")
-    @patch("agents.language_audit.get_cached", return_value=None)
-    @patch("agents.language_audit.invoke_with_retry")
-    def test_tool_failure_falls_back_to_llm(self, mock_invoke, mock_get_cached, mock_run, mock_which):
+    @patch("agents.language_audit.run_dspy_cached")
+    def test_tool_failure_falls_back_to_llm(self, mock_run_cached, mock_run, mock_which):
         mock_which.return_value = "/usr/bin/pylint"
         mock_run.side_effect = RuntimeError("pylint crashed")
-        mock_invoke.return_value = MagicMock(
-            content=json.dumps(
-                {
-                    "findings": [
-                        {
-                            "id": "f2",
-                            "file": "src/main.py",
-                            "line": 1,
-                            "severity": "low",
-                            "title": "Fallback finding",
-                            "description": "Tool failed, LLM fallback",
-                            "remediation": "Fix it",
-                        }
-                    ]
-                }
-            )
-        )
+        mock_run_cached.return_value = [
+            {
+                "id": "f2",
+                "file": "src/main.py",
+                "line": 1,
+                "severity": "low",
+                "title": "Fallback finding",
+                "description": "Tool failed, LLM fallback",
+                "remediation": "Fix it",
+            }
+        ]
 
         results = run_code_audit(["src/main.py"], {"src/main.py": "x = 1\n"})
 
@@ -152,10 +127,9 @@ class TestRunCodeAudit:
         assert results[0]["findings"][0]["id"] == "f2"
 
     @patch("agents.language_audit.shutil.which", return_value=None)
-    @patch("agents.language_audit.get_cached", return_value=None)
-    @patch("agents.language_audit.invoke_with_retry")
-    def test_llm_returns_empty_findings(self, mock_invoke, mock_get_cached, mock_which):
-        mock_invoke.return_value = MagicMock(content=json.dumps({"findings": []}))
+    @patch("agents.language_audit.run_dspy_cached")
+    def test_llm_returns_empty_findings(self, mock_run_cached, mock_which):
+        mock_run_cached.return_value = []
 
         results = run_code_audit(["src/main.py"], {"src/main.py": "x = 1\n"})
 
@@ -164,26 +138,19 @@ class TestRunCodeAudit:
     def test_java_uses_llm_only_no_tool(self):
         with (
             patch("agents.language_audit.shutil.which", return_value=None),
-            patch("agents.language_audit.get_cached", return_value=None),
             patch(
-                "agents.language_audit.invoke_with_retry",
-                return_value=MagicMock(
-                    content=json.dumps(
-                        {
-                            "findings": [
-                                {
-                                    "id": "j1",
-                                    "file": "src/App.java",
-                                    "line": 10,
-                                    "severity": "high",
-                                    "title": "SQL injection",
-                                    "description": "String concat in SQL query",
-                                    "remediation": "Use prepared statements",
-                                }
-                            ]
-                        }
-                    )
-                ),
+                "agents.language_audit.run_dspy_cached",
+                return_value=[
+                    {
+                        "id": "j1",
+                        "file": "src/App.java",
+                        "line": 10,
+                        "severity": "high",
+                        "title": "SQL injection",
+                        "description": "String concat in SQL query",
+                        "remediation": "Use prepared statements",
+                    }
+                ],
             ),
         ):
             results = run_code_audit(
@@ -217,9 +184,8 @@ class TestMaterializeWorkspace:
 
     @patch("agents.language_audit.shutil.which")
     @patch("agents.language_audit.subprocess.run")
-    @patch("agents.language_audit.get_cached", return_value=None)
-    @patch("agents.language_audit.invoke_with_retry")
-    def test_go_tool_runs_in_materialized_workspace(self, mock_invoke, mock_get_cached, mock_run, mock_which):
+    @patch("agents.language_audit.run_dspy_cached")
+    def test_go_tool_runs_in_materialized_workspace(self, mock_run_cached, mock_run, mock_which):
         from pathlib import Path
 
         mock_which.return_value = "/usr/bin/go"
@@ -232,7 +198,7 @@ class TestMaterializeWorkspace:
             return MagicMock(stdout="[]")
 
         mock_run.side_effect = _assert_workspace
-        mock_invoke.return_value = MagicMock(content='{"findings": []}')
+        mock_run_cached.return_value = []
 
         run_code_audit(
             ["main.go"],

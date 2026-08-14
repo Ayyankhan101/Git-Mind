@@ -13,7 +13,7 @@ from unittest.mock import patch
 import git
 import pytest
 
-from agents.scanner import _cleanup_temp_dir, _active_temp_dirs, clone_and_scan
+from agents.scanner import _active_temp_dirs, _cleanup_temp_dir, clone_and_scan
 
 URL = "https://github.com/acme/example"
 
@@ -92,8 +92,7 @@ class TestCloneRetry:
             calls.append(kwargs)
             if len(calls) == 1:
                 raise _clone_error(
-                    "fatal: unable to access 'https://github.com/acme/example.git/': "
-                    "Could not resolve host: github.com"
+                    "fatal: unable to access 'https://github.com/acme/example.git/': Could not resolve host: github.com"
                 )
             return _fake_repo()
 
@@ -148,9 +147,11 @@ class TestDeterministicFailures:
             calls.append(kwargs)
             raise _clone_error(stderr)
 
-        with patch("agents.scanner.git.Repo.clone_from", side_effect=fake_clone):
-            with pytest.raises(RuntimeError) as excinfo:
-                clone_and_scan(URL)
+        with (
+            patch("agents.scanner.git.Repo.clone_from", side_effect=fake_clone),
+            pytest.raises(RuntimeError) as excinfo,
+        ):
+            clone_and_scan(URL)
 
         assert len(calls) == 1, "deterministic failures must not be retried"
         assert "Git clone failed for" in str(excinfo.value)
@@ -162,9 +163,11 @@ class TestErrorSurfacing:
     def test_transient_final_failure_surfaces_git_stderr(self, mock_sleep):
         stderr = "fatal: unable to access 'https://github.com/acme/example.git/': Could not resolve host: github.com"
 
-        with patch("agents.scanner.git.Repo.clone_from", side_effect=_clone_error(stderr)):
-            with pytest.raises(RuntimeError) as excinfo:
-                clone_and_scan(URL)
+        with (
+            patch("agents.scanner.git.Repo.clone_from", side_effect=_clone_error(stderr)),
+            pytest.raises(RuntimeError) as excinfo,
+        ):
+            clone_and_scan(URL)
 
         # Both attempts fail -> full stderr appears in the message
         assert "Could not resolve host" in str(excinfo.value)
@@ -188,12 +191,14 @@ class TestErrorSurfacing:
 
     @patch("agents.scanner.time.sleep")
     def test_error_message_falls_back_when_stderr_is_none(self, mock_sleep):
-        with patch(
-            "agents.scanner.git.Repo.clone_from",
-            side_effect=git.exc.GitCommandError("git clone", 128),  # stderr=None
+        with (
+            patch(
+                "agents.scanner.git.Repo.clone_from",
+                side_effect=git.exc.GitCommandError("git clone", 128),  # stderr=None
+            ),
+            pytest.raises(RuntimeError) as excinfo,
         ):
-            with pytest.raises(RuntimeError) as excinfo:
-                clone_and_scan(URL)
+            clone_and_scan(URL)
 
         assert str(excinfo.value).startswith("Git clone failed for")
 

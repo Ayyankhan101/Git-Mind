@@ -203,15 +203,17 @@ def main():
                 page.evaluate("document.fonts.check('16px Geist')"),
                 "Geist font loaded",
             )
-            title = grab_style(page, ".lp-title-accent", ["background-image"])
+            # AI-tell audit: no gradient headline, no gradient CTA fill —
+            # the hero is flat and confident.
+            title = grab_style(page, ".lp-title-accent", ["background-image", "color"])
             check(
-                title and title["background-image"] and "linear-gradient" in title["background-image"],
-                "hero title uses gradient text",
+                title and title["background-image"] in ("none", ""),
+                "hero title uses solid text (no gradient)",
             )
             cta = grab_style(page, ".lp-hero-btn", ["background-image", "border-radius"])
             check(
-                cta and "linear-gradient" in cta["background-image"],
-                "hero CTA uses blue->violet gradient",
+                cta and cta["background-image"] in ("none", ""),
+                "hero CTA uses flat fill (no gradient)",
             )
             check(
                 cta and cta["border-radius"] == "999px",
@@ -297,11 +299,11 @@ def main():
 
             page.locator(".theme-btn").first.click()
             page.wait_for_timeout(400)
-            opts = page.locator(".theme-opt-name").all_inner_texts()
+            opts = page.locator(".theme-grid-name").all_inner_texts()
             check("Freebuff" in opts and "Daylight" in opts, "theme list includes Freebuff + Daylight")
 
             # Switch to Matrix
-            page.locator(".theme-opt", has_text="Matrix").first.click()
+            page.locator(".theme-grid-item", has_text="Matrix").first.click()
             page.wait_for_timeout(500)
             matrix_bg = grab_style(page, "body", ["background-color"])
             check(
@@ -312,7 +314,7 @@ def main():
             # Switch to Daylight (light mode)
             page.locator(".theme-btn").first.click()
             page.wait_for_timeout(300)
-            page.locator(".theme-opt", has_text="Daylight").first.click()
+            page.locator(".theme-grid-item", has_text="Daylight").first.click()
             page.wait_for_timeout(500)
             light_bg = grab_style(page, "body", ["background-color"])
             check(
@@ -324,7 +326,7 @@ def main():
             # Switch back to Freebuff
             page.locator(".theme-btn").first.click()
             page.wait_for_timeout(300)
-            page.locator(".theme-opt", has_text="Freebuff").first.click()
+            page.locator(".theme-grid-item", has_text="Freebuff").first.click()
             page.wait_for_timeout(500)
             dark_bg = grab_style(page, "body", ["background-color"])
             check(

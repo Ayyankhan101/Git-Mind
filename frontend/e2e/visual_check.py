@@ -136,7 +136,12 @@ class Auditor:
         def on_console(m):
             if m.type != "error":
                 return
-            loc = m.location()
+            # m.location is a property in newer Playwright, a method in
+            # older ones — accept both so the handler never crashes.
+            loc = m.location
+            if callable(loc):
+                loc = loc()
+            loc = loc or {}
             self.console_errors.append(
                 f"[console] {m.text} @ {loc.get('url', '?')}:{loc.get('lineNumber', '?')}"
             )

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ShieldAlert, Wrench } from "lucide-react";
+import { ShieldAlert, Wrench } from "../icons";
 import { fs } from "../typeScale";
 
 const SEV_ORDER = ["critical", "high", "medium", "low"];
@@ -233,9 +233,10 @@ export default function SolidityTab({
       <div className="tab-header">
         <div className="tab-header-main">
           <span className="tab-header-icon">
-            <ShieldAlert size={15} strokeWidth={1.5} />
+            <ShieldAlert size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">07 — Solidity</div>
             <div className="tab-header-title">Solidity Audit</div>
             <div className="tab-header-sub">
               {sorted.length} finding{sorted.length !== 1 ? "s" : ""}

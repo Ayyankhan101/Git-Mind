@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { ShieldAlert, Wrench, ExternalLink } from "lucide-react";
+import { ShieldAlert, Wrench, ExternalLink } from "../icons";
 import { fs } from "../typeScale";
 
 const SEV_ORDER = ["critical", "high", "medium", "low"];
@@ -144,7 +144,6 @@ function FindingRow({
             >
               <Wrench
                 size={13}
-                strokeWidth={1.5}
                 style={{ color: "var(--success)", flexShrink: 0, marginTop: 2 }}
               />
               <div>
@@ -200,7 +199,7 @@ function FindingRow({
                   textDecoration: "none",
                 }}
               >
-                <ExternalLink size={10} strokeWidth={1.5} />
+                <ExternalLink size={10} />
                 {finding.cwe}
               </a>
             )}
@@ -430,9 +429,9 @@ export default function SecurityTab({
   if (!analyzed && !isAnalyzing) {
     return (
       <div className="empty">
-        <ShieldAlert size={20} className="empty-icon" strokeWidth={1.5} />
+        <ShieldAlert size={20} className="empty-icon" />
         <div className="empty-title">Security not available</div>
-        <div className="empty-sub">Analyze a repository to get started</div>
+        <div className="empty-sub">Load a repository to run an analysis</div>
       </div>
     );
   }
@@ -442,7 +441,7 @@ export default function SecurityTab({
   if (analyzed && !findings?.length) {
     return (
       <div className="empty">
-        <ShieldAlert size={20} className="empty-icon" strokeWidth={1.5} />
+        <ShieldAlert size={20} className="empty-icon" />
         <div className="empty-title">No vulnerabilities detected</div>
         <div className="empty-sub">
           The security scanner found no issues in this repository.
@@ -463,9 +462,10 @@ export default function SecurityTab({
       <div className="tab-header">
         <div className="tab-header-main">
           <span className="tab-header-icon">
-            <ShieldAlert size={15} strokeWidth={1.5} />
+            <ShieldAlert size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">04 — Security</div>
             <div className="tab-header-title">Security</div>
             <div className="tab-header-sub">
               {findings?.length || 0} findings

@@ -9,7 +9,7 @@ import {
   AlertTriangle,
   Plus,
   X,
-} from "lucide-react";
+} from "../icons";
 import {
   subscribeMonitor,
   fetchMonitorStatus,
@@ -38,7 +38,7 @@ function StatusBadge({ last_sha }) {
 function EmptyState() {
   return (
     <div className="mon-empty">
-      <Activity size={32} strokeWidth={1.2} style={{ opacity: 0.3 }} />
+      <Activity size={32} style={{ opacity: 0.3 }} />
       <div className="mon-empty-title">No repos monitored yet</div>
       <div className="mon-empty-sub">
         Subscribe to a repo to receive automated security alerts and health
@@ -159,9 +159,10 @@ export default function MonitoringTab({ ghToken, repoUrl, analyzed }) {
       >
         <div className="tab-header-main">
           <span className="tab-header-icon">
-            <Activity size={15} strokeWidth={1.5} />
+            <Activity size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">10 — Watch</div>
             <div className="tab-header-title">Watch</div>
             <div className="tab-header-sub">
               Monitor repos for security changes and health regressions
