@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-1.0.0-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-1.1.0-blue.svg?cacheSeconds=2592000" />
   <a href="https://github.com/Ayyankhan101/Git-Mind/actions"><img src="https://github.com/Ayyankhan101/Git-Mind/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/Ayyankhan101/Git-Mind/blob/main/backend/tests/"><img src="https://img.shields.io/badge/backend-245%20tests-brightgreen" alt="Backend Tests"></a>
   <a href="https://github.com/Ayyankhan101/Git-Mind/blob/main/frontend/src/"><img src="https://img.shields.io/badge/frontend-164%20tests-brightgreen" alt="Frontend Tests"></a>

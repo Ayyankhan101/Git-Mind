@@ -1,5 +1,4 @@
 import asyncio
-import re
 
 import structlog
 from fastapi import APIRouter, Request
@@ -7,7 +6,7 @@ from fastapi import APIRouter, Request
 from chroma_utils import search_codebase
 from llm_cache import invoke_with_retry
 from models.requests import SummaryRequest
-from routes._errors import error_response
+from routes._errors import error_response, is_valid_gh_url
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
 from services.session import _UUID_RE, get_session
@@ -17,8 +16,6 @@ logger = structlog.get_logger(__name__)
 router = APIRouter()
 
 _LLM = get_llm(temperature_key="analysis")
-
-_GH_URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+/?$")
 
 
 def _count_by_severity(findings: list[dict]) -> tuple[int, int]:
@@ -189,7 +186,7 @@ async def get_previous_analysis(repo_url: str, exclude_session: str | None = Non
         if not (await check_rate_limit("analysis_previous", client_ip))[0]:
             return await rate_limit_response("analysis_previous", client_ip)
 
-    if not _GH_URL_RE.match(repo_url.strip()):
+    if not is_valid_gh_url(repo_url.strip()):
         return error_response("Invalid GitHub repo URL — must be https://github.com/{owner}/{repo}", 400)
 
     snap = await get_previous_analysis_db(repo_url, exclude_session)
@@ -208,7 +205,7 @@ async def get_analysis_history(repo_url: str, days: int = 0, request: Request = 
     if not (await check_rate_limit("analysis_history", client_ip))[0]:
         return await rate_limit_response("analysis_history", client_ip)
 
-    if not _GH_URL_RE.match(repo_url.strip()):
+    if not is_valid_gh_url(repo_url.strip()):
         return error_response("Invalid GitHub repo URL — must be https://github.com/{owner}/{repo}", 400)
 
     since = None

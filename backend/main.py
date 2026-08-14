@@ -284,8 +284,7 @@ elif _CORS_ORIGINS_ENV:
     _CORS_ORIGINS = [o.strip() for o in _CORS_ORIGINS_ENV.split(",") if o.strip()]
 elif _ENVIRONMENT == "production":
     _CORS_ORIGINS = [
-        "https://ak001z-gitmind-frontend.vercel.app",
-        "https://git-mind.vercel.app",
+        "https://gitmind-peach.vercel.app",
     ]
 else:
     _CORS_ORIGINS = [
@@ -294,8 +293,7 @@ else:
         "http://localhost:3001",
         "http://localhost:3002",
         "http://localhost:8002",
-        "https://ak001z-gitmind-frontend.vercel.app",
-        "https://git-mind.vercel.app",
+        "https://gitmind-peach.vercel.app",
     ]
 app.add_middleware(
     CORSMiddleware,

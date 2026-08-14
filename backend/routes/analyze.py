@@ -1,6 +1,5 @@
 import asyncio
 import contextlib
-import re
 import shutil
 import uuid
 
@@ -11,7 +10,7 @@ from agents.blame import enrich_findings_with_blame
 from agents.health import compute_health
 from models.requests import AnalyzeRequest
 from orchestrator import graph
-from routes._errors import error_response
+from routes._errors import error_response, is_valid_gh_url
 from services.auth import get_service_key, hash_token
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
@@ -20,8 +19,6 @@ from services.sha_cache import find_cached_snapshot, get_remote_sha
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
-
-_GH_URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+/?$")
 
 
 async def _run_analysis(repo_url: str, gh_token: str | None, session_id: str) -> dict:
@@ -148,7 +145,7 @@ async def analyze_endpoint(req: AnalyzeRequest, request: Request):
     repo_url = req.repo_url.strip()
     gh_token = (req.gh_token or "").strip() or None
 
-    if not _GH_URL_RE.match(repo_url):
+    if not is_valid_gh_url(repo_url):
         return error_response("Invalid GitHub URL — must be https://github.com/{owner}/{repo}", 400)
 
     client_ip = get_client_ip(request)
