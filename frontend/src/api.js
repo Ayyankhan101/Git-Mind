@@ -78,13 +78,18 @@ async function _apiFetch(url, options = {}, timeoutMs = 30_000, retries = 2) {
       res = await fetch(url, fetchOpts);
     } catch (err) {
       lastErr = err;
-      if (err.name === "TimeoutError")
-        throw new Error(timeoutError || "Request timed out.");
+      if (err.name === "TimeoutError") {
+        const e = new Error(timeoutError || "Request timed out.");
+        e.status = 0;
+        throw e;
+      }
       // Retry on network errors (TypeError = fetch failed)
       if (err instanceof TypeError && attempt < retries) continue;
-      throw new Error(
+      const e = new Error(
         "Cannot reach the backend. Make sure it is running on port 8002.",
       );
+      e.status = 0;
+      throw e;
     }
     if (!res.ok) {
       // Don't retry client errors (4xx) or 501/505
@@ -94,7 +99,9 @@ async function _apiFetch(url, options = {}, timeoutMs = 30_000, retries = 2) {
           const j = await res.json();
           msg = _extractError(j, msg);
         } catch {}
-        throw new Error(msg);
+        const e = new Error(msg);
+        e.status = res.status;
+        throw e;
       }
       // Retry on 502/503/504 (server temporarily unavailable)
       if (
@@ -108,11 +115,16 @@ async function _apiFetch(url, options = {}, timeoutMs = 30_000, retries = 2) {
         const j = await res.json();
         msg = _extractError(j, msg);
       } catch {}
-      throw new Error(msg);
+      const e = new Error(msg);
+      e.status = res.status;
+      throw e;
     }
     const data = await res.json();
-    if (data.error)
-      throw new Error(_extractError(data.error, "Request failed"));
+    if (data.error) {
+      const e = new Error(_extractError(data.error, "Request failed"));
+      e.status = res.status;
+      throw e;
+    }
     return data;
   }
   throw lastErr || new Error("Request failed after retries");
