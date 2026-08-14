@@ -1244,45 +1244,67 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
   const content = [
     // Header
     {
-      text: "GITMIND",
-      fontSize: 10,
-      color: C.primary,
-      bold: true,
-      letterSpacing: 3,
+      columns: [
+        {
+          text: "GITMIND",
+          width: "*",
+          font: "GeistMono",
+          fontSize: 11,
+          bold: true,
+          letterSpacing: 4,
+          color: C.primary,
+        },
+        {
+          text: now.toUpperCase(),
+          font: "GeistMono",
+          fontSize: 8,
+          color: C.text3,
+        },
+      ],
+      margin: [0, 0, 0, 22],
     },
-    { text: "", margin: [0, 10, 0, 0] },
-    { text: "Incident Report", fontSize: 24, bold: true, color: C.text1 },
+    {
+      text: "INCIDENT REPORT",
+      font: "Geist",
+      fontSize: 24,
+      bold: true,
+      color: C.ink,
+    },
     { text: "", margin: [0, 8, 0, 0] },
     {
-      text: finding?.title || "Security Incident",
+      text: safeText(finding?.title || "Security Incident"),
+      font: "Geist",
       fontSize: 14,
+      bold: true,
       color: C.primary,
     },
-    { text: "", margin: [0, 10, 0, 0] },
+    { text: "", margin: [0, 12, 0, 0] },
     {
       table: {
-        widths: ["auto", "*"],
+        widths: [150, "*"],
         body: [
+          [monoLabel("Date"), { text: now, style: "metaValue" }],
           [
-            { text: "Date:", style: "metaLabel" },
-            { text: now, style: "metaValue" },
+            monoLabel("Repository"),
+            { text: safeText(repoName || "—"), style: "metaValue" },
           ],
           [
-            { text: "Repository:", style: "metaLabel" },
-            { text: repoName || "—", style: "metaValue" },
-          ],
-          [
-            { text: "Severity:", style: "metaLabel" },
+            monoLabel("Severity"),
             {
               text: (finding?.severity || "unknown").toUpperCase(),
-              style: "metaValue",
+              font: "GeistMono",
+              fontSize: 8,
+              bold: true,
+              color: C.text2,
             },
           ],
           [
-            { text: "Outcome:", style: "metaLabel" },
+            monoLabel("Outcome"),
             {
               text: outcome === "resolved" ? "CONTAINED" : "LEAKED",
-              style: "metaValue",
+              font: "GeistMono",
+              fontSize: 8,
+              bold: true,
               color: outcome === "resolved" ? C.success : C.critical,
             },
           ],
@@ -1299,8 +1321,8 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
           y1: 0,
           x2: 515,
           y2: 0,
-          lineWidth: 1,
-          lineColor: C.primary,
+          lineWidth: 2,
+          lineColor: C.ink,
         },
       ],
       margin: [0, 0, 0, 12],
@@ -1313,15 +1335,15 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
     const r = report;
 
     // Summary
+    content.push(
+      monoLabel("Incident Summary", {
+        fontSize: 12,
+        color: C.primary,
+        margin: [0, 12, 0, 6],
+      }),
+    );
     content.push({
-      text: "Incident Summary",
-      fontSize: 14,
-      bold: true,
-      color: C.primary,
-      margin: [0, 12, 0, 6],
-    });
-    content.push({
-      text: r.summary,
+      text: safeText(r.summary),
       fontSize: 10,
       color: C.text2,
       margin: [0, 0, 0, 10],
@@ -1329,31 +1351,23 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
 
     // Timeline
     if (r.timeline?.length) {
-      content.push({
-        text: "Timeline",
-        fontSize: 14,
-        bold: true,
-        color: C.primary,
-        margin: [0, 12, 0, 6],
-      });
-      content.push({
-        table: {
-          widths: [80, "*"],
-          headerRows: 1,
-          body: [
-            [
-              { text: "Time", style: "th" },
-              { text: "Event", style: "th" },
-            ],
-            ...r.timeline.map((t) => [
-              { text: t.label || "", style: "td", bold: true },
-              { text: t.event || "", style: "td" },
-            ]),
-          ],
-        },
-        layout: "lightTable",
-        margin: [0, 4, 0, 10],
-      });
+      content.push(
+        monoLabel("Timeline", {
+          fontSize: 12,
+          color: C.primary,
+          margin: [0, 12, 0, 6],
+        }),
+      );
+      content.push(
+        hardTable(
+          ["Time", "Event"],
+          r.timeline.map((t) => [
+            { text: safeText(t.label || ""), bold: true },
+            wrapLong(safeText(t.event || "")),
+          ]),
+          [80, "*"],
+        ),
+      );
     }
 
     // Impact
@@ -1363,13 +1377,13 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
         r.impact.exposure_window ||
         r.impact.affected_users)
     ) {
-      content.push({
-        text: "Impact Assessment",
-        fontSize: 14,
-        bold: true,
-        color: C.primary,
-        margin: [0, 12, 0, 6],
-      });
+      content.push(
+        monoLabel("Impact Assessment", {
+          fontSize: 12,
+          color: C.primary,
+          margin: [0, 12, 0, 6],
+        }),
+      );
       const impactRows = [];
       if (r.impact.systems_at_risk)
         impactRows.push(["Systems at Risk", r.impact.systems_at_risk]);
@@ -1380,10 +1394,10 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
       if (impactRows.length) {
         content.push({
           table: {
-            widths: [120, "*"],
+            widths: [150, "*"],
             body: impactRows.map(([k, v]) => [
-              { text: k, style: "metaLabel" },
-              { text: v, style: "metaValue" },
+              monoLabel(k),
+              { text: safeText(v), style: "metaValue" },
             ]),
           },
           layout: "noBorders",
@@ -1394,15 +1408,15 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
 
     // Stakeholder Statement
     if (r.stakeholder_statement) {
+      content.push(
+        monoLabel("Stakeholder Communication", {
+          fontSize: 12,
+          color: C.primary,
+          margin: [0, 12, 0, 6],
+        }),
+      );
       content.push({
-        text: "Stakeholder Communication",
-        fontSize: 14,
-        bold: true,
-        color: C.primary,
-        margin: [0, 12, 0, 6],
-      });
-      content.push({
-        text: r.stakeholder_statement,
+        text: safeText(r.stakeholder_statement),
         fontSize: 10,
         color: C.text2,
         italics: true,
@@ -1412,28 +1426,30 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
 
     // Remediation
     if (r.remediation) {
-      content.push({
-        text: "Remediation Checklist",
-        fontSize: 14,
-        bold: true,
-        color: C.primary,
-        margin: [0, 12, 0, 6],
-      });
+      content.push(
+        monoLabel("Remediation Checklist", {
+          fontSize: 12,
+          color: C.primary,
+          margin: [0, 12, 0, 6],
+        }),
+      );
       for (const [phase, items] of Object.entries(r.remediation)) {
         if (!items?.length) continue;
         const label = phase
           .replace(/_/g, " ")
           .replace(/\b\w/g, (c) => c.toUpperCase());
         content.push({
-          text: label,
-          fontSize: 11,
+          text: label.toUpperCase(),
+          font: "GeistMono",
+          fontSize: 9,
           bold: true,
-          color: C.text1,
+          letterSpacing: 1,
+          color: C.ink,
           margin: [0, 6, 0, 4],
         });
         content.push({
           ul: items.map((item) => ({
-            text: String(item),
+            text: safeText(String(item)),
             margin: [0, 2, 0, 2],
           })),
           margin: [0, 0, 0, 6],
@@ -1445,16 +1461,16 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
 
     // Lessons Learned
     if (r.lessons_learned?.length) {
-      content.push({
-        text: "Lessons Learned",
-        fontSize: 14,
-        bold: true,
-        color: C.primary,
-        margin: [0, 12, 0, 6],
-      });
+      content.push(
+        monoLabel("Lessons Learned", {
+          fontSize: 12,
+          color: C.primary,
+          margin: [0, 12, 0, 6],
+        }),
+      );
       content.push({
         ul: r.lessons_learned.map((l) => ({
-          text: String(l),
+          text: safeText(String(l)),
           margin: [0, 2, 0, 2],
         })),
         margin: [0, 0, 0, 8],
@@ -1475,13 +1491,13 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
       });
 
     for (const section of sections) {
-      content.push({
-        text: section.title,
-        fontSize: 14,
-        bold: true,
-        color: C.primary,
-        margin: [0, 12, 0, 6],
-      });
+      content.push(
+        monoLabel(section.title, {
+          fontSize: 12,
+          color: C.primary,
+          margin: [0, 12, 0, 6],
+        }),
+      );
 
       const lines = section.body.split("\n");
       const bullets = [];
@@ -1497,7 +1513,7 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
 
       if (paragraphs.length) {
         content.push({
-          text: paragraphs.join("\n\n"),
+          text: safeText(paragraphs.join("\n\n")),
           fontSize: 10,
           color: C.text2,
           margin: [0, 0, 0, 6],
@@ -1508,7 +1524,7 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
         content.push({
           ul: bullets.map((b) => {
             const text = b.replace(/^-\s*\[?\]?\s*/, "");
-            return { text, margin: [0, 2, 0, 2] };
+            return { text: safeText(text), margin: [0, 2, 0, 2] };
           }),
           margin: [0, 0, 0, 8],
           fontSize: 10,
@@ -1530,30 +1546,38 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
           x2: 515,
           y2: 0,
           lineWidth: 0.5,
-          lineColor: C.border,
+          lineColor: C.ink,
         },
       ],
       margin: [0, 0, 0, 6],
     },
     {
-      text: "Generated by GitMind — AI-powered incident response",
+      text: "GENERATED BY GITMIND — AI-POWERED INCIDENT RESPONSE",
+      font: "GeistMono",
       fontSize: 8,
+      letterSpacing: 1,
       color: C.text3,
-      italics: true,
     },
   );
 
   return {
     content,
-    defaultStyle: { font: "Roboto", fontSize: 10, color: C.text1 },
+    defaultStyle: { font: "Geist", fontSize: 10, color: C.text1 },
     styles: {
       metaLabel: {
-        fontSize: 10,
+        font: "GeistMono",
+        fontSize: 8,
         color: C.text3,
         bold: true,
+        letterSpacing: 1,
         margin: [0, 2, 8, 2],
       },
-      metaValue: { fontSize: 10, color: C.text2, margin: [0, 2, 0, 2] },
+      metaValue: {
+        font: "Geist",
+        fontSize: 10,
+        color: C.text2,
+        margin: [0, 2, 0, 2],
+      },
     },
     pageMargins: [40, 50, 40, 50],
     header: (currentPage, pageCount) => {
@@ -1562,12 +1586,14 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
         columns: [
           {
             text: "GitMind — Incident Report",
+            font: "GeistMono",
             fontSize: 8,
             color: C.text3,
             margin: [40, 10, 0, 0],
           },
           {
             text: `${currentPage} / ${pageCount}`,
+            font: "GeistMono",
             fontSize: 8,
             color: C.text3,
             alignment: "right",
@@ -1598,19 +1624,44 @@ export function buildSummaryPdf({
 
   const content = [
     {
-      text: "GITMIND",
-      fontSize: 10,
-      color: C.primary,
-      bold: true,
-      letterSpacing: 3,
+      columns: [
+        {
+          text: "GITMIND",
+          width: "*",
+          font: "GeistMono",
+          fontSize: 11,
+          bold: true,
+          letterSpacing: 4,
+          color: C.primary,
+        },
+        {
+          text: now.toUpperCase(),
+          font: "GeistMono",
+          fontSize: 8,
+          color: C.text3,
+        },
+      ],
+      margin: [0, 0, 0, 26],
     },
-    { text: "", margin: [0, 12, 0, 0] },
-    { text: "Analysis Summary", fontSize: 24, bold: true, color: C.text1 },
-    { text: "", margin: [0, 8, 0, 0] },
-    { text: repoName || "Repository", fontSize: 16, color: C.primary },
-    { text: "", margin: [0, 10, 0, 0] },
-    { text: now, fontSize: 10, color: C.text3 },
-    { text: "", margin: [0, 16, 0, 0] },
+    {
+      canvas: [{ type: "rect", x: 0, y: 0, w: 72, h: 8, color: C.primary }],
+      margin: [0, 0, 0, 14],
+    },
+    {
+      text: safeText(repoName || "Repository"),
+      font: "Geist",
+      fontSize: 24,
+      bold: true,
+      color: C.ink,
+    },
+    {
+      text: "ANALYSIS SUMMARY",
+      font: "GeistMono",
+      fontSize: 11,
+      letterSpacing: 2,
+      color: C.text3,
+      margin: [0, 6, 0, 18],
+    },
     {
       canvas: [
         {
@@ -1619,8 +1670,8 @@ export function buildSummaryPdf({
           y1: 0,
           x2: 515,
           y2: 0,
-          lineWidth: 1,
-          lineColor: C.primary,
+          lineWidth: 2,
+          lineColor: C.ink,
         },
       ],
       margin: [0, 0, 0, 12],
@@ -1645,6 +1696,7 @@ export function buildSummaryPdf({
           stack: [
             {
               text: health.grade || "?",
+              font: "GeistMono",
               fontSize: 42,
               bold: true,
               color: gc,
@@ -1652,6 +1704,7 @@ export function buildSummaryPdf({
             },
             {
               text: `${health.score || 0}/100`,
+              font: "GeistMono",
               fontSize: 12,
               color: C.text2,
               alignment: "center",
@@ -1678,7 +1731,12 @@ export function buildSummaryPdf({
               ]),
             ],
           },
-          layout: "lightTable",
+          layout: {
+            hLineWidth: () => 1,
+            vLineWidth: () => 1,
+            hLineColor: () => C.ink,
+            vLineColor: () => C.ink,
+          },
         },
       ],
       margin: [0, 0, 0, 16],
@@ -1687,15 +1745,15 @@ export function buildSummaryPdf({
 
   // AI Summary
   if (summary) {
+    content.push(
+      monoLabel("AI Summary", {
+        fontSize: 11,
+        color: C.primary,
+        margin: [0, 8, 0, 6],
+      }),
+    );
     content.push({
-      text: "AI Summary",
-      fontSize: 14,
-      bold: true,
-      color: C.primary,
-      margin: [0, 8, 0, 6],
-    });
-    content.push({
-      text: summary,
+      text: safeText(summary),
       fontSize: 10,
       color: C.text2,
       margin: [0, 0, 0, 12],
@@ -1704,27 +1762,23 @@ export function buildSummaryPdf({
 
   // Quick stats
   if (stats) {
-    content.push({
-      text: "Quick Stats",
-      fontSize: 14,
-      bold: true,
-      color: C.primary,
-      margin: [0, 8, 0, 6],
-    });
-    content.push({
-      table: {
-        widths: ["*", "*"],
-        body: Object.entries(stats).map(([k, v]) => [
-          {
-            text: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-            style: "td",
-          },
-          { text: String(v), style: "td", bold: true },
+    content.push(
+      monoLabel("Quick Stats", {
+        fontSize: 11,
+        color: C.primary,
+        margin: [0, 8, 0, 6],
+      }),
+    );
+    content.push(
+      hardTable(
+        ["Metric", "Value"],
+        Object.entries(stats).map(([k, v]) => [
+          k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+          { text: String(v), bold: true },
         ]),
-      },
-      layout: "lightTable",
-      margin: [0, 0, 0, 12],
-    });
+        ["*", 80],
+      ),
+    );
   }
 
   // Footer
@@ -1739,31 +1793,39 @@ export function buildSummaryPdf({
           x2: 515,
           y2: 0,
           lineWidth: 0.5,
-          lineColor: C.border,
+          lineColor: C.ink,
         },
       ],
       margin: [0, 0, 0, 6],
     },
     {
-      text: `Scanned in ${elapsedSec || 0}s by GitMind`,
+      text: `SCANNED IN ${elapsedSec || 0}S BY GITMIND`,
+      font: "GeistMono",
       fontSize: 8,
+      letterSpacing: 1,
       color: C.text3,
-      italics: true,
     },
   );
 
   return {
     content,
-    defaultStyle: { font: "Roboto", fontSize: 10, color: C.text1 },
+    defaultStyle: { font: "Geist", fontSize: 10, color: C.text1 },
     styles: {
       th: {
+        font: "GeistMono",
         bold: true,
-        fontSize: 9,
+        fontSize: 8,
+        letterSpacing: 1,
         color: C.white,
-        fillColor: C.primary,
+        fillColor: C.ink,
         margin: [6, 5, 6, 5],
       },
-      td: { fontSize: 9, margin: [6, 4, 6, 4], color: C.text2 },
+      td: {
+        font: "Geist",
+        fontSize: 8.5,
+        margin: [6, 4, 6, 4],
+        color: C.text2,
+      },
     },
     pageMargins: [40, 50, 40, 50],
   };
