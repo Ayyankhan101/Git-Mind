@@ -197,6 +197,8 @@ describe("buildAnalysisPdf", () => {
       const rendered = fixed + offsetsFor(n);
       expect(rendered).toBeLessThanOrEqual(CONTENT_WIDTH + 0.01);
     }
+    // Low-severity chips paint the web accent (--sev-low = #3b82f6).
+    expect(JSON.stringify(doc.content)).toContain('"background":"#3b82f6"');
   });
 
   it("returns a docDefinition with brand fonts and a cover", () => {
@@ -227,6 +229,34 @@ describe("buildAnalysisPdf", () => {
     // Accent follows the web palette: electric blue, not the old indigo.
     expect(JSON.stringify(doc.content)).toContain("#3b82f6");
     expect(JSON.stringify(doc.content)).not.toContain("#7c6fe0");
+    // Grade B is success-green like the web HealthCard, not a stray blue.
+    expect(JSON.stringify(doc.content)).toContain('"color":"#16a34a"');
+  });
+
+  it("section headers echo the web eyebrow: mono accent numeral + sans title", () => {
+    const doc = buildAnalysisPdf({
+      repoName: "acme/app",
+      diagram: "graph TD; A-->B;",
+      apiDocs: [],
+      findings: [],
+      cveFindings: [],
+      gitAudit: null,
+      solidityAudit: null,
+      codeAudit: [],
+      health: null,
+      elapsedSec: 0,
+    });
+    const headers = doc.content.filter(
+      (c) => Array.isArray(c.text) && c.text[0]?.text === "01 — ",
+    );
+    expect(headers.length).toBe(1);
+    const [num, title] = headers[0].text;
+    expect(num.font).toBe("GeistMono");
+    expect(num.fontSize).toBe(10);
+    expect(num.color).toBe("#3b82f6");
+    expect(title.font).toBe("Geist");
+    expect(title.fontSize).toBe(15);
+    expect(title.text).toBe("ARCHITECTURE");
   });
 });
 
@@ -240,7 +270,10 @@ describe("buildSummaryPdf", () => {
       elapsedSec: 9,
     });
     expect(doc.defaultStyle.font).toBe("Geist");
-    expect(JSON.stringify(doc.content)).toContain("ANALYSIS SUMMARY");
+    expect(JSON.stringify(doc.content)).toContain("EXECUTIVE SUMMARY");
+    // Grade color follows web HealthCard semantics: B is success-green.
+    expect(JSON.stringify(doc.content)).toContain('"text":"A"');
+    expect(JSON.stringify(doc.content)).toContain('"color":"#16a34a"');
   });
 });
 
@@ -257,5 +290,22 @@ describe("buildIncidentPdf", () => {
     });
     expect(doc.defaultStyle.font).toBe("Geist");
     expect(JSON.stringify(doc.content)).toContain("INCIDENT REPORT");
+    // Severity in the cover meta row is tinted by severity, not plain gray.
+    expect(JSON.stringify(doc.content)).toContain('"text":"HIGH"');
+    expect(JSON.stringify(doc.content)).toContain("#ea580c");
+  });
+
+  it("drops the markdown H1 document title (no duplicate INCIDENT REPORT)", () => {
+    const doc = buildIncidentPdf({
+      report:
+        "# Incident Report\n\nA hardcoded API secret was rotated in 40 minutes.",
+      finding: { title: "API key leak", severity: "high" },
+      outcome: "resolved",
+      repoName: "acme/app",
+    });
+    const json = JSON.stringify(doc.content);
+    // Cover heading only — the body must not repeat it as a section label.
+    expect(json.split('"INCIDENT REPORT"').length - 1).toBe(1);
+    expect(json).toContain("A hardcoded API secret was rotated");
   });
 });

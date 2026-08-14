@@ -55,6 +55,7 @@ SEV_FILLS = {  # severity chip fills that must paint
     "critical": "#dc2626",
     "high": "#ea580c",
     "medium": "#ca8a04",
+    "low": "#3b82f6",  # web --sev-low = accent
 }
 
 
@@ -194,7 +195,7 @@ def audit_analysis(doc):
 def audit_summary(doc):
     issues = []
     text = page_text(doc)
-    if "ANALYSIS SUMMARY" not in text:
+    if "EXECUTIVE SUMMARY" not in text:
         issues.append("summary: header missing")
     if "AI SUMMARY" not in text:
         issues.append("summary: AI summary label missing")

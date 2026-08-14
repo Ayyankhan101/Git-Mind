@@ -445,7 +445,8 @@ const SEVERITY_COLORS = {
   critical: C.critical,
   high: C.high,
   medium: C.medium,
-  low: C.low,
+  // Web --sev-low is the accent (var(--accent) = electric blue).
+  low: C.primary,
   info: C.info,
 };
 
@@ -460,21 +461,23 @@ function sectionHeader(num, title) {
   return [
     { text: "", margin: [0, 14, 0, 0] },
     {
-      columns: [
+      // Echoes the web's numbered eyebrow ("01 — Summary": mono, tracked,
+      // accent) over a heavier sans title — inline runs share a baseline,
+      // so the two sizes align without the old columns offset.
+      text: [
         {
-          text: String(num).padStart(2, "0"),
-          width: 28,
+          text: `${String(num).padStart(2, "0")} — `,
           font: "GeistMono",
-          fontSize: 12,
+          fontSize: 10,
           bold: true,
           color: C.primary,
+          letterSpacing: 1.5,
         },
         {
           text: String(title).toUpperCase(),
-          font: "GeistMono",
-          fontSize: 13,
+          font: "Geist",
+          fontSize: 15,
           bold: true,
-          letterSpacing: 1.5,
           color: C.ink,
         },
       ],
@@ -681,15 +684,6 @@ export function buildAnalysisPdf({
       },
       layout: "noBorders",
       margin: [0, 12, 0, 0],
-    },
-    { text: "", margin: [0, 44, 0, 0] },
-    {
-      text: "POWERED BY GITMIND — AI-POWERED CODE ANALYSIS",
-      font: "GeistMono",
-      fontSize: 8,
-      letterSpacing: 1.5,
-      color: C.text3,
-      alignment: "center",
     },
     { text: "", pageBreak: "after" },
   );
@@ -1015,11 +1009,13 @@ export function buildAnalysisPdf({
   // ── Health Score ─────────────────────────────────────────────────────────────
   content.push(...sectionHeader(8, "Health Score"));
   if (health) {
+    // Mirrors the web HealthCard: A/B are passing (success), C/D are
+    // caution (warning), F fails (danger) — print variants on white.
     const gradeColors = {
       A: "#16a34a",
-      B: "#2563eb",
-      C: "#ca8a04",
-      D: "#ea580c",
+      B: "#16a34a",
+      C: "#d97706",
+      D: "#d97706",
       F: "#dc2626",
     };
     const gc = gradeColors[health.grade] || C.text2;
@@ -1073,10 +1069,12 @@ export function buildAnalysisPdf({
                       w: (v / 100) * HEALTH_BAR_W,
                       h: 8,
                       r: 4,
+                      // Same split as the web HealthCard MiniBar: >=80
+                      // success, >=60 caution, below danger.
                       color:
-                        (v ?? 0) >= 70
+                        (v ?? 0) >= 80
                           ? C.success
-                          : (v ?? 0) >= 40
+                          : (v ?? 0) >= 60
                             ? C.medium
                             : C.critical,
                     },
@@ -1220,7 +1218,17 @@ export function buildAnalysisPdf({
       };
     },
     footer: (currentPage, pageCount) => {
-      if (currentPage === 1) return {};
+      if (currentPage === 1) {
+        // Bottom-anchored credit line instead of a mid-page float.
+        return {
+          text: "POWERED BY GITMIND — AI-POWERED CODE ANALYSIS",
+          font: "GeistMono",
+          fontSize: 8,
+          letterSpacing: 1.5,
+          color: C.text3,
+          alignment: "center",
+        };
+      }
       return {
         canvas: [
           {
@@ -1259,9 +1267,9 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
           text: "GITMIND",
           width: "*",
           font: "GeistMono",
-          fontSize: 11,
+          fontSize: 13,
           bold: true,
-          letterSpacing: 4,
+          letterSpacing: 6,
           color: C.primary,
         },
         {
@@ -1272,6 +1280,10 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
         },
       ],
       margin: [0, 0, 0, 22],
+    },
+    {
+      canvas: [{ type: "rect", x: 0, y: 0, w: 96, h: 10, color: C.primary }],
+      margin: [0, 0, 0, 14],
     },
     {
       text: "INCIDENT REPORT",
@@ -1305,7 +1317,9 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
               font: "GeistMono",
               fontSize: 8,
               bold: true,
-              color: C.text2,
+              color:
+                SEVERITY_COLORS[(finding?.severity || "").toLowerCase()] ||
+                C.text2,
             },
           ],
           [
@@ -1490,24 +1504,33 @@ export function buildIncidentPdf({ report, finding, outcome, repoName }) {
     }
   } else {
     // ── Legacy markdown report ─────────────────────────────────────────────
-    const sections = (typeof report === "string" ? report : "")
-      .split(/^## /m)
-      .filter(Boolean)
-      .map((block) => {
-        const lines = block.split("\n");
-        const title = lines[0].replace(/^#+ /, "").trim();
-        const body = lines.slice(1).join("\n").trim();
-        return { title, body };
-      });
+    let md = typeof report === "string" ? report : "";
+    // The cover already displays "INCIDENT REPORT" — drop a leading H1
+    // document title so it never renders as a duplicate body section.
+    md = md.replace(/^#\s+[^\n]*\n+/, "");
+    const hasSections = /^## /m.test(md);
+    const sections = hasSections
+      ? md
+          .split(/^## /m)
+          .filter(Boolean)
+          .map((block) => {
+            const lines = block.split("\n");
+            const title = lines[0].replace(/^#+ /, "").trim();
+            const body = lines.slice(1).join("\n").trim();
+            return { title, body };
+          })
+      : [{ title: null, body: md.trim() }];
 
     for (const section of sections) {
-      content.push(
-        monoLabel(section.title, {
-          fontSize: 12,
-          color: C.primary,
-          margin: [0, 12, 0, 6],
-        }),
-      );
+      if (section.title) {
+        content.push(
+          monoLabel(section.title, {
+            fontSize: 12,
+            color: C.primary,
+            margin: [0, 12, 0, 6],
+          }),
+        );
+      }
 
       const lines = section.body.split("\n");
       const bullets = [];
@@ -1639,9 +1662,9 @@ export function buildSummaryPdf({
           text: "GITMIND",
           width: "*",
           font: "GeistMono",
-          fontSize: 11,
+          fontSize: 13,
           bold: true,
-          letterSpacing: 4,
+          letterSpacing: 6,
           color: C.primary,
         },
         {
@@ -1654,7 +1677,7 @@ export function buildSummaryPdf({
       margin: [0, 0, 0, 26],
     },
     {
-      canvas: [{ type: "rect", x: 0, y: 0, w: 72, h: 8, color: C.primary }],
+      canvas: [{ type: "rect", x: 0, y: 0, w: 96, h: 10, color: C.primary }],
       margin: [0, 0, 0, 14],
     },
     {
@@ -1665,7 +1688,8 @@ export function buildSummaryPdf({
       color: C.ink,
     },
     {
-      text: "ANALYSIS SUMMARY",
+      // Matches the web Summary tab title ("Executive Summary").
+      text: "EXECUTIVE SUMMARY",
       font: "GeistMono",
       fontSize: 11,
       letterSpacing: 2,
@@ -1690,11 +1714,13 @@ export function buildSummaryPdf({
 
   // Health score card
   if (health) {
+    // Mirrors the web HealthCard: A/B are passing (success), C/D are
+    // caution (warning), F fails (danger) — print variants on white.
     const gradeColors = {
       A: "#16a34a",
-      B: "#2563eb",
-      C: "#ca8a04",
-      D: "#ea580c",
+      B: "#16a34a",
+      C: "#d97706",
+      D: "#d97706",
       F: "#dc2626",
     };
     const gc = gradeColors[health.grade] || C.text2;
