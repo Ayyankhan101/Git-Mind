@@ -10,6 +10,9 @@ jest.mock("../tokenManager", () => ({ get: jest.fn(() => null) }));
 jest.mock("../pdfBuilder", () => ({
   buildSummaryPdf: jest.fn(() => ({ content: [] })),
   downloadPdf: jest.fn(),
+  sanitizeFilename: jest.fn((n) =>
+    String(n || "gitmind-report").replace(/\//g, "-"),
+  ),
 }));
 
 describe("SummaryTab export", () => {
@@ -24,7 +27,11 @@ describe("SummaryTab export", () => {
     fetchSummary.mockResolvedValue({ summary: "OK", stats: { commits: 5 } });
     subscribeMonitor.mockResolvedValue({});
     fetchMonitorStatus.mockResolvedValue({ repos: [] });
-    const { buildSummaryPdf, downloadPdf } = require("../pdfBuilder");
+    const {
+      buildSummaryPdf,
+      downloadPdf,
+      sanitizeFilename,
+    } = require("../pdfBuilder");
     render(
       <SummaryTab
         sessionId="sess-1"
@@ -46,6 +53,7 @@ describe("SummaryTab export", () => {
     expect(buildSummaryPdf).toHaveBeenCalledWith(
       expect.objectContaining({ repoName: "acme/app", summary: "OK" }),
     );
-    expect(downloadPdf.mock.calls[0][1]).toMatch(/^gitmind-summary-/);
+    expect(downloadPdf.mock.calls[0][1]).toMatch(/^gitmind-summary-acme-app-/);
+    expect(sanitizeFilename).toHaveBeenCalledWith("acme/app");
   });
 });

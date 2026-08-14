@@ -278,7 +278,8 @@ export default function SummaryTab({
 
   const handleExportPdf = async () => {
     try {
-      const { buildSummaryPdf, downloadPdf } = await import("../pdfBuilder");
+      const { buildSummaryPdf, downloadPdf, sanitizeFilename } =
+        await import("../pdfBuilder");
       const docDef = buildSummaryPdf({
         repoName,
         summary: data?.summary,
@@ -286,7 +287,10 @@ export default function SummaryTab({
         health,
         elapsedSec,
       });
-      downloadPdf(docDef, `gitmind-summary-${repoName}-${Date.now()}.pdf`);
+      downloadPdf(
+        docDef,
+        `gitmind-summary-${sanitizeFilename(repoName)}-${Date.now()}.pdf`,
+      );
     } catch (err) {
       console.error("Summary export failed", err);
     }

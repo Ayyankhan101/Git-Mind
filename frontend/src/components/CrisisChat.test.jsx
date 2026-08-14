@@ -28,6 +28,9 @@ jest.mock("../api", () => ({
 jest.mock("../pdfBuilder", () => ({
   buildIncidentPdf: jest.fn(() => ({ content: [] })),
   downloadPdf: jest.fn(),
+  sanitizeFilename: jest.fn((n) =>
+    String(n || "gitmind-report").replace(/\//g, "-"),
+  ),
 }));
 
 describe("CrisisChat incident export", () => {
@@ -37,7 +40,11 @@ describe("CrisisChat incident export", () => {
     fetchIncidentReport.mockResolvedValue({
       report: "## Summary\nContained",
     });
-    const { buildIncidentPdf, downloadPdf } = require("../pdfBuilder");
+    const {
+      buildIncidentPdf,
+      downloadPdf,
+      sanitizeFilename,
+    } = require("../pdfBuilder");
     render(
       <CrisisChat
         finding={{ id: "f1", title: "Leak", severity: "high" }}
@@ -58,6 +65,7 @@ describe("CrisisChat incident export", () => {
     expect(buildIncidentPdf).toHaveBeenCalledWith(
       expect.objectContaining({ repoName: "acme/app", outcome: "resolved" }),
     );
-    expect(downloadPdf.mock.calls[0][1]).toMatch(/^gitmind-incident-/);
+    expect(downloadPdf.mock.calls[0][1]).toMatch(/^gitmind-incident-acme-app-/);
+    expect(sanitizeFilename).toHaveBeenCalledWith("acme/app");
   });
 });

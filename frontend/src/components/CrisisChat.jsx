@@ -155,12 +155,13 @@ export default function CrisisChat({ finding, sessionId, onClose, repoName }) {
   const handleExportPdf = async () => {
     if (!report) return;
     try {
-      const { buildIncidentPdf, downloadPdf } = await import("../pdfBuilder");
+      const { buildIncidentPdf, downloadPdf, sanitizeFilename } =
+        await import("../pdfBuilder");
       const outcome = resolved ? "resolved" : "leaked";
       const docDef = buildIncidentPdf({ report, finding, outcome, repoName });
       downloadPdf(
         docDef,
-        `gitmind-incident-${repoName || "report"}-${Date.now()}.pdf`,
+        `gitmind-incident-${sanitizeFilename(repoName || "report")}-${Date.now()}.pdf`,
       );
     } catch (err) {
       setReportError(err.message || "PDF export failed.");
