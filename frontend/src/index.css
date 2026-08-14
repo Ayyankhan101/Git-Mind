@@ -5375,3 +5375,56 @@ button:disabled {
   font-size: 10px;
   color: var(--text-3);
 }
+
+/* ── Share-error overlay ─────────────────────────────────────────────── */
+.share-error-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  backdrop-filter: blur(4px);
+}
+.share-error-panel {
+  position: relative;
+  width: min(420px, calc(100vw - 48px));
+  padding: 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+.share-error-icon {
+  color: var(--danger);
+}
+.share-error-title {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-1);
+}
+.share-error-message {
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.share-error-form {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.share-error-form input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-1);
+  padding: 8px 10px;
+  font: inherit;
+  border-radius: 0;
+}
