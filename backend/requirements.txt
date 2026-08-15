@@ -16,7 +16,7 @@ semgrep==1.172.0
 httpx==0.28.1
 sqlalchemy[asyncio]==2.0.36
 aiosqlite==0.22.1
-asyncpg==0.30.0
+asyncpg==0.31.0
 alembic>=1.14.0,<2.0
 redis[hiredis]>=5.0,<6.0
 orjson>=3.11.9,<4.0
