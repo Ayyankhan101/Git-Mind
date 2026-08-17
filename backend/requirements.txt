@@ -19,7 +19,7 @@ httpx==0.28.1
 sqlalchemy[asyncio]==2.0.52
 aiosqlite==0.22.1
 asyncpg==0.30.0  # transitive: SQLAlchemy async PostgreSQL dialect (no direct import)
-alembic>=1.14.0,<2.0
+alembic>=1.19.1,<2.0
 redis[hiredis]>=5.0,<6.0
 orjson>=3.11.9,<4.0
 sentry-sdk[fastapi]>=2.66.1,<3.0
