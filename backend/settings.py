@@ -9,7 +9,7 @@ import os
 from langchain_groq import ChatGroq
 
 # ── Model configuration ───────────────────────────────────────────────────────
-LLM_MODEL = os.environ.get("LLM_MODEL", "llama-3.3-70b-versatile")
+LLM_MODEL = os.environ.get("LLM_MODEL", "llama-3.3-70b")
 
 # Per-use-case temperature defaults
 TEMPERATURES = {
