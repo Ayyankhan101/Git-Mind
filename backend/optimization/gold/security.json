@@ -1,0 +1,218 @@
+[
+  {
+    "inputs": {
+      "raw_findings": "[{\"check_id\": \"python.lang.security.audit.dangerous-system-call\", \"path\": \"src/main.py\", \"start\": {\"line\": 12}, \"end\": {\"line\": 12}, \"extra\": {\"severity\": \"ERROR\", \"message\": \"subprocess call with shell=True\"}}]"
+    },
+    "output": [
+      {
+        "id": "dangerous-system-call",
+        "file": "src/main.py",
+        "line_start": 12,
+        "line_end": 12,
+        "severity": "high",
+        "title": "Command injection via shell=True",
+        "exploit_story": "An attacker who controls the command string gains arbitrary command execution on the server.",
+        "remediation": "Pass the command as an argument list without shell=True and validate all inputs.",
+        "cwe": "CWE-78"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "raw_findings": "[{\"check_id\": \"python.lang.security.audit.dangerous-eval\", \"path\": \"src/utils.py\", \"start\": {\"line\": 34}, \"end\": {\"line\": 34}, \"extra\": {\"severity\": \"WARNING\", \"message\": \"Use of eval detected\"}}]"
+    },
+    "output": [
+      {
+        "id": "dangerous-eval",
+        "file": "src/utils.py",
+        "line_start": 34,
+        "line_end": 34,
+        "severity": "medium",
+        "title": "Unsafe eval of dynamic input",
+        "exploit_story": "Untrusted data passed to eval can execute arbitrary code in the process.",
+        "remediation": "Replace eval with a safe parser or a whitelist of allowed operations.",
+        "cwe": "CWE-95"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "raw_findings": "[{\"check_id\": \"python.lang.security.audit.hardcoded-password\", \"path\": \"config.py\", \"start\": {\"line\": 5}, \"end\": {\"line\": 5}, \"extra\": {\"severity\": \"WARNING\", \"message\": \"password literal in source\"}}]"
+    },
+    "output": [
+      {
+        "id": "hardcoded-password",
+        "file": "config.py",
+        "line_start": 5,
+        "line_end": 5,
+        "severity": "medium",
+        "title": "Hardcoded password in source",
+        "exploit_story": "Anyone with repository read access obtains the database password without brute-forcing.",
+        "remediation": "Move the secret to an environment variable or secret manager and rotate it.",
+        "cwe": "CWE-798"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "raw_findings": "[{\"check_id\": \"python.lang.security.audit.untrusted-deserialization\", \"path\": \"src/serialize.py\", \"start\": {\"line\": 77}, \"end\": {\"line\": 77}, \"extra\": {\"severity\": \"WARNING\", \"message\": \"pickle.load on untrusted input\"}}]"
+    },
+    "output": [
+      {
+        "id": "untrusted-deserialization",
+        "file": "src/serialize.py",
+        "line_start": 77,
+        "line_end": 77,
+        "severity": "high",
+        "title": "Unsafe pickle deserialization",
+        "exploit_story": "A crafted pickle payload can run arbitrary code when deserialized.",
+        "remediation": "Use a safe serialization format such as JSON, or verify the payload signature.",
+        "cwe": "CWE-502"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "raw_findings": "[{\"check_id\": \"python.lang.security.audit.sql-string-concat\", \"path\": \"api/users.py\", \"start\": {\"line\": 40}, \"end\": {\"line\": 40}, \"extra\": {\"severity\": \"ERROR\", \"message\": \"SQL query built with string concatenation\"}}]"
+    },
+    "output": [
+      {
+        "id": "sql-injection",
+        "file": "api/users.py",
+        "line_start": 40,
+        "line_end": 40,
+        "severity": "critical",
+        "title": "SQL injection via string concatenation",
+        "exploit_story": "An attacker injects SQL through the user_id parameter, reading or deleting arbitrary rows.",
+        "remediation": "Use parameterized queries instead of building SQL with string interpolation.",
+        "cwe": "CWE-89"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "raw_findings": "[{\"check_id\": \"python.lang.security.audit.path-traversal\", \"path\": \"api/files.py\", \"start\": {\"line\": 22}, \"end\": {\"line\": 22}, \"extra\": {\"severity\": \"ERROR\", \"message\": \"user input passed to open()\"}}]"
+    },
+    "output": [
+      {
+        "id": "path-traversal",
+        "file": "api/files.py",
+        "line_start": 22,
+        "line_end": 22,
+        "severity": "high",
+        "title": "Path traversal in file download",
+        "exploit_story": "An attacker uses ../ sequences to read arbitrary files from the server.",
+        "remediation": "Resolve the path and verify it stays inside the allowed directory.",
+        "cwe": "CWE-22"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "raw_findings": "[{\"check_id\": \"python.lang.security.audit.lxml-xxe\", \"path\": \"src/parsers.py\", \"start\": {\"line\": 15}, \"end\": {\"line\": 15}, \"extra\": {\"severity\": \"ERROR\", \"message\": \"XML parser is not configured to disable entities\"}}]"
+    },
+    "output": [
+      {
+        "id": "xml-external-entity",
+        "file": "src/parsers.py",
+        "line_start": 15,
+        "line_end": 15,
+        "severity": "high",
+        "title": "XXE via insecure XML parser",
+        "exploit_story": "A malicious XML document reads local files or makes internal network requests.",
+        "remediation": "Disable external entities and DTD loading in the XML parser.",
+        "cwe": "CWE-611"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "raw_findings": "[{\"check_id\": \"python.lang.security.audit.os-system\", \"path\": \"src/deploy.py\", \"start\": {\"line\": 55}, \"end\": {\"line\": 55}, \"extra\": {\"severity\": \"ERROR\", \"message\": \"os.system with unsanitized input\"}}]"
+    },
+    "output": [
+      {
+        "id": "os-command-injection",
+        "file": "src/deploy.py",
+        "line_start": 55,
+        "line_end": 55,
+        "severity": "critical",
+        "title": "Command injection via os.system",
+        "exploit_story": "Shell metacharacters in the deployment tag execute arbitrary commands as the service user.",
+        "remediation": "Use subprocess with an argument list and never pass unsanitized input to a shell.",
+        "cwe": "CWE-78"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "raw_findings": "[{\"check_id\": \"python.lang.security.audit.insecure-yaml-load\", \"path\": \"src/config.py\", \"start\": {\"line\": 31}, \"end\": {\"line\": 31}, \"extra\": {\"severity\": \"WARNING\", \"message\": \"yaml.load without a safe loader\"}}]"
+    },
+    "output": [
+      {
+        "id": "insecure-yaml-load",
+        "file": "src/config.py",
+        "line_start": 31,
+        "line_end": 31,
+        "severity": "medium",
+        "title": "Unsafe yaml.load",
+        "exploit_story": "A crafted YAML file can construct arbitrary Python objects during loading.",
+        "remediation": "Use yaml.safe_load for untrusted documents.",
+        "cwe": "CWE-502"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "raw_findings": "[{\"check_id\": \"python.lang.security.audit.jinja2-ssti\", \"path\": \"web/render.py\", \"start\": {\"line\": 9}, \"end\": {\"line\": 9}, \"extra\": {\"severity\": \"ERROR\", \"message\": \"render_template_string with user input\"}}]"
+    },
+    "output": [
+      {
+        "id": "ssti",
+        "file": "web/render.py",
+        "line_start": 9,
+        "line_end": 9,
+        "severity": "high",
+        "title": "Server-side template injection",
+        "exploit_story": "User-controlled template text evaluates Jinja2 expressions with server access.",
+        "remediation": "Never pass untrusted input to render_template_string; escape it first.",
+        "cwe": "CWE-1336"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "raw_findings": "[{\"check_id\": \"python.lang.security.audit.requests-verify-false\", \"path\": \"src/http.py\", \"start\": {\"line\": 66}, \"end\": {\"line\": 66}, \"extra\": {\"severity\": \"WARNING\", \"message\": \"SSL verification disabled\"}}]"
+    },
+    "output": [
+      {
+        "id": "ssl-verification-disabled",
+        "file": "src/http.py",
+        "line_start": 66,
+        "line_end": 66,
+        "severity": "low",
+        "title": "TLS verification disabled",
+        "exploit_story": "Traffic to the third-party API can be intercepted in transit by a network attacker.",
+        "remediation": "Remove verify=False so certificates are validated.",
+        "cwe": "CWE-295"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "raw_findings": "[{\"check_id\": \"python.lang.security.audit.jwt-hardcoded-secret\", \"path\": \"auth/tokens.py\", \"start\": {\"line\": 18}, \"end\": {\"line\": 18}, \"extra\": {\"severity\": \"WARNING\", \"message\": \"JWT signed with a hardcoded secret\"}}]"
+    },
+    "output": [
+      {
+        "id": "jwt-hardcoded-secret",
+        "file": "auth/tokens.py",
+        "line_start": 18,
+        "line_end": 18,
+        "severity": "high",
+        "title": "JWT signed with hardcoded secret",
+        "exploit_story": "An attacker who reads the source forges admin tokens for any user.",
+        "remediation": "Load the signing secret from an environment variable and rotate it.",
+        "cwe": "CWE-798"
+      }
+    ]
+  }
+]

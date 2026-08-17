@@ -1,0 +1,184 @@
+[
+  {
+    "inputs": {
+      "source_code": "File: app/main.py\n\nfrom fastapi import FastAPI\napp = FastAPI()\n\n@app.get('/health')\nasync def health():\n    return {'status': 'ok'}\n"
+    },
+    "output": [
+      {
+        "method": "GET",
+        "route": "/health",
+        "description": "Returns service health status.",
+        "parameters": "none",
+        "auth_required": false
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "source_code": "File: app/main.py\n\nfrom fastapi import FastAPI\napp = FastAPI()\n\n@app.post('/users')\nasync def create_user(name: str):\n    return {'name': name}\n"
+    },
+    "output": [
+      {
+        "method": "POST",
+        "route": "/users",
+        "description": "Creates a new user with the given name.",
+        "parameters": "name: str",
+        "auth_required": false
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "source_code": "File: app/routes/users.py\n\nfrom fastapi import APIRouter, Depends\nfrom app.auth import get_current_user\nrouter = APIRouter()\n\n@router.get('/users/{uid}')\ndef get_user(uid: int, user=Depends(get_current_user)):\n    return {'uid': uid}\n"
+    },
+    "output": [
+      {
+        "method": "GET",
+        "route": "/users/{uid}",
+        "description": "Returns a single user by id.",
+        "parameters": "uid: int",
+        "auth_required": true
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "source_code": "File: app/routes/users.py\n\nfrom fastapi import APIRouter\nrouter = APIRouter()\n\n@router.put('/users/{uid}')\ndef update_user(uid: int, name: str):\n    return {'uid': uid, 'name': name}\n"
+    },
+    "output": [
+      {
+        "method": "PUT",
+        "route": "/users/{uid}",
+        "description": "Updates a user's name by id.",
+        "parameters": "uid: int, name: str",
+        "auth_required": true
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "source_code": "File: app/routes/users.py\n\nfrom fastapi import APIRouter\nrouter = APIRouter()\n\n@router.delete('/users/{uid}')\ndef delete_user(uid: int):\n    return {'deleted': uid}\n"
+    },
+    "output": [
+      {
+        "method": "DELETE",
+        "route": "/users/{uid}",
+        "description": "Deletes a user by id.",
+        "parameters": "uid: int",
+        "auth_required": true
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "source_code": "File: app/routes/posts.py\n\nfrom fastapi import APIRouter\nrouter = APIRouter()\n\n@router.patch('/posts/{pid}')\ndef patch_post(pid: int, title: str | None = None):\n    return {'pid': pid, 'title': title}\n"
+    },
+    "output": [
+      {
+        "method": "PATCH",
+        "route": "/posts/{pid}",
+        "description": "Partially updates a post by id.",
+        "parameters": "pid: int, title: str",
+        "auth_required": true
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "source_code": "File: app.py\n\nfrom flask import Flask, request, jsonify\napp = Flask(__name__)\n\n@app.route('/api/items', methods=['GET'])\ndef list_items():\n    return jsonify([])\n\n@app.route('/api/items', methods=['POST'])\ndef create_item():\n    return jsonify(request.json)\n"
+    },
+    "output": [
+      {
+        "method": "GET",
+        "route": "/api/items",
+        "description": "Lists all items.",
+        "parameters": "none",
+        "auth_required": false
+      },
+      {
+        "method": "POST",
+        "route": "/api/items",
+        "description": "Creates a new item from the request body.",
+        "parameters": "body: JSON",
+        "auth_required": false
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "source_code": "File: app.py\n\nfrom flask import Flask, jsonify\napp = Flask(__name__)\n\n@app.route('/api/items/<int:item_id>', methods=['GET'])\ndef get_item(item_id):\n    return jsonify({'id': item_id})\n"
+    },
+    "output": [
+      {
+        "method": "GET",
+        "route": "/api/items/<int:item_id>",
+        "description": "Returns a single item by id.",
+        "parameters": "item_id: int",
+        "auth_required": false
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "source_code": "File: server.js\n\nconst express = require('express');\nconst app = express();\n\napp.get('/health', (req, res) => res.send({status: 'ok'}));\napp.get('/api/products', (req, res) => res.json([]));\n"
+    },
+    "output": [
+      {
+        "method": "GET",
+        "route": "/health",
+        "description": "Returns service health status.",
+        "parameters": "none",
+        "auth_required": false
+      },
+      {
+        "method": "GET",
+        "route": "/api/products",
+        "description": "Lists all products.",
+        "parameters": "none",
+        "auth_required": false
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "source_code": "File: server.js\n\nconst express = require('express');\nconst app = express();\napp.use(express.json());\n\napp.post('/api/products', (req, res) => {\n  res.status(201).json(req.body);\n});\n"
+    },
+    "output": [
+      {
+        "method": "POST",
+        "route": "/api/products",
+        "description": "Creates a new product from the request body.",
+        "parameters": "body: JSON",
+        "auth_required": false
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "source_code": "File: app/routes/search.py\n\nfrom fastapi import APIRouter\nrouter = APIRouter()\n\n@router.get('/search')\ndef search(q: str, limit: int = 10):\n    return {'q': q, 'limit': limit}\n"
+    },
+    "output": [
+      {
+        "method": "GET",
+        "route": "/search",
+        "description": "Searches resources by query string.",
+        "parameters": "q: str, limit: int",
+        "auth_required": false
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "source_code": "File: app/routes/admin.py\n\nfrom fastapi import APIRouter, Depends\nfrom app.auth import require_admin\nrouter = APIRouter()\n\n@router.get('/admin/stats')\ndef admin_stats(user=Depends(require_admin)):\n    return {'users': 0}\n"
+    },
+    "output": [
+      {
+        "method": "GET",
+        "route": "/admin/stats",
+        "description": "Returns admin-only usage statistics.",
+        "parameters": "none",
+        "auth_required": true
+      }
+    ]
+  }
+]

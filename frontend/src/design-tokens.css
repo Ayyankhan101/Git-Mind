@@ -1,0 +1,455 @@
+/* ============================================================
+   GitMind — Midnight Studio Design Tokens
+   Extracted from source project: GitMind Frontend Refactor
+   ============================================================ */
+
+:root {
+  /* Native controls (scrollbars, form fields, date pickers) follow the
+     dark canvas. Overridden to `light` for the Daylight theme below. */
+  color-scheme: dark;
+
+  /* Core Palette — Freebuff canvas + slate surfaces */
+  --bg: #090a0f;
+  --bg-alt: #06070b;
+  --surface-0: #101216;
+  --surface-1: #14161c;
+  --surface-2: #1a1d26;
+  --surface-3: #21242f;
+  --surface-4: #2a2e3b;
+
+  /* Accent — electric blue (freebuff) */
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --primary-strong: #2f6fe4;
+  --primary-muted: rgba(59, 130, 246, 0.15);
+  --primary-subtle: rgba(59, 130, 246, 0.08);
+
+  /* Gradient partner — violet (freebuff blue→violet) */
+  --accent-2: #8b5cf6;
+
+  /* Semantic */
+  --success: #34d399;
+  --success-bg: rgba(52, 211, 153, 0.08);
+  --warning: #fbbf24;
+  --warning-bg: rgba(251, 191, 36, 0.08);
+  --danger: #f87171;
+  --danger-bg: rgba(248, 113, 113, 0.08);
+  --info: #60a5fa;
+  --info-bg: rgba(96, 165, 250, 0.08);
+
+  /* Text */
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --text-tertiary: #6b7280;
+  --text-on-primary: #ffffff;
+
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --border-accent: rgba(59, 130, 246, 0.3);
+
+  /* Glass */
+  --glass-bg: rgba(9, 10, 15, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.06);
+
+  /* Shadows — tinted toward the midnight-blue canvas: no pure-black
+     drop shadows on dark surfaces, the faint blue cast keeps depth. */
+  --shadow-sm: 0 1px 2px rgba(2, 6, 18, 0.4);
+  --shadow-md: 0 4px 12px rgba(2, 6, 18, 0.5);
+  --shadow-lg: 0 8px 32px rgba(2, 6, 18, 0.55);
+  --shadow-accent: 0 4px 20px rgba(59, 130, 246, 0.22);
+
+  /* 1px inner top highlight — machined edge for elevated surfaces */
+  --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+
+  /* Typography — Geist (Vercel's typeface) replaces Inter for a
+     machine-tooled, developer-native voice. Geist Mono covers code. */
+  --font-sans: "Geist", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", "SF Mono", monospace;
+
+  /* Type scale — single source of truth for font sizes.
+     Reference from JSX via the `fs` helper in src/typeScale.js.
+     Floor is 10px: 8px labels were illegible and 8-10px is reserved for
+     decorative marks only; all readable text starts at 11px. */
+  --fs-3xs: 10px;
+  --fs-2xs: 11px;
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-base: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 17px;
+  --fs-2xl: 20px;
+  --fs-3xl: 22px;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* Transitions */
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+  --duration-slow: 350ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Code Syntax */
+  --code-keyword: #c4b5fd;
+  --code-string: #a5d6a7;
+  --code-comment: #6d6c7a;
+  --code-fn: #93c5fd;
+  --code-number: #fbbf24;
+  --code-operator: #93c5fd;
+  --code-punctuation: #a8a7b3;
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text-secondary);
+  line-height: 1.55;
+  min-height: 100vh;
+  letter-spacing: -0.006em;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print */
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+  .swatch-color,
+  .theme-preview span {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+
+/* Keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px var(--primary-muted);
+  }
+  50% {
+    box-shadow:
+      0 0 20px var(--primary-muted),
+      0 0 40px var(--primary-subtle);
+  }
+}
+
+@keyframes glowBorder {
+  0%,
+  100% {
+    border-color: var(--border-accent);
+  }
+  50% {
+    border-color: var(--primary);
+  }
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Animation Utilities */
+.anim-fade-in {
+  animation: fadeIn var(--duration-normal) var(--ease-out) both;
+}
+.anim-fade-in-up {
+  animation: fadeInUp var(--duration-slow) var(--ease-out) both;
+}
+.anim-fade-in-down {
+  animation: fadeInDown var(--duration-slow) var(--ease-out) both;
+}
+.anim-slide-in-left {
+  animation: slideInLeft var(--duration-slow) var(--ease-out) both;
+}
+.anim-slide-in-right {
+  animation: slideInRight var(--duration-slow) var(--ease-out) both;
+}
+.anim-scale-in {
+  animation: scaleIn var(--duration-normal) var(--ease-out) both;
+}
+
+.anim-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+.anim-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+.anim-glow-border {
+  animation: glowBorder 2s ease-in-out infinite;
+}
+.anim-float {
+  animation: float 3s ease-in-out infinite;
+}
+.anim-spin {
+  animation: rotate 1s linear infinite;
+}
+
+.anim-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--primary-subtle) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+.anim-scanline {
+  position: relative;
+  overflow: hidden;
+}
+.anim-scanline::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--primary-subtle) 50%,
+    transparent 100%
+  );
+  animation: scanline 3s linear infinite;
+  pointer-events: none;
+}
+
+/* Stagger delay helpers */
+.delay-1 {
+  animation-delay: 50ms;
+}
+.delay-2 {
+  animation-delay: 100ms;
+}
+.delay-3 {
+  animation-delay: 150ms;
+}
+.delay-4 {
+  animation-delay: 200ms;
+}
+.delay-5 {
+  animation-delay: 250ms;
+}
+.delay-6 {
+  animation-delay: 300ms;
+}
+
+/* Hover animation helpers */
+.hover-lift {
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.hover-glow {
+  transition: box-shadow var(--duration-fast) var(--ease-out);
+}
+.hover-glow:hover {
+  box-shadow:
+    0 0 16px var(--primary-muted),
+    0 0 32px var(--primary-subtle);
+}
+
+.hover-scale {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* Code block typing effect */
+.typing-cursor::after {
+  content: "|";
+  animation: blink 1s step-end infinite;
+  color: var(--primary);
+  margin-left: 2px;
+}

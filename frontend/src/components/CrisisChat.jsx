@@ -1,13 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
+import { fs } from "../typeScale";
 import { useFocusTrap } from "../hooks/useFocusTrap";
-import {
-  X,
-  FileText,
-  AlertTriangle,
-  Copy,
-  Check as CheckIcon,
-} from "lucide-react";
+import { X, FileText, AlertTriangle, Copy, Check as CheckIcon } from "../icons";
 import { WS_BASE, fetchIncidentReport } from "../api";
+import { Download } from "../icons";
 
 const ROLE_COLOR = {
   CEO: "var(--warning)",
@@ -18,7 +14,7 @@ const ROLE_COLOR = {
 const WS_URL = `${WS_BASE}/ws/crisis`;
 const REPORTER_INTERVAL = 45;
 
-export default function CrisisChat({ finding, sessionId, onClose }) {
+export default function CrisisChat({ finding, sessionId, onClose, repoName }) {
   const [messages, setMessages] = useState([]);
   const [countdown, setCountdown] = useState(REPORTER_INTERVAL);
   const [resolved, setResolved] = useState(false);
@@ -156,6 +152,22 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
     }
   };
 
+  const handleExportPdf = async () => {
+    if (!report) return;
+    try {
+      const { buildIncidentPdf, downloadPdf, sanitizeFilename } =
+        await import("../pdfBuilder");
+      const outcome = resolved ? "resolved" : "leaked";
+      const docDef = buildIncidentPdf({ report, finding, outcome, repoName });
+      downloadPdf(
+        docDef,
+        `gitmind-incident-${sanitizeFilename(repoName || "report")}-${Date.now()}.pdf`,
+      );
+    } catch (err) {
+      setReportError(err.message || "PDF export failed.");
+    }
+  };
+
   return (
     <div
       className="crisis-backdrop"
@@ -163,7 +175,13 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="crisis-panel" role="dialog" aria-modal="true" aria-label="Crisis simulation" ref={trapRef}>
+      <div
+        className="crisis-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Crisis simulation"
+        ref={trapRef}
+      >
         {/* Header */}
         <div className="crisis-header">
           <div className="crisis-tag">
@@ -185,7 +203,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
             onClick={onClose}
             aria-label="Close crisis simulation"
           >
-            <X size={14} strokeWidth={1.5} />
+            <X size={14} />
           </button>
         </div>
 
@@ -202,6 +220,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
             ["CEO", ROLE_COLOR.CEO],
             ["Legal", ROLE_COLOR.Legal],
             ["Engineering", ROLE_COLOR.Engineering],
+            ["Reporter", ROLE_COLOR.Reporter],
           ].map(([role, color]) => (
             <div
               key={role}
@@ -209,7 +228,10 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
                 display: "flex",
                 alignItems: "center",
                 gap: 5,
-                fontSize: 11,
+                fontSize: fs.xs,
+                fontFamily: "var(--font-mono)",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
                 color: "var(--text-3)",
               }}
             >
@@ -217,7 +239,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
                 style={{
                   width: 6,
                   height: 6,
-                  borderRadius: "50%",
+                  borderRadius: 0,
                   background: color,
                   flexShrink: 0,
                 }}
@@ -233,10 +255,10 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
             <div
               style={{
                 padding: "12px 14px",
-                background: "rgba(239,68,68,0.08)",
-                border: "1px solid rgba(239,68,68,0.2)",
-                borderRadius: 6,
-                fontSize: 12,
+                background: "var(--danger-bg)",
+                border: "1px solid var(--danger)",
+                borderRadius: 0,
+                fontSize: fs.sm,
                 color: "var(--danger)",
               }}
             >
@@ -249,7 +271,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
             !leaked &&
             messages.length === 0 &&
             !error && (
-              <div style={{ color: "var(--text-3)", fontSize: 13 }}>
+              <div style={{ color: "var(--text-3)", fontSize: fs.md }}>
                 Connecting to crisis simulation…
               </div>
             )}
@@ -272,23 +294,26 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
             <div
               style={{
                 padding: "16px",
-                background: "rgba(34,197,94,0.08)",
-                border: "1px solid rgba(34,197,94,0.2)",
-                borderRadius: 6,
+                background: "var(--success-bg)",
+                border: "1px solid var(--success)",
+                borderRadius: 0,
                 textAlign: "center",
               }}
             >
               <div
                 style={{
-                  fontSize: 14,
+                  fontSize: fs.base,
                   fontWeight: 600,
+                  fontFamily: "var(--font-mono)",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
                   color: "var(--success)",
                   marginBottom: 4,
                 }}
               >
                 Incident Contained
               </div>
-              <div style={{ fontSize: 12, color: "var(--text-3)" }}>
+              <div style={{ fontSize: fs.sm, color: "var(--text-3)" }}>
                 Team issued statement before reporter published.
               </div>
             </div>
@@ -298,23 +323,26 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
             <div
               style={{
                 padding: "16px",
-                background: "rgba(239,68,68,0.08)",
-                border: "1px solid rgba(239,68,68,0.2)",
-                borderRadius: 6,
+                background: "var(--danger-bg)",
+                border: "1px solid var(--danger)",
+                borderRadius: 0,
                 textAlign: "center",
               }}
             >
               <div
                 style={{
-                  fontSize: 14,
+                  fontSize: fs.base,
                   fontWeight: 600,
+                  fontFamily: "var(--font-mono)",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
                   color: "var(--danger)",
                   marginBottom: 4,
                 }}
               >
                 BREAKING: Reporter Published
               </div>
-              <div style={{ fontSize: 12, color: "var(--text-3)" }}>
+              <div style={{ fontSize: fs.sm, color: "var(--text-3)" }}>
                 The team failed to contain the incident in time.
               </div>
             </div>
@@ -326,14 +354,16 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
               style={{
                 marginTop: 12,
                 padding: "14px",
-                background: "var(--surface-2)",
-                borderRadius: 8,
-                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                borderRadius: 0,
+                border: "1px solid var(--border-m)",
               }}
             >
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: fs.xs,
+                  fontFamily: "var(--font-mono)",
+                  letterSpacing: "0.1em",
                   color: "var(--text-3)",
                   marginBottom: 8,
                   display: "flex",
@@ -341,8 +371,26 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
                   gap: 6,
                 }}
               >
-                <FileText size={11} strokeWidth={1.5} />
+                <FileText size={11} />
                 INCIDENT REPORT
+                <button
+                  onClick={handleExportPdf}
+                  aria-label="Export incident report PDF"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "var(--text-3)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    fontSize: fs.xs,
+                    padding: "2px 6px",
+                    borderRadius: 0,
+                  }}
+                >
+                  <Download size={10} /> Export PDF
+                </button>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(report).then(() => {
@@ -360,22 +408,18 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
                     display: "flex",
                     alignItems: "center",
                     gap: 4,
-                    fontSize: 11,
+                    fontSize: fs.xs,
                     padding: "2px 6px",
-                    borderRadius: 4,
+                    borderRadius: 0,
                   }}
                 >
-                  {reportCopied ? (
-                    <CheckIcon size={10} strokeWidth={2} />
-                  ) : (
-                    <Copy size={10} strokeWidth={1.5} />
-                  )}
+                  {reportCopied ? <CheckIcon size={10} /> : <Copy size={10} />}
                   {reportCopied ? "Copied" : "Copy"}
                 </button>
               </div>
               <pre
                 style={{
-                  fontSize: 12,
+                  fontSize: fs.sm,
                   color: "var(--text-2)",
                   whiteSpace: "pre-wrap",
                   fontFamily: "var(--font-mono)",
@@ -393,16 +437,16 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
               style={{
                 marginTop: 8,
                 padding: "8px 12px",
-                background: "rgba(239,68,68,0.08)",
-                borderRadius: 6,
-                fontSize: 12,
+                background: "var(--danger-bg)",
+                borderRadius: 0,
+                fontSize: fs.sm,
                 color: "var(--danger)",
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
               }}
             >
-              <AlertTriangle size={11} strokeWidth={1.5} /> {reportError}
+              <AlertTriangle size={11} /> {reportError}
             </div>
           )}
 
@@ -432,8 +476,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
                 </>
               ) : (
                 <>
-                  <FileText size={13} strokeWidth={1.5} /> Generate Incident
-                  Report
+                  <FileText size={13} /> Generate Incident Report
                 </>
               )}
             </button>

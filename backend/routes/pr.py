@@ -8,7 +8,7 @@ from fastapi import APIRouter, Request
 
 from agents.pr_review import run_pr_review
 from models.requests import PRImpactRequest, PRReviewRequest
-from routes._errors import error_response
+from routes._errors import error_response, match_gh_pr_url
 from services.auth import get_gh_token
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
@@ -17,7 +17,6 @@ from services.session import _UUID_RE, get_session
 logger = structlog.get_logger(__name__)
 router = APIRouter()
 
-_PR_URL_RE = re.compile(r"^https://github\.com/([A-Za-z0-9_.\-]+)/([A-Za-z0-9_.\-]+)/pull/(\d+)/?$")
 _USERNAME_RE = re.compile(r"^[A-Za-z0-9_.\-]+$")
 
 
@@ -78,7 +77,7 @@ async def list_open_prs(owner: str, repo: str, request: Request):
 
 @router.post("/pr-impact")
 async def pr_impact_endpoint(req: PRImpactRequest, request: Request):
-    m = _PR_URL_RE.match(req.pr_url.strip())
+    m = match_gh_pr_url(req.pr_url.strip())
     if not m:
         return error_response("Invalid GitHub PR URL (expected https://github.com/owner/repo/pull/123)", 400)
 

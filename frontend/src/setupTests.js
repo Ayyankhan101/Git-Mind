@@ -1,8 +1,8 @@
 import "@testing-library/jest-dom";
 
 // Mock crypto.randomUUID used in App.js for session IDs
-if (!globalThis.crypto?.randomUUID) {
-  Object.defineProperty(globalThis, "crypto", {
+if (!global.crypto?.randomUUID) {
+  Object.defineProperty(global, "crypto", {
     value: { randomUUID: () => "00000000-0000-0000-0000-000000000001" },
     writable: true,
   });
@@ -48,6 +48,12 @@ Object.defineProperty(navigator, "userAgentData", {
   value: { platform: "MacIntel" },
   writable: true,
 });
+
+// Stub HTMLCanvasElement.getContext (jsdom defines it but throws
+// "Not implemented" without the canvas npm package)
+HTMLCanvasElement.prototype.getContext = function () {
+  return null;
+};
 
 // Mock window.matchMedia - use plain function (jest.fn mockImplementation seems unreliable here)
 window.matchMedia = function (query) {

@@ -18,7 +18,7 @@ import {
   FolderOpen,
   Clock,
   ChevronRight,
-} from "lucide-react";
+} from "../icons";
 
 const NAV_ITEMS = [
   {
@@ -222,9 +222,16 @@ export default function CommandPalette({
   let itemIdx = 0;
   return (
     <div className="palette-backdrop" onMouseDown={onClose}>
-      <div className="palette" onMouseDown={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Command palette" ref={trapRef}>
+      <div
+        className="palette"
+        onMouseDown={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
+        ref={trapRef}
+      >
         <div className="palette-input-row">
-          <Search size={15} strokeWidth={1.5} />
+          <Search size={15} />
           <input
             ref={inputRef}
             className="palette-input"
@@ -241,7 +248,12 @@ export default function CommandPalette({
             <span className="kbd">Esc</span>
           </span>
         </div>
-        <div className="palette-list" ref={listRef} role="listbox" aria-label="Commands">
+        <div
+          className="palette-list"
+          ref={listRef}
+          role="listbox"
+          aria-label="Commands"
+        >
           {groups.length === 0 && (
             <div className="palette-empty">No results for "{query}"</div>
           )}
@@ -264,15 +276,11 @@ export default function CommandPalette({
                     aria-selected={isActive}
                   >
                     <span className="icon-slot">
-                      {IconComp && <IconComp size={14} strokeWidth={1.5} />}
+                      {IconComp && <IconComp size={14} />}
                     </span>
                     <span>{item.label}</span>
                     {item.sub && <span className="meta">{item.sub}</span>}
-                    <ChevronRight
-                      size={12}
-                      strokeWidth={1.5}
-                      className="palette-arrow"
-                    />
+                    <ChevronRight size={12} className="palette-arrow" />
                   </div>
                 );
               })}

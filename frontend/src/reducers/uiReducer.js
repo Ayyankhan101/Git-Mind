@@ -6,6 +6,7 @@ export const uiInitialState = {
   showPalette: false,
   filePreview: null,
   shareCopied: false,
+  shareError: null,
   prAutoUrl: null,
   showOrgAudit: false,
   drawerOpen: false,
@@ -22,7 +23,8 @@ export function uiReducer(state, action) {
     }
     case "SET_DENSITY": {
       const root = document.documentElement;
-      if (action.density === "comfortable") root.removeAttribute("data-density");
+      if (action.density === "comfortable")
+        root.removeAttribute("data-density");
       else root.setAttribute("data-density", action.density);
       localStorage.setItem("gm-density", action.density);
       return { ...state, density: action.density };
@@ -37,6 +39,10 @@ export function uiReducer(state, action) {
       return { ...state, filePreview: action.preview };
     case "SET_SHARE_COPIED":
       return { ...state, shareCopied: action.copied };
+    case "SET_SHARE_ERROR":
+      return { ...state, shareError: action.error };
+    case "CLEAR_SHARE_ERROR":
+      return { ...state, shareError: null };
     case "SET_PR_AUTO_URL":
       return { ...state, prAutoUrl: action.url };
     case "SET_SHOW_ORG_AUDIT":

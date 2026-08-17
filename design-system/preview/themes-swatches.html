@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Themes — GitMind Midnight Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #08090e;
+      --surface-0: #0d0e16;
+      --surface-1: #11121c;
+      --primary: #7c6fe0;
+      --text-primary: #f0eff4;
+      --text-tertiary: #6d6c7a;
+      --border-subtle: rgba(255,255,255,0.04);
+      --border-accent: rgba(124,111,224,0.25);
+      --shadow-accent: 0 4px 20px rgba(124,111,224,0.2);
+      --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'Geist Mono', 'SF Mono', monospace;
+      --radius-lg: 16px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --duration-normal: 200ms;
+      --ease-out: cubic-bezier(0.16,1,0.3,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-sans); background: var(--bg); color: var(--text-primary); padding: var(--space-xl); }
+    .card { max-width: 520px; margin: 0 auto; }
+    .label { font-family: var(--font-mono); font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--primary); margin-bottom: var(--space-md); }
+    .title { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em; margin-bottom: var(--space-lg); }
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-md); }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md); }
+    .theme-card { background: var(--surface-0); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-lg); cursor: pointer; transition: all var(--duration-normal) var(--ease-out); }
+    .theme-card:hover { border-color: var(--border-accent); transform: translateY(-2px); }
+    .theme-card.active { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary), var(--shadow-accent); }
+    .theme-preview { display: flex; gap: 4px; margin-bottom: var(--space-md); height: 40px; border-radius: 6px; overflow: hidden; }
+    .theme-preview span { flex: 1; }
+    .theme-name { font-size: 0.9375rem; font-weight: 500; margin-bottom: 2px; }
+    .theme-desc { font-size: 0.75rem; color: var(--text-tertiary); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="label">07 — Themes</div>
+    <div class="title">Available Themes</div>
+    <div class="grid">
+      <div class="theme-card active"><div class="theme-preview"><span style="background:#08090e"></span><span style="background:#0d0e16"></span><span style="background:#7c6fe0"></span><span style="background:#f0eff4"></span></div><div class="theme-name">Obsidian</div><div class="theme-desc">Default dark · Navy + Indigo</div></div>
+      <div class="theme-card"><div class="theme-preview"><span style="background:#0a0f1e"></span><span style="background:#111827"></span><span style="background:#8b5cf6"></span><span style="background:#f9fafb"></span></div><div class="theme-name">Default</div><div class="theme-desc">Alt dark · Deep blue + Violet</div></div>
+      <div class="theme-card"><div class="theme-preview"><span style="background:#1a1208"></span><span style="background:#1f170a"></span><span style="background:#d4a74a"></span><span style="background:#faf5eb"></span></div><div class="theme-name">Amber</div><div class="theme-desc">Warm · Dark brown + Amber</div></div>
+      <div class="theme-card"><div class="theme-preview"><span style="background:#081208"></span><span style="background:#0d1a0d"></span><span style="background:#22c55e"></span><span style="background:#f0fdf4"></span></div><div class="theme-name">Verdant</div><div class="theme-desc">Nature · Dark forest + Emerald</div></div>
+      <div class="theme-card"><div class="theme-preview"><span style="background:#0a0f14"></span><span style="background:#0f1620"></span><span style="background:#22d3ee"></span><span style="background:#f0fdfa"></span></div><div class="theme-name">Glacier</div><div class="theme-desc">Cool · Dark slate + Cyan</div></div>
+      <div class="theme-card"><div class="theme-preview"><span style="background:#0f0a18"></span><span style="background:#150f20"></span><span style="background:linear-gradient(135deg,#a855f7,#22d3ee)"></span><span style="background:#faf5ff"></span></div><div class="theme-name">Aurora</div><div class="theme-desc">Colorful · Multi-gradient accent</div></div>
+      <div class="theme-card"><div class="theme-preview"><span style="background:#050508"></span><span style="background:#0a0a10"></span><span style="background:#22d3ee"></span><span style="background:#ecfeff"></span></div><div class="theme-name">Spatial</div><div class="theme-desc">Glass · Deep black + Cyan</div></div>
+      <div class="theme-card"><div class="theme-preview"><span style="background:#fafafa"></span><span style="background:#f5f5f5"></span><span style="background:#7c6fe0"></span><span style="background:#18181b"></span></div><div class="theme-name">Daylight</div><div class="theme-desc">Light · White + Indigo</div></div>
+      <div class="theme-card"><div class="theme-preview"><span style="background:#0a0f0a"></span><span style="background:#0d120d"></span><span style="background:#00ff41"></span><span style="background:#d4ffd4"></span></div><div class="theme-name">Matrix</div><div class="theme-desc">Terminal · Dark green + Neon green</div></div>
+      <div class="theme-card"><div class="theme-preview"><span style="background:#0a0010"></span><span style="background:#0f0018"></span><span style="background:#ff006e"></span><span style="background:#fff0f5"></span></div><div class="theme-name">Neon</div><div class="theme-desc">Cyberpunk · Hot pink + Cyan</div></div>
+      <div class="theme-card"><div class="theme-preview"><span style="background:#111111"></span><span style="background:#1a1a1a"></span><span style="background:#ffffff"></span><span style="background:#ffffff"></span></div><div class="theme-name">Carbon</div><div class="theme-desc">Monochrome · Pure black + white</div></div>
+      <div class="theme-card"><div class="theme-preview"><span style="background:#08041a"></span><span style="background:#0c0622"></span><span style="background:#a855f7"></span><span style="background:#f0eaff"></span></div><div class="theme-name">Plasma</div><div class="theme-desc">Electric · Purple + Blue</div></div>
+      <div class="theme-card"><div class="theme-preview"><span style="background:#0f0d08"></span><span style="background:#141209"></span><span style="background:#f59e0b"></span><span style="background:#fef3c7"></span></div><div class="theme-name">Circuit</div><div class="theme-desc">Hardware · Amber + Gold</div></div>
+    </div>
+  </div>
+</body>
+</html>

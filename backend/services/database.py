@@ -63,6 +63,7 @@ def _analysis_row_to_dict(row) -> dict:
         "repo_url": row.repo_url,
         "chat_history": row.chat_history or [],
         "owner_hash": row.owner_hash,
+        "saved_at": row.saved_at,
     }
 
 
@@ -96,7 +97,7 @@ async def delete_expired_analyses(cutoff: float) -> int:
 
     async with async_session_factory() as session:
         result = await session.execute(delete(Analysis).where(Analysis.saved_at < cutoff))
-        removed = result.rowcount
+        removed = result.rowcount  # type: ignore[attr-defined]
         if removed:
             remaining = await session.execute(select(Analysis.id))
             remaining_ids = {row[0] for row in remaining.fetchall()}

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { FileCode2, Lock, LockOpen } from "lucide-react";
+import { FileCode2, Lock, LockOpen } from "../icons";
+import { fs } from "../typeScale";
 
 const METHODS = ["ALL", "GET", "POST", "PUT", "DELETE", "PATCH"];
 
@@ -11,18 +12,18 @@ function AuthBadge({ authRequired }) {
           display: "inline-flex",
           alignItems: "center",
           gap: 3,
-          fontSize: 10,
+          fontSize: fs.micro,
           fontWeight: 600,
           letterSpacing: "0.08em",
           color: "var(--warning)",
-          background: "rgba(234,179,8,0.1)",
-          border: "1px solid rgba(234,179,8,0.2)",
+          background: "var(--warning-bg)",
+          border: "1px solid var(--warning)",
           borderRadius: 4,
           padding: "1px 5px",
           flexShrink: 0,
         }}
       >
-        <Lock size={9} strokeWidth={2} /> AUTH
+        <Lock size={9} /> AUTH
       </span>
     );
   if (authRequired === false)
@@ -32,18 +33,18 @@ function AuthBadge({ authRequired }) {
           display: "inline-flex",
           alignItems: "center",
           gap: 3,
-          fontSize: 10,
+          fontSize: fs.micro,
           fontWeight: 600,
           letterSpacing: "0.08em",
           color: "var(--text-3)",
-          background: "var(--surface-2)",
-          border: "1px solid var(--border)",
+          background: "var(--surface)",
+          border: "1px solid var(--border-m)",
           borderRadius: 4,
           padding: "1px 5px",
           flexShrink: 0,
         }}
       >
-        <LockOpen size={9} strokeWidth={2} /> PUBLIC
+        <LockOpen size={9} /> PUBLIC
       </span>
     );
   return null;
@@ -71,6 +72,14 @@ function Endpoint({ doc, onPickFile }) {
             onClick={() =>
               hasFile && onPickFile?.({ path: doc.file, line: doc.line })
             }
+            onKeyDown={(e) => {
+              if (hasFile && (e.key === "Enter" || e.key === " ")) {
+                e.preventDefault();
+                onPickFile?.({ path: doc.file, line: doc.line });
+              }
+            }}
+            role={hasFile ? "button" : undefined}
+            tabIndex={hasFile ? 0 : undefined}
             title={hasFile ? "Preview file" : undefined}
           >
             {route}
@@ -126,9 +135,9 @@ export default function DocsTab({ docs, isAnalyzing, analyzed, onPickFile }) {
   if (!analyzed && !isAnalyzing) {
     return (
       <div className="empty">
-        <FileCode2 size={20} className="empty-icon" strokeWidth={1.5} />
+        <FileCode2 size={20} className="empty-icon" />
         <div className="empty-title">API Docs not available</div>
-        <div className="empty-sub">Analyze a repository to get started</div>
+        <div className="empty-sub">Load a repository to run an analysis</div>
       </div>
     );
   }
@@ -138,7 +147,7 @@ export default function DocsTab({ docs, isAnalyzing, analyzed, onPickFile }) {
   if (analyzed && !isAnalyzing && !docs?.length) {
     return (
       <div className="empty">
-        <FileCode2 size={20} className="empty-icon" strokeWidth={1.5} />
+        <FileCode2 size={20} className="empty-icon" />
         <div className="empty-title">No API endpoints detected</div>
         <div className="empty-sub">
           No standard routing patterns found in this codebase
@@ -153,9 +162,10 @@ export default function DocsTab({ docs, isAnalyzing, analyzed, onPickFile }) {
       <div className="tab-header">
         <div className="tab-header-main">
           <span className="tab-header-icon">
-            <FileCode2 size={15} strokeWidth={1.5} />
+            <FileCode2 size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">03 — API Docs</div>
             <div className="tab-header-title">API Endpoints</div>
             <div className="tab-header-sub">
               {docs?.length || 0} endpoints discovered

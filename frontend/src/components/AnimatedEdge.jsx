@@ -16,7 +16,7 @@ function buildStyleDefs(kind) {
   if (kind === "dotted") return { strokeDasharray: "2, 4", className: "" };
   return {
     strokeDasharray: "10, 10",
-    className: "animate-[dash_2s_linear_infinite]",
+    className: "edge-dash-anim",
   };
 }
 
@@ -48,8 +48,8 @@ export default function AnimatedEdge({
   const styleConfig = buildStyleDefs(kind);
   const opacity = isDimmed ? 0.12 : 1;
 
-  const baseStroke = "stroke-slate-500";
-  const glowStroke = "stroke-cyan-400/50";
+  const baseStroke = "edge-stroke-base";
+  const glowStroke = "edge-stroke-glow";
 
   return (
     <g
@@ -109,14 +109,17 @@ export default function AnimatedEdge({
       {label && (
         <EdgeLabelRenderer>
           <div
+            className="edge-label"
             style={{
               position: "absolute",
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY + labelYOffset}px)`,
               pointerEvents: "none",
               opacity,
               transition: "opacity 0.25s ease",
+              background: "var(--surface-0)",
+              border: "1px solid var(--border-m)",
+              color: "var(--text-2)",
             }}
-            className="px-2 py-0.5 rounded text-[11px] font-mono tracking-wide font-medium bg-slate-950/70 border border-slate-800/60 text-slate-400 backdrop-blur-sm shadow-md whitespace-nowrap"
           >
             {label}
           </div>

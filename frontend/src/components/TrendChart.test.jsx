@@ -49,6 +49,10 @@ describe("TrendChart with data", () => {
     },
   ];
 
+  const renderChart = () => {
+    render(<TrendChart {...baseProps} data={data} />);
+  };
+
   it("renders SVG chart", () => {
     render(<TrendChart {...baseProps} data={data} />);
     expect(screen.getByRole("img")).toBeInTheDocument();
@@ -89,21 +93,24 @@ describe("TrendChart with data", () => {
   });
 
   it("renders data points as circles", () => {
-    render(<TrendChart {...baseProps} data={data} />);
-    const circles = document.querySelectorAll("circle");
-    expect(circles.length).toBe(3);
+    renderChart();
+    expect(screen.getAllByTestId("trend-point")).toHaveLength(3);
   });
 
   it("hovering shows tooltip with score", () => {
-    render(<TrendChart {...baseProps} data={data} />);
-    const svg = document.querySelector("svg");
-    const circles = svg.querySelectorAll("circle");
-    expect(circles.length).toBe(3);
+    renderChart();
+    fireEvent.mouseEnter(screen.getAllByTestId("trend-point")[0]);
+    expect(screen.getByText(/75\/100/)).toBeInTheDocument();
   });
 
   it("renders main polyline", () => {
+    renderChart();
+    expect(screen.getAllByTestId("trend-line-main")).toHaveLength(1);
+  });
+
+  it("shows dimension lines in SVG when details toggled", () => {
     render(<TrendChart {...baseProps} data={data} />);
-    const polylines = document.querySelectorAll("polyline");
-    expect(polylines.length).toBe(1);
+    fireEvent.click(screen.getByText("Details"));
+    expect(screen.getAllByTestId("trend-line-dim").length).toBeGreaterThan(0);
   });
 });

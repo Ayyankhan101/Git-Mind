@@ -29,8 +29,20 @@ repos:
         args: [--severity=warning]
         files: \.(sh|bash)$
 
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.0
+    hooks:
+      - id: gitleaks
+        entry: gitleaks protect --staged
+
   - repo: local
     hooks:
+      - id: classname-audit
+        name: classname audit (dead-class gate)
+        entry: python3 frontend/e2e/classname_audit.py --check
+        language: system
+        pass_filenames: false
+        files: ^frontend/src/
       - id: clippy-gitmind
         name: clippy (rust-gitmind)
         entry: cargo clippy --manifest-path rust-gitmind/Cargo.toml -- -D warnings

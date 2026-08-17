@@ -6,54 +6,25 @@ import React, {
   Suspense,
   lazy,
 } from "react";
-import {
-  AlertTriangle,
-  X,
-  GitBranch,
-  FileCode2,
-  ShieldAlert,
-  Lock,
-  MessageSquare,
-  Code2,
-  BarChart3,
-  GitPullRequest,
-  GitCommit,
-  Binary,
-  Activity,
-} from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 
-import Sidebar from "./components/Sidebar";
 import LandingPage from "./components/LandingPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ToastSystem from "./components/ToastSystem";
-import CommandBar from "./components/CommandBar";
-import NavRail from "./components/NavRail";
-import {
-  WS_BASE,
-  fetchRepos,
-  loadSharedAnalysis,
-  generateFix,
-} from "./api";
-import { LANG_COLOR } from "./constants";
+import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix } from "./api";
 import { appReducer, initialState } from "./appReducer";
 import * as tokenManager from "./tokenManager";
+import { loadTheme } from "./themeLoader";
 
-const DiagramTab = lazy(() => import("./components/DiagramTab"));
-const DocsTab = lazy(() => import("./components/DocsTab"));
-const SecurityTab = lazy(() => import("./components/SecurityTab"));
-const ChatTab = lazy(() => import("./components/ChatTab"));
-const SummaryTab = lazy(() => import("./components/SummaryTab"));
-const CveTab = lazy(() => import("./components/CveTab"));
-const PRReviewTab = lazy(() => import("./components/PRReviewTab"));
+// Dashboard shell (CommandBar/NavRail/Sidebar + all tabs) is lazy-loaded so
+// the landing page doesn't ship the full 400KB+ dashboard bundle.
+const DashboardLayout = lazy(() => import("./components/DashboardLayout"));
 const CrisisChat = lazy(() => import("./components/CrisisChat"));
 const KeyboardHelp = lazy(() => import("./components/KeyboardHelp"));
 const FilePreviewDrawer = lazy(() => import("./components/FilePreviewDrawer"));
-const GitAuditTab = lazy(() => import("./components/GitAuditTab"));
-const SolidityTab = lazy(() => import("./components/SolidityTab"));
-const CodeAuditTab = lazy(() => import("./components/CodeAuditTab"));
-const MonitoringTab = lazy(() => import("./components/MonitoringTab"));
 const OrgAuditModal = lazy(() => import("./components/OrgAuditModal"));
 const CommandPalette = lazy(() => import("./components/CommandPalette"));
+const ShareErrorOverlay = lazy(() => import("./components/ShareErrorOverlay"));
 
 const IS_MAC = /Mac/i.test(
   navigator.userAgentData?.platform ?? navigator.platform,
@@ -69,7 +40,40 @@ const SESSION_ID =
 const WS_URL = `${WS_BASE}/ws/analyze`;
 const TIMEOUT_MS = 180_000;
 
+function classifyShareError(err) {
+  const status = err?.status;
+  if (status === 404)
+    return {
+      kind: "not_found",
+      message:
+        "This analysis link has expired or the analysis was never saved.",
+    };
+  if (status === 401)
+    return {
+      kind: "locked",
+      message:
+        "This analysis is locked. Add your GitHub token to unlock it — analyses older than 24 hours require authentication.",
+    };
+  if (status === 429)
+    return {
+      kind: "rate_limited",
+      message: "Too many requests. Please wait a moment and try again.",
+    };
+  if (status === 0 || status === undefined)
+    return {
+      kind: "network",
+      message:
+        "Cannot reach the GitMind backend. Check your connection and try again.",
+    };
+  return {
+    kind: "generic",
+    message: err?.message || "Could not load the shared analysis.",
+  };
+}
+
 export default function App() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [state, dispatch] = useReducer(appReducer, initialState);
   const {
     theme,
@@ -77,14 +81,10 @@ export default function App() {
     githubUser,
     ghToken,
     repos,
-    reposLoading,
-    reposError,
     selectedRepoUrl,
-    activeTab,
     repoName,
     isAnalyzing,
     analyzed,
-    agentStatus,
     elapsedSec,
     diagram,
     archGraph,
@@ -95,23 +95,13 @@ export default function App() {
     solidityAudit,
     codeAudit,
     health,
-    agentWarnings,
-    fixLoading,
-    fixResult,
     crisisFinding,
-    globalError,
-    retryUrl,
-    showOnboarding,
     showKbHelp,
     showPalette,
     filePreview,
-    shareCopied,
-    prAutoUrl,
     showOrgAudit,
-    drawerOpen,
-    repoHistory,
+    shareError,
     recents,
-    loadedUsers,
   } = state;
 
   // ── Refs ──────────────────────────────────────────────────
@@ -119,14 +109,23 @@ export default function App() {
 
   // ── Restore theme & density from localStorage on mount ────
   useEffect(() => {
-    const savedTheme = localStorage.getItem("gm-theme") || "obsidian";
+    const savedTheme = localStorage.getItem("gm-theme");
     const savedDensity = localStorage.getItem("gm-density") || "comfortable";
     const root = document.documentElement;
-    if (savedTheme === "obsidian") root.removeAttribute("data-theme");
-    else root.setAttribute("data-theme", savedTheme);
+    if (savedTheme && savedTheme !== "obsidian")
+      root.setAttribute("data-theme", savedTheme);
+    else root.removeAttribute("data-theme");
     if (savedDensity === "comfortable") root.removeAttribute("data-density");
     else root.setAttribute("data-density", savedDensity);
   }, []);
+
+  // ── Lazy-load the active theme's CSS chunk ─────────────────
+  // Fires on mount (restores the saved theme) and on every switch
+  // (ThemeSwitcher + command palette). webpack fetches only the one
+  // theme file being used; the other 12 stay off the network.
+  useEffect(() => {
+    loadTheme(theme);
+  }, [theme]);
   const timerRef = useRef(null);
   const timeoutRef = useRef(null);
   const startRef = useRef(null);
@@ -185,23 +184,43 @@ export default function App() {
   useEffect(() => () => cleanup(), [cleanup]);
 
   // ── Load shared analysis ──────────────────────────────────
+  const runSharedLoad = useCallback(
+    (shareId, token) => {
+      loadSharedAnalysis(shareId, token)
+        .then((data) => {
+          dispatch({ type: "LOAD_SHARED_ANALYSIS", data });
+          dispatch({ type: "CLEAR_SHARE_ERROR" });
+          navigate("/dashboard", { replace: true });
+        })
+        .catch((err) => {
+          dispatch({ type: "SET_SHARE_ERROR", error: classifyShareError(err) });
+        });
+    },
+    [navigate, dispatch],
+  );
+
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(location.search);
     const shareId = params.get("share");
     if (!shareId) return;
-    loadSharedAnalysis(shareId)
-      .then((data) => {
-        dispatch({ type: "LOAD_SHARED_ANALYSIS", data });
-      })
-      .catch(() => {});
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    runSharedLoad(shareId);
+  }, [location.search, runSharedLoad]);
 
-  // ── Notification permission ───────────────────────────────
-  useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-  }, []);
+  const handleShareRetry = useCallback(() => {
+    dispatch({ type: "CLEAR_SHARE_ERROR" });
+    const params = new URLSearchParams(location.search);
+    const shareId = params.get("share");
+    if (shareId) runSharedLoad(shareId);
+  }, [location.search, runSharedLoad, dispatch]);
+
+  const handleShareUnlock = useCallback(
+    (token) => {
+      dispatch({ type: "SET_GH_TOKEN", value: token });
+      tokenManager.set(token);
+      handleShareRetry();
+    },
+    [handleShareRetry, dispatch],
+  );
 
   // ── Global paste → PR auto-load ──────────────────────────
   useEffect(() => {
@@ -248,10 +267,16 @@ export default function App() {
 
   // ── Analyze ──────────────────────────────────────────────
   const handleAnalyze = useCallback(
-    (url) => {
+    (url, tokenOverride) => {
       if (!url) return;
       cleanup();
       dispatch({ type: "START_ANALYSIS", url });
+      // Ask for notification permission as part of a user gesture (analysis
+      // start) instead of on page load — prompts on load hurt UX and the
+      // Lighthouse best-practices score.
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+      }
       analyzingRef.current = true;
 
       startRef.current = Date.now();
@@ -293,11 +318,12 @@ export default function App() {
       };
 
       ws.onopen = () => {
+        const gh = tokenOverride || ghToken;
         ws.send(
           JSON.stringify({
             repo_url: url,
             session_id: SESSION_ID,
-            ...(ghToken ? { gh_token: ghToken } : {}),
+            ...(gh ? { gh_token: gh } : {}),
           }),
         );
         resetInactivityTimer();
@@ -358,7 +384,6 @@ export default function App() {
           ws.close();
         }
         if (data.error) {
-          // Crash recovery: partial results available
           if (data.partial && data.health) {
             dispatch({ type: "SET_HEALTH", health: data.health });
             dispatch({
@@ -487,7 +512,7 @@ export default function App() {
 
   // ── Load repos ────────────────────────────────────────────
   const handleLoadRepos = useCallback(
-    async (user) => {
+    async (user, tokenOverride) => {
       const u = (user || githubUser).trim();
       if (!u) {
         dispatch({
@@ -505,7 +530,9 @@ export default function App() {
         cmd: { id: `user:${u}`, label: u, sub: "GitHub user", icon: "user" },
       });
       try {
-        const list = await fetchRepos(u, ghToken || null);
+        // Landing-page submissions can carry their own token (private
+        // repos / higher rate limits) before the dashboard takes over.
+        const list = await fetchRepos(u, tokenOverride || ghToken || null);
         dispatch({ type: "SET_REPOS", repos: list });
         if (list.length === 0)
           dispatch({
@@ -537,11 +564,21 @@ export default function App() {
     [githubUser, ghToken, addToast],
   );
 
+  // ── Apply a token from the landing page ───────────────────
+  // Mirrors the dashboard CommandBar flow: update app state so the
+  // analysis WS payload carries it, and persist for the session.
+  const applyLandingToken = useCallback((token) => {
+    const t = (token || "").trim();
+    if (!t) return;
+    dispatch({ type: "SET_GH_TOKEN", value: t });
+    tokenManager.set(t);
+  }, []);
+
   // ── Select + analyze ──────────────────────────────────────
   const handleSelectRepo = useCallback(
-    (url) => {
+    (url, tokenOverride) => {
       dispatch({ type: "SET_SELECTED_REPO_URL", url });
-      handleAnalyze(url);
+      handleAnalyze(url, tokenOverride);
     },
     [handleAnalyze],
   );
@@ -550,25 +587,31 @@ export default function App() {
   const handleExport = useCallback(async () => {
     if (!analyzed) return;
     try {
-      const { buildAnalysisPdf, downloadPdf } = await import("./pdfBuilder");
-      const docDef = buildAnalysisPdf({
-        repoName,
-        diagram,
-        archGraph,
-        apiDocs,
-        findings,
-        cveFindings,
-        gitAudit,
-        solidityAudit,
-        codeAudit,
-        health,
-        elapsedSec,
-      });
-      downloadPdf(docDef, `gitmind-${repoName}-${Date.now()}.pdf`);
+      const { buildAnalysisPdf, downloadPdf, getCachedPdf, sanitizeFilename } =
+        await import("./pdfBuilder");
+      const cacheKey = `gm:${SESSION_ID}:analysis`;
+      const cached = getCachedPdf(cacheKey);
+      const docDef =
+        cached ||
+        buildAnalysisPdf({
+          repoName,
+          diagram,
+          archGraph,
+          apiDocs,
+          findings,
+          cveFindings,
+          gitAudit,
+          solidityAudit,
+          codeAudit,
+          health,
+          elapsedSec,
+        });
+      const safeName = sanitizeFilename(repoName);
+      downloadPdf(docDef, `gitmind-${safeName}-${Date.now()}.pdf`, cacheKey);
       addToast({
         kind: "success",
         title: "Report exported",
-        sub: `${repoName}.pdf`,
+        sub: `${safeName}.pdf`,
       });
       dispatch({
         type: "ADD_RECENT",
@@ -633,7 +676,7 @@ export default function App() {
 
   // ── Share ─────────────────────────────────────────────────
   const handleShare = useCallback(() => {
-    const url = `${window.location.origin}${window.location.pathname}?share=${SESSION_ID}`;
+    const url = `${window.location.origin}/?share=${SESSION_ID}`;
     navigator.clipboard
       .writeText(url)
       .then(() => {
@@ -690,70 +733,6 @@ export default function App() {
     [handleShare, handleExport, handleSelectRepo],
   ); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Tab metadata ──────────────────────────────────────────
-  const hasCritical = findings.some((f) => f.severity === "critical");
-  const hasCveCritical = cveFindings.some(
-    (f) => f.worst_severity === "critical",
-  );
-  const selectedRepo = repos.find((r) => r.url === selectedRepoUrl) ?? null;
-
-  const tabs = [
-    { key: "summary", Icon: BarChart3, label: "Summary" },
-    { key: "diagram", Icon: GitBranch, label: "Architecture" },
-    {
-      key: "docs",
-      Icon: FileCode2,
-      label: "API Docs",
-      count: apiDocs.length || null,
-    },
-    {
-      key: "security",
-      Icon: ShieldAlert,
-      label: "Security",
-      count: findings.length || null,
-      alert: hasCritical,
-    },
-    {
-      key: "cve",
-      Icon: Lock,
-      label: "CVE",
-      count: cveFindings.length || null,
-      alert: hasCveCritical,
-    },
-    {
-      key: "git",
-      Icon: GitCommit,
-      label: "Git Audit",
-      count:
-        (gitAudit?.stats?.bad_messages || 0) +
-          (gitAudit?.stats?.secrets_found || 0) +
-          (gitAudit?.stats?.sensitive_files || 0) || null,
-      alert: !!(
-        gitAudit?.stats?.secrets_found || gitAudit?.stats?.sensitive_files
-      ),
-    },
-    {
-      key: "solidity",
-      Icon: Binary,
-      label: "Solidity",
-      count: solidityAudit?.findings?.length || null,
-      alert: solidityAudit?.findings?.some((f) => f.severity === "critical"),
-    },
-    {
-      key: "code_audit",
-      Icon: Code2,
-      label: "Code Audit",
-      count:
-        codeAudit?.reduce((s, r) => s + (r.findings?.length || 0), 0) || null,
-      alert: codeAudit?.some((r) =>
-        r.findings?.some((f) => f.severity === "critical"),
-      ),
-    },
-    { key: "pr", Icon: GitPullRequest, label: "PR Review" },
-    { key: "monitor", Icon: Activity, label: "Watch" },
-    { key: "chat", Icon: MessageSquare, label: "Chat" },
-  ];
-
   // ── Status text ───────────────────────────────────────────
   const statusClass = analyzed ? "done" : isAnalyzing ? "running" : "";
   const statusText = analyzed
@@ -762,353 +741,106 @@ export default function App() {
       ? `Analyzing · ${elapsedSec}s`
       : "Ready";
 
+  const isLanding = location.pathname === "/";
+
   return (
     <div className="app">
-      <CommandBar
-        githubUser={githubUser}
-        ghToken={ghToken}
-        reposLoading={reposLoading}
-        isAnalyzing={isAnalyzing}
-        analyzed={analyzed}
-        shareCopied={shareCopied}
-        statusClass={statusClass}
-        statusText={statusText}
-        usernameRef={usernameRef}
-        dispatch={dispatch}
-        handleLoadRepos={handleLoadRepos}
-        handleShare={handleShare}
-        handleExport={handleExport}
-        theme={theme}
-      />
-
-      <NavRail
-        activeTab={activeTab}
-        drawerOpen={drawerOpen}
-        isAnalyzing={isAnalyzing}
-        analyzed={analyzed}
-        agentStatus={agentStatus}
-        repos={repos}
-        tabs={tabs}
-        dispatch={dispatch}
-      />
-
-      {/* ── Main content ────────────────────────────────────────── */}
-      <div className="main">
-        {globalError && (
-          <div className="error-banner" role="alert">
-            <AlertTriangle size={14} style={{ flexShrink: 0 }} />
-            <span style={{ flex: 1, whiteSpace: "pre-wrap" }}>
-              {globalError}
-            </span>
-            {retryUrl && (
-              <button
-                className="btn-text"
-                style={{
-                  color: "var(--primary)",
-                  flexShrink: 0,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  whiteSpace: "nowrap",
-                }}
-                onClick={() => {
-                  dispatch({ type: "CLEAR_ERROR" });
-                  handleAnalyze(retryUrl);
-                }}
-              >
-                Retry
-              </button>
-            )}
-            <button
-              className="btn-icon"
-              onClick={() => dispatch({ type: "CLEAR_ERROR" })}
-              aria-label="Dismiss error"
-            >
-              <X size={12} />
-            </button>
-          </div>
-        )}
-        {agentWarnings.map((w, i) => (
-          <div
-            key={i}
-            className="error-banner"
-            role="status"
-            style={{
-              borderColor: "var(--warning-bg-strong)",
-              background: "var(--warning-bg)",
-              color: "var(--warning)",
-            }}
+      {isLanding ? (
+        <LandingPage
+          onLoad={(user, token) => {
+            applyLandingToken(token);
+            handleLoadRepos(user, token);
+            navigate("/dashboard");
+          }}
+          onAnalyzeUrl={(url, token) => {
+            applyLandingToken(token);
+            handleSelectRepo(url, token);
+            navigate("/dashboard");
+          }}
+        />
+      ) : (
+        <ErrorBoundary>
+          <Suspense
+            fallback={
+              <div className="app-loading">
+                <span className="spinner" />
+              </div>
+            }
           >
-            <AlertTriangle size={14} style={{ flexShrink: 0 }} />
-            <span style={{ flex: 1 }}>{w}</span>
-            <button
-              className="btn-icon"
-              onClick={() =>
-                dispatch({ type: "DISMISS_AGENT_WARNING", index: i })
-              }
-              aria-label="Dismiss warning"
-            >
-              <X size={12} />
-            </button>
-          </div>
-        ))}
-
-        {selectedRepo && analyzed && (
-          <div className="meta-strip">
-            <a
-              href={selectedRepo.url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {selectedRepo.full_name}
-            </a>
-            <span className="meta-sep">·</span>
-            {selectedRepo.language && (
-              <>
-                <span
-                  className="lang-dot"
-                  style={{
-                    background:
-                      LANG_COLOR[selectedRepo.language] || "var(--text-3)",
-                    width: 8,
-                    height: 8,
-                  }}
-                />
-                {selectedRepo.language}
-                <span className="meta-sep">·</span>
-              </>
-            )}
-            {selectedRepo.stars > 0 && (
-              <>
-                <span>★ {selectedRepo.stars.toLocaleString()}</span>
-                <span className="meta-sep">·</span>
-              </>
-            )}
-            {selectedRepo.fork && (
-              <>
-                <span>fork</span>
-                <span className="meta-sep">·</span>
-              </>
-            )}
-            <span>
-              Updated {new Date(selectedRepo.updated_at).toLocaleDateString()}
-            </span>
-          </div>
-        )}
-
-        <div className="tab-content" role="tabpanel">
-          {showOnboarding && !repos.length ? (
-            <LandingPage
-              onLoad={handleLoadRepos}
-              onAnalyzeUrl={handleSelectRepo}
+            <DashboardLayout
+              state={state}
+              dispatch={dispatch}
+              sessionId={SESSION_ID}
+              usernameRef={usernameRef}
+              handleLoadRepos={handleLoadRepos}
+              handleSelectRepo={handleSelectRepo}
+              handleAnalyze={handleAnalyze}
+              handleShare={handleShare}
+              handleExport={handleExport}
+              handleFix={handleFix}
+              handlePaletteAction={handlePaletteAction}
+              statusClass={statusClass}
+              statusText={statusText}
+              dismissToast={dismissToast}
+              toasts={toasts}
             />
-          ) : (
-            <ErrorBoundary key={activeTab}>
-              <Suspense
-                fallback={<div className="tab-loading">Loading tab…</div>}
-              >
-                {activeTab === "summary" && (
-                  <SummaryTab
-                    sessionId={SESSION_ID}
-                    enabled={analyzed}
-                    repoName={repoName}
-                    findings={findings}
-                    apiDocs={apiDocs}
-                    elapsedSec={elapsedSec}
-                    isAnalyzing={isAnalyzing}
-                    health={health}
-                    healthPartial={state.healthPartial}
-                    repoUrl={selectedRepoUrl}
-                    ghToken={ghToken}
-                  />
-                )}
-                {activeTab === "diagram" && (
-                  <DiagramTab
-                    diagram={diagram}
-                    archGraph={archGraph}
-                    isAnalyzing={isAnalyzing}
-                    analyzed={analyzed}
-                    theme={theme}
-                    sessionId={SESSION_ID}
-                    enabled={analyzed}
-                    repoName={repoName}
-                  />
-                )}
-                {activeTab === "docs" && (
-                  <DocsTab
-                    docs={apiDocs}
-                    isAnalyzing={isAnalyzing}
-                    analyzed={analyzed}
-                    onPickFile={(p) =>
-                      dispatch({ type: "SET_FILE_PREVIEW", preview: p })
-                    }
-                  />
-                )}
-                {activeTab === "security" && (
-                  <SecurityTab
-                    findings={findings}
-                    isAnalyzing={isAnalyzing}
-                    analyzed={analyzed}
-                    onCrisis={(f) =>
-                      dispatch({ type: "SET_CRISIS_FINDING", finding: f })
-                    }
-                    onFix={handleFix}
-                    fixLoading={fixLoading}
-                    fixResult={fixResult}
-                    onPickFile={(p) =>
-                      dispatch({ type: "SET_FILE_PREVIEW", preview: p })
-                    }
-                    sessionId={SESSION_ID}
-                  />
-                )}
-                {activeTab === "cve" && (
-                  <CveTab
-                    findings={cveFindings}
-                    isAnalyzing={isAnalyzing}
-                    analyzed={analyzed}
-                  />
-                )}
-                {activeTab === "git" && (
-                  <GitAuditTab
-                    audit={gitAudit}
-                    isAnalyzing={isAnalyzing}
-                    analyzed={analyzed}
-                  />
-                )}
-                {activeTab === "solidity" && (
-                  <SolidityTab
-                    solAudit={solidityAudit}
-                    onFix={handleFix}
-                    fixLoading={fixLoading}
-                    fixResult={fixResult}
-                  />
-                )}
-                {activeTab === "code_audit" && (
-                  <CodeAuditTab
-                    codeAudit={codeAudit}
-                    isAnalyzing={isAnalyzing}
-                    analyzed={analyzed}
-                    onFix={handleFix}
-                    fixLoading={fixLoading}
-                    fixResult={fixResult}
-                  />
-                )}
-                {activeTab === "pr" && (
-                  <PRReviewTab
-                    prAutoUrl={prAutoUrl}
-                    onAutoUrlUsed={() =>
-                      dispatch({ type: "SET_PR_AUTO_URL", url: null })
-                    }
-                    sessionId={SESSION_ID}
-                    analyzed={analyzed}
-                    repoUrl={selectedRepoUrl}
-                  />
-                )}
-                {activeTab === "monitor" && (
-                  <MonitoringTab
-                    ghToken={ghToken}
-                    repoUrl={selectedRepoUrl}
-                    analyzed={analyzed}
-                  />
-                )}
-                {activeTab === "chat" && (
-                  <ChatTab
-                    key={repoName}
-                    sessionId={SESSION_ID}
-                    enabled={analyzed}
-                    repoName={repoName}
-                  />
-                )}
-              </Suspense>
-            </ErrorBoundary>
-          )}
-        </div>
-      </div>
+          </Suspense>
+        </ErrorBoundary>
+      )}
 
-      {/* ── Repo drawer ─────────────────────────────────────────── */}
-      <div
-        className={`repo-drawer${drawerOpen ? " open" : ""}`}
-        aria-hidden={!drawerOpen}
-      >
-        <div className="drawer-close">
-          <span className="drawer-close-title">Repositories</span>
-          <button
-            className="btn-icon"
-            onClick={() => dispatch({ type: "SET_DRAWER_OPEN", open: false })}
-            title="Close"
-            aria-label="Close repositories"
-          >
-            <X size={14} />
-          </button>
-        </div>
-        <Sidebar
-          repos={repos}
-          onSelect={(url) => {
-            handleSelectRepo(url);
-            dispatch({ type: "SET_DRAWER_OPEN", open: false });
-          }}
-          selectedUrl={selectedRepoUrl}
-          loading={reposLoading}
-          error={reposError}
-          history={repoHistory}
-          onHistorySelect={(url) => {
-            dispatch({ type: "SET_SELECTED_REPO_URL", url });
-            handleAnalyze(url);
-            dispatch({ type: "SET_DRAWER_OPEN", open: false });
-          }}
-          agentStatus={agentStatus}
-          isAnalyzing={isAnalyzing}
-          analyzed={analyzed}
-          elapsedSec={elapsedSec}
-          repoName={repoName}
-          onLoadUser={handleLoadRepos}
-          currentUser={githubUser || loadedUsers[0] || ""}
-          loadedUsers={loadedUsers}
-        />
-      </div>
-
-      {/* ── Overlays ────────────────────────────────────────────── */}
+      {/* ── Global overlays (shared across routes) ─────────────── */}
       <ErrorBoundary>
-      <Suspense fallback={null}>
-        {showOrgAudit && (
-          <OrgAuditModal
+        <Suspense fallback={null}>
+          {showOrgAudit && (
+            <OrgAuditModal
+              repos={repos}
+              token={ghToken || null}
+              onClose={() =>
+                dispatch({ type: "SET_SHOW_ORG_AUDIT", show: false })
+              }
+            />
+          )}
+          {crisisFinding && (
+            <CrisisChat
+              finding={crisisFinding}
+              sessionId={SESSION_ID}
+              repoName={repoName}
+              onClose={() =>
+                dispatch({ type: "SET_CRISIS_FINDING", finding: null })
+              }
+            />
+          )}
+          {shareError && (
+            <ShareErrorOverlay
+              error={shareError}
+              onRetry={handleShareRetry}
+              onUnlock={handleShareUnlock}
+              onClose={() => dispatch({ type: "CLEAR_SHARE_ERROR" })}
+            />
+          )}
+          <KeyboardHelp
+            open={showKbHelp}
+            onClose={() => dispatch({ type: "SET_SHOW_KB_HELP", show: false })}
+          />
+          <FilePreviewDrawer
+            path={filePreview?.path}
+            line={filePreview?.line}
+            repoUrl={selectedRepoUrl}
+            ghToken={ghToken}
+            onClose={() =>
+              dispatch({ type: "SET_FILE_PREVIEW", preview: null })
+            }
+          />
+          <CommandPalette
+            open={showPalette}
+            onClose={() => dispatch({ type: "SET_SHOW_PALETTE", show: false })}
+            onAction={handlePaletteAction}
             repos={repos}
-            token={ghToken || null}
-            onClose={() =>
-              dispatch({ type: "SET_SHOW_ORG_AUDIT", show: false })
-            }
+            recents={recents}
+            theme={theme}
+            density={density}
           />
-        )}
-        {crisisFinding && (
-          <CrisisChat
-            finding={crisisFinding}
-            sessionId={SESSION_ID}
-            repoName={repoName}
-            onClose={() =>
-              dispatch({ type: "SET_CRISIS_FINDING", finding: null })
-            }
-          />
-        )}
-        <KeyboardHelp
-          open={showKbHelp}
-          onClose={() => dispatch({ type: "SET_SHOW_KB_HELP", show: false })}
-        />
-        <FilePreviewDrawer
-          path={filePreview?.path}
-          line={filePreview?.line}
-          repoUrl={selectedRepoUrl}
-          ghToken={ghToken}
-          onClose={() => dispatch({ type: "SET_FILE_PREVIEW", preview: null })}
-        />
-        <CommandPalette
-          open={showPalette}
-          onClose={() => dispatch({ type: "SET_SHOW_PALETTE", show: false })}
-          onAction={handlePaletteAction}
-          repos={repos}
-          recents={recents}
-          theme={theme}
-          density={density}
-        />
-      </Suspense>
+        </Suspense>
       </ErrorBoundary>
       <ToastSystem toasts={toasts} onDismiss={dismissToast} />
     </div>

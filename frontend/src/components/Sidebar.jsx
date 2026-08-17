@@ -1,4 +1,11 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  memo,
+} from "react";
 import { FixedSizeList } from "react-window";
 import {
   Star,
@@ -10,13 +17,21 @@ import {
   Bookmark,
   Lock,
   ExternalLink,
-} from "lucide-react";
+} from "../icons";
+import { fs } from "../typeScale";
 import AgentPipeline from "./AgentPipeline";
 import { LANG_COLOR } from "../constants";
 
 function fmtStars(n) {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
   return String(n);
+}
+
+function byPushed(a, b) {
+  return (
+    new Date(b.pushed_at || b.updated_at) -
+    new Date(a.pushed_at || a.updated_at)
+  );
 }
 
 const SAVED_VIEWS = [
@@ -36,13 +51,13 @@ const SAVED_VIEWS = [
   },
 ];
 
-function RepoCard({
+const RepoCard = memo(function RepoCard({
   repo,
   selected,
   focused,
   onSelect,
-  onMouseEnter,
-  onMouseLeave,
+  onHover,
+  onLeave,
 }) {
   const pushedAt =
     repo.pushed_at || repo.updated_at
@@ -55,8 +70,8 @@ function RepoCard({
     <div
       className={`repo-card${selected ? " selected" : ""}${focused ? " focused" : ""}`}
       onClick={() => onSelect(repo.url)}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+      onMouseEnter={(e) => onHover(e, repo)}
+      onMouseLeave={onLeave}
       tabIndex={0}
       role="option"
       aria-selected={selected}
@@ -67,17 +82,13 @@ function RepoCard({
           style={{ display: "flex", alignItems: "center", gap: 4 }}
         >
           {repo.private && (
-            <Lock
-              size={10}
-              strokeWidth={1.5}
-              style={{ color: "var(--text-3)", flexShrink: 0 }}
-            />
+            <Lock size={10} style={{ color: "var(--text-3)", flexShrink: 0 }} />
           )}
           {repo.name}
         </span>
         {repo.stars > 0 && (
           <span className="repo-stars">
-            <Star size={11} strokeWidth={1.5} />
+            <Star size={11} />
             {fmtStars(repo.stars)}
           </span>
         )}
@@ -90,7 +101,7 @@ function RepoCard({
             window.open(repo.url, "_blank", "noopener,noreferrer");
           }}
         >
-          <ExternalLink size={11} strokeWidth={1.5} />
+          <ExternalLink size={11} />
         </button>
       </div>
       {repo.description && <div className="repo-desc">{repo.description}</div>}
@@ -111,7 +122,23 @@ function RepoCard({
       </div>
     </div>
   );
-}
+});
+
+const RepoRow = memo(function RepoRow({ index, style, data }) {
+  const repo = data.items[index];
+  return (
+    <div style={style}>
+      <RepoCard
+        repo={repo}
+        selected={data.selectedUrl === repo.url}
+        focused={data.focusedIdx === index}
+        onSelect={data.onSelect}
+        onHover={data.onHover}
+        onLeave={data.onLeave}
+      />
+    </div>
+  );
+});
 
 function WorkspaceSwitcher({ currentUser, loadedUsers, onSwitch }) {
   const [open, setOpen] = useState(false);
@@ -169,13 +196,13 @@ function WorkspaceSwitcher({ currentUser, loadedUsers, onSwitch }) {
             >
               <span
                 className="ws-mark"
-                style={{ width: 22, height: 22, fontSize: 11 }}
+                style={{ width: 22, height: 22, fontSize: fs.xs }}
               >
                 {u[0].toUpperCase()}
               </span>
               <span
                 style={{
-                  fontSize: 13,
+                  fontSize: fs.md,
                   color: "var(--text-1)",
                   fontWeight: 500,
                 }}
@@ -219,16 +246,47 @@ export default function Sidebar({
 
   const view = SAVED_VIEWS.find((v) => v.id === savedView) || SAVED_VIEWS[0];
 
-  const byPushed = (a, b) =>
-    new Date(b.pushed_at || b.updated_at) -
-    new Date(a.pushed_at || a.updated_at);
+  const filtered = useMemo(
+    () =>
+      repos
+        .filter((r) => view.filter(r))
+        .filter(
+          (r) => !filter || r.name.toLowerCase().includes(filter.toLowerCase()),
+        )
+        .sort(view.sort || byPushed),
+    [repos, view, filter],
+  );
 
-  const filtered = repos
-    .filter((r) => view.filter(r))
-    .filter(
-      (r) => !filter || r.name.toLowerCase().includes(filter.toLowerCase()),
-    )
-    .sort(view.sort || byPushed);
+  const handleRepoSelect = useCallback((url) => onSelect(url), [onSelect]);
+
+  const handleRepoHover = useCallback((e, repo) => {
+    setHoverRepo(repo);
+    setHoverRect(e.currentTarget.getBoundingClientRect());
+  }, []);
+
+  const handleRepoLeave = useCallback(() => {
+    setHoverRepo(null);
+    setHoverRect(null);
+  }, []);
+
+  const repoItemData = useMemo(
+    () => ({
+      items: filtered,
+      selectedUrl,
+      focusedIdx,
+      onSelect: handleRepoSelect,
+      onHover: handleRepoHover,
+      onLeave: handleRepoLeave,
+    }),
+    [
+      filtered,
+      selectedUrl,
+      focusedIdx,
+      handleRepoSelect,
+      handleRepoHover,
+      handleRepoLeave,
+    ],
+  );
 
   const handleKeyDown = useCallback(
     (e) => {
@@ -274,18 +332,7 @@ export default function Sidebar({
         )}
       </div>
 
-      {error && (
-        <div
-          style={{
-            padding: "8px 14px",
-            fontSize: 12,
-            color: "var(--danger)",
-            borderBottom: "1px solid var(--border)",
-          }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <div className="sidebar-error">{error}</div>}
 
       <div className="sb-list">
         {/* Saved views toggle */}
@@ -299,18 +346,17 @@ export default function Sidebar({
               <span
                 className="t-label"
                 style={{
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
                 }}
               >
-                <Bookmark size={11} strokeWidth={1.5} />
+                <Bookmark size={11} />
                 SAVED VIEWS
               </span>
               <ChevronDown
                 size={12}
-                strokeWidth={1.5}
                 className="chevron"
                 style={{
                   transform: showSavedViews ? "none" : "rotate(-90deg)",
@@ -347,7 +393,7 @@ export default function Sidebar({
                       role="option"
                       aria-selected={savedView === v.id}
                     >
-                      <Filter size={12} strokeWidth={1.5} />
+                      <Filter size={12} />
                       <span className="label">{v.label}</span>
                       <span className="count">{count}</span>
                     </div>
@@ -368,10 +414,10 @@ export default function Sidebar({
               onClick={() => setHistorySectionOpen((o) => !o)}
               aria-expanded={historySectionOpen}
             >
-              <span className="t-label" style={{ fontSize: 11 }}>
+              <span className="t-label" style={{ fontSize: fs.xs }}>
                 RECENT
               </span>
-              <ChevronDown size={12} strokeWidth={1.5} className="chevron" />
+              <ChevronDown size={12} className="chevron" />
             </button>
             <div className="sb-section-body">
               {history.map((h) => (
@@ -397,18 +443,14 @@ export default function Sidebar({
                         alignItems: "center",
                         gap: 6,
                         color: "var(--text-2)",
-                        fontSize: 13,
+                        fontSize: fs.md,
                       }}
                     >
-                      <Clock
-                        size={11}
-                        strokeWidth={1.5}
-                        style={{ color: "var(--text-3)" }}
-                      />
+                      <Clock size={11} style={{ color: "var(--text-3)" }} />
                       {h.name}
                     </span>
                   </div>
-                  <div className="repo-meta" style={{ marginTop: 2 }}>
+                  <div className="repo-meta sidebar-history-meta">
                     {new Date(h.ts).toLocaleDateString()}
                   </div>
                 </div>
@@ -425,18 +467,18 @@ export default function Sidebar({
               onClick={() => setRepoSectionOpen((o) => !o)}
               aria-expanded={repoSectionOpen}
             >
-              <span className="t-label" style={{ fontSize: 11 }}>
+              <span className="t-label" style={{ fontSize: fs.xs }}>
                 REPOSITORIES
                 {repos.length
                   ? ` · ${filtered.length}${filtered.length !== repos.length ? `/${repos.length}` : ""}`
                   : ""}
               </span>
-              <ChevronDown size={12} strokeWidth={1.5} className="chevron" />
+              <ChevronDown size={12} className="chevron" />
             </button>
             <div className="sb-section-body">
               {repos.length > 4 && (
                 <div className="sb-filter">
-                  <Search size={12} strokeWidth={1.5} />
+                  <Search size={12} />
                   <input
                     ref={filterRef}
                     placeholder="Filter repos…"
@@ -483,30 +525,10 @@ export default function Sidebar({
                   width="100%"
                   itemCount={filtered.length}
                   itemSize={72}
+                  itemData={repoItemData}
                   style={{ overflowX: "hidden" }}
                 >
-                  {({ index, style }) => {
-                    const repo = filtered[index];
-                    return (
-                      <div style={style}>
-                        <RepoCard
-                          key={repo.url}
-                          repo={repo}
-                          selected={selectedUrl === repo.url}
-                          focused={focusedIdx === index}
-                          onSelect={onSelect}
-                          onMouseEnter={(e) => {
-                            setHoverRepo(repo);
-                            setHoverRect(e.currentTarget.getBoundingClientRect());
-                          }}
-                          onMouseLeave={() => {
-                            setHoverRepo(null);
-                            setHoverRect(null);
-                          }}
-                        />
-                      </div>
-                    );
-                  }}
+                  {RepoRow}
                 </FixedSizeList>
               ) : (
                 filtered.map((repo, i) => (
@@ -515,15 +537,9 @@ export default function Sidebar({
                     repo={repo}
                     selected={selectedUrl === repo.url}
                     focused={focusedIdx === i}
-                    onSelect={onSelect}
-                    onMouseEnter={(e) => {
-                      setHoverRepo(repo);
-                      setHoverRect(e.currentTarget.getBoundingClientRect());
-                    }}
-                    onMouseLeave={() => {
-                      setHoverRepo(null);
-                      setHoverRect(null);
-                    }}
+                    onSelect={handleRepoSelect}
+                    onHover={handleRepoHover}
+                    onLeave={handleRepoLeave}
                   />
                 ))
               )}
@@ -531,7 +547,7 @@ export default function Sidebar({
                 <div
                   style={{
                     padding: "16px 14px",
-                    fontSize: 12,
+                    fontSize: fs.sm,
                     color: "var(--text-3)",
                   }}
                 >
@@ -544,9 +560,9 @@ export default function Sidebar({
 
         {/* Empty state */}
         {!loading && repos.length === 0 && history.length === 0 && (
-          <div className="empty" style={{ padding: "40px 16px" }}>
-            <FolderOpen size={18} strokeWidth={1.5} className="empty-icon" />
-            <div className="empty-title" style={{ fontSize: 13 }}>
+          <div className="empty sidebar-empty">
+            <FolderOpen size={18} className="empty-icon" />
+            <div className="empty-title" style={{ fontSize: fs.md }}>
               No repositories
             </div>
             <div className="empty-sub">Enter a GitHub username above</div>
@@ -573,23 +589,22 @@ function RepoHoverPreview({ repo, anchorRect }) {
   const left = Math.min(window.innerWidth - 296, anchorRect.right + 12);
   const top = Math.max(16, Math.min(window.innerHeight - 220, anchorRect.top));
   return (
-    <div className="repo-preview" style={{ left, top }} role="tooltip" aria-live="polite">
+    <div
+      className="repo-preview"
+      style={{ left, top }}
+      role="tooltip"
+      aria-live="polite"
+    >
       <div
         className="name"
         style={{ display: "flex", alignItems: "center", gap: 6 }}
       >
-        {repo.private && (
-          <Lock
-            size={11}
-            strokeWidth={1.5}
-            style={{ color: "var(--text-3)" }}
-          />
-        )}
+        {repo.private && <Lock size={11} style={{ color: "var(--text-3)" }} />}
         {repo.full_name || repo.name}
         {repo.private && (
           <span
             style={{
-              fontSize: 11,
+              fontSize: fs.xs,
               color: "var(--text-3)",
               background: "var(--surface-2)",
               padding: "1px 5px",
@@ -603,7 +618,7 @@ function RepoHoverPreview({ repo, anchorRect }) {
       {repo.description && <div className="desc">{repo.description}</div>}
       <div className="row-stats">
         <span>
-          <Star size={11} strokeWidth={1.5} /> {repo.stars || 0}
+          <Star size={11} /> {repo.stars || 0}
         </span>
         {repo.language && (
           <span>
@@ -618,7 +633,7 @@ function RepoHoverPreview({ repo, anchorRect }) {
         )}
         {(repo.pushed_at || repo.updated_at) && (
           <span>
-            <Clock size={11} strokeWidth={1.5} />
+            <Clock size={11} />
             {new Date(repo.pushed_at || repo.updated_at).toLocaleDateString(
               undefined,
               { month: "short", day: "numeric" },

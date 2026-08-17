@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { ShieldAlert, Wrench } from "lucide-react";
+import { ShieldAlert, Wrench } from "../icons";
+import { fs } from "../typeScale";
 
 const SEV_ORDER = ["critical", "high", "medium", "low"];
 
@@ -41,7 +42,7 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
       {expanded && (
         <div className="row-detail">
           <p>{finding.description}</p>
-          <p style={{ color: "var(--text-2)", fontSize: 13, marginTop: 4 }}>
+          <p style={{ color: "var(--text-2)", fontSize: fs.md, marginTop: 4 }}>
             {finding.remediation}
           </p>
           {onFix && (
@@ -64,7 +65,7 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
                   <p
                     style={{
                       color: "var(--success)",
-                      fontSize: 13,
+                      fontSize: fs.md,
                       marginBottom: 4,
                     }}
                   >
@@ -100,35 +101,37 @@ function ContractList({ contracts }) {
               padding: "6px 0",
               background: "none",
               border: "none",
-              color: "var(--text)",
-              fontSize: 14,
+              color: "var(--text-1)",
+              fontSize: fs.base,
               width: "100%",
               textAlign: "left",
             }}
           >
             <span style={{ flex: 1 }}>📄 {c.name}</span>
-            <span style={{ color: "var(--text-3)", fontSize: 12 }}>
+            <span style={{ color: "var(--text-3)", fontSize: fs.sm }}>
               {c.functions?.length || 0} fn · {c.state_variables?.length || 0}{" "}
               var
             </span>
           </button>
           {open === i && (
             <div
-              style={{ paddingLeft: 16, fontSize: 13, color: "var(--text-2)" }}
+              style={{
+                paddingLeft: 16,
+                fontSize: fs.md,
+                color: "var(--text-2)",
+              }}
             >
               {c.functions?.length > 0 && (
                 <div style={{ marginBottom: 8 }}>
                   <strong>Functions:</strong>
                   {c.functions.map((f, j) => (
                     <div key={j} style={{ paddingLeft: 12, marginTop: 2 }}>
-                      <span style={{ color: "var(--text)" }}>{f.name}</span>
+                      <span style={{ color: "var(--text-1)" }}>{f.name}</span>
                       <span style={{ color: "var(--text-3)", marginLeft: 6 }}>
                         ({f.visibility})
                       </span>
                       {f.modifiers?.length > 0 && (
-                        <span
-                          style={{ color: "var(--primary)", marginLeft: 6 }}
-                        >
+                        <span style={{ color: "var(--accent)", marginLeft: 6 }}>
                           @{f.modifiers.join(", ")}
                         </span>
                       )}
@@ -150,7 +153,7 @@ function ContractList({ contracts }) {
                       }}
                     >
                       <span>{v.typ}</span>
-                      <span style={{ color: "var(--text)" }}>{v.name}</span>
+                      <span style={{ color: "var(--text-1)" }}>{v.name}</span>
                       <span style={{ color: "var(--text-3)" }}>
                         ({v.visibility})
                       </span>
@@ -183,10 +186,27 @@ function ContractList({ contracts }) {
 
 export default function SolidityTab({
   solAudit,
+  isAnalyzing,
   onFix,
   fixLoading,
   fixResult,
 }) {
+  if (!solAudit && isAnalyzing) {
+    return (
+      <div className="tab-content-inner">
+        <div className="skeleton-card" style={{ padding: 24 }}>
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="sk"
+              style={{ height: 60, marginBottom: 8, borderRadius: 8 }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (!solAudit) {
     return (
       <div className="tab-content-inner">
@@ -210,15 +230,21 @@ export default function SolidityTab({
 
   return (
     <div className="tab-content-inner">
-      <div className="sec-header">
-        <ShieldAlert size={16} />
-        <span>Solidity Audit</span>
-        <span className="sec-count">{sorted.length} findings</span>
-        {contracts.length > 0 && (
-          <span className="sec-count" style={{ opacity: 0.5 }}>
-            {contracts.length} contract{contracts.length > 1 ? "s" : ""}
+      <div className="tab-header">
+        <div className="tab-header-main">
+          <span className="tab-header-icon">
+            <ShieldAlert size={15} />
           </span>
-        )}
+          <div className="tab-header-text">
+            <div className="tab-header-eyebrow">07 — Solidity</div>
+            <div className="tab-header-title">Solidity Audit</div>
+            <div className="tab-header-sub">
+              {sorted.length} finding{sorted.length !== 1 ? "s" : ""}
+              {contracts.length > 0 &&
+                ` · ${contracts.length} contract${contracts.length > 1 ? "s" : ""}`}
+            </div>
+          </div>
+        </div>
       </div>
 
       {critical.length + high.length > 0 && (

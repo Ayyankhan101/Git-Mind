@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { X, Cpu, Send, MessageSquare } from "lucide-react";
+import { X, Cpu, Send, MessageSquare } from "../icons";
+import { fs } from "../typeScale";
 import { postChatStream } from "../api";
 
 const SUGGESTIONS = (node) => [
@@ -39,7 +40,7 @@ function ChatMessage({ msg }) {
               : "var(--text-1)",
           borderRadius: isUser ? "12px 12px 3px 12px" : "12px 12px 12px 3px",
           padding: "8px 12px",
-          fontSize: 13,
+          fontSize: fs.md,
           lineHeight: 1.55,
           wordBreak: "break-word",
         }}
@@ -181,14 +182,15 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
     <div className="node-panel" onClick={(e) => e.stopPropagation()}>
       {/* ── Header ─────────────────────────────────────────────── */}
       <div className="node-panel-header">
-        <Cpu
-          size={15}
-          style={{ color: "var(--primary)", flexShrink: 0 }}
-          strokeWidth={1.5}
-        />
+        <Cpu size={15} style={{ color: "var(--primary)", flexShrink: 0 }} />
         <span className="node-panel-title">{node}</span>
-        <button className="btn-icon" onClick={onClose} title="Close (Esc)" aria-label="Close panel">
-          <X size={14} strokeWidth={2} />
+        <button
+          className="btn-icon"
+          onClick={onClose}
+          title="Close (Esc)"
+          aria-label="Close panel"
+        >
+          <X size={14} />
         </button>
       </div>
 
@@ -198,7 +200,7 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
           <span
             style={{
               color: "var(--warning)",
-              fontSize: 12,
+              fontSize: fs.sm,
               lineHeight: 1.55,
             }}
           >
@@ -210,7 +212,7 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
             style={{
               color: "var(--text-3)",
               fontStyle: "italic",
-              fontSize: 13,
+              fontSize: fs.md,
             }}
           >
             Analyzing component
@@ -227,7 +229,7 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
           <span
             style={{
               color: "var(--text-3)",
-              fontSize: 13,
+              fontSize: fs.md,
               fontStyle: "italic",
             }}
           >
@@ -241,7 +243,7 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
         <div className="node-panel-suggestions">
           <div
             style={{
-              fontSize: 11,
+              fontSize: fs.xs,
               color: "var(--text-3)",
               marginBottom: 6,
               display: "flex",
@@ -249,7 +251,7 @@ export default function NodePanel({ node, sessionId, enabled, onClose }) {
               gap: 5,
             }}
           >
-            <MessageSquare size={11} strokeWidth={1.5} /> Ask about this node
+            <MessageSquare size={11} /> Ask about this node
           </div>
           {SUGGESTIONS(node).map((q) => (
             <button

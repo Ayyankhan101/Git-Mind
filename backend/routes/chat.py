@@ -66,6 +66,8 @@ async def chat_endpoint(req: ChatRequest, request: Request):
     client_ip = get_client_ip(request)
     if not (await check_rate_limit("chat", client_ip))[0]:
         return await rate_limit_response("chat", client_ip)
+    if not (await check_rate_limit("analyze_chat_burst", client_ip))[0]:
+        return await rate_limit_response("analyze_chat_burst", client_ip)
 
     session = await get_session(req.session_id)
     if not session:

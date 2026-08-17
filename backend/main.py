@@ -38,6 +38,7 @@ from routes.webhook import router as webhook_router  # noqa: E402
 from services.auth import AuthMiddleware  # noqa: E402
 from services.body_limit import BodyLimitMiddleware  # noqa: E402
 from services.correlation import CorrelationMiddleware  # noqa: E402
+from services.security_headers import SecurityHeadersMiddleware  # noqa: E402
 from services.telemetry import setup_logging, setup_metrics, setup_tracing  # noqa: E402
 from ws.analyze import handle_analyze  # noqa: E402
 from ws.crisis import handle_crisis  # noqa: E402
@@ -284,8 +285,7 @@ elif _CORS_ORIGINS_ENV:
     _CORS_ORIGINS = [o.strip() for o in _CORS_ORIGINS_ENV.split(",") if o.strip()]
 elif _ENVIRONMENT == "production":
     _CORS_ORIGINS = [
-        "https://ak001z-gitmind-frontend.vercel.app",
-        "https://git-mind.vercel.app",
+        "https://gitmind-peach.vercel.app",
     ]
 else:
     _CORS_ORIGINS = [
@@ -294,8 +294,7 @@ else:
         "http://localhost:3001",
         "http://localhost:3002",
         "http://localhost:8002",
-        "https://ak001z-gitmind-frontend.vercel.app",
-        "https://git-mind.vercel.app",
+        "https://gitmind-peach.vercel.app",
     ]
 app.add_middleware(
     CORSMiddleware,
@@ -303,6 +302,8 @@ app.add_middleware(
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type", "X-GH-Token", "X-Request-ID", "Authorization"],
 )
+# Outermost middleware: security headers on every response, incl. errors/metrics/health.
+app.add_middleware(SecurityHeadersMiddleware)
 
 # ── Telemetry ───────────────────────────────────────────────────────────────
 

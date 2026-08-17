@@ -98,6 +98,21 @@ describe("loadSharedAnalysis", () => {
     mockFetchOnce(200, data);
     await expect(loadSharedAnalysis("share-1")).resolves.toEqual(data);
   });
+
+  test("exposes HTTP status on 404", async () => {
+    mockFetchOnce(404, { detail: "Analysis not found or has expired" });
+    await expect(loadSharedAnalysis("missing")).rejects.toMatchObject({
+      status: 404,
+      message: expect.stringContaining("Analysis not found"),
+    });
+  });
+
+  test("exposes HTTP status on 401", async () => {
+    mockFetchOnce(401, { detail: "Authentication required" });
+    await expect(loadSharedAnalysis("locked")).rejects.toMatchObject({
+      status: 401,
+    });
+  });
 });
 
 describe("orgAudit", () => {

@@ -1,4 +1,10 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import ChatTab from "./ChatTab";
 
 jest.mock("../api", () => ({
@@ -36,8 +42,11 @@ describe("ChatTab disabled state", () => {
 describe("ChatTab rendering", () => {
   it("renders welcome prompt when enabled", () => {
     render(<ChatTab {...defaultProps} />);
-    expect(screen.getByText(/Ask anything about/)).toBeInTheDocument();
-    expect(screen.getByText("test/repo")).toBeInTheDocument();
+    // Scope to the message list — the new header sub also starts with
+    // "Ask anything about", so a bare screen query would be ambiguous.
+    const messages = within(document.querySelector(".chat-messages"));
+    expect(messages.getByText(/Ask anything about/)).toBeInTheDocument();
+    expect(messages.getByText("test/repo")).toBeInTheDocument();
   });
 
   it("renders chat input", () => {
@@ -99,10 +108,8 @@ describe("ChatTab streaming", () => {
   });
 
   it("appends assistant response to messages", async () => {
-    let onChunk;
     postChatStream.mockImplementation(
       async (sid, text, chunk, signal, onSources) => {
-        onChunk = chunk;
         chunk("Hello ");
         chunk("world");
         onSources?.([]);
@@ -114,7 +121,6 @@ describe("ChatTab streaming", () => {
     fireEvent.change(textarea, { target: { value: "Hi" } });
     fireEvent.keyDown(textarea, { key: "Enter" });
     // After postChatStream resolves, the message should be rendered
-    const { waitFor } = require("@testing-library/react");
     await waitFor(() => {
       expect(screen.getByText("Hello world")).toBeInTheDocument();
     });
@@ -126,7 +132,6 @@ describe("ChatTab streaming", () => {
     const textarea = screen.getByPlaceholderText(/Ask anything.*Enter to send/);
     fireEvent.change(textarea, { target: { value: "error test" } });
     fireEvent.keyDown(textarea, { key: "Enter" });
-    const { waitFor } = require("@testing-library/react");
     await waitFor(() => {
       expect(screen.getByText("Error: Connection failed")).toBeInTheDocument();
     });

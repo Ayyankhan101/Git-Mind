@@ -14,7 +14,8 @@ import {
   AlertCircle,
   GitMerge,
   XCircle,
-} from "lucide-react";
+} from "../icons";
+import { fs } from "../typeScale";
 import { reviewPR, prImpact, fetchOpenPRs } from "../api";
 import * as tokenManager from "../tokenManager";
 import OpenPRsList from "./OpenPRsList";
@@ -35,7 +36,7 @@ const VERDICT_CLASS = {
   "NEEDS DISCUSSION": "discuss",
 };
 
-function parseReview(text) {
+export function parseReview(text) {
   const sections = { summary: "", issues: [], verdict: "", verdictLine: "" };
   const lines = text.split("\n");
   let current = null;
@@ -125,30 +126,30 @@ function IssueRow({ issue }) {
 const RISK_META = {
   low: {
     color: "var(--success)",
-    bg: "rgba(34,197,94,0.10)",
+    bg: "var(--success-bg)",
     label: "Low Risk",
   },
   medium: {
     color: "var(--warning)",
-    bg: "rgba(234,179,8,0.10)",
+    bg: "var(--warning-bg)",
     label: "Medium Risk",
   },
   high: {
     color: "var(--danger)",
-    bg: "rgba(239,68,68,0.10)",
+    bg: "var(--danger-bg)",
     label: "High Risk",
   },
   critical: {
     color: "var(--danger)",
-    bg: "var(--primary-dim)",
+    bg: "var(--danger-bg)",
     label: "Critical",
   },
 };
 
 const REC_ICON = {
-  "Safe to merge": <GitMerge size={13} strokeWidth={1.5} />,
-  "Merge with caution": <AlertCircle size={13} strokeWidth={1.5} />,
-  "Block — requires changes": <XCircle size={13} strokeWidth={1.5} />,
+  "Safe to merge": <GitMerge size={13} />,
+  "Merge with caution": <AlertCircle size={13} />,
+  "Block — requires changes": <XCircle size={13} />,
 };
 
 function ImpactPanel({ impact, loading, error }) {
@@ -168,7 +169,7 @@ function ImpactPanel({ impact, loading, error }) {
   if (error)
     return (
       <div className="error-banner" style={{ marginTop: 12, borderRadius: 6 }}>
-        <AlertTriangle size={13} strokeWidth={1.5} />
+        <AlertTriangle size={13} />
         <span>{error}</span>
       </div>
     );
@@ -200,7 +201,7 @@ function ImpactPanel({ impact, loading, error }) {
         style={{
           padding: "12px 16px",
           background: riskMeta.bg,
-          border: `1px solid ${riskMeta.color}40`,
+          border: `1px solid color-mix(in srgb, ${riskMeta.color} 25%, transparent)`,
           borderRadius: 10,
           display: "flex",
           alignItems: "flex-start",
@@ -213,19 +214,19 @@ function ImpactPanel({ impact, loading, error }) {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span
               style={{
-                fontSize: 11,
+                fontSize: fs.xs,
                 fontWeight: 700,
                 letterSpacing: ".06em",
                 color: riskMeta.color,
                 padding: "2px 8px",
-                background: `${riskMeta.color}20`,
+                background: `color-mix(in srgb, ${riskMeta.color} 12%, transparent)`,
                 borderRadius: 4,
               }}
             >
               {riskMeta.label.toUpperCase()}
             </span>
             {impact.confidence && (
-              <span style={{ fontSize: 11, color: "var(--text-3)" }}>
+              <span style={{ fontSize: fs.xs, color: "var(--text-3)" }}>
                 confidence: {impact.confidence}
               </span>
             )}
@@ -233,7 +234,7 @@ function ImpactPanel({ impact, loading, error }) {
           {impact.one_liner && (
             <div
               style={{
-                fontSize: 13,
+                fontSize: fs.md,
                 color: "var(--text-1)",
                 lineHeight: 1.5,
                 marginTop: 2,
@@ -249,17 +250,17 @@ function ImpactPanel({ impact, loading, error }) {
               display: "flex",
               alignItems: "center",
               gap: 6,
-              fontSize: 12,
+              fontSize: fs.sm,
               fontWeight: 600,
               color: riskMeta.color,
               whiteSpace: "nowrap",
               padding: "4px 10px",
-              border: `1px solid ${riskMeta.color}40`,
+              border: `1px solid color-mix(in srgb, ${riskMeta.color} 25%, transparent)`,
               borderRadius: 6,
               flexShrink: 0,
             }}
           >
-            {REC_ICON[rec] || <Zap size={13} strokeWidth={1.5} />}
+            {REC_ICON[rec] || <Zap size={13} />}
             {rec}
           </div>
         )}
@@ -273,7 +274,7 @@ function ImpactPanel({ impact, loading, error }) {
             <div style={{ flex: 1, minWidth: 160 }}>
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   color: "var(--text-3)",
                   marginBottom: 6,
                   letterSpacing: ".06em",
@@ -286,11 +287,11 @@ function ImpactPanel({ impact, loading, error }) {
                   <span
                     key={a}
                     style={{
-                      fontSize: 11,
+                      fontSize: fs.xs,
                       padding: "3px 8px",
                       borderRadius: 4,
-                      background: "var(--surface-2)",
-                      border: "1px solid var(--border)",
+                      background: "var(--surface)",
+                      border: "1px solid var(--border-m)",
                       color: "var(--text-2)",
                     }}
                   >
@@ -304,7 +305,7 @@ function ImpactPanel({ impact, loading, error }) {
             <div style={{ flex: 1, minWidth: 160 }}>
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   color: "var(--danger)",
                   marginBottom: 6,
                   letterSpacing: ".06em",
@@ -317,7 +318,7 @@ function ImpactPanel({ impact, loading, error }) {
                   <div
                     key={i}
                     style={{
-                      fontSize: 11,
+                      fontSize: fs.xs,
                       display: "flex",
                       alignItems: "flex-start",
                       gap: 6,
@@ -326,7 +327,6 @@ function ImpactPanel({ impact, loading, error }) {
                   >
                     <XCircle
                       size={11}
-                      strokeWidth={1.5}
                       style={{
                         color: "var(--danger)",
                         flexShrink: 0,
@@ -347,14 +347,14 @@ function ImpactPanel({ impact, loading, error }) {
         <div
           style={{
             padding: "12px 16px",
-            background: "var(--surface-2)",
+            background: "var(--surface)",
             borderRadius: 8,
-            border: "1px solid var(--border)",
+            border: "1px solid var(--border-m)",
           }}
         >
           <div
             style={{
-              fontSize: 11,
+              fontSize: fs.xs,
               color: "var(--text-3)",
               marginBottom: 8,
               letterSpacing: ".06em",
@@ -363,11 +363,11 @@ function ImpactPanel({ impact, loading, error }) {
               gap: 5,
             }}
           >
-            <Zap size={10} strokeWidth={1.5} /> MERGE IMPACT ANALYSIS
+            <Zap size={10} /> MERGE IMPACT ANALYSIS
           </div>
           <div
             style={{
-              fontSize: 13,
+              fontSize: fs.md,
               color: "var(--text-2)",
               lineHeight: 1.75,
               whiteSpace: "pre-line",
@@ -382,14 +382,14 @@ function ImpactPanel({ impact, loading, error }) {
       <div
         style={{
           padding: "14px 16px",
-          background: "var(--surface-2)",
+          background: "var(--surface)",
           borderRadius: 8,
-          border: "1px solid var(--border)",
+          border: "1px solid var(--border-m)",
         }}
       >
         <div
           style={{
-            fontSize: 11,
+            fontSize: fs.xs,
             color: "var(--text-3)",
             marginBottom: 10,
             letterSpacing: ".06em",
@@ -404,15 +404,15 @@ function ImpactPanel({ impact, loading, error }) {
               display: "flex",
               alignItems: "center",
               gap: 6,
-              fontSize: 11,
+              fontSize: fs.xs,
               color: "var(--warning)",
               padding: "6px 10px",
-              background: "rgba(234,179,8,0.08)",
+              background: "var(--warning-bg)",
               borderRadius: 6,
               marginBottom: 10,
             }}
           >
-            <AlertTriangle size={11} strokeWidth={1.5} />
+            <AlertTriangle size={11} />
             Base session has no health score — re-analyze the repo for an
             accurate delta
           </div>
@@ -433,23 +433,27 @@ function ImpactPanel({ impact, loading, error }) {
               padding: "8px 12px",
               background: "var(--surface)",
               borderRadius: 7,
-              border: "1px solid var(--border)",
+              border: "1px solid var(--border-m)",
             }}
           >
             <div
-              style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 3 }}
+              style={{
+                fontSize: fs.xs,
+                color: "var(--text-3)",
+                marginBottom: 3,
+              }}
             >
               BASE
             </div>
             <div
               style={{
-                fontSize: 20,
+                fontSize: fs.xxl,
                 fontWeight: 700,
                 fontFamily: "var(--font-mono)",
               }}
             >
               {impact.base_score}
-              <span style={{ fontSize: 12, color: "var(--text-3)" }}>
+              <span style={{ fontSize: fs.sm, color: "var(--text-3)" }}>
                 {" "}
                 ({impact.base_grade})
               </span>
@@ -462,23 +466,27 @@ function ImpactPanel({ impact, loading, error }) {
               padding: "8px 12px",
               background: "var(--surface)",
               borderRadius: 7,
-              border: "1px solid var(--border)",
+              border: "1px solid var(--border-m)",
             }}
           >
             <div
-              style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 3 }}
+              style={{
+                fontSize: fs.xs,
+                color: "var(--text-3)",
+                marginBottom: 3,
+              }}
             >
               PR
             </div>
             <div
               style={{
-                fontSize: 20,
+                fontSize: fs.xxl,
                 fontWeight: 700,
                 fontFamily: "var(--font-mono)",
               }}
             >
               {impact.pr_score}
-              <span style={{ fontSize: 12, color: "var(--text-3)" }}>
+              <span style={{ fontSize: fs.sm, color: "var(--text-3)" }}>
                 {" "}
                 ({impact.pr_grade})
               </span>
@@ -491,17 +499,21 @@ function ImpactPanel({ impact, loading, error }) {
               padding: "8px 12px",
               background: "var(--surface)",
               borderRadius: 7,
-              border: `1px solid ${deltaColor}40`,
+              border: `1px solid color-mix(in srgb, ${deltaColor} 25%, transparent)`,
             }}
           >
             <div
-              style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 3 }}
+              style={{
+                fontSize: fs.xs,
+                color: "var(--text-3)",
+                marginBottom: 3,
+              }}
             >
               DELTA
             </div>
             <div
               style={{
-                fontSize: 20,
+                fontSize: fs.xxl,
                 fontWeight: 700,
                 fontFamily: "var(--font-mono)",
                 color: deltaColor,
@@ -510,7 +522,7 @@ function ImpactPanel({ impact, loading, error }) {
                 gap: 5,
               }}
             >
-              <DeltaIcon size={16} strokeWidth={2} />
+              <DeltaIcon size={16} />
               {delta > 0 ? `+${delta}` : delta}
             </div>
           </div>
@@ -524,15 +536,14 @@ function ImpactPanel({ impact, loading, error }) {
                 display: "flex",
                 alignItems: "center",
                 gap: 5,
-                fontSize: 11,
+                fontSize: fs.xs,
                 color: "var(--danger)",
                 padding: "4px 9px",
-                background: "rgba(239,68,68,0.08)",
+                background: "var(--danger-bg)",
                 borderRadius: 5,
               }}
             >
-              <ShieldAlert size={10} strokeWidth={1.5} />+
-              {impact.new_findings.length} finding
+              <ShieldAlert size={10} />+{impact.new_findings.length} finding
               {impact.new_findings.length !== 1 ? "s" : ""}
             </span>
           )}
@@ -542,14 +553,14 @@ function ImpactPanel({ impact, loading, error }) {
                 display: "flex",
                 alignItems: "center",
                 gap: 5,
-                fontSize: 11,
+                fontSize: fs.xs,
                 color: "var(--success)",
                 padding: "4px 9px",
-                background: "rgba(34,197,94,0.08)",
+                background: "var(--success-bg)",
                 borderRadius: 5,
               }}
             >
-              <Check size={10} strokeWidth={2} />
+              <Check size={10} />
               {impact.fixed_findings.length} fixed
             </span>
           )}
@@ -559,15 +570,15 @@ function ImpactPanel({ impact, loading, error }) {
                 display: "flex",
                 alignItems: "center",
                 gap: 5,
-                fontSize: 11,
+                fontSize: fs.xs,
                 color: "var(--warning)",
                 padding: "4px 9px",
-                background: "rgba(234,179,8,0.08)",
+                background: "var(--warning-bg)",
                 borderRadius: 5,
               }}
             >
-              <Package size={10} strokeWidth={1.5} />+{impact.new_cves.length}{" "}
-              CVE{impact.new_cves.length !== 1 ? "s" : ""}
+              <Package size={10} />+{impact.new_cves.length} CVE
+              {impact.new_cves.length !== 1 ? "s" : ""}
             </span>
           )}
           {impact.fixed_cves?.length > 0 && (
@@ -576,14 +587,14 @@ function ImpactPanel({ impact, loading, error }) {
                 display: "flex",
                 alignItems: "center",
                 gap: 5,
-                fontSize: 11,
+                fontSize: fs.xs,
                 color: "var(--success)",
                 padding: "4px 9px",
-                background: "rgba(34,197,94,0.08)",
+                background: "var(--success-bg)",
                 borderRadius: 5,
               }}
             >
-              <Check size={10} strokeWidth={2} />
+              <Check size={10} />
               {impact.fixed_cves.length} CVE
               {impact.fixed_cves.length !== 1 ? "s" : ""} resolved
             </span>
@@ -594,7 +605,7 @@ function ImpactPanel({ impact, loading, error }) {
             !impact.fixed_cves?.length && (
               <span
                 style={{
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   color: "var(--text-3)",
                   padding: "4px 9px",
                 }}
@@ -609,14 +620,14 @@ function ImpactPanel({ impact, loading, error }) {
           Object.values(impact.breakdown_delta).some((v) => v !== 0) && (
             <div
               style={{
-                borderTop: "1px solid var(--border)",
+                borderTop: "1px solid var(--border-m)",
                 paddingTop: 10,
                 marginTop: 10,
               }}
             >
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   color: "var(--text-3)",
                   marginBottom: 7,
                   letterSpacing: ".06em",
@@ -631,13 +642,11 @@ function ImpactPanel({ impact, loading, error }) {
                       <span
                         key={k}
                         style={{
-                          fontSize: 11,
+                          fontSize: fs.xs,
                           padding: "3px 8px",
                           borderRadius: 4,
                           background:
-                            v > 0
-                              ? "rgba(34,197,94,0.1)"
-                              : "rgba(239,68,68,0.1)",
+                            v > 0 ? "var(--success-bg)" : "var(--danger-bg)",
                           color: v > 0 ? "var(--success)" : "var(--danger)",
                         }}
                       >
@@ -765,9 +774,10 @@ export default function PRReviewTab({
       >
         <div className="tab-header-main">
           <span className="tab-header-icon">
-            <GitPullRequest size={15} strokeWidth={1.5} />
+            <GitPullRequest size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">09 — PR Review</div>
             <div className="tab-header-title">PR Review</div>
             <div className="tab-header-sub">
               AI-powered pull request analysis
@@ -789,7 +799,7 @@ export default function PRReviewTab({
       {/* Manual input — always available as fallback */}
       <div
         style={{
-          fontSize: 11,
+          fontSize: fs.xs,
           color: "var(--text-3)",
           marginBottom: 6,
           letterSpacing: ".05em",
@@ -835,7 +845,7 @@ export default function PRReviewTab({
               </>
             ) : (
               <>
-                <TrendingUp size={13} strokeWidth={1.5} /> Predict Impact
+                <TrendingUp size={13} /> Predict Impact
               </>
             )}
           </button>
@@ -850,7 +860,6 @@ export default function PRReviewTab({
       >
         <ChevronDown
           size={12}
-          strokeWidth={1.5}
           style={{
             transform: showAdvanced ? "none" : "rotate(-90deg)",
             transition: "transform 0.15s",
@@ -878,7 +887,7 @@ export default function PRReviewTab({
           className="error-banner"
           style={{ marginBottom: 16, marginTop: 8, borderRadius: 6 }}
         >
-          <AlertTriangle size={13} strokeWidth={1.5} />
+          <AlertTriangle size={13} />
           <span>{error}</span>
         </div>
       )}
@@ -939,15 +948,9 @@ export default function PRReviewTab({
                     <span className="t-label">VERDICT</span>
                   </div>
                   <div className="verdict-line">
-                    {verdictClass === "approve" && (
-                      <Check size={24} strokeWidth={2} />
-                    )}
-                    {verdictClass === "changes" && (
-                      <AlertTriangle size={24} strokeWidth={2} />
-                    )}
-                    {verdictClass === "discuss" && (
-                      <MessageSquare size={24} strokeWidth={2} />
-                    )}
+                    {verdictClass === "approve" && <Check size={24} />}
+                    {verdictClass === "changes" && <AlertTriangle size={24} />}
+                    {verdictClass === "discuss" && <MessageSquare size={24} />}
                     {parsed.verdict}
                   </div>
                   {parsed.verdictLine &&

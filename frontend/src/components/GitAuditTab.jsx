@@ -8,23 +8,24 @@ import {
   ShieldAlert,
   FileWarning,
   ExternalLink,
-} from "lucide-react";
+} from "../icons";
+import { fs } from "../typeScale";
 
 const QUALITY_META = {
   good: {
     label: "Good",
     color: "var(--success)",
-    icon: <CheckCircle size={11} strokeWidth={1.5} />,
+    icon: <CheckCircle size={11} />,
   },
   warn: {
     label: "Vague",
     color: "var(--warning)",
-    icon: <AlertTriangle size={11} strokeWidth={1.5} />,
+    icon: <AlertTriangle size={11} />,
   },
   bad: {
     label: "Poor",
     color: "var(--danger)",
-    icon: <AlertTriangle size={11} strokeWidth={1.5} />,
+    icon: <AlertTriangle size={11} />,
   },
 };
 
@@ -36,7 +37,7 @@ function StatPill({ label, value, color }) {
         flexDirection: "column",
         alignItems: "center",
         padding: "10px 18px",
-        background: "var(--surface-2)",
+        background: "var(--surface)",
         borderRadius: 8,
         border: "1px solid var(--border)",
         minWidth: 80,
@@ -44,7 +45,7 @@ function StatPill({ label, value, color }) {
     >
       <span
         style={{
-          fontSize: 22,
+          fontSize: fs.xxxl,
           fontWeight: 700,
           color: color || "var(--text-1)",
           fontFamily: "var(--font-mono)",
@@ -52,7 +53,7 @@ function StatPill({ label, value, color }) {
       >
         {value}
       </span>
-      <span style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>
+      <span style={{ fontSize: fs.xs, color: "var(--text-3)", marginTop: 2 }}>
         {label}
       </span>
     </div>
@@ -83,7 +84,7 @@ function CommitRow({ commit }) {
             alignItems: "center",
             gap: 4,
             color: q.color,
-            fontSize: 11,
+            fontSize: fs.xs,
             minWidth: 60,
             flexShrink: 0,
           }}
@@ -93,7 +94,7 @@ function CommitRow({ commit }) {
         <div className="row-main">
           <span
             className="row-title"
-            style={{ fontFamily: "var(--font-mono)", fontSize: 12 }}
+            style={{ fontFamily: "var(--font-mono)", fontSize: fs.sm }}
           >
             {commit.sha}
           </span>
@@ -108,19 +109,19 @@ function CommitRow({ commit }) {
             flexShrink: 0,
           }}
         >
-          <span style={{ fontSize: 11, color: "var(--text-3)" }}>
+          <span style={{ fontSize: fs.xs, color: "var(--text-3)" }}>
             {commit.author}
           </span>
           <span
             style={{
-              fontSize: 11,
+              fontSize: fs.xs,
               color: "var(--text-3)",
               display: "flex",
               alignItems: "center",
               gap: 3,
             }}
           >
-            <Clock size={9} strokeWidth={1.5} /> {date}
+            <Clock size={9} /> {date}
           </span>
         </div>
         {commit.url && (
@@ -128,6 +129,7 @@ function CommitRow({ commit }) {
             href={commit.url}
             target="_blank"
             rel="noopener noreferrer"
+            aria-label="Open commit on GitHub"
             style={{
               color: "var(--text-3)",
               flexShrink: 0,
@@ -136,7 +138,7 @@ function CommitRow({ commit }) {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <ExternalLink size={12} strokeWidth={1.5} />
+            <ExternalLink size={12} />
           </a>
         )}
       </div>
@@ -145,7 +147,7 @@ function CommitRow({ commit }) {
           className="row-expand"
           style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 12,
+            fontSize: fs.sm,
             whiteSpace: "pre-wrap",
             color: "var(--text-2)",
           }}
@@ -176,7 +178,7 @@ function SecretRow({ finding }) {
           className="row-path"
           style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 11,
+            fontSize: fs.xs,
             color: "var(--text-3)",
             maxWidth: 200,
             overflow: "hidden",
@@ -248,9 +250,9 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
   if (!analyzed && !isAnalyzing) {
     return (
       <div className="empty">
-        <GitCommit size={20} className="empty-icon" strokeWidth={1.5} />
+        <GitCommit size={20} className="empty-icon" />
         <div className="empty-title">Git Audit not available</div>
-        <div className="empty-sub">Analyze a repository to get started</div>
+        <div className="empty-sub">Load a repository to run an analysis</div>
       </div>
     );
   }
@@ -260,7 +262,7 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
   if (analyzed && !isAnalyzing && !audit) {
     return (
       <div className="empty">
-        <GitCommit size={20} className="empty-icon" strokeWidth={1.5} />
+        <GitCommit size={20} className="empty-icon" />
         <div className="empty-title">No commit data available</div>
         <div className="empty-sub">
           Repository may be private or GitHub API rate-limited
@@ -275,9 +277,10 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
       <div className="tab-header">
         <div className="tab-header-main">
           <span className="tab-header-icon">
-            <GitCommit size={15} strokeWidth={1.5} />
+            <GitCommit size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">06 — Git Audit</div>
             <div className="tab-header-title">Git Audit</div>
             <div className="tab-header-sub">
               {stats.total || 0} commits · {totalIssues} issue
@@ -288,14 +291,7 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
       </div>
 
       {/* Stats row */}
-      <div
-        style={{
-          display: "flex",
-          gap: 10,
-          padding: "16px 20px",
-          flexWrap: "wrap",
-        }}
-      >
+      <div className="git-stats">
         <StatPill label="Commits" value={stats.total || 0} />
         <StatPill
           label="Poor msgs"
@@ -320,10 +316,7 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
       </div>
 
       {/* Section pills */}
-      <div
-        className="tab-header"
-        style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}
-      >
+      <div className="sec-toolbar">
         <div className="sev-pills">
           {[
             { id: "commits", label: "All Commits", count: stats.total },
@@ -341,11 +334,7 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
               onClick={() => setSection(id)}
             >
               {alert && section !== id && (
-                <AlertTriangle
-                  size={10}
-                  strokeWidth={2}
-                  style={{ color: "var(--danger)" }}
-                />
+                <AlertTriangle size={10} style={{ color: "var(--danger)" }} />
               )}
               {label}
               {count != null && <span className="count">{count}</span>}
@@ -362,7 +351,6 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
               <CheckCircle
                 size={20}
                 className="empty-icon"
-                strokeWidth={1.5}
                 style={{ color: "var(--success)" }}
               />
               <div className="empty-title">No secrets detected</div>
@@ -376,16 +364,15 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
                 <>
                   <div
                     style={{
-                      padding: "10px 20px 4px",
-                      fontSize: 11,
+                      padding: "10px 28px 4px",
+                      fontSize: fs.xs,
                       color: "var(--text-3)",
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
                     }}
                   >
-                    <FileWarning size={11} strokeWidth={1.5} /> SENSITIVE FILES
-                    IN REPO
+                    <FileWarning size={11} /> SENSITIVE FILES IN REPO
                   </div>
                   {senFiles.map((f, i) => (
                     <SensitiveFileRow key={i} item={f} />
@@ -396,16 +383,15 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
                 <>
                   <div
                     style={{
-                      padding: "10px 20px 4px",
-                      fontSize: 11,
+                      padding: "10px 28px 4px",
+                      fontSize: fs.xs,
                       color: "var(--text-3)",
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
                     }}
                   >
-                    <ShieldAlert size={11} strokeWidth={1.5} /> HARDCODED
-                    SECRETS IN CODE
+                    <ShieldAlert size={11} /> HARDCODED SECRETS IN CODE
                   </div>
                   {secrets.map((s, i) => (
                     <SecretRow key={i} finding={s} />
@@ -422,7 +408,6 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
               <CheckCircle
                 size={20}
                 className="empty-icon"
-                strokeWidth={1.5}
                 style={{ color: "var(--success)" }}
               />
               <div className="empty-title">

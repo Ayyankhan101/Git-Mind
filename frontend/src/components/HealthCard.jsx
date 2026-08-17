@@ -22,9 +22,9 @@ function MiniBar({ value, color, delay = 0 }) {
   useEffect(() => {
     if (!ref.current) return;
     const el = ref.current;
-    el.style.width = "0%";
+    el.style.transform = "scaleX(0)";
     const timer = setTimeout(() => {
-      el.style.width = `${value}%`;
+      el.style.transform = `scaleX(${value / 100})`;
     }, 100 + delay);
     return () => clearTimeout(timer);
   }, [value, delay]);
@@ -32,7 +32,9 @@ function MiniBar({ value, color, delay = 0 }) {
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.06)",
+        /* --health-track lets the editorial band variant retune the
+           track to on-primary without touching the default surface. */
+        background: "var(--health-track, var(--border-s))",
         borderRadius: 4,
         height: 8,
         width: "100%",
@@ -42,28 +44,42 @@ function MiniBar({ value, color, delay = 0 }) {
       <div
         ref={ref}
         style={{
-          background: `linear-gradient(90deg, ${color}, ${color}dd)`,
+          // Fill spans the full track; the visible portion is driven by
+          // transform scaleX (compositor-friendly) instead of width.
+          background: `linear-gradient(90deg, ${color}, color-mix(in srgb, ${color} 85%, #000))`,
+          width: "100%",
           height: "100%",
+          transformOrigin: "left center",
+          transform: "scaleX(0)",
           borderRadius: 4,
-          transition: "width 0.8s cubic-bezier(0.22, 1, 0.36, 1)",
-          boxShadow: `0 0 8px ${color}44`,
+          transition: "transform 0.8s cubic-bezier(0.22, 1, 0.36, 1)",
+          boxShadow: `0 0 8px color-mix(in srgb, ${color} 30%, transparent)`,
         }}
       />
     </div>
   );
 }
 
-export default function HealthCard({ health }) {
+export default function HealthCard({ health, variant }) {
   if (!health) return null;
   const gradeColor = GRADE_COLOR[health.grade] || "var(--text-3)";
+  /* "band": the editorial stats-band treatment (--primary-strong fill,
+     on-primary type) used on the dashboard grade card. */
+  const isBand = variant === "band";
 
   return (
-    <div className="health-card">
+    <div
+      className={`health-card${isBand ? " health-card--band" : ""}`}
+      data-testid="health-card"
+    >
       {/* Glow backdrop */}
       <div
         className="health-card-glow"
         style={{
-          background: `radial-gradient(circle at 30% 50%, ${gradeColor}18, transparent 60%)`,
+          // `var(--x)18` alpha-suffix is invalid CSS (dropped -> glow never
+          // painted); use color-mix so the glow is theme-aware like the
+          // float shapes.
+          background: `radial-gradient(circle at 30% 50%, color-mix(in srgb, ${gradeColor} 10%, transparent), transparent 60%)`,
         }}
       />
 
@@ -87,7 +103,7 @@ export default function HealthCard({ health }) {
               cy="48"
               r="42"
               fill="none"
-              stroke="rgba(255,255,255,0.06)"
+              stroke="var(--health-track, var(--border-s))"
               strokeWidth="4"
             />
             <circle
@@ -104,7 +120,14 @@ export default function HealthCard({ health }) {
             />
           </svg>
           <div className="health-grade-text">
-            <span className="health-grade-letter" style={{ color: gradeColor }}>
+            <span
+              className="health-grade-letter"
+              style={{
+                /* Band mode drops the semantic grade color for on-primary
+                   (the ring arc still carries the grade color). */
+                color: isBand ? "var(--text-on-primary)" : gradeColor,
+              }}
+            >
               {health.grade}
             </span>
             <span className="health-grade-score">{health.score}/100</span>

@@ -2,6 +2,7 @@ import atexit
 import contextlib
 import os
 import re
+import shutil
 import stat
 import tempfile
 import time
@@ -101,19 +102,43 @@ def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None =
         clone_kwargs["branch"] = branch
     else:
         clone_kwargs["no_single_branch"] = True
+
+    # Clone with one retry: shallow clones fail on transient network/DNS
+    # hiccups that usually clear within a couple of seconds. Deterministic
+    # failures (repo not found, auth, HTTP 4xx) are raised immediately — no
+    # retry. Each attempt gets a fresh dest so a partially-written clone can't
+    # poison the retry with the "destination path already exists" error.
+    max_attempts = 2
     try:
-        repo = git.Repo.clone_from(
-            clone_url,
-            dest,
-            env=_env,
-            **clone_kwargs,
-        )
-        head_sha = repo.head.commit.hexsha
-        repo.close()  # prevents resource leak on Windows
-    except git.exc.GitCommandError as exc:
-        _cleanup_temp_dir(dest)
-        raise RuntimeError(f"Git clone failed: {exc}") from exc
+        for attempt in range(1, max_attempts + 1):
+            try:
+                repo = git.Repo.clone_from(
+                    clone_url,
+                    dest,
+                    env=_env,
+                    **clone_kwargs,
+                )
+                head_sha = repo.head.commit.hexsha
+                repo.close()  # prevents resource leak on Windows
+                break
+            except git.exc.GitCommandError as exc:
+                if attempt < max_attempts and _is_transient_clone_failure(exc):
+                    logger.warning(
+                        "Clone attempt %d/%d failed — retrying",
+                        attempt,
+                        max_attempts,
+                        repo=repo_url,
+                        stderr=(exc.stderr or "")[:200],
+                    )
+                    time.sleep(2)
+                    shutil.rmtree(dest, ignore_errors=True)
+                    os.makedirs(dest, exist_ok=True)
+                else:
+                    _cleanup_temp_dir(dest)
+                    raise RuntimeError(_clone_failure_message(repo_url, exc)) from exc
     finally:
+        # The askpass script must outlive every retry attempt — deleting it
+        # after attempt 1 would make a retried private-repo clone fail auth.
         if _askpass_script:
             with contextlib.suppress(OSError):
                 os.unlink(_askpass_name)
@@ -176,16 +201,48 @@ def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None =
 
 _GITHUB_URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+/?$")
 
+# Deterministic clone failures — raising immediately instead of retrying.
+# Covers: repo missing, auth errors, HTTP 4xx (except 408 timeout / 429 rate
+# limit, which can clear). Everything else (DNS, connect, timeout, 5xx) is
+# treated as transient.
+_NON_TRANSIENT_CLONE_RE = re.compile(
+    r"repository not found"
+    r"|does not exist"
+    r"|not found"
+    r"|could not read username"
+    r"|authentication (failed|required)"
+    r"|permission denied"
+    r"|access denied"
+    r"|invalid username or password"
+    r"|terminal prompts disabled"
+    r"|returned error: 4(?!0[89]|29)\d\d",
+    re.IGNORECASE,
+)
+
+
+def _is_transient_clone_failure(exc: git.exc.GitCommandError) -> bool:
+    """False for deterministic failures (404 / auth / missing repo) — no retry.
+
+    Failures without stderr default to transient so ambiguous cases still get
+    one retry.
+    """
+    stderr = exc.stderr or ""
+    return not bool(_NON_TRANSIENT_CLONE_RE.search(stderr))
+
 
 def _validate_url(repo_url: str) -> None:
     if not _GITHUB_URL_RE.match(repo_url):
         raise ValueError(f"Only public GitHub URLs are supported (https://github.com/owner/repo). Got: {repo_url!r}")
 
 
+def _clone_failure_message(repo_url: str, exc: git.exc.GitCommandError) -> str:
+    """Surface the git `fatal:` line (stderr) — the part that names the real cause."""
+    detail = (exc.stderr or str(exc)).strip().replace("\n", " ").replace("\r", " ")
+    return f"Git clone failed for {repo_url}: {detail[:400]}"
+
+
 def _cleanup_temp_dir(path: str) -> None:
     """Remove a temp directory and untrack it."""
-    import shutil
-
     _active_temp_dirs.pop(path, None)
     with contextlib.suppress(OSError):
         shutil.rmtree(path, ignore_errors=True)

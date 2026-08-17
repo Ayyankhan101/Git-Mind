@@ -5,7 +5,7 @@ test("renders nothing when toasts is empty", () => {
   const { container } = render(
     <ToastSystem toasts={[]} onDismiss={() => {}} />,
   );
-  expect(container.innerHTML).toBe("");
+  expect(container).toBeEmptyDOMElement();
 });
 
 test("renders toast with title and subtitle", () => {
@@ -30,11 +30,15 @@ test("shows count badge when count > 1", () => {
 });
 
 test("calls onDismiss when dismiss button clicked", () => {
+  jest.useFakeTimers();
   const handleDismiss = jest.fn();
   const toasts = [{ id: 4, kind: "danger", title: "Error" }];
   render(<ToastSystem toasts={toasts} onDismiss={handleDismiss} />);
-  fireEvent.click(screen.getByRole("button"));
+  fireEvent.click(screen.getByRole("button", { name: "Dismiss notification" }));
+  expect(handleDismiss).not.toHaveBeenCalledWith(4);
+  jest.advanceTimersByTime(260);
   expect(handleDismiss).toHaveBeenCalledWith(4);
+  jest.useRealTimers();
 });
 
 test("renders multiple toasts", () => {
@@ -49,8 +53,15 @@ test("renders multiple toasts", () => {
 
 test("applies kind class to toast", () => {
   const toasts = [{ id: 7, kind: "danger", title: "Boom" }];
-  const { container } = render(
-    <ToastSystem toasts={toasts} onDismiss={() => {}} />,
-  );
-  expect(container.querySelector(".toast.danger")).toBeInTheDocument();
+  render(<ToastSystem toasts={toasts} onDismiss={() => {}} />);
+  expect(screen.getByTestId("toast")).toHaveClass("danger");
+});
+
+test("announces toasts through an aria-live status region", () => {
+  const toasts = [{ id: 8, kind: "info", title: "Analysis started" }];
+  render(<ToastSystem toasts={toasts} onDismiss={() => {}} />);
+  const region = screen.getByRole("status");
+  // Screen readers announce additions to this region unprompted.
+  expect(region).toHaveAttribute("aria-live", "polite");
+  expect(region).toHaveClass("toasts");
 });

@@ -1,5 +1,6 @@
 import React from "react";
-import { FolderOpen, Command, Building2 } from "lucide-react";
+import { FolderOpen, Command, Building2 } from "../icons";
+import { fs } from "../typeScale";
 
 const IS_MAC = /Mac/i.test(
   navigator.userAgentData?.platform ?? navigator.platform,
@@ -25,7 +26,7 @@ export default function NavRail({
         data-tip="Repositories"
         aria-label="Repositories"
       >
-        <FolderOpen size={18} strokeWidth={1.5} />
+        <FolderOpen size={18} />
       </button>
 
       <div className="nav-divider" />
@@ -39,7 +40,7 @@ export default function NavRail({
           aria-label={label}
           aria-current={activeTab === key ? "page" : undefined}
         >
-          <Icon size={18} strokeWidth={1.5} />
+          <Icon size={18} />
           <span className="nav-label">{label}</span>
           {count > 0 && (
             <span className={`nav-badge${alert ? " warn" : " info"}`}>
@@ -50,11 +51,27 @@ export default function NavRail({
       ))}
 
       {(isAnalyzing || analyzed) && (
-        <div className="nav-agents" title="Agent pipeline" aria-label="Agent pipeline status">
-          {["scanner", "architecture", "api_docs", "security", "cve_scanner", "chat", "git_audit", "solidity", "code_audit"].map((key) => (
+        <div
+          className="nav-agents"
+          title="Agent pipeline"
+          aria-label="Agent pipeline status"
+        >
+          {[
+            "scanner",
+            "architecture",
+            "api_docs",
+            "security",
+            "cve_scanner",
+            "chat",
+            "git_audit",
+            "solidity",
+            "code_audit",
+          ].map((key) => (
             <div
               key={key}
               className={`nav-agent-dot ${agentStatus[key] || "waiting"}`}
+              role="img"
+              aria-label={`${key.replace(/_/g, " ")}: ${agentStatus[key] || "waiting"}`}
             />
           ))}
         </div>
@@ -69,7 +86,7 @@ export default function NavRail({
           data-tip="Org Audit"
           aria-label="Org Audit"
         >
-          <Building2 size={18} strokeWidth={1.5} />
+          <Building2 size={18} />
         </button>
       )}
 
@@ -79,7 +96,7 @@ export default function NavRail({
         data-tip={`${mod}+K`}
         aria-label="Command palette"
       >
-        <Command size={18} strokeWidth={1.5} />
+        <Command size={18} />
       </button>
 
       <button
@@ -88,7 +105,9 @@ export default function NavRail({
         data-tip="Shortcuts"
         aria-label="Keyboard shortcuts"
       >
-        <span style={{ fontSize: 14, fontWeight: 700, lineHeight: 1 }}>?</span>
+        <span style={{ fontSize: fs.base, fontWeight: 700, lineHeight: 1 }}>
+          ?
+        </span>
       </button>
     </nav>
   );

@@ -1,5 +1,7 @@
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import App from "./App";
+import { loadSharedAnalysis } from "./api";
 
 jest.mock("./components/LandingPage", () => {
   return function MockLandingPage() {
@@ -16,12 +18,7 @@ jest.mock("./api", () => ({
   isValidGhToken: jest.fn().mockReturnValue(true),
 }));
 
-// mermaid is ESM-only and breaks Jest; mock it before the import chain pulls it in
-jest.mock("mermaid", () => ({
-  run: jest.fn(),
-  initialize: jest.fn(),
-  mermaidAPI: { getConfig: () => ({}) },
-}));
+// mermaid dependency was removed; no production code imports it anymore
 
 beforeAll(() => {
   global.WebSocket = class MockWS {
@@ -37,28 +34,59 @@ afterAll(() => {
   delete global.WebSocket;
 });
 
+function renderApp(path = "/dashboard") {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <App />
+    </MemoryRouter>,
+  );
+}
+
 test("renders app root", () => {
-  render(<App />);
+  renderApp("/");
   const elements = screen.getAllByText("GitMind");
   expect(elements.length).toBeGreaterThanOrEqual(1);
 });
 
-test("renders theme switcher", () => {
-  render(<App />);
-  expect(screen.getByTitle("Change theme")).toBeInTheDocument();
+test("renders theme switcher", async () => {
+  renderApp();
+  expect(await screen.findByLabelText("Change theme")).toBeInTheDocument();
 });
 
-test("renders keyboard help trigger", () => {
-  render(<App />);
-  expect(screen.getByLabelText("Keyboard shortcuts")).toBeInTheDocument();
+test("renders keyboard help trigger", async () => {
+  renderApp();
+  expect(
+    await screen.findByLabelText("Keyboard shortcuts"),
+  ).toBeInTheDocument();
 });
 
-test("renders command palette trigger", () => {
-  render(<App />);
-  expect(screen.getByLabelText("Command palette")).toBeInTheDocument();
+test("renders command palette trigger", async () => {
+  renderApp();
+  expect(await screen.findByLabelText("Command palette")).toBeInTheDocument();
 });
 
-test("renders repository toggle", () => {
-  render(<App />);
-  expect(screen.getByLabelText("Repositories")).toBeInTheDocument();
+test("renders repository toggle", async () => {
+  renderApp();
+  expect(await screen.findByLabelText("Repositories")).toBeInTheDocument();
+});
+
+test("shows an error overlay when a shared analysis 404s", async () => {
+  loadSharedAnalysis.mockRejectedValueOnce(
+    Object.assign(new Error("Analysis not found"), { status: 404 }),
+  );
+  renderApp("/?share=missing");
+  expect(
+    await screen.findByText(/could not open analysis/i),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /retry/i })).toBeInTheDocument();
+});
+
+test("shows the unlock flow for a locked shared analysis", async () => {
+  loadSharedAnalysis.mockRejectedValueOnce(
+    Object.assign(new Error("Auth required"), { status: 401 }),
+  );
+  renderApp("/?share=old-session");
+  expect(
+    await screen.findByRole("button", { name: /unlock/i }),
+  ).toBeInTheDocument();
 });

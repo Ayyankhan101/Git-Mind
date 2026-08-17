@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { Code, ExternalLink, Wrench, ChevronDown, ChevronUp } from "lucide-react";
+import { Code, ExternalLink, Wrench, ChevronDown, ChevronUp } from "../icons";
+import { fs } from "../typeScale";
 
 const LANG_COLORS = {
   python: "#3572A5",
@@ -52,11 +53,11 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 4,
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   fontWeight: 600,
                   color: "var(--text-3)",
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid var(--border)",
+                  background: "var(--hover)",
+                  border: "1px solid var(--border-m)",
                   borderRadius: 4,
                   padding: "1px 7px",
                   fontFamily: "var(--font-mono)",
@@ -80,9 +81,9 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
                 marginTop: 8,
                 padding: "8px 12px",
                 borderRadius: 6,
-                background: "rgba(34,197,94,0.08)",
-                border: "1px solid rgba(34,197,94,0.2)",
-                fontSize: 12,
+                background: "var(--success-bg)",
+                border: "1px solid var(--success)",
+                fontSize: fs.sm,
                 lineHeight: 1.5,
                 color: "var(--success)",
               }}
@@ -91,7 +92,7 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
             </div>
           )}
           {finding.cwe && (
-            <div style={{ marginTop: 6, fontSize: 11 }}>
+            <div style={{ marginTop: 6, fontSize: fs.xs }}>
               <a
                 href={`https://cwe.mitre.org/data/definitions/${finding.cwe.replace("CWE-", "")}.html`}
                 target="_blank"
@@ -103,7 +104,7 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
                   gap: 3,
                 }}
               >
-                <ExternalLink size={11} strokeWidth={1.5} /> {finding.cwe}
+                <ExternalLink size={11} /> {finding.cwe}
               </a>
             </div>
           )}
@@ -127,7 +128,7 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
                   <p
                     style={{
                       color: "var(--success)",
-                      fontSize: 13,
+                      fontSize: fs.md,
                       marginBottom: 4,
                     }}
                   >
@@ -166,8 +167,8 @@ function LangSection({ langResult, onFix, fixLoading, fixResult }) {
           alignItems: "center",
           gap: 8,
           cursor: "pointer",
-          padding: "10px 0",
-          borderBottom: "1px solid var(--border)",
+          padding: "10px 28px",
+          borderBottom: "1px solid var(--border-m)",
           userSelect: "none",
         }}
       >
@@ -181,17 +182,27 @@ function LangSection({ langResult, onFix, fixLoading, fixResult }) {
           }}
         />
         <span
-          style={{ fontWeight: 600, fontSize: 13, textTransform: "capitalize" }}
+          style={{
+            fontWeight: 600,
+            fontSize: fs.md,
+            textTransform: "capitalize",
+          }}
         >
           {language}
         </span>
-        <span style={{ fontSize: 11, color: "var(--text-3)", marginLeft: 4 }}>
+        <span
+          style={{ fontSize: fs.xs, color: "var(--text-3)", marginLeft: 4 }}
+        >
           · {file_count} file{file_count !== 1 ? "s" : ""}· {findings.length}{" "}
           finding{findings.length !== 1 ? "s" : ""}
           {tool && ` · ${tool}`}
         </span>
         <span
-          style={{ marginLeft: "auto", fontSize: 11, color: "var(--text-3)" }}
+          style={{
+            marginLeft: "auto",
+            fontSize: fs.xs,
+            color: "var(--text-3)",
+          }}
         >
           {langExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
         </span>
@@ -251,7 +262,7 @@ export default function CodeAuditTab({
   if (!analyzed && !isAnalyzing) {
     return (
       <div className="empty">
-        <Code size={20} className="empty-icon" strokeWidth={1.5} />
+        <Code size={20} className="empty-icon" />
         <div className="empty-title">Code Audit</div>
         <div className="empty-sub">
           Analyze a repository to see per-language code quality and security
@@ -266,7 +277,7 @@ export default function CodeAuditTab({
   if (analyzed && !totalFindings) {
     return (
       <div className="empty">
-        <Code size={20} className="empty-icon" strokeWidth={1.5} />
+        <Code size={20} className="empty-icon" />
         <div className="empty-title">No issues found</div>
         <div className="empty-sub">
           No code quality or security issues detected across all languages.
@@ -280,9 +291,10 @@ export default function CodeAuditTab({
       <div className="tab-header">
         <div className="tab-header-main">
           <span className="tab-header-icon">
-            <Code size={15} strokeWidth={1.5} />
+            <Code size={15} />
           </span>
           <div className="tab-header-text">
+            <div className="tab-header-eyebrow">08 — Code Audit</div>
             <div className="tab-header-title">Code Audit</div>
             <div className="tab-header-sub">
               {totalFindings} finding{totalFindings !== 1 ? "s" : ""} across{" "}
@@ -292,7 +304,9 @@ export default function CodeAuditTab({
         </div>
       </div>
 
-      <div style={{ padding: "0 16px" }}>
+      {/* Language sections share the 28px row gutter — no extra wrapper
+          padding, so the section headers line up with the finding rows. */}
+      <div>
         {codeAudit.map((result, i) => (
           <LangSection
             key={result.language || i}

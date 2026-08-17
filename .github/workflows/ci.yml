@@ -35,9 +35,18 @@ jobs:
           ruff format --check backend/
           echo "=== MyPy ==="
           mypy backend/ --ignore-missing-imports
-          echo "=== Prettier check ==="
-          cd frontend && npx prettier --check "src/**/*.{js,jsx,ts,tsx,css,json}" && cd ..
-          echo "=== All checks passed ==="
+      # Prettier gets its own step so a failed --check propagates as a job
+      # failure. (In the old combined step the mid-chain `&&` failure was
+      # silently swallowed by bash -e, so the gate never failed the job.)
+      - name: Prettier check
+        working-directory: frontend
+        run: npx prettier --check "src/**/*.{js,jsx,ts,tsx,css,json}"
+      # Dead-class gate: every className in src must resolve to a CSS rule.
+      # Catches orphaned classes (Tailwind utilities after the import was
+      # dropped, unshipped component classes) before they reach the build.
+      - name: Classname audit (dead-class gate)
+        working-directory: frontend
+        run: python3 e2e/classname_audit.py --check
 
   backend-tests:
     runs-on: ubuntu-latest
@@ -95,7 +104,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
       - name: Run tests with coverage
-        run: CI=true npx react-scripts test --coverage --watchAll=false --ci --testPathIgnorePatterns='src/components/LandingPage\.test\.jsx' --testPathIgnorePatterns='src/App\.test\.jsx'
+        run: CI=true npx react-scripts test --coverage --watchAll=false --ci
       - name: Build
         run: npm run build
         env:
@@ -109,9 +118,113 @@ jobs:
           path: frontend/coverage/
           retention-days: 7
 
+  frontend-smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+      - name: Build
+        run: npm run build
+        env:
+          NODE_OPTIONS: "--openssl-legacy-provider --max-old-space-size=4096"
+          CI: "true"
+      # Note: ubuntu runners have no Brave installed, so this job exercises the
+      # script's bundled-Chromium fallback. Brave is used automatically when the
+      # script runs locally (macOS/Linux) or via $BRAVE_PATH / --browser brave.
+      - name: Install Playwright (bundled Chromium fallback)
+        run: |
+          pip install playwright pymupdf --break-system-packages
+          python -m playwright install chromium --with-deps
+      - name: Run frontend smoke test
+        run: python e2e/smoke_test.py --browser auto
+      # PDF export regression gate: the three exports (analysis / summary /
+      # incident) are generated through the real app and inspected with
+      # pymupdf — every text span and drawing must stay inside the printable
+      # content area (catches pdfmake tables that render wider than their
+      # declared widths), Geist fonts must be embedded, and the brand accent /
+      # severity chips must paint. Any drift fails the build.
+      - name: Run PDF layout audit (export regression gate)
+        run: python e2e/pdf_layout_audit.py --check
+      # Spacing regression gate: every tab must keep its standard tab-header
+      # (32px icon / 12px sub) and the shared 28px content gutter. Any drift
+      # (e.g. someone reverts .sev-filter to 24px) fails the build here.
+      - name: Run spacing audit (gutter/header regression gate)
+        run: python e2e/spacing_audit.py --check
+      # Overlap regression gate: clicking a diagram node must push the
+      # canvas (flex sibling) and keep the floating control dock clear — a
+      # revert to absolute overlay, or any panel/dock overlap, fails here.
+      - name: Run overlap audit (node panel / dock regression gate)
+        run: python e2e/overlap_probe.py --check
+      - name: Upload smoke screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-smoke-screenshots
+          path: /tmp/gitmind-smoke/
+          retention-days: 7
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install tools
+        run: |
+          pip install pip-audit --break-system-packages
+          GITLEAKS_VERSION=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest | grep -oP '"tag_name":\s*"\K[^"]+')
+          curl -sLo gitleaks.tgz "https://github.com/gitleaks/gitleaks/releases/download/${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION#v}_linux_x64.tar.gz"
+          tar -xzf gitleaks.tgz gitleaks
+          sudo mv gitleaks /usr/local/bin/
+      # Modern pip-audit (>=2.4) removed the --fail-on severity threshold:
+      # the audit now exits 1 when ANY known vulnerability is found. Keep
+      # the unpinned tool and its default fail-on-any behavior rather than
+      # pinning a years-old scanner to preserve a removed flag.
+      #
+      # Ignored advisories (no upstream fix exists; package already at
+      # latest PyPI version — re-check on every dep bump):
+      #   PYSEC-2026-311  chromadb pre-auth code injection (no fixed release)
+      #   PYSEC-2026-2447 diskcache unsafe pickle deserialization (no fixed release)
+      - name: Scan Python dependencies
+        run: pip-audit -r backend/requirements.txt --ignore-vuln PYSEC-2026-311 --ignore-vuln PYSEC-2026-2447
+      # Audit production dependencies only: react-scripts (build tool) and the
+      # rest of the dev toolchain (lighthouse CI, size-limit, svgo/workbox
+      # chains) carry advisories with no compatible fix (e.g. extract-zip has
+      # no patched release), so a full-tree gate can never pass. Production
+      # deps audit clean; dev-tooling advisories are tracked via Dependabot.
+      - name: Scan npm dependencies (production)
+        working-directory: frontend
+        run: |
+          npm ci --legacy-peer-deps
+          npm audit --omit=dev --audit-level=high
+      # .gitleaks.toml extends the default rules and allowlists the known
+      # false positive from a minified third-party Obsidian plugin commit.
+      - name: Gitleaks secret scan (full history)
+        run: gitleaks detect --source . --no-banner --config .gitleaks.toml
+
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [lint, backend-tests, frontend-tests]
+    needs: [lint, backend-tests, frontend-tests, frontend-smoke, security]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

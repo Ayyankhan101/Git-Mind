@@ -1,0 +1,61 @@
+/* ============================================================
+   DAYLIGHT THEME (lazy-loaded)
+   ============================================================ */
+[data-theme="daylight"],
+.daylight {
+  /* Native controls match the bright canvas (light scrollbars/inputs). */
+  color-scheme: light;
+
+  --bg: #f8fafc;
+  --bg-alt: #f1f5f9;
+  --surface-0: #ffffff;
+  --surface-1: #f8fafc;
+  --surface-2: #f1f5f9;
+  --surface-3: #e2e8f0;
+  --surface-4: #cbd5e1;
+
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-strong: #1d4ed8;
+  --primary-muted: rgba(59, 130, 246, 0.12);
+  --primary-subtle: rgba(59, 130, 246, 0.06);
+
+  /* Gradient partner — violet (freebuff blue→violet) */
+  --accent-2: #8b5cf6;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
+  --text-on-primary: #ffffff;
+
+  --border-subtle: rgba(15, 23, 42, 0.06);
+  --border-default: rgba(15, 23, 42, 0.1);
+  --border-strong: rgba(15, 23, 42, 0.16);
+  --border-accent: rgba(59, 130, 246, 0.3);
+
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(15, 23, 42, 0.08);
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 8px 32px rgba(15, 23, 42, 0.12);
+  --shadow-accent: 0 4px 20px rgba(59, 130, 246, 0.15);
+
+  --success: #16a34a;
+  --success-bg: rgba(22, 163, 74, 0.08);
+  --warning: #d97706;
+  --warning-bg: rgba(217, 119, 6, 0.08);
+  --warning-border: rgba(217, 119, 6, 0.3);
+  --danger: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.08);
+  --info: #2563eb;
+  --info-bg: rgba(37, 99, 235, 0.08);
+
+  --code-keyword: #7c3aed;
+  --code-string: #16a34a;
+  --code-comment: #94a3b8;
+  --code-fn: #2563eb;
+  --code-number: #d97706;
+  --code-operator: #2563eb;
+  --code-punctuation: #475569;
+}

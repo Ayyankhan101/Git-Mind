@@ -1,5 +1,4 @@
-import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 
 class TestHealthAgent:
@@ -17,12 +16,9 @@ class TestHealthAgent:
 
 
 class TestArchitectureAgent:
-    @patch("agents.architecture.invoke_with_retry")
-    @patch("agents.architecture.get_cached", return_value=None)
-    def test_api_doc_returns_diagram(self, mock_cache, mock_invoke):
+    @patch("agents.architecture.run_dspy_cached", return_value="graph TD\n    A[test]\n")
+    def test_architecture_returns_diagram(self, mock_run):
         from agents.architecture import run_architecture_agent
-
-        mock_invoke.return_value = MagicMock(content=json.dumps({"diagram": "graph TD\n    A[test]\n"}))
 
         result = run_architecture_agent(["src/main.py"], {"src/main.py": "print('hello')"})
         assert isinstance(result, str)

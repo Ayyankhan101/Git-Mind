@@ -8,7 +8,8 @@ import {
   Brain,
   GitCommit,
   ChevronDown,
-} from "lucide-react";
+} from "../icons";
+import { fs } from "../typeScale";
 
 const AGENTS = [
   { key: "scanner", label: "REPO SCANNER", Icon: Search },
@@ -59,8 +60,8 @@ export default function AgentPipeline({
 
   return (
     <div className={`pipeline${mini ? " mini" : ""}`}>
-      <div className="pipeline-header">
-        <span className="t-label" style={{ fontSize: 11 }}>
+      <div className="pipeline-header" data-testid="pipeline-header">
+        <span className="t-label" style={{ fontSize: fs.xs }}>
           AGENTS · {doneCount}/7
         </span>
         {allDone && (
@@ -71,7 +72,6 @@ export default function AgentPipeline({
             {expanded ? "collapse" : "expand"}
             <ChevronDown
               size={10}
-              strokeWidth={1.5}
               style={{
                 transform: expanded ? "none" : "rotate(-90deg)",
                 transition: "transform 0.15s",
@@ -108,11 +108,13 @@ export default function AgentPipeline({
             >
               <span className="pipe-dot" />
               <span className="pipe-name">{agent.label}</span>
-              <span className="pipe-time">
+              <span className="pipe-time" data-testid="pipe-time">
                 {rowStatus === "done" && (
                   <>{elapsedSec > 0 ? `${Math.min(elapsedSec, 99)}s` : "✓"}</>
                 )}
-                {rowStatus === "running" && <span className="spinner" />}
+                {rowStatus === "running" && (
+                  <span className="spinner" data-testid="agent-spinner" />
+                )}
               </span>
             </div>
           );

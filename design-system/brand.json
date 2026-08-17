@@ -1,0 +1,100 @@
+{
+  "name": "GitMind Midnight Studio",
+  "version": "1.0.0",
+  "surface": "web",
+  "product": "Code intelligence platform — repo analysis, security, architecture, code quality",
+  "palette": {
+    "bg": "#08090e",
+    "bgAlt": "#06070c",
+    "surface0": "#0d0e16",
+    "surface1": "#11121c",
+    "surface2": "#161824",
+    "surface3": "#1c1e2e",
+    "surface4": "#232538"
+  },
+  "accent": {
+    "primary": "#7c6fe0",
+    "primaryHover": "#8b7fe8",
+    "primaryStrong": "#6b5fd4",
+    "primaryMuted": "rgba(124, 111, 224, 0.15)",
+    "primarySubtle": "rgba(124, 111, 224, 0.08)"
+  },
+  "semantic": {
+    "success": "#34d399",
+    "successBg": "rgba(52, 211, 153, 0.08)",
+    "warning": "#fbbf24",
+    "warningBg": "rgba(251, 191, 36, 0.08)",
+    "danger": "#f87171",
+    "dangerBg": "rgba(248, 113, 113, 0.08)",
+    "info": "#60a5fa",
+    "infoBg": "rgba(96, 165, 250, 0.08)"
+  },
+  "text": {
+    "primary": "#f0eff4",
+    "secondary": "#a8a7b3",
+    "tertiary": "#6d6c7a",
+    "onPrimary": "#08090e"
+  },
+  "borders": {
+    "subtle": "rgba(255, 255, 255, 0.04)",
+    "default": "rgba(255, 255, 255, 0.06)",
+    "strong": "rgba(255, 255, 255, 0.10)",
+    "accent": "rgba(124, 111, 224, 0.25)"
+  },
+  "glass": {
+    "bg": "rgba(13, 14, 22, 0.7)",
+    "border": "rgba(255, 255, 255, 0.06)"
+  },
+  "shadows": {
+    "sm": "0 1px 2px rgba(0, 0, 0, 0.3)",
+    "md": "0 4px 12px rgba(0, 0, 0, 0.4)",
+    "lg": "0 8px 32px rgba(0, 0, 0, 0.5)",
+    "accent": "0 4px 20px rgba(124, 111, 224, 0.2)"
+  },
+  "radii": {
+    "sm": "6px",
+    "md": "10px",
+    "lg": "16px",
+    "xl": "24px",
+    "full": "999px"
+  },
+  "spacing": {
+    "xs": "4px",
+    "sm": "8px",
+    "md": "16px",
+    "lg": "24px",
+    "xl": "32px",
+    "2xl": "48px",
+    "3xl": "64px"
+  },
+  "typography": {"sans": "'Geist', -apple-system, BlinkMacSystemFont, sans-serif",
+     "mono": "'Geist Mono', 'SF Mono', monospace",
+    "scale": {
+      "display": { "weight": 700, "size": "48px", "tracking": "-0.025em" },
+      "h1": { "weight": 600, "size": "36px", "tracking": "-0.02em" },
+      "h2": { "weight": 600, "size": "28px", "tracking": "-0.01em" },
+      "h3": { "weight": 500, "size": "20px", "tracking": "normal" },
+      "body": { "weight": 400, "size": "16px", "tracking": "-0.006em" },
+      "small": { "weight": 400, "size": "14px", "tracking": "normal" },
+      "caption": { "weight": 400, "size": "12px", "tracking": "0.06em", "transform": "uppercase" },
+      "mono": { "weight": 400, "size": "15px", "tracking": "normal" }
+    }
+  },
+  "motion": {
+    "duration": {
+      "fast": "120ms",
+      "normal": "200ms",
+      "slow": "350ms"
+    },
+    "ease": "cubic-bezier(0.16, 1, 0.3, 1)"
+  },
+  "codeSyntax": {
+    "keyword": "#c4b5fd",
+    "string": "#a5d6a7",
+    "comment": "#6d6c7a",
+    "function": "#93c5fd",
+    "number": "#fbbf24",
+    "operator": "#93c5fd",
+    "punctuation": "#a8a7b3"
+  }
+}

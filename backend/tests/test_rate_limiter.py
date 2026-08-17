@@ -38,7 +38,7 @@ def test_different_endpoints_independent():
 
 
 def test_analyze_limit():
-    for _ in range(3):
+    for _ in range(2):
         allowed, _, _ = _mem_rate_check("analyze", "analyze_key")
         assert allowed is True
     allowed, _, _ = _mem_rate_check("analyze", "analyze_key")

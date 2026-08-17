@@ -6,8 +6,10 @@ import {
   Zap,
   Activity,
   ArrowUpRight,
-} from "lucide-react";
+  Download,
+} from "../icons";
 import gsap from "gsap";
+import { fs } from "../typeScale";
 import { fetchSummary, subscribeMonitor, fetchMonitorStatus } from "../api";
 import * as tokenManager from "../tokenManager";
 import HealthCard from "./HealthCard";
@@ -24,7 +26,7 @@ function Sparkline({
   data,
   width = 360,
   height = 60,
-  color = "var(--primary)",
+  color = "var(--accent)",
 }) {
   if (!data || data.length < 2) return null;
   const max = Math.max(...data);
@@ -114,7 +116,7 @@ function Donut({ segments, size = 120, thickness = 14 }) {
         fill="var(--text-1)"
         fontSize="22"
         fontWeight="600"
-        fontFamily="DM Sans, system-ui, sans-serif"
+        fontFamily="var(--font-sans)"
       >
         {total}
       </text>
@@ -124,7 +126,7 @@ function Donut({ segments, size = 120, thickness = 14 }) {
         textAnchor="middle"
         fill="var(--text-3)"
         fontSize="10"
-        fontFamily="DM Sans, system-ui, sans-serif"
+        fontFamily="var(--font-sans)"
         letterSpacing="0.14em"
       >
         FINDINGS
@@ -274,6 +276,26 @@ export default function SummaryTab({
     );
   }, [enabled]);
 
+  const handleExportPdf = async () => {
+    try {
+      const { buildSummaryPdf, downloadPdf, sanitizeFilename } =
+        await import("../pdfBuilder");
+      const docDef = buildSummaryPdf({
+        repoName,
+        summary: data?.summary,
+        stats: data?.stats,
+        health,
+        elapsedSec,
+      });
+      downloadPdf(
+        docDef,
+        `gitmind-summary-${sanitizeFilename(repoName)}-${Date.now()}.pdf`,
+      );
+    } catch (err) {
+      console.error("Summary export failed", err);
+    }
+  };
+
   const handleWatch = async () => {
     if (!repoUrl) return;
     const token = ghToken || tokenManager.get() || null;
@@ -296,9 +318,9 @@ export default function SummaryTab({
   if (!enabled && !isAnalyzing) {
     return (
       <div className="empty">
-        <BarChart3 size={20} className="empty-icon" strokeWidth={1.5} />
+        <BarChart3 size={20} className="empty-icon" />
         <div className="empty-title">Summary not available</div>
-        <div className="empty-sub">Analyze a repository to get started</div>
+        <div className="empty-sub">Load a repository to run an analysis</div>
       </div>
     );
   }
@@ -381,19 +403,35 @@ export default function SummaryTab({
   );
 
   return (
-    <div className="summary summary--upgraded">
+    <div className="summary">
       <FloatingShapes />
 
-      <div className="summary-header">
-        <h2>
-          <span className="summary-title-icon">
-            <BarChart3 size={24} strokeWidth={1.5} />
+      <div className="tab-header">
+        <div className="tab-header-main">
+          <span className="tab-header-icon">
+            <BarChart3 size={15} />
           </span>
-          Executive Summary
-        </h2>
+          <div className="tab-header-text">
+            <div className="tab-header-eyebrow">01 — Summary</div>
+            <div className="tab-header-title">Executive Summary</div>
+            <div className="tab-header-sub">{repoName}</div>
+          </div>
+        </div>
+        <button
+          className="btn btn-ghost"
+          onClick={handleExportPdf}
+          disabled={!data}
+          style={{ marginLeft: "auto", alignSelf: "center" }}
+          title="Export summary PDF"
+          aria-label="Export summary PDF"
+        >
+          <Download size={13} /> Export PDF
+        </button>
       </div>
 
-      <HealthCard health={health} />
+      {/* Editorial band variant: the grade card mirrors the landing
+          stats-band treatment (--primary-strong fill, on-primary type). */}
+      <HealthCard health={health} variant="band" />
 
       {enabled && repoUrl && (
         <div className="summary-watch">
@@ -424,7 +462,7 @@ export default function SummaryTab({
             gap: 8,
             alignItems: "center",
             color: "var(--text-3)",
-            fontSize: 14,
+            fontSize: fs.base,
             marginBottom: 24,
           }}
         >
@@ -438,15 +476,7 @@ export default function SummaryTab({
         </p>
       )}
       {/* Two-column grid: graph/bar (left) + summary (right) */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "24px",
-          width: "100%",
-          alignItems: "start",
-        }}
-      >
+      <div className="summary-grid">
         {/* Left Card — Findings & Metrics (graph/bar) */}
         <div className="summary-card">
           {/* FINDINGS BY SEVERITY */}
@@ -459,7 +489,7 @@ export default function SummaryTab({
                   className="chart-trend"
                   style={{ color: "var(--text-3)", gap: 4 }}
                 >
-                  <span style={{ fontSize: 11 }}>LOW → CRITICAL</span>
+                  <span style={{ fontSize: fs.xs }}>LOW → CRITICAL</span>
                   {[
                     nCritical && "critical",
                     nHigh && "high",
@@ -518,7 +548,7 @@ export default function SummaryTab({
           <div className="stat-grid" ref={statsRef}>
             <div className="stat">
               <div className="stat-icon-wrap">
-                <FileCode2 size={20} strokeWidth={1.5} />
+                <FileCode2 size={20} />
               </div>
               <span className="stat-value">{apiDocs.length || 0}</span>
               <span className="stat-label">ENDPOINTS</span>
@@ -528,7 +558,7 @@ export default function SummaryTab({
             </div>
             <div className="stat">
               <div className="stat-icon-wrap stat-icon--warn">
-                <ShieldAlert size={20} strokeWidth={1.5} />
+                <ShieldAlert size={20} />
               </div>
               <span className="stat-value">{findings.length || 0}</span>
               <span className="stat-label">FINDINGS</span>
@@ -538,7 +568,7 @@ export default function SummaryTab({
             </div>
             <div className="stat">
               <div className="stat-icon-wrap stat-icon--ok">
-                <Zap size={20} strokeWidth={1.5} />
+                <Zap size={20} />
               </div>
               <span className="stat-value">
                 {elapsedSec > 0 ? `${elapsedSec}s` : "—"}
@@ -549,34 +579,6 @@ export default function SummaryTab({
               </span>
             </div>
           </div>
-
-          {/* Severity text breakdown */}
-          {findings.length > 0 && (
-            <div>
-              <div className="t-label" style={{ marginBottom: 12 }}>
-                SECURITY BREAKDOWN
-              </div>
-              <div className="sev-breakdown">
-                {[
-                  ["critical", nCritical],
-                  ["high", nHigh],
-                  ["medium", nMedium],
-                  ["low", nLow],
-                ].map(
-                  ([sev, count]) =>
-                    count > 0 && (
-                      <span key={sev}>
-                        <span
-                          className="sev-glyph"
-                          style={{ background: SEV_COLORS[sev] }}
-                        />
-                        {count} {sev.charAt(0).toUpperCase() + sev.slice(1)}
-                      </span>
-                    ),
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Right Card — Repository Description (summary text) */}

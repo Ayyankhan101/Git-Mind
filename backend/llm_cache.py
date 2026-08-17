@@ -6,17 +6,68 @@ On hit: backfill Redis from diskcache.
 
 import contextlib
 import hashlib
+import json
+import re
 import time
 from pathlib import Path
 
 import diskcache
 import structlog
+from pydantic import BaseModel
 
 from services.cache import get_redis
 
 logger = structlog.get_logger(__name__)
 
 _REDIS_TTL = 86_400  # 24 hours
+
+# ── Harvest telemetry (JSONL, gitignored) ────────────────────────────────────
+# `run_dspy_cached` appends one record per LLM call (cache miss only):
+# {sig, inputs, output}. The optimization pipeline (optimization/trainsets.py)
+# reads these to build dspy.Example trainsets. The cache keys themselves are
+# sha-256 hashes of the inputs, so the inputs are unrecoverable from the cache
+# — this side log is the only replayable record of live calls.
+
+_HARVEST_DIR = Path(__file__).parent / ".dspy_harvest"
+_MAX_HARVEST_BYTES = 25 * 1024 * 1024  # rotate a log once it exceeds this
+
+
+def _harvest_path(namespace: str) -> Path:
+    safe = re.sub(r"[^A-Za-z0-9_.-]", "_", namespace)
+    return _HARVEST_DIR / f"{safe}.jsonl"
+
+
+def _record_harvest(namespace: str, sig_name: str, inputs: dict, output) -> None:
+    """Append one telemetry record to the agent's harvest log.
+
+    Best-effort: telemetry must never break the request path.
+    """
+    try:
+        _HARVEST_DIR.mkdir(exist_ok=True)
+        path = _harvest_path(namespace)
+        line = json.dumps(
+            {"sig": sig_name, "inputs": inputs, "output": output},
+            default=str,
+            ensure_ascii=False,
+        )
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(line + "\n")
+        if path.stat().st_size > _MAX_HARVEST_BYTES:
+            _trim_harvest(path)
+    except Exception as exc:
+        logger.debug("harvest record failed: %s", exc)
+
+
+def _trim_harvest(path: Path) -> None:
+    """Keep only the newest records when a harvest log grows too large."""
+    try:
+        with open(path, encoding="utf-8") as f:
+            lines = f.readlines()
+        with open(path, "w", encoding="utf-8") as f:
+            f.writelines(lines[-2_000:])
+    except Exception:
+        pass
+
 
 # ── Diskcache setup (fallback) ───────────────────────────────────────────────
 
@@ -100,3 +151,73 @@ def invoke_with_retry(llm, prompt, max_retries: int = 2, base_delay: float = 2.0
             if attempt < max_retries:
                 time.sleep(base_delay * (2**attempt))
     raise last_exc  # type: ignore[misc]
+
+
+def run_dspy_cached(program, cache_namespace: str, *, lm, output_field: str, **inputs):
+    """Run a DSPy program behind the existing Redis → diskcache LLM cache.
+
+    The cache key is derived from the program signature plus the serialized
+    inputs, so identical calls (same task + same data) short-circuit before
+    reaching the LLM. Returns the program's typed output field as plain
+    JSON-ready data (dict / list / str).
+
+    Parameters
+    ----------
+    program:
+        A dspy module (Predict / ChainOfThought) compiled from a signature.
+    cache_namespace:
+        Existing cache namespace, e.g. f"{LLM_MODEL}:security:json".
+    lm:
+        The dspy.LM to use for this call (per-agent temperature).
+    output_field:
+        Name of the signature's output field to return (e.g. "findings").
+    inputs:
+        Keyword inputs for the program.
+    """
+    from dspy_setup import dspy
+
+    sig_name = getattr(program, "signature", type(program).__name__)
+    # MIPROv2 changes a signature's instructions/demos but not its class name, so
+    # a promoted program would keep hitting stale pre-optimization cache entries
+    # unless the key folds in the program version. `load_program` stamps
+    # `_opt_version` (registry.VERSION_ATTR) onto promoted programs; students
+    # have no version ⇒ key unchanged from before optimization existed.
+    version = getattr(program, "_opt_version", "")
+    key = _dspy_key(sig_name, inputs, version=version)
+
+    cached = get_cached(cache_namespace, key)
+    if cached is not None:
+        logger.debug("DSPy program cache hit: %s", sig_name)
+        return json.loads(cached)
+
+    with dspy.context(lm=lm):
+        result = program(**inputs)
+
+    payload = _to_plain(getattr(result, output_field))
+    set_cached(cache_namespace, key, json.dumps(payload, default=str, ensure_ascii=False))
+    # Misses only — we want actual LLM outputs, not replays. The harvest log is
+    # named by the program's agent (stamped by the registry) when available, else
+    # by the cache namespace.
+    _record_harvest(getattr(program, "_agent", None) or cache_namespace, sig_name, inputs, payload)
+    return payload
+
+
+def _dspy_key(sig_name, inputs: dict, version: str = "") -> str:
+    # Students (version "") keep the exact pre-optimization key format so existing
+    # cache entries still hit; promoted programs get version-scoped keys.
+    if version:
+        material = f"{sig_name}::{version}::{json.dumps(inputs, sort_keys=True, default=str, ensure_ascii=False)}"
+    else:
+        material = f"{sig_name}::{json.dumps(inputs, sort_keys=True, default=str, ensure_ascii=False)}"
+    return hashlib.sha256(material.encode()).hexdigest()
+
+
+def _to_plain(value):
+    """Recursively convert pydantic models / lists / dicts to JSON-safe plain data."""
+    if isinstance(value, BaseModel):
+        return value.model_dump()
+    if isinstance(value, dict):
+        return {k: _to_plain(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_to_plain(v) for v in value]
+    return value

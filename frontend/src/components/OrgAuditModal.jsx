@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { fs } from "../typeScale";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import {
   X,
@@ -7,7 +8,7 @@ import {
   CheckCircle,
   Building2,
   ShieldAlert,
-} from "lucide-react";
+} from "../icons";
 import { orgAudit } from "../api";
 
 // Backend caps each org audit at 20 repos (fans out N× GitHub API calls).
@@ -64,7 +65,7 @@ function RepoRow({ repo }) {
         <span
           style={{
             fontWeight: 600,
-            fontSize: 13,
+            fontSize: fs.md,
             flex: 1,
             color: "var(--text-1)",
           }}
@@ -72,23 +73,23 @@ function RepoRow({ repo }) {
           {repo.repo_name}
         </span>
         {hasError ? (
-          <span style={{ fontSize: 11, color: "var(--danger)" }}>error</span>
+          <span style={{ fontSize: fs.xs, color: "var(--danger)" }}>error</span>
         ) : count === 0 ? (
           <span
             style={{
               display: "flex",
               alignItems: "center",
               gap: 4,
-              fontSize: 11,
+              fontSize: fs.xs,
               color: "var(--success)",
             }}
           >
-            <CheckCircle size={11} strokeWidth={1.5} /> clean
+            <CheckCircle size={11} /> clean
           </span>
         ) : (
           <span
             style={{
-              fontSize: 11,
+              fontSize: fs.xs,
               color: "var(--danger)",
               fontFamily: "var(--font-mono)",
             }}
@@ -97,7 +98,7 @@ function RepoRow({ repo }) {
           </span>
         )}
         {repo.dep_files_found?.length > 0 && (
-          <span style={{ fontSize: 11, color: "var(--text-3)" }}>
+          <span style={{ fontSize: fs.xs, color: "var(--text-3)" }}>
             {repo.dep_files_found.join(", ")}
           </span>
         )}
@@ -108,7 +109,7 @@ function RepoRow({ repo }) {
             key={i}
             style={{
               padding: "6px 20px 6px 32px",
-              background: "var(--surface-2)",
+              background: "var(--surface)",
             }}
           >
             <div
@@ -119,21 +120,17 @@ function RepoRow({ repo }) {
                 marginBottom: 4,
               }}
             >
-              <Package
-                size={11}
-                strokeWidth={1.5}
-                style={{ color: "var(--text-3)" }}
-              />
+              <Package size={11} style={{ color: "var(--text-3)" }} />
               <span
                 style={{
-                  fontSize: 12,
+                  fontSize: fs.sm,
                   fontFamily: "var(--font-mono)",
                   color: "var(--text-2)",
                 }}
               >
                 {pkg.package} v{pkg.version}
               </span>
-              <span style={{ fontSize: 11, color: "var(--text-3)" }}>
+              <span style={{ fontSize: fs.xs, color: "var(--text-3)" }}>
                 {pkg.ecosystem}
               </span>
             </div>
@@ -144,7 +141,7 @@ function RepoRow({ repo }) {
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   color: "var(--text-3)",
                   marginLeft: 18,
                   marginBottom: 2,
@@ -219,7 +216,14 @@ export default function OrgAuditModal({ repos, token, onClose }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="crisis-panel" style={{ maxWidth: 680 }} role="dialog" aria-modal="true" aria-label="Org-wide CVE audit" ref={trapRef}>
+      <div
+        className="crisis-panel"
+        style={{ maxWidth: 680 }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Org-wide CVE audit"
+        ref={trapRef}
+      >
         {/* Header */}
         <div
           className="crisis-header"
@@ -229,22 +233,18 @@ export default function OrgAuditModal({ repos, token, onClose }) {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Building2
-              size={16}
-              strokeWidth={1.5}
-              style={{ color: "var(--accent)" }}
-            />
+            <Building2 size={16} style={{ color: "var(--accent)" }} />
             <div>
               <div
                 style={{
-                  fontSize: 14,
+                  fontSize: fs.base,
                   fontWeight: 700,
                   color: "var(--text-1)",
                 }}
               >
                 Org-wide CVE Audit
               </div>
-              <div style={{ fontSize: 11, color: "var(--text-3)" }}>
+              <div style={{ fontSize: fs.xs, color: "var(--text-3)" }}>
                 {repos.length} repositories
               </div>
             </div>
@@ -255,7 +255,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
             onClick={onClose}
             aria-label="Close"
           >
-            <X size={14} strokeWidth={1.5} />
+            <X size={14} />
           </button>
         </div>
 
@@ -265,12 +265,11 @@ export default function OrgAuditModal({ repos, token, onClose }) {
             <div style={{ padding: "32px 24px", textAlign: "center" }}>
               <Package
                 size={28}
-                strokeWidth={1}
                 style={{ color: "var(--text-3)", marginBottom: 12 }}
               />
               <div
                 style={{
-                  fontSize: 13,
+                  fontSize: fs.md,
                   color: "var(--text-2)",
                   marginBottom: 6,
                 }}
@@ -279,7 +278,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
               </div>
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   color: "var(--text-3)",
                   marginBottom: 20,
                 }}
@@ -301,7 +300,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                 className="spinner"
                 style={{ width: 20, height: 20, marginBottom: 12 }}
               />
-              <div style={{ fontSize: 13, color: "var(--text-3)" }}>
+              <div style={{ fontSize: fs.md, color: "var(--text-3)" }}>
                 Scanning {scanList.length} repositories…
               </div>
             </div>
@@ -309,8 +308,8 @@ export default function OrgAuditModal({ repos, token, onClose }) {
 
           {error && (
             <div style={{ padding: "24px" }}>
-              <div className="error-banner" style={{ borderRadius: 6 }}>
-                <AlertTriangle size={13} strokeWidth={1.5} />
+              <div className="error-banner" style={{ borderRadius: 0 }}>
+                <AlertTriangle size={13} />
                 <span>{error}</span>
               </div>
               <button
@@ -361,16 +360,16 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                     key={label}
                     style={{
                       padding: "8px 14px",
-                      background: "var(--surface-2)",
-                      borderRadius: 8,
-                      border: "1px solid var(--border)",
+                      background: "var(--surface)",
+                      borderRadius: 0,
+                      border: "1px solid var(--border-m)",
                       minWidth: 80,
                       textAlign: "center",
                     }}
                   >
                     <div
                       style={{
-                        fontSize: 20,
+                        fontSize: fs.xxl,
                         fontWeight: 700,
                         fontFamily: "var(--font-mono)",
                         color: color || "var(--text-1)",
@@ -380,7 +379,10 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                     </div>
                     <div
                       style={{
-                        fontSize: 11,
+                        fontSize: fs.xs,
+                        fontFamily: "var(--font-mono)",
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
                         color: "var(--text-3)",
                         marginTop: 2,
                       }}
@@ -397,15 +399,16 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                   <div
                     style={{
                       padding: "10px 20px 4px",
-                      fontSize: 11,
+                      fontSize: fs.xs,
+                      fontFamily: "var(--font-mono)",
+                      letterSpacing: "0.08em",
                       color: "var(--text-3)",
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
                     }}
                   >
-                    <ShieldAlert size={11} strokeWidth={1.5} /> CROSS-REPO
-                    VULNERABILITIES
+                    <ShieldAlert size={11} /> CROSS-REPO VULNERABILITIES
                   </div>
                   {shared.map((c, i) => (
                     <div
@@ -421,7 +424,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                       <span
                         style={{
                           fontFamily: "var(--font-mono)",
-                          fontSize: 12,
+                          fontSize: fs.sm,
                           color: "var(--danger)",
                           minWidth: 100,
                         }}
@@ -430,7 +433,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                       </span>
                       <span
                         style={{
-                          fontSize: 11,
+                          fontSize: fs.xs,
                           color: "var(--text-3)",
                           flex: 1,
                         }}
@@ -439,10 +442,11 @@ export default function OrgAuditModal({ repos, token, onClose }) {
                       </span>
                       <span
                         style={{
-                          fontSize: 11,
+                          fontSize: fs.xs,
+                          fontFamily: "var(--font-mono)",
                           padding: "2px 6px",
-                          background: "rgba(239,68,68,0.1)",
-                          borderRadius: 4,
+                          background: "var(--danger-bg)",
+                          borderRadius: 0,
                           color: "var(--danger)",
                         }}
                       >
@@ -457,7 +461,9 @@ export default function OrgAuditModal({ repos, token, onClose }) {
               <div
                 style={{
                   padding: "10px 20px 4px",
-                  fontSize: 11,
+                  fontSize: fs.xs,
+                  fontFamily: "var(--font-mono)",
+                  letterSpacing: "0.08em",
                   color: "var(--text-3)",
                 }}
               >

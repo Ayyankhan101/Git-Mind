@@ -5,10 +5,10 @@
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-1.0.0-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-1.1.0-blue.svg?cacheSeconds=2592000" />
   <a href="https://github.com/Ayyankhan101/Git-Mind/actions"><img src="https://github.com/Ayyankhan101/Git-Mind/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/Ayyankhan101/Git-Mind/blob/main/backend/tests/"><img src="https://img.shields.io/badge/backend-106%20tests-brightgreen" alt="Backend Tests"></a>
-  <a href="https://github.com/Ayyankhan101/Git-Mind/blob/main/frontend/src/"><img src="https://img.shields.io/badge/frontend-70%20tests-brightgreen" alt="Frontend Tests"></a>
+  <a href="https://github.com/Ayyankhan101/Git-Mind/blob/main/backend/tests/"><img src="https://img.shields.io/badge/backend-245%20tests-brightgreen" alt="Backend Tests"></a>
+  <a href="https://github.com/Ayyankhan101/Git-Mind/blob/main/frontend/src/"><img src="https://img.shields.io/badge/frontend-164%20tests-brightgreen" alt="Frontend Tests"></a>
   <a href="https://github.com/Ayyankhan101/Git-Mind/blob/master/LICENSE" target="_blank">
     <img alt="License: Apache 2.0" src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" />
   </a>
@@ -34,9 +34,9 @@
 - [Architecture](#architecture)
 - [Features](#features)
 - [Quickstart](#quickstart)
-- [Environment Variables](#️-environment-variables-20)
+- [Environment Variables](#️-environment-variables-30)
 - [Project Layout](#️-project-layout)
-- [API Endpoints (19)](#-api-endpoints-19)
+- [API Endpoints (25)](#-api-endpoints-25)
 - [Rust Native Acceleration](#rust-native-acceleration)
 - [RAG Pipeline](#rag-pipeline)
 - [Persistence](#persistence)
@@ -164,26 +164,28 @@ flowchart TB
 
 ### 🛠️ Developer Experience
 
-| Feature                     | What it does                                                                                                        |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| 🩹 **Auto-fix patches**     | Click "Generate Fix" → unified diff patch from LLM + RAG; click "Open PR" → auto-commit and open a GitHub PR        |
-| 👀 **PR review**            | Paste any GitHub PR URL → structured review with file:line issues and verdict; cached by PR head SHA                |
-| 📊 **Predictive PR impact** | Enter a PR URL → LLM merge-risk prediction (low/medium/high/critical) with health score delta                       |
-| 💬 **RAG chat**             | Ask anything about the codebase; ChromaDB (8 context chunks) + source badges + streaming SSE                        |
-| 🆘 **Crisis Mode**          | Escalation simulation: CEO / Legal / Engineering debate a live incident; reporter publishes if the team is too slow |
-| 📄 **Shareable links**      | Analysis snapshots saved server-side; share via `?share=SESSION_ID` URL                                             |
-| ⬇️ **Export report**        | Full analysis as PDF with syntax-highlighted code blocks, cached by session for instant re-download                 |
-| 📊 **Live health score**    | Incremental health grade streams during analysis — see score update in real-time as agents complete                 |
+| Feature                            | What it does                                                                                                                                                                                                                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 🩹 **Auto-fix patches**            | Click "Generate Fix" → unified diff patch from LLM + RAG; click "Open PR" → auto-commit and open a GitHub PR                                                                                                                                                                         |
+| 👀 **PR review**                   | Paste any GitHub PR URL → structured review with file:line issues and verdict; cached by PR head SHA                                                                                                                                                                                 |
+| 📊 **Predictive PR impact**        | Enter a PR URL → LLM merge-risk prediction (low/medium/high/critical) with health score delta                                                                                                                                                                                        |
+| 💬 **RAG chat**                    | Ask anything about the codebase; ChromaDB (8 context chunks) + source badges + streaming SSE                                                                                                                                                                                         |
+| 🆘 **Crisis Mode**                 | Escalation simulation: CEO / Legal / Engineering debate a live incident; reporter publishes if the team is too slow                                                                                                                                                                  |
+| 📄 **Shareable links**             | Analysis snapshots saved server-side; share via `?share=SESSION_ID` URL                                                                                                                                                                                                              |
+| ⬇️ **Export report**               | Full analysis as PDF with syntax-highlighted code blocks, cached by session for instant re-download                                                                                                                                                                                  |
+| 📊 **Live health score**           | Incremental health grade streams during analysis — see score update in real-time as agents complete                                                                                                                                                                                  |
+| 🎨 **13 themes + 3 density modes** | Theme switcher in the command bar (`⌘K` → token popover) with 13 curated themes (obsidian default, daylight light, matrix, neon, plasma, circuit, …); comfortable/compact/spacious density modes; token-based design system (`design-tokens.css`); respects `prefers-reduced-motion` |
+| 🖥️ **Editorial landing page**      | Split-screen hero with live health-grade preview, "how it works" steps, stats strip, and a themed footer with GitHub link; responsive with mobile hamburger menu                                                                                                                     |
 
 ### 🏢 Enterprise / Ops
 
-| Feature                       | What it does                                                                                   |
-| ----------------------------- | ---------------------------------------------------------------------------------------------- |
-| 🏢 **Org-wide CVE dashboard** | Scan all loaded repos for CVEs via GitHub API — cross-repo shared vulnerability detection      |
-| 🔄 **Repository monitoring**  | Subscribe repos — background loop fetches latest shas, triggers re-analysis on change          |
-| 🔔 **Webhook notifications**  | Push analysis results to external URLs for CI/CD integration                                   |
-| 📧 **Email notifications**    | Optional SMTP alerts on monitoring score changes                                               |
-| 🚀 **CI/CD integration**      | 3 GitHub Actions workflows: CI, PR analysis (auto-comment), weekly monitoring (Slack + issues) |
+| Feature                       | What it does                                                                                                                  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| 🏢 **Org-wide CVE dashboard** | Scan all loaded repos for CVEs via GitHub API — cross-repo shared vulnerability detection                                     |
+| 🔄 **Repository monitoring**  | Subscribe repos — background loop fetches latest shas, triggers re-analysis on change                                         |
+| 🔔 **Webhook notifications**  | Push analysis results to external URLs for CI/CD integration                                                                  |
+| 📧 **Email notifications**    | Optional SMTP alerts on monitoring score changes                                                                              |
+| 🚀 **CI/CD integration**      | 4 GitHub Actions workflows: build, CI (lint + tests + deploy), PR analysis (auto-comment), weekly monitoring (Slack + issues) |
 
 ---
 
@@ -216,7 +218,7 @@ docker compose -f docker-compose.dev.yml up -d --build
 ```bash
 cp backend/.env.example backend/.env
 # Edit backend/.env — add GROQ_API_KEY=gsk_...
-# Set DATABASE_URL=sqlite+aiosqlite:///./gitmind.db  (default)
+# Set DATABASE_URL=sqlite+aiosqlite:////tmp/gitmind.db  (default)
 
 ./start.sh          # starts backend (:8002) + frontend (:3000)
 ./stop.sh           # stops both
@@ -242,7 +244,7 @@ Logs are written to `logs/backend.log` and `logs/frontend.log`.
 ---
 
 <details>
-<summary><strong>Environment Variables (20)</strong></summary>
+<summary><strong>Environment Variables (30)</strong></summary>
 
 **Required**
 
@@ -253,19 +255,22 @@ Logs are written to `logs/backend.log` and `logs/frontend.log`.
 
 **Database & Storage**
 
-| Variable       | Default                            | Description                                            |
-| -------------- | ---------------------------------- | ------------------------------------------------------ |
-| `DATABASE_URL` | `sqlite+aiosqlite:///./gitmind.db` | SQLite for dev; `postgresql+asyncpg://...` for prod    |
-| `REDIS_URL`    | —                                  | Enables shared rate limiter, session cache, task queue |
+| Variable       | Default                               | Description                                            |
+| -------------- | ------------------------------------- | ------------------------------------------------------ |
+| `DATABASE_URL` | `sqlite+aiosqlite:////tmp/gitmind.db` | SQLite for dev; `postgresql+asyncpg://...` for prod    |
+| `REDIS_URL`    | —                                     | Enables shared rate limiter, session cache, task queue |
 
 **Authentication & Security**
 
-| Variable              | Description                                         |
-| --------------------- | --------------------------------------------------- |
-| `GITHUB_TOKEN`        | Server-side PAT — raises rate limit to 5,000 req/hr |
-| `WS_AUTH_SECRET`      | WebSocket auth — clients must send matching value   |
-| `REQUIRE_WS_AUTH`     | When `true`, reject WS without valid auth           |
-| `GITMIND_SERVICE_KEY` | CI/service key — bypasses rate limits               |
+| Variable                     | Description                                                                           |
+| ---------------------------- | ------------------------------------------------------------------------------------- |
+| `GITHUB_TOKEN`               | Server-side PAT — raises rate limit to 5,000 req/hr                                   |
+| `WS_AUTH_SECRET`             | WebSocket auth — when set, clients must send matching `ws_auth_secret` + `ws_auth_ts` |
+| `GITMIND_SERVICE_KEY`        | CI/service key — bypasses rate limits (`X-Service-Key` header)                        |
+| `GITHUB_APP_ID`              | GitHub App credentials (webhook flows)                                                |
+| `GITHUB_APP_PRIVATE_KEY`     | GitHub App private key (webhook flows)                                                |
+| `GITHUB_APP_INSTALLATION_ID` | GitHub App installation ID (webhook flows)                                            |
+| `GITHUB_APP_WEBHOOK_SECRET`  | GitHub App webhook HMAC secret                                                        |
 
 **Observability**
 
@@ -277,17 +282,29 @@ Logs are written to `logs/backend.log` and `logs/frontend.log`.
 | `JSON_LOGS`                   | Enable JSON structured logging            |
 | `LOG_LEVEL`                   | Logging level (default: `INFO`)           |
 
+**Email (SMTP alerts)**
+
+| Variable        | Description                       |
+| --------------- | --------------------------------- |
+| `SMTP_HOST`     | SMTP server for monitoring alerts |
+| `SMTP_PORT`     | SMTP port (default `587`)         |
+| `SMTP_USER`     | SMTP username                     |
+| `SMTP_PASSWORD` | SMTP password                     |
+| `SMTP_FROM`     | Sender address                    |
+
 **Tuning**
 
-| Variable                   | Default                   | Description                         |
-| -------------------------- | ------------------------- | ----------------------------------- |
-| `LLM_MODEL`                | `llama-3.3-70b-versatile` | Override Groq model for all agents  |
-| `RERANKER_MODEL`           | `ms-marco-MiniLM-L-6-v2`  | Cross-encoder reranker model        |
-| `SIDECAR_URL`              | `http://127.0.0.1:8003`   | Solidity parser sidecar endpoint    |
-| `TASK_WORKERS`             | `3`                       | Background task queue worker count  |
-| `MONITOR_INTERVAL_SECONDS` | `3600`                    | Repo monitoring loop interval       |
-| `REPORTER_INTERVAL_SEC`    | `45`                      | Crisis Mode reporter check interval |
-| `DEBUG`                    | —                         | Enable health check debug info      |
+| Variable                   | Default                                | Description                                            |
+| -------------------------- | -------------------------------------- | ------------------------------------------------------ |
+| `LLM_MODEL`                | `llama-3.3-70b-versatile`              | Override Groq model for all agents                     |
+| `RERANKER_MODEL`           | `cross-encoder/ms-marco-MiniLM-L-6-v2` | Cross-encoder reranker model                           |
+| `SIDECAR_URL`              | `http://127.0.0.1:8003`                | Solidity parser sidecar endpoint                       |
+| `TASK_WORKERS`             | `3`                                    | Background task queue worker count                     |
+| `MONITOR_INTERVAL_SECONDS` | `3600`                                 | Repo monitoring loop interval                          |
+| `REPORTER_INTERVAL_SEC`    | `45`                                   | Crisis Mode reporter check interval                    |
+| `MAX_REQUEST_BODY_BYTES`   | `5242880` (5 MB)                       | Max request body size                                  |
+| `GROQ_DAILY_REMAINING`     | —                                      | Daily token window guard for MIPROv2 self-optimization |
+| `DEBUG`                    | —                                      | Enable health check debug info                         |
 
 </details>
 
@@ -316,7 +333,7 @@ Git-Mind/
 │   ├── models/                     ← SQLAlchemy + Pydantic
 │   ├── services/                   ← Auth, cache, rate limiter, BM25 FTS5, reranker
 │   ├── alembic/                    ← Database migrations
-│   └── tests/                      ← 106 pytest tests
+│   └── tests/                      ← 245 pytest tests
 │
 ├── rust-gitmind/                   ← PyO3 native module (gitmind_core)
 │   └── src/
@@ -340,7 +357,7 @@ Git-Mind/
         ├── pdfBuilder.js           ← PDF generation + caching + syntax highlighting
         ├── tokenManager.js         ← Encrypted PAT storage (AES-GCM)
         ├── components/             ← Tab components + CommandPalette
-        └── ...                     ← 70 Vitest tests
+        └── ...                     ← 164 Jest tests
 ```
 
 </details>
@@ -348,7 +365,7 @@ Git-Mind/
 ---
 
 <details>
-<summary><strong>API Endpoints (19)</strong></summary>
+<summary><strong>API Endpoints (25)</strong></summary>
 
 **Analysis**
 
@@ -359,6 +376,7 @@ Git-Mind/
 | `/analysis/{session_id}` | GET    | Load saved analysis snapshot      |
 | `/analysis/previous`     | GET    | Last analysis for a repo          |
 | `/analysis/history`      | GET    | Health trend data over time       |
+| `/summary`               | POST   | Generate executive summary        |
 | `/chat`                  | POST   | Ask a question about the codebase |
 | `/chat/stream`           | POST   | SSE streaming chat                |
 | `/fix`                   | POST   | Generate a fix patch              |
@@ -375,13 +393,16 @@ Git-Mind/
 
 **Monitoring & Org**
 
-| Endpoint            | Method          | Description                |
-| ------------------- | --------------- | -------------------------- |
-| `/repos/{username}` | GET             | List user repos            |
-| `/monitor`          | POST/GET/DELETE | Subscribe/list/unsubscribe |
-| `/org-audit`        | POST            | Cross-repo CVE scan        |
-| `/webhook/notify`   | POST            | Push results to webhook    |
-| `/incident-report`  | POST            | Generate incident report   |
+| Endpoint                | Method | Description                  |
+| ----------------------- | ------ | ---------------------------- |
+| `/repos/{username}`     | GET    | List user repos              |
+| `/monitor/subscribe`    | POST   | Subscribe to repo monitoring |
+| `/monitor/status`       | GET    | List monitored repos         |
+| `/monitor/{monitor_id}` | DELETE | Unsubscribe from monitoring  |
+| `/org-audit`            | POST   | Cross-repo CVE scan          |
+| `/webhook/notify`       | POST   | Push results to webhook      |
+| `/github/webhook`       | POST   | GitHub App webhook handler   |
+| `/incident-report`      | POST   | Generate incident report     |
 
 **System**
 
@@ -442,7 +463,7 @@ Llama 3.3 70B via Groq                           ← generates answer with citat
 | **ChromaDB (vector)**      | Semantic similarity search using `all-MiniLM-L6-v2` embeddings                          |
 | **BM25 (FTS5)**            | SQLite FTS5 — exact term matching with zero external dependencies                       |
 | **RRF fusion**             | Combines rank positions from both searchers; weighted blend (default 70/30 vector/BM25) |
-| **Cross-encoder reranker** | `ms-marco-MiniLM-L-6-v2` (configurable via `RERANKER_MODEL` env var)                    |
+| **Cross-encoder reranker** | `cross-encoder/ms-marco-MiniLM-L-6-v2` (configurable via `RERANKER_MODEL` env var)      |
 | **Context dedup**          | Allows multiple chunks per file (dedup by filepath + content prefix, not filepath-only) |
 | **LLM cache**              | `diskcache` (SQLite, 2 GB, 24h TTL) — instant return for repeated questions             |
 
@@ -475,16 +496,57 @@ Llama 3.3 70B via Groq                           ← generates answer with citat
 
 ## Rate Limiting
 
-| Tier              | Rate        | Applied to                 |
-| ----------------- | ----------- | -------------------------- |
-| **Service key**   | Unlimited   | `X-Service-Key` header     |
-| **Authenticated** | 30 req/min  | `X-GH-Token` header        |
-| **Anonymous**     | 3 req/min   | No auth                    |
-| **Analyze**       | 1 req/60s   | `POST /analyze` (per repo) |
-| **PR impact**     | 5 req/10min | `POST /pr-impact`          |
-| **Fix**           | 5 req/min   | `POST /fix`                |
+Sliding-window limits (Redis-backed, in-memory fallback for dev) keyed by endpoint:
 
+| Endpoint                                       | Limit  | Window |
+| ---------------------------------------------- | ------ | ------ |
+| `analyze`                                      | 2 req  | 60s    |
+| `analyze_chat_burst` (analyze + chat combined) | 10 req | 60s    |
+| `summary`                                      | 5 req  | 60s    |
+| `chat`                                         | 20 req | 60s    |
+| `fix`                                          | 10 req | 60s    |
+| `pr`                                           | 5 req  | 60s    |
+| `pr_impact`                                    | 3 req  | 60s    |
+| `org_audit`                                    | 3 req  | 60s    |
+| `repos`                                        | 20 req | 60s    |
+| `monitor`                                      | 10 req | 60s    |
+| `webhook_notify`                               | 10 req | 60s    |
+| `analysis_get`                                 | 30 req | 60s    |
+| `analysis_previous`                            | 20 req | 60s    |
+| `analysis_history`                             | 20 req | 60s    |
+| `task`                                         | 30 req | 60s    |
+
+Requests authenticated with a valid `GITMIND_SERVICE_KEY` (`X-Service-Key` header) bypass rate limits.
 Rate-limited requests return HTTP 429 with `Retry-After` header.
+
+---
+
+## Security
+
+Defense-in-depth posture — 20-point checklist status:
+
+| Control                | Status                                                                                         |
+| ---------------------- | ---------------------------------------------------------------------------------------------- |
+| Hide API keys          | ✅ Env-only (`GROQ_API_KEY`, `GITHUB_TOKEN`, `SMTP_PASSWORD`); `.env` untracked                |
+| Purge git secrets      | ✅ History clean (test placeholders only); `gitleaks` in pre-commit + CI `security` job        |
+| Public DB key          | ✅ No DB credentials in code; env via compose                                                  |
+| Row-level security     | N/A — single-tenant; access controlled per session                                             |
+| Encrypt sensitive data | ✅ Frontend PAT AES-GCM (1h TTL); `gh_token` stripped before persistence                       |
+| Server-side auth       | ✅ Default-deny middleware; allowlist public paths; webhook HMAC-verified                      |
+| Lock record access     | ✅ Hybrid `/analysis/{id}`: public ≤24h (share-by-URL), authenticated after                    |
+| Block field tampering  | ✅ Response whitelist (`_trim_analysis`) — internal fields never leave API                     |
+| Secure session cookies | N/A — no cookies; PAT-header auth                                                              |
+| Hash passwords         | N/A — no password auth                                                                         |
+| Rate limit login       | N/A — no login; 17 endpoint windows + cross-endpoint burst guard                               |
+| Bot protection         | ✅ IP-velocity burst cap (analyze + chat combined, 10/60s)                                     |
+| Parameterize queries   | ✅ SQLAlchemy ORM; no user input reaches raw SQL                                               |
+| Validate all inputs    | ✅ Pydantic bodies + regex validators (repo/PR/username/session UUID)                          |
+| Escape user content    | ✅ react-markdown (no raw HTML) + `esc()` on DOM injection + `encodeURIComponent`              |
+| Restrict file uploads  | N/A — no upload endpoints                                                                      |
+| Trim API responses     | ✅ `_trim_analysis` whitelist; history/org/pr/repos return fixed shapes                        |
+| Security headers       | ✅ X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy, CSP (report-only), HSTS |
+| Force HTTPS            | ✅ Platform-terminated (Vercel / HF Spaces)                                                    |
+| Scan dependencies      | ✅ `pip-audit` + `npm audit` in CI `security` job; Dependabot monthly                          |
 
 ---
 
@@ -514,19 +576,19 @@ Rate-limited requests return HTTP 429 with `Retry-After` header.
 
 ## CI/CD
 
-| Workflow               | Trigger              | What it does                                                     |
-| ---------------------- | -------------------- | ---------------------------------------------------------------- |
-| `ci.yml`               | Push/PR to `main`    | Backend tests + Rust build, frontend tests + build, deploy to HF |
-| `gitmind-analysis.yml` | PR open/sync         | Auto-comment with health score + top findings                    |
-| `gitmind-monitor.yml`  | Weekly (Mon 8am UTC) | Re-analyze, health delta, Slack alert + GitHub issue             |
+| Workflow              | Trigger               | What it does                                                                                                     |
+| --------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `build.yml`           | Push/PR to any branch | Frontend production build                                                                                        |
+| `ci.yml`              | Push/PR to `main`     | Ruff/mypy/Prettier lint, backend tests + Rust build, frontend tests + build, smoke + layout audits, deploy to HF |
+| `gitmind-monitor.yml` | Weekly (Mon 8am UTC)  | Re-analyze, health delta, Slack alert + GitHub issue                                                             |
 
 ---
 
 ## Testing
 
 ```
-✅ Backend:  106 tests passing (pytest-asyncio)
-✅ Frontend:  70 tests passing (Vitest + React Testing Library)
+✅ Backend:  245 tests passing (pytest-asyncio)
+✅ Frontend:  164 tests passing (Jest + React Testing Library)
 ✅ Rust:      clippy + rustfmt clean
 ```
 
@@ -535,7 +597,7 @@ Rate-limited requests return HTTP 429 with `Retry-After` header.
 cd backend && python -m pytest tests/ -v
 
 # Frontend
-cd frontend && npx vitest run
+cd frontend && CI=true npx react-scripts test --watchAll=false
 ```
 
 ---
@@ -571,6 +633,8 @@ docker compose up -d --build
 | `⌘/Ctrl + R`      | Re-analyze                       |
 | `⌘/Ctrl + 1-9, 0` | Switch tabs                      |
 | `?`               | Toggle shortcut help             |
+| `/`               | Focus username input             |
+| `Esc`             | Dismiss / close                  |
 | `+` / `-` / `0`   | Zoom in/out/reset (Architecture) |
 | `F`               | Fit diagram to screen            |
 

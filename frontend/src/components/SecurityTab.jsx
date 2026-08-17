@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { ShieldAlert, Wrench, ExternalLink } from "lucide-react";
+import { ShieldAlert, Wrench, ExternalLink } from "../icons";
+import { fs } from "../typeScale";
 
 const SEV_ORDER = ["critical", "high", "medium", "low"];
 
@@ -136,20 +137,19 @@ function FindingRow({
                 alignItems: "flex-start",
                 marginTop: 10,
                 padding: "8px 12px",
-                background: "rgba(34,197,94,0.06)",
+                background: "var(--success-bg)",
                 borderRadius: 6,
-                border: "1px solid rgba(34,197,94,0.18)",
+                border: "1px solid var(--success)",
               }}
             >
               <Wrench
                 size={13}
-                strokeWidth={1.5}
                 style={{ color: "var(--success)", flexShrink: 0, marginTop: 2 }}
               />
               <div>
                 <div
                   style={{
-                    fontSize: 11,
+                    fontSize: fs.xs,
                     fontWeight: 600,
                     letterSpacing: "0.1em",
                     color: "var(--success)",
@@ -160,7 +160,7 @@ function FindingRow({
                 </div>
                 <div
                   style={{
-                    fontSize: 13,
+                    fontSize: fs.md,
                     color: "var(--text-2)",
                     lineHeight: 1.55,
                   }}
@@ -195,11 +195,11 @@ function FindingRow({
                   alignItems: "center",
                   gap: 3,
                   color: "var(--info)",
-                  fontSize: 11,
+                  fontSize: fs.xs,
                   textDecoration: "none",
                 }}
               >
-                <ExternalLink size={10} strokeWidth={1.5} />
+                <ExternalLink size={10} />
                 {finding.cwe}
               </a>
             )}
@@ -210,7 +210,7 @@ function FindingRow({
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
-                fontSize: 11,
+                fontSize: fs.xs,
                 color: "var(--text-3)",
                 marginTop: 6,
                 flexWrap: "wrap",
@@ -218,10 +218,10 @@ function FindingRow({
             >
               <span
                 style={{
-                  background: "var(--surface-2)",
+                  background: "var(--surface)",
                   borderRadius: 4,
                   padding: "2px 6px",
-                  fontFamily: "monospace",
+                  fontFamily: "var(--font-mono)",
                 }}
               >
                 {finding.blame.commit_hash}
@@ -282,11 +282,11 @@ function FindingRow({
                     onKeyDown={(e) => e.key === "Enter" && handleOpenPR()}
                     autoFocus
                     style={{
-                      fontSize: 12,
+                      fontSize: fs.sm,
                       padding: "8px 12px",
                       borderRadius: 4,
-                      border: "1px solid var(--border-2)",
-                      background: "var(--surface-2)",
+                      border: "1px solid var(--border-m)",
+                      background: "var(--surface)",
                       color: "var(--text-1)",
                       width: 210,
                     }}
@@ -312,7 +312,7 @@ function FindingRow({
               ) : (
                 <button
                   className="btn-text"
-                  style={{ color: "var(--primary)" }}
+                  style={{ color: "var(--accent)" }}
                   onClick={() => setShowTokenInput(true)}
                 >
                   Open PR
@@ -320,21 +320,21 @@ function FindingRow({
               ))}
             {prUrl && (
               <>
-                <span style={{ fontSize: 11, color: "var(--success)" }}>
+                <span style={{ fontSize: fs.xs, color: "var(--success)" }}>
                   ✓ PR opened
                 </span>
                 <a
                   href={prUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ fontSize: 11, color: "var(--text-3)" }}
+                  style={{ fontSize: fs.xs, color: "var(--text-3)" }}
                 >
                   {prUrl}
                 </a>
               </>
             )}
             {prError && (
-              <span style={{ fontSize: 11, color: "var(--danger)" }}>
+              <span style={{ fontSize: fs.xs, color: "var(--danger)" }}>
                 {prError}
               </span>
             )}
@@ -348,7 +348,7 @@ function FindingRow({
               {parsed.explanation && (
                 <div
                   style={{
-                    fontSize: 14,
+                    fontSize: fs.base,
                     color: "var(--text-2)",
                     lineHeight: 1.65,
                     marginBottom: 10,
@@ -429,9 +429,9 @@ export default function SecurityTab({
   if (!analyzed && !isAnalyzing) {
     return (
       <div className="empty">
-        <ShieldAlert size={20} className="empty-icon" strokeWidth={1.5} />
+        <ShieldAlert size={20} className="empty-icon" />
         <div className="empty-title">Security not available</div>
-        <div className="empty-sub">Analyze a repository to get started</div>
+        <div className="empty-sub">Load a repository to run an analysis</div>
       </div>
     );
   }
@@ -441,7 +441,7 @@ export default function SecurityTab({
   if (analyzed && !findings?.length) {
     return (
       <div className="empty">
-        <ShieldAlert size={20} className="empty-icon" strokeWidth={1.5} />
+        <ShieldAlert size={20} className="empty-icon" />
         <div className="empty-title">No vulnerabilities detected</div>
         <div className="empty-sub">
           The security scanner found no issues in this repository.
@@ -458,6 +458,22 @@ export default function SecurityTab({
 
   return (
     <div>
+      {/* Tab header */}
+      <div className="tab-header">
+        <div className="tab-header-main">
+          <span className="tab-header-icon">
+            <ShieldAlert size={15} />
+          </span>
+          <div className="tab-header-text">
+            <div className="tab-header-eyebrow">04 — Security</div>
+            <div className="tab-header-title">Security</div>
+            <div className="tab-header-sub">
+              {findings?.length || 0} findings
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Severity filter */}
       <div className="sev-filter">
         {["all", ...SEV_ORDER].map((key) => {

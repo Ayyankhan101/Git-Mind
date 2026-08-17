@@ -1,0 +1,54 @@
+/* ============================================================
+   MATRIX THEME (lazy-loaded)
+   ============================================================ */
+[data-theme="matrix"],
+.matrix {
+  --bg: #0a0f0a;
+  --bg-alt: #060806;
+  --surface-0: #0d120d;
+  --surface-1: #111a11;
+  --surface-2: #162016;
+  --surface-3: #1c281c;
+  --surface-4: #233023;
+
+  --primary: #00ff41;
+  --primary-hover: #33ff66;
+  --primary-strong: #00cc33;
+  --primary-muted: rgba(0, 255, 65, 0.12);
+  --primary-subtle: rgba(0, 255, 65, 0.06);
+
+  --text-primary: #d4ffd4;
+  --text-secondary: #88cc88;
+  --text-tertiary: #4a7a4a;
+  --text-on-primary: #000000;
+
+  --border-subtle: rgba(0, 255, 65, 0.06);
+  --border-default: rgba(0, 255, 65, 0.1);
+  --border-strong: rgba(0, 255, 65, 0.16);
+  --border-accent: rgba(0, 255, 65, 0.3);
+
+  --glass-bg: rgba(10, 15, 10, 0.8);
+  --glass-border: rgba(0, 255, 65, 0.1);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-accent: 0 4px 24px rgba(0, 255, 65, 0.15);
+
+  --success: #00ff41;
+  --success-bg: rgba(0, 255, 65, 0.08);
+  --warning: #ffff00;
+  --warning-bg: rgba(255, 255, 0, 0.08);
+  --danger: #ff3333;
+  --danger-bg: rgba(255, 51, 51, 0.08);
+  --info: #00ffff;
+  --info-bg: rgba(0, 255, 255, 0.08);
+
+  --code-keyword: #00ff41;
+  --code-string: #ffff00;
+  --code-comment: #4a7a4a;
+  --code-fn: #00ffff;
+  --code-number: #ff9900;
+  --code-operator: #00ffff;
+  --code-punctuation: #88cc88;
+}

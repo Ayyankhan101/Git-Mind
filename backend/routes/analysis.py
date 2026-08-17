@@ -1,5 +1,5 @@
 import asyncio
-import re
+import time
 
 import structlog
 from fastapi import APIRouter, Request
@@ -7,7 +7,7 @@ from fastapi import APIRouter, Request
 from chroma_utils import search_codebase
 from llm_cache import invoke_with_retry
 from models.requests import SummaryRequest
-from routes._errors import error_response
+from routes._errors import error_response, is_valid_gh_url
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
 from services.session import _UUID_RE, get_session
@@ -18,7 +18,25 @@ router = APIRouter()
 
 _LLM = get_llm(temperature_key="analysis")
 
-_GH_URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+/?$")
+_PUBLIC_ANALYSIS_KEYS = (
+    "repo_name",
+    "repo_url",
+    "architecture_diagram",
+    "api_docs",
+    "security_findings",
+    "cve_findings",
+    "git_audit",
+    "solidity_audit",
+    "code_audit",
+    "health",
+    "head_sha",
+    "saved_at",
+)
+
+
+def _trim_analysis(snap: dict) -> dict:
+    """Strip internal fields (owner_hash, chroma_collection_name, chat_history)."""
+    return {k: snap.get(k) for k in _PUBLIC_ANALYSIS_KEYS if k in snap}
 
 
 def _count_by_severity(findings: list[dict]) -> tuple[int, int]:
@@ -172,10 +190,13 @@ async def get_analysis(session_id: str, request: Request):
     snap = await get_analysis_db(session_id)
     if snap is None:
         return error_response("Analysis not found or has expired", 404)
-    try:
-        return snap
-    except Exception:
-        return error_response("Analysis file corrupted", 500)
+    # Hybrid access: fresh analyses (≤24h) are public share-by-URL links;
+    # older snapshots require authentication.
+    if time.time() - (snap.get("saved_at") or 0) > 86400:
+        from services.auth import require_gh_token_or_service_key
+
+        require_gh_token_or_service_key(request)
+    return _trim_analysis(snap)
 
 
 @router.get("/analysis/previous")
@@ -189,13 +210,13 @@ async def get_previous_analysis(repo_url: str, exclude_session: str | None = Non
         if not (await check_rate_limit("analysis_previous", client_ip))[0]:
             return await rate_limit_response("analysis_previous", client_ip)
 
-    if not _GH_URL_RE.match(repo_url.strip()):
+    if not is_valid_gh_url(repo_url.strip()):
         return error_response("Invalid GitHub repo URL — must be https://github.com/{owner}/{repo}", 400)
 
     snap = await get_previous_analysis_db(repo_url, exclude_session)
     if snap is None:
         return error_response("No previous analysis found", 404)
-    return snap
+    return _trim_analysis(snap)
 
 
 @router.get("/analysis/history")
@@ -208,7 +229,7 @@ async def get_analysis_history(repo_url: str, days: int = 0, request: Request = 
     if not (await check_rate_limit("analysis_history", client_ip))[0]:
         return await rate_limit_response("analysis_history", client_ip)
 
-    if not _GH_URL_RE.match(repo_url.strip()):
+    if not is_valid_gh_url(repo_url.strip()):
         return error_response("Invalid GitHub repo URL — must be https://github.com/{owner}/{repo}", 400)
 
     since = None

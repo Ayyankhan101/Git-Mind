@@ -1,7 +1,31 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { MessageSquare } from "../icons";
+import { fs } from "../typeScale";
 import { postChatStream } from "../api";
+
+/* Standard tab-header so Chat matches every other dashboard tab. */
+function ChatHeader({ enabled }) {
+  return (
+    <div className="tab-header">
+      <div className="tab-header-main">
+        <span className="tab-header-icon">
+          <MessageSquare size={15} />
+        </span>
+        <div className="tab-header-text">
+          <div className="tab-header-eyebrow">11 — Chat</div>
+          <div className="tab-header-title">Chat</div>
+          <div className="tab-header-sub">
+            {enabled
+              ? "Ask anything about this repository"
+              : "Requires an analysis"}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function SourceBadge({ source }) {
   const path = source.filepath || "";
@@ -125,6 +149,7 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
   if (!enabled) {
     return (
       <div className="chat-wrap">
+        <ChatHeader enabled={false} />
         <div className="chat-empty">Analyze a repository to unlock chat</div>
       </div>
     );
@@ -132,6 +157,7 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
 
   return (
     <div className="chat-wrap">
+      <ChatHeader enabled />
       <div
         className="chat-messages"
         aria-live="polite"
@@ -150,7 +176,7 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
             <div
               style={{
                 color: "var(--text-3)",
-                fontSize: 14,
+                fontSize: fs.base,
                 textAlign: "center",
               }}
             >

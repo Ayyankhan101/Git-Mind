@@ -3,8 +3,8 @@ import { render, screen } from "@testing-library/react";
 import HealthCard from "./HealthCard";
 
 test("returns null when health is null", () => {
-  const { container } = render(<HealthCard health={null} />);
-  expect(container.firstChild).toBeNull();
+  render(<HealthCard health={null} />);
+  expect(screen.queryByTestId("health-card")).not.toBeInTheDocument();
 });
 
 test("renders grade and score", () => {
@@ -38,4 +38,22 @@ test("renders dimension labels from breakdown", () => {
 test("renders F grade", () => {
   render(<HealthCard health={{ grade: "F", score: 15, breakdown: {} }} />);
   expect(screen.getByText("F")).toBeInTheDocument();
+});
+
+test("band variant applies the editorial band class", () => {
+  const { container } = render(
+    <HealthCard
+      health={{ grade: "A", score: 92, breakdown: {} }}
+      variant="band"
+    />,
+  );
+  expect(container.querySelector(".health-card--band")).toBeTruthy();
+  expect(container.querySelector(".health-card")).toBeTruthy();
+});
+
+test("default variant has no band class", () => {
+  const { container } = render(
+    <HealthCard health={{ grade: "A", score: 92, breakdown: {} }} />,
+  );
+  expect(container.querySelector(".health-card--band")).toBeNull();
 });

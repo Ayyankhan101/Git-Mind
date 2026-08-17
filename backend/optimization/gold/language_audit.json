@@ -1,0 +1,230 @@
+[
+  {
+    "inputs": {
+      "guidance": "You are a senior Python code reviewer. Below are file paths and source contents from a Python project.\n\nAnalyze each file for:\n- Security vulnerabilities (SQL injection, command injection, unsafe eval/exec, XXE, pickle deserialization)\n- Logic errors (incorrect exception handling, race conditions with asyncio, mutable default args)\n- Anti-patterns (global state, wildcard imports, overly broad except)\n- Performance issues (O(n**2) loops, missing __slots__, sync I/O in async code)\n- Convention violations (PEP 8 naming, missing type hints, unused imports/variables)",
+      "context": "{\n  \"src/app.py\": \"import subprocess\\n\\ndef run(cmd):\\n    subprocess.call(cmd, shell=True)\\n\"\n}"
+    },
+    "output": [
+      {
+        "id": "cmd-injection",
+        "file": "src/app.py",
+        "line": 4,
+        "severity": "high",
+        "title": "Command injection",
+        "description": "subprocess.call with shell=True allows arbitrary command execution.",
+        "remediation": "Pass the command as an argument list without shell=True.",
+        "rule": "W1509",
+        "cwe": "CWE-78"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "guidance": "You are a senior Python code reviewer. Below are file paths and source contents from a Python project.\n\nAnalyze each file for:\n- Security vulnerabilities (SQL injection, command injection, unsafe eval/exec, XXE, pickle deserialization)\n- Logic errors (incorrect exception handling, race conditions with asyncio, mutable default args)\n- Anti-patterns (global state, wildcard imports, overly broad except)\n- Performance issues (O(n**2) loops, missing __slots__, sync I/O in async code)\n- Convention violations (PEP 8 naming, missing type hints, unused imports/variables)",
+      "context": "{\n  \"api/db.py\": \"def query(user_id):\\n    return conn.execute(f'SELECT * FROM users WHERE id = {user_id}')\\n\"\n}"
+    },
+    "output": [
+      {
+        "id": "sql-injection",
+        "file": "api/db.py",
+        "line": 2,
+        "severity": "high",
+        "title": "SQL injection",
+        "description": "user_id is interpolated directly into the SQL query string.",
+        "remediation": "Use parameterized queries instead of string interpolation.",
+        "rule": null,
+        "cwe": "CWE-89"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "guidance": "You are a senior Python code reviewer. Below are file paths and source contents from a Python project.\n\nAnalyze each file for:\n- Security vulnerabilities (SQL injection, command injection, unsafe eval/exec, XXE, pickle deserialization)\n- Logic errors (incorrect exception handling, race conditions with asyncio, mutable default args)\n- Anti-patterns (global state, wildcard imports, overly broad except)\n- Performance issues (O(n**2) loops, missing __slots__, sync I/O in async code)\n- Convention violations (PEP 8 naming, missing type hints, unused imports/variables)",
+      "context": "{\n  \"src/serialize.py\": \"import pickle\\n\\ndef load(data):\\n    return pickle.loads(data)\\n\"\n}"
+    },
+    "output": [
+      {
+        "id": "pickle-deserialization",
+        "file": "src/serialize.py",
+        "line": 4,
+        "severity": "high",
+        "title": "Unsafe pickle deserialization",
+        "description": "pickle.loads on untrusted data executes arbitrary code.",
+        "remediation": "Use a safe format like JSON or verify the payload signature.",
+        "rule": null,
+        "cwe": "CWE-502"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "guidance": "You are a senior JavaScript/TypeScript code reviewer. Below are file paths and source contents from a JS/TS project.\n\nAnalyze each file for:\n- Security vulnerabilities (XSS, prototype pollution, unsafe regex, RCE via eval)\n- Logic errors (async/await mistakes, null/undefined access, incorrect closure scoping)\n- Anti-patterns (any abuse, deeply nested callbacks, mutation of function params)\n- Performance issues (unnecessary re-renders, large deps arrays, O(n**2) in hot paths)\n- Convention violations (unused vars, missing error handling, inconsistent naming)",
+      "context": "{\n  \"web/render.js\": \"const express = require('express');\\nconst app = express();\\n\\napp.get('/', (req, res) => {\\n  res.send('<h1>' + req.query.name + '</h1>');\\n});\\n\"\n}"
+    },
+    "output": [
+      {
+        "id": "xss",
+        "file": "web/render.js",
+        "line": 6,
+        "severity": "high",
+        "title": "Reflected XSS",
+        "description": "User input is concatenated into HTML without escaping.",
+        "remediation": "Escape output or use a template engine that auto-escapes.",
+        "rule": "no-unsanitized/method",
+        "cwe": "CWE-79"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "guidance": "You are a senior JavaScript/TypeScript code reviewer. Below are file paths and source contents from a JS/TS project.\n\nAnalyze each file for:\n- Security vulnerabilities (XSS, prototype pollution, unsafe regex, RCE via eval)\n- Logic errors (async/await mistakes, null/undefined access, incorrect closure scoping)\n- Anti-patterns (any abuse, deeply nested callbacks, mutation of function params)\n- Performance issues (unnecessary re-renders, large deps arrays, O(n**2) in hot paths)\n- Convention violations (unused vars, missing error handling, inconsistent naming)",
+      "context": "{\n  \"src/cache.js\": \"function lookup(key) {\\n  const data = cache[key];\\n  return JSON.parse(data.body);\\n}\\n\"\n}"
+    },
+    "output": [
+      {
+        "id": "null-access",
+        "file": "src/cache.js",
+        "line": 3,
+        "severity": "medium",
+        "title": "Null dereference",
+        "description": "cache[key] may be undefined and data.body throws.",
+        "remediation": "Check for existence before accessing properties.",
+        "rule": "no-unsafe-optional-chaining",
+        "cwe": null
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "guidance": "You are a senior Go code reviewer. Below are file paths and source contents from a Go project.\n\nAnalyze each file for:\n- Security vulnerabilities (SQL injection via string building, command injection, unsafe pointer misuse)\n- Logic errors (deferred execution pitfalls, goroutine leaks, incorrect channel use)\n- Anti-patterns (global mutex, naked returns, package-level state)\n- Performance issues (goroutine leaks, excessive allocations, missing pool reuse)\n- Convention violations (missing err checks, inconsistent naming, missing doc comments)",
+      "context": "{\n  \"api/main.go\": \"package main\\n\\nimport \\\"database/sql\\\"\\n\\nfunc GetUser(db *sql.DB, id string) {\\n    db.Query(\\\"SELECT * FROM users WHERE id = \\\" + id)\\n}\\n\"\n}"
+    },
+    "output": [
+      {
+        "id": "sql-injection",
+        "file": "api/main.go",
+        "line": 7,
+        "severity": "high",
+        "title": "SQL injection",
+        "description": "The id parameter is concatenated into the SQL query.",
+        "remediation": "Use parameterized queries with ? placeholders.",
+        "rule": "sqlclosecheck",
+        "cwe": "CWE-89"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "guidance": "You are a senior Go code reviewer. Below are file paths and source contents from a Go project.\n\nAnalyze each file for:\n- Security vulnerabilities (SQL injection via string building, command injection, unsafe pointer misuse)\n- Logic errors (deferred execution pitfalls, goroutine leaks, incorrect channel use)\n- Anti-patterns (global mutex, naked returns, package-level state)\n- Performance issues (goroutine leaks, excessive allocations, missing pool reuse)\n- Convention violations (missing err checks, inconsistent naming, missing doc comments)",
+      "context": "{\n  \"worker/worker.go\": \"package worker\\n\\nfunc Start() {\\n    for {\\n        go process(jobs <- ch)\\n    }\\n}\\n\"\n}"
+    },
+    "output": [
+      {
+        "id": "goroutine-leak",
+        "file": "worker/worker.go",
+        "line": 4,
+        "severity": "medium",
+        "title": "Goroutine leak",
+        "description": "Goroutines are spawned without a way to stop or wait for them.",
+        "remediation": "Use a context with cancellation and a WaitGroup.",
+        "rule": "gocritic",
+        "cwe": null
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "guidance": "You are a senior Rust code reviewer. Below are file paths and source contents from a Rust project.\n\nAnalyze each file for:\n- Security vulnerabilities (unsafe block misuse, transmute, buffer overflow)\n- Logic errors (incorrect borrows, lifetime mismatches, panic unwinds)\n- Anti-patterns (unnecessary clones, large enum overhead, Box<dyn> everywhere)\n- Performance issues (O(n**2) with Vec, unnecessary allocations, Arc misuse)\n- Convention violations (missing derives, unwrap/expect in production, TODO stubs)",
+      "context": "{\n  \"src/parser.rs\": \"use std::mem;\\n\\nfn cast<T>(v: &[u8]) -> &T {\\n    unsafe { mem::transmute(v.as_ptr()) }\\n}\\n\"\n}"
+    },
+    "output": [
+      {
+        "id": "unsafe-transmute",
+        "file": "src/parser.rs",
+        "line": 4,
+        "severity": "high",
+        "title": "Unsafe transmute",
+        "description": "transmute reinterprets raw bytes without size or alignment checks.",
+        "remediation": "Use bytemuck or safe parsing APIs instead of transmute.",
+        "rule": "clippy::missing_transmute_annotations",
+        "cwe": "CWE-119"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "guidance": "You are a senior Rust code reviewer. Below are file paths and source contents from a Rust project.\n\nAnalyze each file for:\n- Security vulnerabilities (unsafe block misuse, transmute, buffer overflow)\n- Logic errors (incorrect borrows, lifetime mismatches, panic unwinds)\n- Anti-patterns (unnecessary clones, large enum overhead, Box<dyn> everywhere)\n- Performance issues (O(n**2) with Vec, unnecessary allocations, Arc misuse)\n- Convention violations (missing derives, unwrap/expect in production, TODO stubs)",
+      "context": "{\n  \"src/server.rs\": \"fn handle(req: Request) {\\n    let body = req.body();\\n    let n: u32 = body[0..4].try_into().unwrap();\\n}\\n\"\n}"
+    },
+    "output": [
+      {
+        "id": "panic-unwrap",
+        "file": "src/server.rs",
+        "line": 3,
+        "severity": "medium",
+        "title": "Panic on unwrap",
+        "description": "unwrap on a fallible conversion panics if the slice is too short.",
+        "remediation": "Return a Result and handle the error gracefully.",
+        "rule": "clippy::unwrap_used",
+        "cwe": null
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "guidance": "You are a senior Java code reviewer. Below are file paths and source contents from a Java project.\n\nAnalyze each file for:\n- Security vulnerabilities (SQL injection, XXE, insecure deserialization, path traversal)\n- Logic errors (null pointer, incorrect equals/hashCode, thread safety issues)\n- Anti-patterns (god class, empty catch blocks, magic numbers, excessive null checks)\n- Performance issues (O(n**2) in loops, missing StringBuilder, excessive boxing)\n- Convention violations (unused imports, missing Override, naming conventions)",
+      "context": "{\n  \"src/main/java/com/acme/Auth.java\": \"public class Auth {\\n    public String sign(String secret) {\\n        return secret + \\\":\\\" + System.currentTimeMillis();\\n    }\\n}\\n\"\n}"
+    },
+    "output": [
+      {
+        "id": "weak-signature",
+        "file": "src/main/java/com/acme/Auth.java",
+        "line": 3,
+        "severity": "high",
+        "title": "Insecure token signature",
+        "description": "Tokens are signed with a string concatenation instead of a MAC.",
+        "remediation": "Use HMAC with a strong secret via a standard library.",
+        "rule": null,
+        "cwe": "CWE-347"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "guidance": "You are a senior Python code reviewer. Below are file paths and source contents from a Python project.\n\nAnalyze each file for:\n- Security vulnerabilities (SQL injection, command injection, unsafe eval/exec, XXE, pickle deserialization)\n- Logic errors (incorrect exception handling, race conditions with asyncio, mutable default args)\n- Anti-patterns (global state, wildcard imports, overly broad except)\n- Performance issues (O(n**2) loops, missing __slots__, sync I/O in async code)\n- Convention violations (PEP 8 naming, missing type hints, unused imports/variables)",
+      "context": "{\n  \"api/utils.py\": \"def parse(data):\\n    return eval(data)\\n\"\n}"
+    },
+    "output": [
+      {
+        "id": "unsafe-eval",
+        "file": "api/utils.py",
+        "line": 2,
+        "severity": "high",
+        "title": "Unsafe eval",
+        "description": "eval on untrusted input executes arbitrary Python code.",
+        "remediation": "Replace with a safe parser such as ast.literal_eval.",
+        "rule": "W0123",
+        "cwe": "CWE-95"
+      }
+    ]
+  },
+  {
+    "inputs": {
+      "guidance": "You are a senior JavaScript/TypeScript code reviewer. Below are file paths and source contents from a JS/TS project.\n\nAnalyze each file for:\n- Security vulnerabilities (XSS, prototype pollution, unsafe regex, RCE via eval)\n- Logic errors (async/await mistakes, null/undefined access, incorrect closure scoping)\n- Anti-patterns (any abuse, deeply nested callbacks, mutation of function params)\n- Performance issues (unnecessary re-renders, large deps arrays, O(n**2) in hot paths)\n- Convention violations (unused vars, missing error handling, inconsistent naming)",
+      "context": "{\n  \"src/client.ts\": \"const socket = new WebSocket(url);\\nsocket.onmessage = (ev) => {\\n  render(JSON.parse(ev.data).html);\\n};\\n\"\n}"
+    },
+    "output": [
+      {
+        "id": "inner-html",
+        "file": "src/client.ts",
+        "line": 4,
+        "severity": "high",
+        "title": "Unsafe innerHTML",
+        "description": "Server-controlled HTML is injected via innerHTML without sanitizing.",
+        "remediation": "Use textContent or a sanitizer before rendering HTML.",
+        "rule": "react/no-danger",
+        "cwe": "CWE-79"
+      }
+    ]
+  }
+]

@@ -14,7 +14,7 @@ import {
   ShieldCheck,
   Server,
   Globe,
-} from "lucide-react";
+} from "../icons";
 
 const ICON_MAP = {
   Shield,
@@ -168,12 +168,19 @@ export default function ArchNode({ data, selected }) {
   const language = data.language || "";
   const framework = data.framework || "";
 
+  // color-mix() — tint the layer color toward transparent for borders and
+  // badge fills. The old `.replace("0.5)", ...)` string hacks were no-ops on
+  // var() references (and appending alpha suffixes like `${c}15` produces
+  // invalid CSS that browsers silently drop).
+  const mix = (colorVar, pct) =>
+    `color-mix(in srgb, ${colorVar} ${pct}, transparent)`;
+
   const cardStyle = {
-    background: `linear-gradient(135deg, ${colors.bg}, rgba(18,18,35,0.88))`,
-    borderColor: colors.border.replace("0.5)", "0.65)"),
+    background: `linear-gradient(135deg, ${colors.bg}, var(--surface-1))`,
+    borderColor: mix(colors.border, "65%"),
     boxShadow: selected
-      ? `0 0 30px ${colors.glow}, 0 0 60px ${colors.glow}, inset 0 1px 0 rgba(255,255,255,0.06)`
-      : `0 6px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)`,
+      ? `0 0 30px ${colors.glow}, 0 0 60px ${colors.glow}, inset 0 1px 0 var(--border-s)`
+      : `3px 3px 0 color-mix(in srgb, var(--border-m) 45%, transparent), inset 0 1px 0 var(--border-s)`,
   };
 
   const handleCommon = {
@@ -185,7 +192,7 @@ export default function ArchNode({ data, selected }) {
 
   return (
     <div
-      className="group rounded-xl border backdrop-blur-xl transition-all duration-300 select-none cursor-pointer overflow-hidden arch-node-card"
+      className="arch-node-card"
       style={{
         ...cardStyle,
         animation: "nodeFadeIn 0.4s ease-out both",
@@ -194,45 +201,39 @@ export default function ArchNode({ data, selected }) {
     >
       <Handle type="target" position={Position.Top} style={handleCommon} />
 
-      <div
-        className="px-4 py-3 flex flex-col gap-2 pointer-events-none"
-        style={{ minWidth: 200, maxWidth: 300 }}
-      >
+      <div className="arch-node-body">
         {/* Icon + Title row */}
-        <div className="flex items-center gap-2.5">
+        <div className="arch-node-head">
           <div
-            className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+            className="arch-node-icon"
             style={{ background: colors.bg, color: colors.text }}
           >
-            <IconComp size={18} strokeWidth={1.5} />
+            <IconComp size={18} />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+          <div className="arch-node-head-main">
+            <div className="arch-node-title-row">
               <h4
-                className="truncate"
-                style={{
-                  fontSize: 17,
-                  fontWeight: 700,
-                  color: "var(--text-1)",
-                }}
+                className="arch-node-label"
+                style={{ color: "var(--text-1)" }}
               >
                 {data.label}
               </h4>
               <span
-                className="text-[12px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-widest shrink-0 leading-none"
+                className="arch-node-type"
                 style={{
-                  background: colors.border
-                    .replace("0.5)", "0.25)")
-                    .replace("0.65)", "0.3)"),
+                  background: mix(colors.border, "25%"),
                   color: "var(--text-1)",
-                  border: `1px solid ${colors.border.replace("0.5)", "0.35)").replace("0.65)", "0.4)")}`,
+                  border: `1px solid ${mix(colors.border, "40%")}`,
                 }}
               >
                 {typeLabel}
               </span>
             </div>
             {(language || framework) && (
-              <div className="text-[11px] text-slate-400 mt-0.5 truncate">
+              <div
+                className="arch-node-meta"
+                style={{ color: "var(--text-2)" }}
+              >
                 {language}
                 {framework ? ` · ${framework}` : ""}
               </div>
@@ -242,29 +243,34 @@ export default function ArchNode({ data, selected }) {
 
         {/* Endpoint pills */}
         {endpoints.length > 0 && (
-          <div className="flex flex-wrap gap-1">
+          <div className="arch-node-endpoints">
             {endpoints.slice(0, 4).map((ep, i) => {
               const methodColor =
                 HTTP_METHOD_COLORS[ep.method] || "var(--text-3)";
               return (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono leading-none truncate max-w-full"
+                  className="arch-node-endpoint"
                   style={{
-                    background: `${methodColor}15`,
-                    border: `1px solid ${methodColor}30`,
+                    background: mix(methodColor, "15%"),
+                    border: `1px solid ${mix(methodColor, "30%")}`,
                   }}
                   title={`${ep.method} ${ep.path}`}
                 >
                   <span style={{ color: methodColor, fontWeight: 700 }}>
                     {ep.method}
                   </span>
-                  <span className="text-slate-400 truncate">{ep.path}</span>
+                  <span
+                    className="arch-node-endpoint-path"
+                    style={{ color: "var(--text-2)" }}
+                  >
+                    {ep.path}
+                  </span>
                 </span>
               );
             })}
             {endpoints.length > 4 && (
-              <span className="text-[10px] text-slate-500 px-1">
+              <span className="arch-node-endpoint-more">
                 +{endpoints.length - 4}
               </span>
             )}
@@ -272,17 +278,19 @@ export default function ArchNode({ data, selected }) {
         )}
 
         {/* Imports / Export chips */}
-        <div className="flex items-center gap-2 text-[11px] text-slate-500">
+        <div className="arch-node-footer">
           {imports.length > 0 && (
-            <div className="flex items-center gap-1 truncate min-w-0">
-              <span className="shrink-0 opacity-60">in</span>
-              <span className="truncate">{imports.slice(0, 4).join(", ")}</span>
+            <div className="arch-node-imports">
+              <span className="arch-node-imports-in">in</span>
+              <span className="arch-node-imports-text">
+                {imports.slice(0, 4).join(", ")}
+              </span>
               {imports.length > 4 && <span>+{imports.length - 4}</span>}
             </div>
           )}
           {endpoints.length > 0 && (
             <span
-              className="shrink-0 ml-auto text-[11px] font-mono"
+              className="arch-node-apis"
               style={{ color: colors.text, opacity: 0.6 }}
             >
               {endpoints.length > 1 ? `${endpoints.length} APIs` : "1 API"}

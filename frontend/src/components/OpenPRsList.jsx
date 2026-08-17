@@ -1,35 +1,46 @@
 import React from "react";
-import { GitPullRequest, GitBranch } from "lucide-react";
+import { GitPullRequest, GitBranch } from "../icons";
+import { fs } from "../typeScale";
 import { relativeTime } from "./PRReviewTab";
 
-export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impactLoading, onSelect }) {
-  if (!prsLoading && openPRs.length === 0) return (
-    <div style={{ marginBottom: 20 }}>
-      <div
-        style={{
-          fontSize: 11,
-          color: "var(--text-3)",
-          marginBottom: 8,
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          letterSpacing: ".05em",
-        }}
-      >
-        <GitPullRequest size={11} strokeWidth={1.5} />
-        OPEN PULL REQUESTS (0)
+export default function OpenPRsList({
+  openPRs,
+  prsLoading,
+  prUrl,
+  loading,
+  impactLoading,
+  onSelect,
+}) {
+  if (!prsLoading && openPRs.length === 0)
+    return (
+      <div style={{ marginBottom: 20 }}>
+        <div
+          style={{
+            fontSize: fs.xs,
+            color: "var(--text-3)",
+            marginBottom: 8,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            letterSpacing: ".05em",
+          }}
+        >
+          <GitPullRequest size={11} />
+          OPEN PULL REQUESTS (0)
+        </div>
+        <div
+          style={{ fontSize: fs.sm, color: "var(--text-3)", padding: "8px 0" }}
+        >
+          No open pull requests
+        </div>
       </div>
-      <div style={{ fontSize: 12, color: "var(--text-3)", padding: "8px 0" }}>
-        No open pull requests
-      </div>
-    </div>
-  );
+    );
 
   return (
     <div style={{ marginBottom: 20 }}>
       <div
         style={{
-          fontSize: 11,
+          fontSize: fs.xs,
           color: "var(--text-3)",
           marginBottom: 8,
           display: "flex",
@@ -38,7 +49,7 @@ export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impac
           letterSpacing: ".05em",
         }}
       >
-        <GitPullRequest size={11} strokeWidth={1.5} />
+        <GitPullRequest size={11} />
         OPEN PULL REQUESTS {!prsLoading && `(${openPRs.length})`}
       </div>
       {prsLoading ? (
@@ -75,14 +86,16 @@ export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impac
                   borderRadius: 8,
                   textAlign: "left",
                   cursor: "pointer",
-                  background: active ? "var(--primary)10" : "var(--surface-2)",
+                  background: active
+                    ? "color-mix(in srgb, var(--primary) 10%, transparent)"
+                    : "var(--surface-2)",
                   border: `1px solid ${active ? "var(--primary)" : "var(--border)"}`,
                   transition: "border-color .15s, background .15s",
                 }}
               >
                 <span
                   style={{
-                    fontSize: 11,
+                    fontSize: fs.xs,
                     fontFamily: "var(--font-mono)",
                     color: active ? "var(--primary)" : "var(--text-3)",
                     flexShrink: 0,
@@ -94,7 +107,7 @@ export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impac
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={{
-                      fontSize: 13,
+                      fontSize: fs.md,
                       fontWeight: 500,
                       color: "var(--text-1)",
                       overflow: "hidden",
@@ -106,7 +119,7 @@ export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impac
                     {pr.draft && (
                       <span
                         style={{
-                          fontSize: 11,
+                          fontSize: fs.xs,
                           padding: "1px 5px",
                           borderRadius: 3,
                           background: "var(--surface)",
@@ -130,27 +143,27 @@ export default function OpenPRsList({ openPRs, prsLoading, prUrl, loading, impac
                   >
                     <span
                       style={{
-                        fontSize: 11,
+                        fontSize: fs.xs,
                         color: "var(--text-3)",
                         display: "flex",
                         alignItems: "center",
                         gap: 3,
                       }}
                     >
-                      <GitBranch size={10} strokeWidth={1.5} />
+                      <GitBranch size={10} />
                       {pr.head_ref} → {pr.base_ref}
                     </span>
-                    <span style={{ fontSize: 11, color: "var(--text-3)" }}>
+                    <span style={{ fontSize: fs.xs, color: "var(--text-3)" }}>
                       @{pr.user}
                     </span>
-                    <span style={{ fontSize: 11, color: "var(--text-3)" }}>
+                    <span style={{ fontSize: fs.xs, color: "var(--text-3)" }}>
                       {relativeTime(pr.updated_at)}
                     </span>
                     {pr.labels?.map((l) => (
                       <span
                         key={l}
                         style={{
-                          fontSize: 11,
+                          fontSize: fs.xs,
                           padding: "1px 6px",
                           borderRadius: 3,
                           background: "var(--surface)",

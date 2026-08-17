@@ -8,15 +8,61 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import structlog
+from pydantic import BaseModel
 
-from llm_cache import get_cached, invoke_with_retry, set_cached
-from settings import LLM_MODEL, get_llm
+from dspy_setup import dspy
+from llm_cache import run_dspy_cached
+from optimization.registry import define_program
+from settings import LLM_MODEL, get_dspy_lm
 
 logger = structlog.get_logger(__name__)
 
-_LLM = get_llm(temperature_key="code_audit", json_mode=True)
+_LM = get_dspy_lm(temperature_key="code_audit")
 _CACHE_NS = f"{LLM_MODEL}:lang_audit:json"
 _MAX_FINDINGS = 40
+
+
+class CodeAuditFinding(BaseModel):
+    """Code review finding — shape matches the frontend contract exactly."""
+
+    id: str
+    file: str
+    line: int | None = None
+    severity: str
+    title: str
+    description: str
+    remediation: str
+    rule: str | None = None
+    cwe: str | None = None
+
+
+class CodeAuditSignature(dspy.Signature):
+    """You are a senior code reviewer.
+
+    Analyze the input for security vulnerabilities, logic errors, anti-patterns,
+    performance issues, and convention violations, following the language-specific
+    audit guidance. If no issues are found, return an empty list."""
+
+    guidance: str = dspy.InputField(desc="Language-specific audit checklist to follow when reviewing")
+    context: str = dspy.InputField(desc="Tool findings (JSON) or source files (JSON) to review")
+    findings: list[CodeAuditFinding] = dspy.OutputField(
+        desc=(
+            "Review findings. Each has: id (short unique id), file (relative path), "
+            "line (integer line number or null), severity (critical|high|medium|low), "
+            "title (max 10 words), description (one sentence explaining the issue), "
+            "remediation (one concrete fix sentence), rule (linter rule ID or null), "
+            "cwe (CWE identifier or null)."
+        )
+    )
+
+
+_predictor = define_program(
+    "language_audit",
+    CodeAuditSignature,
+    output_field="findings",
+    input_fields=("guidance", "context"),
+    output_model=CodeAuditFinding,
+)
 
 
 @dataclass
@@ -320,6 +366,13 @@ def _run_tool(tool: tuple[str, ...], matching: list[str], file_contents: dict[st
         shutil.rmtree(dest, ignore_errors=True)
 
 
+def _audit_guidance(prompt_template: str) -> str:
+    """Strip the JSON-output instructions from a language prompt — DSPy owns the output format."""
+    marker = "Return a JSON object"
+    idx = prompt_template.find(marker)
+    return prompt_template[:idx].rstrip() if idx != -1 else prompt_template
+
+
 def _triage_with_llm(prompt_template: str, tool_results: list[dict], lang: str) -> list[dict]:
     truncated = [
         {
@@ -333,16 +386,15 @@ def _triage_with_llm(prompt_template: str, tool_results: list[dict], lang: str) 
         for r in tool_results[:_MAX_FINDINGS]
     ]
 
-    prompt = f"{prompt_template}\n\nTool findings:\n{json.dumps(truncated, indent=2)}"
-
-    cached = get_cached(_CACHE_NS, prompt)
-    if cached:
-        return json.loads(cached).get("findings", [])
-
     try:
-        raw = invoke_with_retry(_LLM, prompt).content
-        findings = json.loads(raw).get("findings", [])
-        set_cached(_CACHE_NS, prompt, raw)
+        findings = run_dspy_cached(
+            _predictor,
+            _CACHE_NS,
+            lm=_LM,
+            output_field="findings",
+            guidance=_audit_guidance(prompt_template),
+            context=json.dumps(truncated, indent=2),
+        )
     except Exception as exc:
         logger.error("LLM triage failed for %s: %s", lang, exc)
         return []
@@ -359,16 +411,15 @@ def _run_llm_fallback(
     if not sources:
         return []
 
-    prompt = f"{prompt_template}\n\nFiles:\n{json.dumps(sources, indent=2)}"
-
-    cached = get_cached(_CACHE_NS, prompt)
-    if cached:
-        return json.loads(cached).get("findings", [])
-
     try:
-        raw = invoke_with_retry(_LLM, prompt).content
-        findings = json.loads(raw).get("findings", [])
-        set_cached(_CACHE_NS, prompt, raw)
+        findings = run_dspy_cached(
+            _predictor,
+            _CACHE_NS,
+            lm=_LM,
+            output_field="findings",
+            guidance=_audit_guidance(prompt_template),
+            context=json.dumps(sources, indent=2),
+        )
     except Exception as exc:
         logger.error("LLM fallback failed for %s: %s", lang, exc)
         return []

@@ -1,21 +1,39 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/jpeg" href="%PUBLIC_URL%/logo.jpeg" />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo.jpeg" />
+    <link rel="icon" type="image/x-icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#080b14" />
-    <meta name="description" content="GitMind — Drop a GitHub URL. Get a senior engineer's understanding of that codebase in 60 seconds." />
+    <meta name="theme-color" content="#090a0f" />
+    <meta
+      name="description"
+      content="GitMind — Drop a GitHub URL. Get a senior engineer's understanding of that codebase in 60 seconds."
+    />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&family=Press+Start+2P&display=swap" rel="stylesheet" />
+    <!-- Fonts load async (non-render-blocking) via the print-media swap trick.
+         display=swap means text paints immediately with the fallback face and
+         swaps once Geist/Geist Mono arrive. Geist gives the app a
+         machine-tooled, developer-native voice (Vercel's own typeface)
+         instead of the generic Inter default. -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"
+      media="print"
+      onload="this.media = 'all'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"
+      />
+    </noscript>
     <title>GitMind</title>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <script>window.__ENV__={API_BASE:"https://ak001z-gitmind-backend.hf.space"};</script>
     <div id="root"></div>
     <!-- GitMind — AI-powered codebase analysis. Multi-agent parallel scanning, CVE detection, PR review, and architecture visualization. -->
   </body>

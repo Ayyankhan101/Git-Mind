@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "preview/themes-swatches.html",
+  "entry": "preview/themes-swatches.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-08-09T04:13:22.448Z",
+  "updatedAt": "2026-08-09T04:13:22.448Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

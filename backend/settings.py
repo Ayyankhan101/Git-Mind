@@ -9,7 +9,7 @@ import os
 from langchain_groq import ChatGroq
 
 # ── Model configuration ───────────────────────────────────────────────────────
-LLM_MODEL = os.environ.get("LLM_MODEL", "llama-3.3-70b-versatile")
+LLM_MODEL = os.environ.get("LLM_MODEL", "llama-3.3-70b")
 
 # Per-use-case temperature defaults
 TEMPERATURES = {
@@ -48,3 +48,21 @@ def get_llm(
     if json_mode:
         llm = llm.bind(response_format={"type": "json_object"})  # type: ignore[assignment]
     return llm
+
+
+def get_dspy_lm(
+    *,
+    temperature_key: str = "analysis",
+    temperature: float | None = None,
+):
+    """Return a configured DSPy LM (Groq via LiteLLM), mirroring get_llm.
+
+    Uses the same LLM_MODEL and per-use-case temperature defaults as get_llm,
+    exposed as a dspy.LM for use inside DSPy programs. DSPy's internal response
+    cache is disabled — the Redis/diskcache LLM cache (llm_cache.py) wraps
+    program calls instead.
+    """
+    from dspy_setup import dspy
+
+    temp = temperature if temperature is not None else TEMPERATURES.get(temperature_key, 0.1)
+    return dspy.LM(model=f"groq/{LLM_MODEL}", temperature=temp, cache=False)

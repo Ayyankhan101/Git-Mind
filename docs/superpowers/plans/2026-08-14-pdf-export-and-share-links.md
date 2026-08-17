@@ -1,0 +1,1441 @@
+# PDF Export + Share Links Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Restyle the PDF exports to match the web app's brutalist aesthetic (embedded Geist fonts, brand primitives, bug fixes, wire up the unused summary/incident builders) and make share links resilient (classified errors, token recovery, canonical format).
+
+**Architecture:** All PDF work is frontend-only: `pdfBuilder.js` is refactored around shared primitives (palette, mono labels, numbered section headers, severity chips, bordered data tables, text sanitizers) using embedded Geist/GeistMono TTFs shipped as a base64 vfs module in a lazy chunk. Link work is frontend-only too: `_apiFetch` carries HTTP status on errors, `App.jsx` classifies share-load failures into a new `shareError` overlay state with a 401 unlock flow, and `handleShare` adopts the canonical `/?share=<id>` format.
+
+**Tech Stack:** React 19 (CRA 5 / react-app-rewired), pdfmake 0.3.11 (vfs base64 fonts, pdfkit under the hood), Jest via react-scripts, Geist/Geist Mono TTFs (SIL OFL 1.1) from the `geist@1.7.2` npm package.
+
+## Global Constraints
+
+- No backend changes. Backend already returns HTTP 401 for locked analyses (`require_gh_token_or_service_key`).
+- Fonts must load lazily: keep the existing `import("./pdfBuilder")` dynamic import in `App.jsx` — never import pdfBuilder statically.
+- pdfmake 0.3.11 only; fonts embedded via `pdfMake.vfs` base64 map (no external font URLs).
+- Geist font files: SIL OFL 1.1 — add an OFL attribution comment at the top of the generated `frontend/src/pdfFonts.js`.
+- Every new `className` must resolve to a CSS rule (dead-class gate: `python3 e2e/classname_audit.py --check`).
+- Frontend test command (from `frontend/`): `CI=true npx react-scripts test <match> --watchAll=false`.
+- Prettier must pass: `npx prettier --check "src/**/*.{js,jsx,ts,tsx,css,json}"` (CI runs this; use `npx prettier --write` locally on changed files).
+- Repo state starts clean on branch `develop`; commit after each task with the repo's conventional style (`feat(ui): ...`, `fix(...)`, `docs: ...`).
+
+---
+
+### Task 1: Embed Geist + Geist Mono fonts
+
+**Files:**
+- Create: `frontend/src/fonts/Geist-Regular.ttf`, `frontend/src/fonts/Geist-Bold.ttf`, `frontend/src/fonts/GeistMono-Regular.ttf`, `frontend/src/fonts/GeistMono-Bold.ttf`
+- Create: `scripts/build-pdf-fonts.js`
+- Create: `frontend/src/pdfFonts.js` (generated)
+- Modify: `frontend/src/pdfBuilder.js` (top: vfs + fonts setup)
+- Test: `frontend/src/pdfFonts.test.js`
+
+**Interfaces:**
+- Consumes: nothing.
+- Produces: `frontend/src/pdfFonts.js` — default export object mapping vfs font names to base64 strings: keys `"Geist-Regular"`, `"Geist-Bold"`, `"GeistMono-Regular"`, `"GeistMono-Bold"`. Later tasks import it and rely on `pdfMake.fonts` being declared with families `Geist` and `GeistMono`.
+
+- [ ] **Step 1: Download the four TTF files**
+
+The `geist` npm package ships static TTFs. From `frontend/`:
+```bash
+mkdir -p src/fonts
+curl -fsSL -o src/fonts/Geist-Regular.ttf  https://cdn.jsdelivr.net/npm/geist@1.7.2/dist/fonts/geist-sans/Geist-Regular.ttf
+curl -fsSL -o src/fonts/Geist-Bold.ttf      https://cdn.jsdelivr.net/npm/geist@1.7.2/dist/fonts/geist-sans/Geist-Bold.ttf
+curl -fsSL -o src/fonts/GeistMono-Regular.ttf https://cdn.jsdelivr.net/npm/geist@1.7.2/dist/fonts/geist-mono/GeistMono-Regular.ttf
+curl -fsSL -o src/fonts/GeistMono-Bold.ttf  https://cdn.jsdelivr.net/npm/geist@1.7.2/dist/fonts/geist-mono/GeistMono-Bold.ttf
+```
+Verify each is a valid TrueType font (first 4 bytes `00 01 00 00`):
+```bash
+cd frontend && for f in src/fonts/*.ttf; do printf '%s: ' "$f"; head -c 4 "$f" | xxd -p; done
+```
+Expected: `00010000` for all four. If any URL 404s, list the package to find the exact path: `curl -fsSL https://data.jsdelivr.com/v1/package/npm/geist@1.7.2/flat | grep -o '"name": *"[^"]*\.ttf"'` and adjust the URL. If no TTF source is reachable at all, STOP and fall back to the Roboto vfs (leave `pdfMake.vfs = pdfFonts` from `pdfmake/build/vfs_fonts`, skip `pdfMake.fonts`), note it in the commit, and continue with the rest of the plan — the PDF still renders with Roboto.
+
+- [ ] **Step 2: Write the font generator script**
+
+`scripts/build-pdf-fonts.js`:
+```js
+#!/usr/bin/env node
+/* Regenerates frontend/src/pdfFonts.js from frontend/src/fonts/*.ttf.
+ * Geist + Geist Mono — SIL OFL 1.1 (see https://github.com/vercel/geist-font). */
+const fs = require("fs");
+const path = require("path");
+
+const FONTS = {
+  "Geist-Regular": "frontend/src/fonts/Geist-Regular.ttf",
+  "Geist-Bold": "frontend/src/fonts/Geist-Bold.ttf",
+  "GeistMono-Regular": "frontend/src/fonts/GeistMono-Regular.ttf",
+  "GeistMono-Bold": "frontend/src/fonts/GeistMono-Bold.ttf",
+};
+
+const out = [`// Generated by scripts/build-pdf-fonts.js — do not edit by hand.`,
+`// Geist + Geist Mono (SIL OFL 1.1, (c) Vercel — github.com/vercel/geist-font).`,
+`const pdfFonts = {`];
+for (const [name, file] of Object.entries(FONTS)) {
+  const abs = path.join(__dirname, "..", file);
+  if (!fs.existsSync(abs)) throw new Error(`Missing font: ${abs}`);
+  const b64 = fs.readFileSync(abs).toString("base64");
+  out.push(`  "${name}": "${b64}",`);
+}
+out.push(`};`, ``, `export default pdfFonts;`);
+fs.writeFileSync(path.join(__dirname, "..", "frontend/src/pdfFonts.js"), out.join("\n") + "\n");
+console.log("Wrote frontend/src/pdfFonts.js");
+```
+
+- [ ] **Step 3: Generate the vfs module and verify**
+
+```bash
+node scripts/build-pdf-fonts.js
+node -e "const m = require('./frontend/src/pdfFonts.js'); console.log('ok')" 2>/dev/null || true
+node --input-type=module -e "import f from './frontend/src/pdfFonts.js'; console.log(Object.keys(f), f['Geist-Regular'].length)"
+```
+Expected: four keys printed, `Geist-Regular` base64 length > 100000 (150KB TTF → ~200KB base64). (The plain `require` line may fail on ESM — that's fine; the `--input-type=module` line is the real check.)
+
+- [ ] **Step 4: Write the failing test**
+
+`frontend/src/pdfFonts.test.js`:
+```js
+import pdfFonts from "./pdfFonts";
+
+describe("pdfFonts (embedded Geist vfs)", () => {
+  it("exposes the four font weights as base64", () => {
+    expect(Object.keys(pdfFonts).sort()).toEqual([
+      "Geist-Bold",
+      "Geist-Regular",
+      "GeistMono-Bold",
+      "GeistMono-Regular",
+    ]);
+  });
+  it.each(["Geist-Regular", "Geist-Bold", "GeistMono-Regular", "GeistMono-Bold"])(
+    "%s is a non-trivial base64 blob",
+    (name) => {
+      expect(pdfFonts[name]).toEqual(expect.any(String));
+      expect(pdfFonts[name].length).toBeGreaterThan(100000);
+    },
+  );
+});
+```
+
+- [ ] **Step 5: Run the test — expect fail (module missing)**
+
+Run (from `frontend/`): `CI=true npx react-scripts test pdfFonts --watchAll=false`
+Expected: FAIL, "Cannot find module './pdfFonts'".
+
+- [ ] **Step 6: Wire the vfs + font families into pdfBuilder.js**
+
+At the very top of `frontend/src/pdfBuilder.js`, replace the two import lines:
+```js
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+
+pdfMake.vfs = pdfFonts;
+```
+with:
+```js
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "./pdfFonts";
+
+pdfMake.vfs = pdfFonts;
+pdfMake.fonts = {
+  Geist: {
+    normal: "Geist-Regular",
+    bold: "Geist-Bold",
+    italics: "Geist-Regular",
+    bolditalics: "Geist-Bold",
+  },
+  GeistMono: {
+    normal: "GeistMono-Regular",
+    bold: "GeistMono-Bold",
+    italics: "GeistMono-Regular",
+    bolditalics: "GeistMono-Bold",
+  },
+};
+```
+
+- [ ] **Step 7: Run the test — expect pass**
+
+Run: `CI=true npx react-scripts test pdfFonts --watchAll=false`
+Expected: PASS (2 tests).
+
+- [ ] **Step 8: Verify the build still resolves the lazy chunk**
+
+Run (from `frontend/`): `npm run build`
+Expected: build succeeds; `build/static/js/*.pdfBuilder*.chunk.js` (or similar named chunk) exists and is > 500KB (contains the base64 fonts).
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add frontend/src/fonts frontend/src/pdfFonts.js scripts/build-pdf-fonts.js frontend/src/pdfBuilder.js frontend/src/pdfFonts.test.js
+git commit -m "feat(pdf): embed Geist + Geist Mono fonts for PDF exports"
+```
+
+---
+
+### Task 2: pdfBuilder shared primitives + bug fixes (pure helpers, TDD)
+
+**Files:**
+- Modify: `frontend/src/pdfBuilder.js` (add exported helpers + fix `_NUM_RE` bug)
+- Test: `frontend/src/pdfBuilder.test.js` (new)
+
+**Interfaces:**
+- Consumes: nothing new.
+- Produces (all exported from `pdfBuilder.js` so later tasks and tests use them):
+  - `safeText(s)` → sanitized string (entities escaped, emoji/control chars stripped)
+  - `wrapLong(s, maxLen = 40)` → string with long unbroken runs chunked by `\n`
+  - `sanitizeFilename(name)` → filesystem-safe string
+  - `highlightCode(code, lang)` → array of per-line token arrays `[{ text, color?, bold?, italics? }]`
+  - Existing `downloadPdf(docDef, filename, cacheKey)` / `getCachedPdf(cacheKey)` keep signatures.
+
+- [ ] **Step 1: Write the failing tests**
+
+`frontend/src/pdfBuilder.test.js` — mock the heavy modules so tests stay fast and deterministic:
+```js
+jest.mock("pdfmake/build/pdfmake", () => ({
+  __esModule: true,
+  default: { vfs: {}, fonts: {}, createPdf: jest.fn(() => ({ download: jest.fn() })) },
+}));
+jest.mock("./pdfFonts", () => ({}));
+
+import {
+  highlightCode,
+  safeText,
+  wrapLong,
+  sanitizeFilename,
+  downloadPdf,
+  getCachedPdf,
+} from "./pdfBuilder";
+import pdfMake from "pdfmake/build/pdfmake";
+
+describe("highlightCode", () => {
+  it("highlights a number in each line (regression: /g regex statefulness)", () => {
+    const out = highlightCode("count = 42\ntotal = 7", "javascript");
+    expect(out[0].some((t) => t.text === "42" && t.color === "#ea580c")).toBe(true);
+    expect(out[1].some((t) => t.text === "7" && t.color === "#ea580c")).toBe(true);
+  });
+  it("highlights keywords, strings and comments", () => {
+    const out = highlightCode('const x = "hi"; // note', "javascript");
+    const flat = out[0];
+    expect(flat.some((t) => t.text === "const" && t.bold)).toBe(true);
+    expect(flat.some((t) => t.text === '"hi"' && t.color === "#16a34a")).toBe(true);
+    expect(flat.some((t) => t.text === "// note" && t.italics)).toBe(true);
+  });
+});
+
+describe("safeText", () => {
+  it("escapes XML entities", () => {
+    expect(safeText('a < b & c > d')).toBe("a &lt; b &amp; c &gt; d");
+  });
+  it("strips emoji and control characters", () => {
+    expect(safeText("boom 💥 ok\u0000end")).toBe("boom  okend");
+  });
+  it("handles null/undefined", () => {
+    expect(safeText(null)).toBe("");
+    expect(safeText(undefined)).toBe("");
+  });
+});
+
+describe("wrapLong", () => {
+  it("chunks an unbroken long string every 40 chars with \\n", () => {
+    const s = "x".repeat(100);
+    const out = wrapLong(s);
+    expect(out.split("\n").every((line) => line.length <= 40)).toBe(true);
+    expect(out.replace(/\n/g, "")).toBe(s);
+  });
+  it("leaves short strings and existing newlines intact", () => {
+    expect(wrapLong("short")).toBe("short");
+    expect(wrapLong("a\nb")).toBe("a\nb");
+  });
+});
+
+describe("sanitizeFilename", () => {
+  it("strips path/illegal chars and collapses whitespace", () => {
+    expect(sanitizeFilename("foo/bar\\baz:*.pdf")).toMatch(/^[A-Za-z0-9._-]+$/);
+    expect(sanitizeFilename("my repo  name")).toBe("my-repo-name");
+  });
+  it("falls back for empty input", () => {
+    expect(sanitizeFilename("")).toBe("gitmind-report");
+  });
+});
+
+describe("pdf cache", () => {
+  it("stores and retrieves docDefs by cacheKey", () => {
+    const docDef = { content: [{ text: "x" }] };
+    downloadPdf(docDef, "x.pdf", "k1");
+    expect(getCachedPdf("k1")).toBe(docDef);
+    expect(pdfMake.createPdf).toHaveBeenCalledWith(docDef);
+  });
+});
+```
+
+- [ ] **Step 2: Run the tests — expect fail**
+
+Run: `CI=true npx react-scripts test pdfBuilder --watchAll=false`
+Expected: FAIL — `safeText`/`wrapLong`/`sanitizeFilename` are not exported; `highlightCode` numbers fail on the second line (the `/g` bug).
+
+- [ ] **Step 3: Implement the helpers + fix the bug**
+
+Add to `frontend/src/pdfBuilder.js` (place after the `highlightCode` function):
+
+```js
+// ── Text safety (pdfmake/Roboto+Geist glyph coverage) ────────────────────────
+export function safeText(s) {
+  if (s == null) return "";
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    // Emoji + dingbats + variation selectors + ZWJ sequences
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, "")
+    // Control characters (keeps \n and \t)
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
+}
+
+// Long unbroken tokens (URLs, file paths) overflow fixed table widths; chunk them.
+export function wrapLong(s, maxLen = 40) {
+  if (s == null) return s;
+  const str = String(s);
+  if (str.length <= maxLen) return str;
+  return str.replace(/[^\s]{40,}/g, (m) => m.match(/.{1,40}/g).join("\n"));
+}
+
+export function sanitizeFilename(name) {
+  return String(name || "gitmind-report")
+    .replace(/[\/\\:*?"<>|]/g, "-")
+    .replace(/[\u0000-\u001F\u007F]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 120);
+}
+```
+
+Fix the number-highlight bug in the tokenize loop of `highlightCode` (currently `_NUM_RE.test(part)` where `_NUM_RE` has the `/g` flag — replace the regex usage, and remove the now-unused `_NUM_RE` const):
+
+```js
+} else if (/^\d+(\.\d+)?$/.test(part)) {
+  tokens.push({ text: part, color: "#ea580c" }); // orange = number
+}
+```
+Also change `function highlightCode(...)` to `export function highlightCode(...)`.
+
+- [ ] **Step 4: Run the tests — expect pass**
+
+Run: `CI=true npx react-scripts test pdfBuilder --watchAll=false`
+Expected: PASS (all describe blocks).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add frontend/src/pdfBuilder.js frontend/src/pdfBuilder.test.js
+git commit -m "fix(pdf): stateless number highlighting + text safety helpers"
+```
+
+---
+
+### Task 3: Restyle the analysis report with brand primitives
+
+**Files:**
+- Modify: `frontend/src/pdfBuilder.js` (palette, sectionHeader/chip/dataTable helpers, cover + each section of `buildAnalysisPdf`, styles, header/footer)
+
+**Interfaces:**
+- Consumes: `pdfMake.fonts` families `Geist`/`GeistMono` (Task 1), `safeText`/`wrapLong` (Task 2).
+- Produces: `buildAnalysisPdf({ repoName, diagram, apiDocs, findings, cveFindings, gitAudit, solidityAudit, codeAudit, health, elapsedSec })` → docDefinition with brutalist styling. Signature unchanged.
+
+- [ ] **Step 1: Add the brand palette and layout helpers**
+
+Replace the `C` palette object (keep the same name so existing sections keep compiling until each is restyled) and add helpers right after it:
+
+```js
+const C = {
+  primary: "#7c6fe0", // brand indigo accent
+  primaryDark: "#5b4fd8",
+  ink: "#08090e",
+  text1: "#1c1c1e",
+  text2: "#3d3d40",
+  text3: "#73737a",
+  surface: "#ffffff",
+  surface2: "#f6f5f2",
+  border: "#111113",
+  critical: "#dc2626",
+  high: "#ea580c",
+  medium: "#ca8a04",
+  low: "#6b7280",
+  info: "#2563eb",
+  success: "#16a34a",
+  white: "#ffffff",
+};
+
+// ── Brutalist layout primitives ──────────────────────────────────────────────
+function sectionHeader(num, title) {
+  return [
+    { text: "", margin: [0, 14, 0, 0] },
+    {
+      columns: [
+        { text: String(num).padStart(2, "0"), width: 28, font: "GeistMono", fontSize: 12, bold: true, color: C.primary },
+        { text: String(title).toUpperCase(), font: "GeistMono", fontSize: 13, bold: true, letterSpacing: 1.5, color: C.ink },
+      ],
+      margin: [0, 0, 0, 6],
+    },
+    {
+      canvas: [{ type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2, lineColor: C.ink }],
+      margin: [0, 0, 0, 10],
+    },
+  ];
+}
+
+function chip(severity) {
+  const s = (severity || "info").toLowerCase();
+  const color = SEVERITY_COLORS[s] || C.text3;
+  return {
+    text: s.toUpperCase(),
+    font: "GeistMono",
+    fontSize: 7.5,
+    bold: true,
+    color: C.white,
+    background: color, // solid block — border on inline text is unreliable in pdfmake
+    margin: [4, 2, 4, 2],
+  };
+}
+
+function hardTable(headers, rows, widths) {
+  return {
+    table: {
+      widths,
+      headerRows: 1,
+      body: [
+        headers.map((h) => ({ text: String(h).toUpperCase(), style: "th" })),
+        ...rows.map((r) => r.map((cell) => ({ text: cell, style: "td" }))),
+      ],
+    },
+    layout: {
+      hLineWidth: () => 1,
+      vLineWidth: () => 1,
+      hLineColor: () => C.ink,
+      vLineColor: () => C.ink,
+      paddingLeft: () => 6,
+      paddingRight: () => 6,
+      paddingTop: () => 4,
+      paddingBottom: () => 4,
+    },
+    margin: [0, 4, 0, 10],
+  };
+}
+
+function monoLabel(text, opts = {}) {
+  return {
+    text: String(text).toUpperCase(),
+    font: "GeistMono",
+    fontSize: opts.fontSize || 8,
+    bold: opts.bold != null ? opts.bold : true,
+    color: opts.color || C.text3,
+    letterSpacing: opts.letterSpacing != null ? opts.letterSpacing : 0.8,
+    ...(opts.margin ? { margin: opts.margin } : {}),
+  };
+}
+```
+
+- [ ] **Step 2: Restyle the cover page**
+
+Replace the whole "Cover page" block in `buildAnalysisPdf` (from `content.push({ text: "", margin: [0, 60, 0, 0] },` through the `pageBreak: "after"` entry) with:
+
+```js
+content.push(
+  { text: "", margin: [0, 70, 0, 0] },
+  {
+    columns: [
+      { text: "GITMIND", width: "*", font: "GeistMono", fontSize: 13, bold: true, letterSpacing: 6, color: C.primary },
+      { text: now.toUpperCase(), font: "GeistMono", fontSize: 8, color: C.text3 },
+    ],
+    margin: [0, 0, 0, 34],
+  },
+  {
+    canvas: [{ type: "rect", x: 0, y: 0, w: 96, h: 10, color: C.primary }],
+    margin: [0, 0, 0, 18],
+  },
+  { text: repoName || "Repository", font: "Geist", fontSize: 34, bold: true, color: C.ink },
+  { text: "Repository Analysis Report", font: "GeistMono", fontSize: 12, letterSpacing: 2, color: C.text3, margin: [0, 8, 0, 26] },
+  {
+    canvas: [{ type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2, lineColor: C.ink }],
+    margin: [0, 0, 0, 14],
+  },
+  {
+    table: {
+      widths: [150, "*"],
+      body: [
+        [monoLabel("Date"), { text: now, style: "metaValue" }],
+        [monoLabel("Scan Duration"), { text: `${elapsedSec || 0}s`, style: "metaValue" }],
+        [
+          monoLabel("Sections"),
+          {
+            text: [
+              findings?.length ? "SECURITY " : "",
+              cveFindings?.length ? "CVE " : "",
+              gitAudit ? "GIT AUDIT " : "",
+              solidityAudit ? "SOLIDITY " : "",
+              codeAudit?.length ? "CODE AUDIT " : "",
+              health ? "HEALTH " : "",
+            ].filter(Boolean).join("/ "),
+            font: "GeistMono",
+            fontSize: 8,
+            color: C.text2,
+          },
+        ],
+      ],
+    },
+    layout: "noBorders",
+    margin: [0, 12, 0, 0],
+  },
+  { text: "", margin: [0, 44, 0, 0] },
+  {
+    text: "POWERED BY GITMIND — AI-POWERED CODE ANALYSIS",
+    font: "GeistMono",
+    fontSize: 8,
+    letterSpacing: 1.5,
+    color: C.text3,
+    alignment: "center",
+  },
+  { text: "", pageBreak: "after" },
+);
+```
+Note: the cover header's `now` is already computed above the content array — keep that line.
+
+- [ ] **Step 3: Restyle each section (mechanical table swap + content safety)**
+
+For every section body inside `buildAnalysisPdf`, apply the following transforms. Work section by section; each keeps its data mapping but swaps presentation:
+
+- **Architecture**: keep the code block but add mono styling and wrap content:
+  ```js
+  content.push(...sectionHeader(1, "Architecture"));
+  content.push({
+    text: wrapLong(safeText(diagram)),
+    font: "GeistMono",
+    fontSize: 8,
+    color: C.text2,
+    fillColor: C.surface2,
+    border: [1, 1, 1, 1],
+    borderColor: C.border,
+    margin: [8, 6, 8, 10],
+  });
+  ```
+- **API Endpoints** (section 2): replace the `layout: "lightTable"` table with `hardTable(["Method", "Route", "Description"], rows, [60, 190, 265])` where each row is `[{ text: method.toUpperCase(), font: "GeistMono", fontSize: 8, bold: true, color: methodColor(method) }, safeText(e.route || ""), safeText(e.description || "")]`.
+- **Security Findings** (section 3): replace with `hardTable(["Severity", "Rule", "Details"], rows, [70, 120, 325])`; cells: `chip(f.severity)`, `safeText(f.rule || f.check || "—")`, and a details stack of `safeText(...)` + `File: ...` line in `font: "GeistMono"` fontSize 7 color C.text3. Drop the `layout: "lightTable"` everywhere.
+- **CVE Vulnerabilities** (section 4): package header row becomes `{ text: safeText(`${pkg.package} v${pkg.version}`), font: "GeistMono", fontSize: 10, bold: true, color: C.ink }` + `chip(pkg.worst_severity)`; the per-vuln table becomes `hardTable(["CVE ID", "Severity", "Summary / Fix"], rows, [95, 60, 360])` with `safeText`/`wrapLong` on the summary cell.
+- **Git Audit** (section 5): stat tiles → keep the 4-up table but give it `layout` with `hLineColor: () => C.ink, vLineColor: () => C.ink` (1pt grid) and make values `font: "GeistMono"`; secret findings + sensitive files tables → `hardTable` with `safeText`/`wrapLong` on paths.
+- **Solidity Audit** (section 6): `hardTable(["Severity", "Contract", "Title", "Description / Remediation"], rows, [60, 90, 120, 245])` with `chip()` + `safeText()`.
+- **Code Audit** (section 7): per-language tables → `hardTable(["Severity", "Title", "Details"], rows, [60, 130, 325])`, language headers in GeistMono bold, `safeText`/`wrapLong` everywhere.
+- **Health Score** (section 8): grade numeral → `font: "GeistMono"`; breakdown table → `hardTable`-style grid (keep the progress-bar canvas columns; give them the 1pt ink grid layout).
+
+- [ ] **Step 4: Update styles + header/footer to the brand**
+
+Replace the `styles` object in `buildAnalysisPdf` with:
+```js
+styles: {
+  sectionTitle: { font: "Geist", fontSize: 16, bold: true, color: C.primary, margin: [0, 0, 0, 4] },
+  th: { font: "GeistMono", bold: true, fontSize: 8, letterSpacing: 1, color: C.white, fillColor: C.ink, margin: [6, 5, 6, 5] },
+  td: { font: "Geist", fontSize: 8.5, margin: [6, 4, 6, 4], color: C.text2 },
+  badge: { font: "GeistMono", fontSize: 7.5, bold: true, margin: [4, 2, 4, 2] },
+  code: { font: "GeistMono", fontSize: 8, color: C.text2, fillColor: C.surface2, margin: [8, 6, 8, 6] },
+  codeInline: { font: "GeistMono", fontSize: 8, color: C.primaryDark },
+  methodCell: { font: "GeistMono", bold: true, fontSize: 8, margin: [6, 3, 6, 3] },
+  statLabel: { font: "GeistMono", fontSize: 8, color: C.text3, bold: true, alignment: "center", margin: [4, 2, 4, 2] },
+  statValue: { font: "GeistMono", fontSize: 18, bold: true, alignment: "center", margin: [4, 4, 4, 4] },
+  metaLabel: { font: "GeistMono", fontSize: 8, color: C.text3, bold: true, letterSpacing: 1, margin: [0, 2, 8, 2] },
+  metaValue: { font: "Geist", fontSize: 10, color: C.text2, margin: [0, 2, 0, 2] },
+},
+```
+And set `defaultStyle: { font: "Geist", fontSize: 10, color: C.text1 }`. Update the `header` callback text (e.g., `font: "GeistMono"` on the page label) and `footer` line color to `C.ink`.
+
+- [ ] **Step 5: Add structural tests**
+
+Append to `frontend/src/pdfBuilder.test.js`:
+```js
+import { buildAnalysisPdf, buildSummaryPdf, buildIncidentPdf } from "./pdfBuilder";
+
+describe("buildAnalysisPdf", () => {
+  it("returns a docDefinition with brand fonts and a cover", () => {
+    const doc = buildAnalysisPdf({
+      repoName: "acme/app",
+      diagram: "graph TD; A-->B;",
+      apiDocs: [{ method: "GET", route: "/api/v1/x", description: "Fetch x" }],
+      findings: [{ severity: "critical", rule: "r1", description: "d1", file: "src/a.py", line_start: 3 }],
+      cveFindings: [],
+      gitAudit: null,
+      solidityAudit: null,
+      codeAudit: [],
+      health: { grade: "B", score: 72, breakdown: { security: 60 } },
+      elapsedSec: 42,
+    });
+    expect(doc.defaultStyle.font).toBe("Geist");
+    expect(doc.content.length).toBeGreaterThan(10);
+    expect(JSON.stringify(doc.content)).toContain("REPOSITORY ANALYSIS REPORT");
+    expect(doc.styles.th.fillColor).toBe("#08090e");
+  });
+});
+```
+
+- [ ] **Step 6: Run tests**
+
+Run: `CI=true npx react-scripts test pdfBuilder --watchAll=false`
+Expected: PASS.
+
+- [ ] **Step 7: Visual sanity check (manual)**
+
+Run the app (`cd frontend && npm start`), analyze a repo, open the Command Palette → "Export report". Open the downloaded PDF: cover shows the mono wordmark + indigo bar + heavy repo name; tables have hard black borders; severity chips are bordered blocks; numbers are orange in code blocks. Fix any rendering breakage (e.g., a table that overflows) before committing.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add frontend/src/pdfBuilder.js frontend/src/pdfBuilder.test.js
+git commit -m "feat(pdf): brutalist redesign of analysis report with Geist brand primitives"
+```
+
+---
+
+### Task 4: Restyle summary + incident PDFs with the same primitives
+
+**Files:**
+- Modify: `frontend/src/pdfBuilder.js` (`buildSummaryPdf`, `buildIncidentPdf`)
+
+**Interfaces:**
+- Consumes: `sectionHeader`, `chip`, `hardTable`, `monoLabel`, `safeText`, `wrapLong`, `C` palette, Geist families (Tasks 1–3).
+- Produces: `buildSummaryPdf({ repoName, summary, stats, health, elapsedSec })` and `buildIncidentPdf({ report, finding, outcome, repoName })` — signatures unchanged, brutalist styling.
+
+- [ ] **Step 1: Restyle `buildSummaryPdf`**
+
+Apply the same treatment as Task 3:
+- Header: mono wordmark row (`GITMIND` + date), thick indigo bar, `repoName` in Geist 24 bold, title `ANALYSIS SUMMARY` in GeistMono letter-spaced.
+- Health card: grade numeral `font: "GeistMono"`, breakdown table with 1pt ink grid (`hLineColor`/`vLineColor` → `C.ink`).
+- AI Summary: Geist 10 body; heading via `monoLabel("AI Summary", { fontSize: 11, color: C.primary, margin: [0, 8, 0, 6] })`.
+- Quick stats: `hardTable(["Metric", "Value"], Object.entries(stats).map(...), ["*", 80])` with metric names title-cased and values `font: "GeistMono"` bold.
+- Footer: `font: "GeistMono"` italics caption.
+- Replace the `styles` block to mirror Task 3 Step 4 (th/td only) and set `defaultStyle.font = "Geist"`.
+
+- [ ] **Step 2: Restyle `buildIncidentPdf`**
+
+- Header: mono `GITMIND` + `INCIDENT REPORT` (Geist 24 bold, ink), finding title in `font: "Geist"` bold primary, meta table rows via `monoLabel` + `metaValue`; outcome value color stays `C.success`/`C.critical`.
+- All content headings → `monoLabel(title, { fontSize: 12, color: C.primary, margin: [0, 12, 0, 6] })`; body text → Geist 10 with `safeText`; timeline table → `hardTable(["Time", "Event"], rows, [80, "*"])`; bullet lists keep `ul` but set `font: "Geist"`.
+- Footer caption `font: "GeistMono"` italics.
+- `defaultStyle.font = "Geist"`; `styles.metaLabel`/`metaValue` use GeistMono/Geist.
+
+- [ ] **Step 3: Add structural tests**
+
+Append to `frontend/src/pdfBuilder.test.js`:
+```js
+describe("buildSummaryPdf", () => {
+  it("renders brand fonts and summary content", () => {
+    const doc = buildSummaryPdf({
+      repoName: "acme/app",
+      summary: "All good",
+      stats: { commits: 12 },
+      health: { grade: "A", score: 91, breakdown: { security: 90 } },
+      elapsedSec: 9,
+    });
+    expect(doc.defaultStyle.font).toBe("Geist");
+    expect(JSON.stringify(doc.content)).toContain("ANALYSIS SUMMARY");
+  });
+});
+
+describe("buildIncidentPdf", () => {
+  it("renders a structured incident report", () => {
+    const doc = buildIncidentPdf({
+      report: { summary: "Leak contained", timeline: [{ label: "t0", event: "detected" }] },
+      finding: { title: "API key leak", severity: "high" },
+      outcome: "resolved",
+      repoName: "acme/app",
+    });
+    expect(doc.defaultStyle.font).toBe("Geist");
+    expect(JSON.stringify(doc.content)).toContain("INCIDENT REPORT");
+  });
+});
+```
+
+- [ ] **Step 4: Run tests**
+
+Run: `CI=true npx react-scripts test pdfBuilder --watchAll=false`
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add frontend/src/pdfBuilder.js frontend/src/pdfBuilder.test.js
+git commit -m "feat(pdf): brutalist redesign of summary and incident reports"
+```
+
+---
+
+### Task 5: Wire the summary PDF export into SummaryTab
+
+**Files:**
+- Modify: `frontend/src/components/SummaryTab.jsx` (header area + handler)
+
+**Interfaces:**
+- Consumes: `buildSummaryPdf`, `downloadPdf` (dynamic `import("../pdfBuilder")` — match App.jsx's lazy pattern), props already present: `repoName`, `health`, `elapsedSec`, and `data` (from `fetchSummary`) with `.summary` and `.stats`.
+- Produces: an "Export PDF" button in the SummaryTab header that downloads `gitmind-summary-<repoName>-<ts>.pdf`.
+
+- [ ] **Step 1: Write the failing test**
+
+`frontend/src/components/SummaryTab.test.jsx`:
+```jsx
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import SummaryTab from "./SummaryTab";
+
+jest.mock("../api", () => ({
+  fetchSummary: jest.fn().mockResolvedValue({ summary: "OK", stats: { commits: 5 } }),
+  subscribeMonitor: jest.fn().mockResolvedValue({}),
+  fetchMonitorStatus: jest.fn().mockResolvedValue({ repos: [] }),
+}));
+jest.mock("../tokenManager", () => ({ get: jest.fn(() => null) }));
+jest.mock("../pdfBuilder", () => ({
+  buildSummaryPdf: jest.fn(() => ({ content: [] })),
+  downloadPdf: jest.fn(),
+}));
+
+describe("SummaryTab export", () => {
+  it("downloads a summary PDF on button click", async () => {
+    const { buildSummaryPdf, downloadPdf } = require("../pdfBuilder");
+    render(
+      <SummaryTab
+        sessionId="sess-1"
+        enabled
+        repoName="acme/app"
+        findings={[]}
+        apiDocs={[]}
+        elapsedSec={12}
+        isAnalyzing={false}
+        health={{ grade: "A", score: 95, breakdown: {} }}
+        repoUrl="https://github.com/acme/app"
+        ghToken={null}
+      />,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: /export pdf/i }));
+    await waitFor(() => expect(downloadPdf).toHaveBeenCalled());
+    expect(buildSummaryPdf).toHaveBeenCalledWith(
+      expect.objectContaining({ repoName: "acme/app", summary: "OK" }),
+    );
+    expect(downloadPdf.mock.calls[0][1]).toMatch(/^gitmind-summary-/);
+  });
+});
+```
+Note: `jest.mock("../pdfBuilder")` replaces the module so the dynamic import resolves to the mock.
+
+- [ ] **Step 2: Run the test — expect fail (no button)**
+
+Run: `CI=true npx react-scripts test SummaryTab --watchAll=false`
+Expected: FAIL — "Unable to find role button with name /export pdf/i".
+
+- [ ] **Step 3: Implement**
+
+In `SummaryTab.jsx`:
+- Add a handler inside the component (place near `handleWatch`):
+  ```jsx
+  const handleExportPdf = async () => {
+    try {
+      const { buildSummaryPdf, downloadPdf } = await import("../pdfBuilder");
+      const docDef = buildSummaryPdf({
+        repoName,
+        summary: data?.summary,
+        stats: data?.stats,
+        health,
+        elapsedSec,
+      });
+      downloadPdf(docDef, `gitmind-summary-${repoName}-${Date.now()}.pdf`);
+    } catch (err) {
+      console.error("Summary export failed", err);
+    }
+  };
+  ```
+- In the `.tab-header` block, after the `.tab-header-main` div, add:
+  ```jsx
+  <button
+    className="btn btn-ghost"
+    onClick={handleExportPdf}
+    disabled={!data}
+    title="Export summary PDF"
+    aria-label="Export summary PDF"
+  >
+    <Download size={13} /> Export PDF
+  </button>
+  ```
+  Import `Download` from `../icons` (check it is exported there; if not, use an existing icon like `FileText` — verify against `frontend/src/icons.js`).
+  Wrap the header children in a flex row so the button sits right-aligned (match existing header markup; if `.tab-header` is already flex, add `style={{ marginLeft: "auto" }}` on the button).
+
+- [ ] **Step 4: Run the test — expect pass**
+
+Run: `CI=true npx react-scripts test SummaryTab --watchAll=false`
+Expected: PASS.
+
+- [ ] **Step 5: Classname + prettier gates**
+
+Run: `python3 e2e/classname_audit.py --check` (uses `btn`, `btn-ghost` — already defined) and `npx prettier --write src/components/SummaryTab.jsx src/components/SummaryTab.test.jsx`.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add frontend/src/components/SummaryTab.jsx frontend/src/components/SummaryTab.test.jsx
+git commit -m "feat(ui): export summary PDF from Summary tab"
+```
+
+---
+
+### Task 6: Wire the incident PDF export into CrisisChat
+
+**Files:**
+- Modify: `frontend/src/components/CrisisChat.jsx` (destructure `repoName`; export button next to the copy button)
+
+**Interfaces:**
+- Consumes: `buildIncidentPdf`, `downloadPdf` (dynamic import), `repoName` prop — already passed by both render sites (`App.jsx:741`, `DashboardLayout.jsx:477`).
+- Produces: an "Export PDF" button in the INCIDENT REPORT header (visible only when `report` exists) that downloads `gitmind-incident-<repoName>-<ts>.pdf`.
+
+- [ ] **Step 1: Write the failing test**
+
+`frontend/src/components/CrisisChat.test.jsx` — stub the WebSocket so the crisis resolves, then generate + export:
+```jsx
+import React from "react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import CrisisChat from "./CrisisChat";
+
+class FakeWS {
+  constructor() {
+    this.onopen = null; this.onmessage = null; this.onerror = null; this.onclose = null;
+    // Trigger onopen once the component attaches its handler; CrisisChat's
+    // onopen sends the session payload, and this fake replies with "resolved".
+    queueMicrotask(() => this.onopen && this.onopen());
+  }
+  send() {
+    queueMicrotask(() => {
+      this.onmessage({ data: JSON.stringify({ kind: "resolved" }) });
+    });
+  }
+  close() {}
+}
+global.WebSocket = FakeWS;
+
+jest.mock("../api", () => ({
+  WS_BASE: "ws://localhost:8002",
+  fetchIncidentReport: jest.fn().mockResolvedValue({
+    report: { summary: "Contained", timeline: [] },
+  }),
+}));
+jest.mock("../pdfBuilder", () => ({
+  buildIncidentPdf: jest.fn(() => ({ content: [] })),
+  downloadPdf: jest.fn(),
+}));
+
+describe("CrisisChat incident export", () => {
+  it("downloads the incident PDF once the report exists", async () => {
+    const { buildIncidentPdf, downloadPdf } = require("../pdfBuilder");
+    render(
+      <CrisisChat
+        finding={{ id: "f1", title: "Leak", severity: "high" }}
+        sessionId="sess-1"
+        repoName="acme/app"
+        onClose={() => {}}
+      />,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: /generate incident report/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /export pdf/i }));
+    await waitFor(() => expect(downloadPdf).toHaveBeenCalled());
+    expect(buildIncidentPdf).toHaveBeenCalledWith(
+      expect.objectContaining({ repoName: "acme/app", outcome: "resolved" }),
+    );
+    expect(downloadPdf.mock.calls[0][1]).toMatch(/^gitmind-incident-/);
+  });
+});
+```
+If the "Generate Incident Report" button is disabled until `resolved`/`leaked`, the FakeWS `send()` above triggers `resolved` — verify the WS message contract (`data.kind === "resolved"` sets `resolved=true`) before relying on it; if the contract differs, adjust FakeWS to emit the messages the real `ws/` handler would.
+
+- [ ] **Step 2: Run the test — expect fail (no export button)**
+
+Run: `CI=true npx react-scripts test CrisisChat --watchAll=false`
+Expected: FAIL — "Unable to find role button with name /export pdf/i".
+
+- [ ] **Step 3: Implement**
+
+In `CrisisChat.jsx`:
+- Change the component signature to `export default function CrisisChat({ finding, sessionId, onClose, repoName })`.
+- Add a handler near `generateReport`:
+  ```jsx
+  const handleExportPdf = async () => {
+    if (!report) return;
+    try {
+      const { buildIncidentPdf, downloadPdf } = await import("../pdfBuilder");
+      const outcome = resolved ? "resolved" : "leaked";
+      const docDef = buildIncidentPdf({ report, finding, outcome, repoName });
+      downloadPdf(docDef, `gitmind-incident-${repoName || "report"}-${Date.now()}.pdf`);
+    } catch (err) {
+      setReportError(err.message || "PDF export failed.");
+    }
+  };
+  ```
+- In the INCIDENT REPORT header row (the `<div>` that holds the copy button), add an export button right before the copy button:
+  ```jsx
+  <button
+    onClick={handleExportPdf}
+    aria-label="Export incident report PDF"
+    style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-3)", display: "flex", alignItems: "center", gap: 4, fontSize: fs.xs, padding: "2px 6px", borderRadius: 0 }}
+  >
+    <Download size={10} /> Export PDF
+  </button>
+  ```
+  Import `Download` from `../icons` (verify it exists there; fallback: reuse `FileText`).
+
+- [ ] **Step 4: Run the test — expect pass**
+
+Run: `CI=true npx react-scripts test CrisisChat --watchAll=false`
+Expected: PASS.
+
+- [ ] **Step 5: Prettier + full suite sanity**
+
+Run: `npx prettier --write src/components/CrisisChat.jsx src/components/CrisisChat.test.jsx` then `CI=true npx react-scripts test --watchAll=false` — all existing tests still pass.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add frontend/src/components/CrisisChat.jsx frontend/src/components/CrisisChat.test.jsx
+git commit -m "feat(ui): export incident report PDF from crisis chat"
+```
+
+---
+
+### Task 7: Use the PDF cache + sanitize filenames in App.jsx export
+
+**Files:**
+- Modify: `frontend/src/App.jsx` (`handleExport`, around line 528)
+
+**Interfaces:**
+- Consumes: `sanitizeFilename`, `downloadPdf`, `getCachedPdf` from `../pdfBuilder` (dynamic import), `SESSION_ID`.
+- Produces: cached, sanitized export — re-exporting the same session renders instantly from cache.
+
+- [ ] **Step 1: Implement**
+
+In `App.jsx` `handleExport`, replace the body with:
+```jsx
+try {
+  const { buildAnalysisPdf, downloadPdf, getCachedPdf, sanitizeFilename } = await import("./pdfBuilder");
+  const cacheKey = `gm:${SESSION_ID}:analysis`;
+  const cached = getCachedPdf(cacheKey);
+  const docDef =
+    cached ||
+    buildAnalysisPdf({
+      repoName,
+      diagram,
+      archGraph,
+      apiDocs,
+      findings,
+      cveFindings,
+      gitAudit,
+      solidityAudit,
+      codeAudit,
+      health,
+      elapsedSec,
+    });
+  downloadPdf(docDef, `gitmind-${sanitizeFilename(repoName)}-${Date.now()}.pdf`, cacheKey);
+  addToast({ kind: "success", title: "Report exported", sub: `${sanitizeFilename(repoName)}.pdf` });
+  ...
+```
+Keep the rest of the existing try/catch and `ADD_RECENT` dispatch unchanged.
+
+- [ ] **Step 2: Test via existing suite + build**
+
+There is no cheap unit test for the App-level export (dynamic import + full dashboard render); verification is:
+- Run: `CI=true npx react-scripts test --watchAll=false` — nothing regresses (existing `App.test.jsx` passes).
+- Run: `npm run build` — succeeds.
+- Manual: analyze → Command Palette → Export → download works; second export is instant (cache hit) and the filename has no slashes.
+
+- [ ] **Step 3: Prettier + commit**
+
+```bash
+npx prettier --write src/App.jsx
+git add frontend/src/App.jsx
+git commit -m "perf(pdf): use pdf cache and sanitize filenames on export"
+```
+
+---
+
+### Task 8: Propagate HTTP status through `_apiFetch`
+
+**Files:**
+- Modify: `frontend/src/api.js` (`_apiFetch`)
+- Test: `frontend/src/api.test.js`
+
+**Interfaces:**
+- Consumes: nothing.
+- Produces: every `Error` thrown by `_apiFetch`/`_post` carries `err.status` (HTTP status for server responses, `0` for network/timeout). Later task classifies `404`/`401`/`429`/`0`.
+
+- [ ] **Step 1: Write the failing tests**
+
+Append to `frontend/src/api.test.js`:
+```js
+import { loadSharedAnalysis } from "./api";
+
+describe("loadSharedAnalysis status propagation", () => {
+  it("exposes HTTP status on 404", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: async () => ({ detail: "Analysis not found or has expired" }),
+    });
+    await expect(loadSharedAnalysis("missing")).rejects.toMatchObject({
+      status: 404,
+      message: expect.stringContaining("Analysis not found"),
+    });
+  });
+  it("exposes HTTP status on 401", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ detail: "Authentication required" }),
+    });
+    await expect(loadSharedAnalysis("locked")).rejects.toMatchObject({
+      status: 401,
+    });
+  });
+});
+```
+(Place the `import` at the top of the file if not already present — check the existing import line and merge.)
+
+- [ ] **Step 2: Run the tests — expect fail**
+
+Run: `CI=true npx react-scripts test api --watchAll=false`
+Expected: FAIL — rejected errors have no `status` property.
+
+- [ ] **Step 3: Implement**
+
+In `api.js` `_apiFetch`:
+- Timeout branch: `const err = new Error(timeoutError || "Request timed out."); err.status = 0; throw err;`
+- Network `TypeError` final throw: `const err = new Error("Cannot reach the backend. Make sure it is running on port 8002."); err.status = 0; throw err;`
+- In the 4xx branch, before `throw new Error(msg)`, attach status:
+  ```js
+  const e = new Error(msg);
+  e.status = res.status;
+  throw e;
+  ```
+- Same for the final `Server error ${res.status}` branch (after retries exhausted on 502/503/504) — attach `e.status = res.status`.
+- In the `data.error` branch after a successful response, also attach `e.status = res.status` (backend may return 200 with `{ error }`).
+
+- [ ] **Step 4: Run the tests — expect pass**
+
+Run: `CI=true npx react-scripts test api --watchAll=false`
+Expected: PASS (new + existing).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add frontend/src/api.js frontend/src/api.test.js
+git commit -m "fix(api): propagate HTTP status on request errors"
+```
+
+---
+
+### Task 9: Add `shareError` state to the reducers
+
+**Files:**
+- Modify: `frontend/src/reducers/uiReducer.js` (state + cases)
+- Modify: `frontend/src/appReducer.js` (slice mapping)
+
+**Interfaces:**
+- Consumes: nothing.
+- Produces: `state.shareError` — `null` or `{ kind: "not_found" | "locked" | "rate_limited" | "network" | "generic", message: string }`; actions `SET_SHARE_ERROR` (payload `{ error }` or `null`) and `CLEAR_SHARE_ERROR`. Later tasks read `state.shareError` and dispatch these.
+
+- [ ] **Step 1: Write the failing tests**
+
+`frontend/src/reducers/uiReducer.test.js` (new):
+```js
+import { uiReducer, uiInitialState } from "./uiReducer";
+
+describe("uiReducer shareError", () => {
+  it("stores a share error", () => {
+    const next = uiReducer(uiInitialState, {
+      type: "SET_SHARE_ERROR",
+      error: { kind: "locked", message: "Needs token" },
+    });
+    expect(next.shareError).toEqual({ kind: "locked", message: "Needs token" });
+  });
+  it("clears on CLEAR_SHARE_ERROR / null", () => {
+    const seeded = { ...uiInitialState, shareError: { kind: "network", message: "x" } };
+    expect(uiReducer(seeded, { type: "CLEAR_SHARE_ERROR" }).shareError).toBeNull();
+    expect(uiReducer(seeded, { type: "SET_SHARE_ERROR", error: null }).shareError).toBeNull();
+  });
+});
+```
+
+- [ ] **Step 2: Run the test — expect fail**
+
+Run: `CI=true npx react-scripts test uiReducer --watchAll=false`
+Expected: FAIL — `shareError` undefined.
+
+- [ ] **Step 3: Implement**
+
+In `uiReducer.js`: add `shareError: null` to `uiInitialState`; add cases:
+```js
+case "SET_SHARE_ERROR":
+  return { ...state, shareError: action.error };
+case "CLEAR_SHARE_ERROR":
+  return { ...state, shareError: null };
+```
+In `appReducer.js`: add `shareError: state.shareError` to the `ui:` slice object passed to `_combined`, and add `shareError: state.shareError` to the initial state spread if needed (the slice mapping covers reads; verify `initialState` includes it for completeness).
+
+- [ ] **Step 4: Run the test — expect pass**
+
+Run: `CI=true npx react-scripts test uiReducer --watchAll=false`
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add frontend/src/reducers/uiReducer.js frontend/src/appReducer.js frontend/src/reducers/uiReducer.test.js
+git commit -m "feat(state): add shareError state for resilient share links"
+```
+
+---
+
+### Task 10: Build the ShareErrorOverlay component
+
+**Files:**
+- Create: `frontend/src/components/ShareErrorOverlay.jsx`
+- Modify: `frontend/src/index.css` (overlay styles)
+- Test: `frontend/src/components/ShareErrorOverlay.test.jsx`
+
+**Interfaces:**
+- Consumes: props `{ error, onRetry, onUnlock, onClose }` where `error` is `{ kind, message }`; `tokenManager` for the unlock input; `dispatch` for `SET_GH_TOKEN`.
+- Produces: a modal overlay component rendered by `App.jsx` (next task) showing the message + contextual actions; for `kind === "locked"` an unlock input + button that calls `onUnlock(token)`.
+
+- [ ] **Step 1: Write the failing tests**
+
+`frontend/src/components/ShareErrorOverlay.test.jsx`:
+```jsx
+import React from "react";
+import { render, screen, fireEvent } from "@testing-library/react";
+import ShareErrorOverlay from "./ShareErrorOverlay";
+
+const base = { kind: "not_found", message: "This link has expired." };
+
+describe("ShareErrorOverlay", () => {
+  it("shows the message with a retry action", () => {
+    const onRetry = jest.fn();
+    render(<ShareErrorOverlay error={base} onRetry={onRetry} onUnlock={jest.fn()} onClose={jest.fn()} />);
+    expect(screen.getByText("This link has expired.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /retry/i }));
+    expect(onRetry).toHaveBeenCalled();
+  });
+  it("shows an unlock input for locked links", () => {
+    const onUnlock = jest.fn();
+    render(
+      <ShareErrorOverlay
+        error={{ kind: "locked", message: "Add your token." }}
+        onRetry={jest.fn()}
+        onUnlock={onUnlock}
+        onClose={jest.fn()}
+      />,
+    );
+    const input = screen.getByLabelText(/github token/i);
+    fireEvent.change(input, { target: { value: "ghp_abc123" } });
+    fireEvent.click(screen.getByRole("button", { name: /unlock/i }));
+    expect(onUnlock).toHaveBeenCalledWith("ghp_abc123");
+  });
+  it("closes via the close button", () => {
+    const onClose = jest.fn();
+    render(<ShareErrorOverlay error={base} onRetry={jest.fn()} onUnlock={jest.fn()} onClose={onClose} />);
+    fireEvent.click(screen.getByRole("button", { name: /close/i }));
+    expect(onClose).toHaveBeenCalled();
+  });
+});
+```
+
+- [ ] **Step 2: Run the test — expect fail (no module)**
+
+Run: `CI=true npx react-scripts test ShareErrorOverlay --watchAll=false`
+Expected: FAIL — "Cannot find module".
+
+- [ ] **Step 3: Implement the component**
+
+`frontend/src/components/ShareErrorOverlay.jsx`:
+```jsx
+import React, { useState } from "react";
+import { AlertTriangle, Lock, X, RefreshCw } from "../icons";
+
+export default function ShareErrorOverlay({ error, onRetry, onUnlock, onClose }) {
+  const [token, setToken] = useState("");
+  const locked = error?.kind === "locked";
+  return (
+    <div
+      className="share-error-backdrop"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Shared analysis error"
+    >
+      <div className="share-error-panel">
+        <button className="btn-icon" style={{ position: "absolute", top: 12, right: 12 }} onClick={onClose} aria-label="Close">
+          <X size={14} />
+        </button>
+        <div className="share-error-icon">
+          {locked ? <Lock size={18} /> : <AlertTriangle size={18} />}
+        </div>
+        <div className="share-error-title">
+          {locked ? "This analysis is locked" : "Could not open analysis"}
+        </div>
+        <div className="share-error-message">{error?.message || "Something went wrong."}</div>
+        {locked ? (
+          <div className="share-error-form">
+            <input
+              type="password"
+              aria-label="GitHub token"
+              placeholder="Paste your GitHub token"
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && token.trim()) onUnlock(token.trim()); }}
+            />
+            <button className="btn btn-primary" onClick={() => onUnlock(token.trim())} disabled={!token.trim()}>
+              Unlock
+            </button>
+          </div>
+        ) : (
+          <button className="btn btn-primary" onClick={onRetry}>
+            <RefreshCw size={13} /> Retry
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+Verified: `frontend/src/icons.js` exports `RefreshCw` (Phosphor `ArrowsClockwise`) — no `RotateCcw` exists.
+
+- [ ] **Step 4: Add the CSS**
+
+Append to `frontend/src/index.css` (must exist for the classname gate):
+```css
+.share-error-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  backdrop-filter: blur(4px);
+}
+.share-error-panel {
+  position: relative;
+  width: min(420px, calc(100vw - 48px));
+  padding: 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+.share-error-icon { color: var(--danger); }
+.share-error-title { font-family: var(--font-mono); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-1); }
+.share-error-message { color: var(--text-2); font-size: 14px; line-height: 1.5; }
+.share-error-form { display: flex; gap: 8px; width: 100%; }
+.share-error-form input { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text-1); padding: 8px 10px; font: inherit; border-radius: 0; }
+```
+
+- [ ] **Step 5: Run the tests — expect pass**
+
+Run: `CI=true npx react-scripts test ShareErrorOverlay --watchAll=false`
+Expected: PASS.
+
+- [ ] **Step 6: Classname gate + prettier**
+
+Run: `python3 e2e/classname_audit.py --check` (new classes now resolve) and `npx prettier --write src/components/ShareErrorOverlay.jsx src/index.css src/components/ShareErrorOverlay.test.jsx`.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add frontend/src/components/ShareErrorOverlay.jsx frontend/src/components/ShareErrorOverlay.test.jsx frontend/src/index.css
+git commit -m "feat(ui): share-error overlay with retry and token unlock"
+```
+
+---
+
+### Task 11: Classify share-load failures + canonical link format in App.jsx
+
+**Files:**
+- Modify: `frontend/src/App.jsx` (share-load effect around line 153; `handleShare` around line 612; render overlay near the global overlays)
+- Test: `frontend/src/App.test.jsx` (extend)
+
+**Interfaces:**
+- Consumes: `loadSharedAnalysis` (now throws with `.status`, Task 8), `shareError` state (Task 9), `ShareErrorOverlay` (Task 10), `tokenManager`.
+- Produces: classified `shareError` on failure; unlock flow that retries with a token; canonical `/?share=<id>` links; overlay rendered at App level.
+
+- [ ] **Step 1: Write the failing tests**
+
+Extend `frontend/src/App.test.jsx`. The file already has a `renderApp(path)` helper (`MemoryRouter` + `initialEntries`) and mocks `./api` with `loadSharedAnalysis: jest.fn().mockRejectedValue(new Error("no share"))`. Reuse that helper and override the mock per-test with `mockRejectedValueOnce` so existing tests keep their default. Add:
+
+```jsx
+it("shows an error overlay when a shared analysis 404s", async () => {
+  loadSharedAnalysis.mockRejectedValueOnce(
+    Object.assign(new Error("Analysis not found"), { status: 404 }),
+  );
+  renderApp("/?share=missing");
+  expect(await screen.findByText(/could not open analysis/i)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /retry/i })).toBeInTheDocument();
+});
+
+it("shows the unlock flow for a locked shared analysis", async () => {
+  loadSharedAnalysis.mockRejectedValueOnce(
+    Object.assign(new Error("Auth required"), { status: 401 }),
+  );
+  renderApp("/?share=old-session");
+  expect(await screen.findByRole("button", { name: /unlock/i })).toBeInTheDocument();
+});
+```
+
+- [ ] **Step 2: Run the tests — expect fail**
+
+Run: `CI=true npx react-scripts test App --watchAll=false`
+Expected: FAIL — no overlay rendered on failure (silent catch).
+
+- [ ] **Step 3: Implement the classification helper + effect**
+
+In `App.jsx`:
+- Add a module-level helper (near `SESSION_ID`):
+  ```js
+  function classifyShareError(err) {
+    const status = err?.status;
+    if (status === 404)
+      return { kind: "not_found", message: "This analysis link has expired or the analysis was never saved." };
+    if (status === 401)
+      return { kind: "locked", message: "This analysis is locked. Add your GitHub token to unlock it — analyses older than 24 hours require authentication." };
+    if (status === 429)
+      return { kind: "rate_limited", message: "Too many requests. Please wait a moment and try again." };
+    if (status === 0 || status === undefined)
+      return { kind: "network", message: "Cannot reach the GitMind backend. Check your connection and try again." };
+    return { kind: "generic", message: err?.message || "Could not load the shared analysis." };
+  }
+  ```
+- Replace the share-load effect body:
+  ```jsx
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const shareId = params.get("share");
+    if (!shareId) return;
+    let cancelled = false;
+    const load = (token) => {
+      loadSharedAnalysis(shareId, token)
+        .then((data) => {
+          if (cancelled) return;
+          dispatch({ type: "LOAD_SHARED_ANALYSIS", data });
+          dispatch({ type: "CLEAR_SHARE_ERROR" });
+          navigate("/dashboard", { replace: true });
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          dispatch({ type: "SET_SHARE_ERROR", error: classifyShareError(err) });
+        });
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [location.search, navigate]); // eslint-disable-line react-hooks/exhaustive-deps
+  ```
+- Add handlers (place near `handleShare`):
+  ```jsx
+  const handleShareRetry = useCallback(() => {
+    dispatch({ type: "CLEAR_SHARE_ERROR" });
+    const params = new URLSearchParams(location.search);
+    const shareId = params.get("share");
+    if (shareId) loadSharedAnalysis(shareId)
+      .then((data) => {
+        dispatch({ type: "LOAD_SHARED_ANALYSIS", data });
+        navigate("/dashboard", { replace: true });
+      })
+      .catch((err) => dispatch({ type: "SET_SHARE_ERROR", error: classifyShareError(err) }));
+  }, [location.search, navigate, dispatch]);
+
+  const handleShareUnlock = useCallback((token) => {
+    dispatch({ type: "SET_GH_TOKEN", value: token });
+    tokenManager.set(token);
+    handleShareRetry();
+  }, [handleShareRetry, dispatch]);
+  ```
+  (Refactor the effect to call the same `load(shareId, token)` helper to avoid duplication — extract `const runSharedLoad = useCallback((shareId, token) => {...})` and use it from both the effect and the retry/unlock handlers.)
+
+- [ ] **Step 4: Canonical link format in `handleShare`**
+
+In `handleShare`, change the URL construction to:
+```jsx
+const url = `${window.location.origin}/?share=${SESSION_ID}`;
+```
+
+- [ ] **Step 5: Render the overlay**
+
+In the global overlays block (near `<CrisisChat .../>`), add:
+```jsx
+{shareError && (
+  <ShareErrorOverlay
+    error={shareError}
+    onRetry={handleShareRetry}
+    onUnlock={handleShareUnlock}
+    onClose={() => dispatch({ type: "CLEAR_SHARE_ERROR" })}
+  />
+)}
+```
+Add `ShareErrorOverlay` to the lazy imports at the top (`const ShareErrorOverlay = lazy(() => import("./components/ShareErrorOverlay"));`) and pull `shareError` from state in the component body.
+
+- [ ] **Step 6: Run the tests — expect pass**
+
+Run: `CI=true npx react-scripts test App --watchAll=false`
+Expected: PASS (new + existing). If the new 404 test collides with the existing global `loadSharedAnalysis` mock, use `mockRejectedValueOnce` and re-render fresh per test.
+
+- [ ] **Step 7: Prettier + gates**
+
+Run: `npx prettier --write src/App.jsx src/App.test.jsx`, `python3 e2e/classname_audit.py --check`, and the full suite `CI=true npx react-scripts test --watchAll=false`.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add frontend/src/App.jsx frontend/src/App.test.jsx
+git commit -m "feat(ui): classify share-link failures with unlock recovery and canonical /?share= links"
+```
+
+---
+
+### Task 12: Final verification
+
+**Files:** none (verification only)
+
+- [ ] **Step 1: Full test suite**
+
+Run (from `frontend/`): `CI=true npx react-scripts test --watchAll=false`
+Expected: all tests pass, including the new `pdfFonts`, `pdfBuilder`, `SummaryTab`, `CrisisChat`, `uiReducer`, `ShareErrorOverlay`, `api`, and `App` suites.
+
+- [ ] **Step 2: Lint gates**
+
+Run:
+```bash
+cd frontend && npx prettier --check "src/**/*.{js,jsx,ts,tsx,css,json}" && python3 e2e/classname_audit.py --check
+```
+Expected: clean.
+
+- [ ] **Step 3: Production build**
+
+Run (from `frontend/`): `npm run build`
+Expected: build succeeds; the pdfBuilder lazy chunk contains the base64 Geist fonts.
+
+- [ ] **Step 4: Manual smoke (PDF + share)**
+
+1. `cd frontend && npm start`; analyze a repo.
+2. Export the report (palette → Export): cover shows the brand wordmark/indigo bar; tables have hard black borders; severity chips bordered; no overflowing URLs; filename has no slashes. Re-export → instant (cache).
+3. Summary tab → "Export PDF" downloads `gitmind-summary-...pdf`. Run a crisis → generate report → "Export PDF" downloads `gitmind-incident-...pdf`.
+4. Copy share link (command bar button) → verify the URL is `<origin>/?share=<id>`.
+5. Open the share link in a private window → analysis loads. To exercise the error paths, temporarily force `loadSharedAnalysis` to reject with status 404/401 (e.g., edit the mock in devtools or point the browser at a bogus `?share=` id) → overlay shows the correct message; 401 shows the unlock input; adding a valid token retries and loads.
+
+- [ ] **Step 5: Update the design doc status**
+
+In `docs/superpowers/specs/2026-08-14-pdf-export-and-share-links-design.md`, change `Status: Approved (user)` to `Status: Implemented`. Commit:
+```bash
+git add docs/superpowers/specs/2026-08-14-pdf-export-and-share-links-design.md
+git commit -m "docs: mark PDF export + share links design as implemented"
+```
+
+---
+
+## Self-Review Notes
+
+- **Spec coverage:** Section 1 (fonts Task 1, primitives+bugs Task 2, analysis restyle Task 3, summary/incident restyle Task 4, wiring Tasks 5–6, cache/filename Task 7) — Section 2 (status Task 8, reducer Task 9, overlay Task 10, flow+format Task 11) — testing/gates Task 12. Link option B (expiry metadata) intentionally deferred per spec.
+- **Type consistency:** `safeText`/`wrapLong`/`sanitizeFilename`/`highlightCode` exported in Task 2, used in Tasks 3–4 and 7. `shareError` shape `{ kind, message }` defined in Task 9, consumed identically in Tasks 10–11. `downloadPdf(docDef, filename, cacheKey)` unchanged. `classifyShareError` helper introduced in Task 11 only.
+- **Placeholders:** none — every step carries concrete code or an explicit command; the two genuine unknowns (font URL availability, `App.test.jsx` current shape, `icons.js` exports, `FakeWS` message contract) are called out with fallback instructions at the point of use.

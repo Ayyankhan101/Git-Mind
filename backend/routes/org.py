@@ -1,6 +1,5 @@
 import asyncio
 import base64
-import re
 
 import httpx
 import structlog
@@ -8,7 +7,7 @@ from fastapi import APIRouter, Request
 
 from agents.cve_scanner import run_cve_scanner
 from models.requests import OrgAuditRequest
-from routes._errors import error_response
+from routes._errors import error_response, match_gh_repo_url
 from services.auth import get_gh_token
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
@@ -28,7 +27,6 @@ _DEP_FILES = [
     "poetry.lock",
     "Gemfile.lock",
 ]
-_REPO_URL_RE = re.compile(r"^https://github\.com/([A-Za-z0-9_.\-]+)/([A-Za-z0-9_.\-]+?)(?:\.git)?/?$")
 
 
 @router.post("/org-audit")
@@ -65,7 +63,7 @@ async def org_audit_endpoint(req: OrgAuditRequest, request: Request):
         return contents
 
     async def _scan_repo(repo_url: str) -> dict:
-        m = _REPO_URL_RE.match(repo_url.strip())
+        m = match_gh_repo_url(repo_url.strip())
         if not m:
             return {"repo_url": repo_url, "error": "Invalid GitHub URL", "cve_findings": [], "repo_name": repo_url}
         owner, repo = m.group(1), m.group(2)

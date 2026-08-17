@@ -2,14 +2,60 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import LandingPage from "./LandingPage";
 
-jest.mock("gsap", () => require("../__mocks__/gsap"));
-jest.mock("gsap/ScrollTrigger", () =>
-  require("../__mocks__/gsapScrollTrigger"),
-);
-jest.mock("lenis", () => require("../__mocks__/lenis"));
-jest.mock("./ScrollWorldBg", () => {
-  return function MockScrollWorldBg() {
-    return <div data-testid="scroll-world-bg" />;
+// CRA's jest config sets `resetMocks: true`, which wipes `jest.fn(impl)`
+// implementations before each test. So behaviors the component depends on
+// (e.g. gsap.context returning an object with .revert()) are defined as plain
+// functions here rather than jest.fn() with implementations.
+jest.mock("gsap", () => ({
+  gsap: {
+    registerPlugin: jest.fn(),
+    fromTo: jest.fn(),
+    to: jest.fn(),
+    from: jest.fn(),
+    set: jest.fn(),
+    timeline: () => ({
+      from: jest.fn(),
+      to: jest.fn(),
+      fromTo: jest.fn(),
+      set: jest.fn(),
+    }),
+    context: (cb) => {
+      if (typeof cb === "function") cb();
+      return { revert: jest.fn() };
+    },
+    utils: {
+      toArray: () => [],
+    },
+    ticker: {
+      add: jest.fn(),
+      remove: jest.fn(),
+      lagSmoothing: jest.fn(),
+    },
+    matchMedia: () => ({ add: jest.fn() }),
+  },
+}));
+
+jest.mock("gsap/ScrollTrigger", () => ({
+  ScrollTrigger: {
+    update: jest.fn(),
+    create: jest.fn(),
+    refresh: jest.fn(),
+    getAll: () => [],
+  },
+}));
+
+jest.mock("lenis", () => {
+  return class Lenis {
+    on() {
+      return this;
+    }
+    off() {
+      return this;
+    }
+    start() {}
+    stop() {}
+    destroy() {}
+    raf() {}
   };
 });
 
@@ -21,60 +67,92 @@ describe("LandingPage", () => {
   it("renders navigation links", () => {
     render(<LandingPage onLoad={jest.fn()} onAnalyzeUrl={jest.fn()} />);
     expect(screen.getByText("Features")).toBeInTheDocument();
-    expect(screen.getByText("Capabilities")).toBeInTheDocument();
+    expect(screen.getByText("How it works")).toBeInTheDocument();
   });
 
   it("renders the input field for GitHub URL or username", () => {
     render(<LandingPage onLoad={jest.fn()} onAnalyzeUrl={jest.fn()} />);
     expect(
-      screen.getByPlaceholderText("Paste a GitHub URL or enter a username"),
+      screen.getByPlaceholderText("GitHub username or repo URL"),
     ).toBeInTheDocument();
   });
 
   it("calls onLoad with username when plain text is submitted", () => {
     const onLoad = jest.fn();
     render(<LandingPage onLoad={onLoad} onAnalyzeUrl={jest.fn()} />);
-    const input = screen.getByPlaceholderText(
-      "Paste a GitHub URL or enter a username",
-    );
+    const input = screen.getByPlaceholderText("GitHub username or repo URL");
     fireEvent.change(input, { target: { value: "facebook" } });
-    fireEvent.submit(input.closest("form"));
+    fireEvent.submit(
+      screen.getByRole("form", { name: "Analyze a GitHub repository" }),
+    );
     expect(onLoad).toHaveBeenCalledWith("facebook");
   });
 
   it("calls onAnalyzeUrl when GitHub URL is submitted", () => {
     const onAnalyzeUrl = jest.fn();
     render(<LandingPage onLoad={jest.fn()} onAnalyzeUrl={onAnalyzeUrl} />);
-    const input = screen.getByPlaceholderText(
-      "Paste a GitHub URL or enter a username",
-    );
+    const input = screen.getByPlaceholderText("GitHub username or repo URL");
     fireEvent.change(input, {
       target: { value: "https://github.com/facebook/react" },
     });
-    fireEvent.submit(input.closest("form"));
+    fireEvent.submit(
+      screen.getByRole("form", { name: "Analyze a GitHub repository" }),
+    );
     expect(onAnalyzeUrl).toHaveBeenCalledWith(
       "https://github.com/facebook/react",
     );
   });
 
-  it("calls onLoad when Get Started button is clicked", () => {
+  it("passes a GitHub token through when provided", () => {
     const onLoad = jest.fn();
     render(<LandingPage onLoad={onLoad} onAnalyzeUrl={jest.fn()} />);
-    // Find the button with aria-label containing "Get Started" or the hero CTA
-    const buttons = screen.getAllByRole("button");
-    const getStartedBtn = buttons.find(
-      (btn) =>
-        btn.textContent.includes("Get Started") ||
-        btn.getAttribute("aria-label")?.includes("Get Started"),
+    fireEvent.click(screen.getByText("Use GitHub token"));
+    fireEvent.change(screen.getByLabelText("GitHub personal access token"), {
+      target: { value: "ghp_test123" },
+    });
+    const input = screen.getByPlaceholderText("GitHub username or repo URL");
+    fireEvent.change(input, { target: { value: "facebook" } });
+    fireEvent.submit(
+      screen.getByRole("form", { name: "Analyze a GitHub repository" }),
     );
-    if (getStartedBtn) {
-      fireEvent.click(getStartedBtn);
-      expect(onLoad).toHaveBeenCalled();
-    }
+    expect(onLoad).toHaveBeenCalledWith("facebook", "ghp_test123");
   });
 
-  it("renders skip to content link for accessibility", () => {
-    render(<LandingPage onLoad={jest.fn()} onAnalyzeUrl={jest.fn()} />);
-    expect(screen.getByText("Skip to content")).toBeInTheDocument();
+  it("submits empty input without calling onLoad", () => {
+    const onLoad = jest.fn();
+    render(<LandingPage onLoad={onLoad} onAnalyzeUrl={jest.fn()} />);
+    fireEvent.submit(
+      screen.getByRole("form", { name: "Analyze a GitHub repository" }),
+    );
+    expect(onLoad).not.toHaveBeenCalled();
+  });
+
+  it("renders the hero without fake product chrome", () => {
+    const { container } = render(
+      <LandingPage onLoad={jest.fn()} onAnalyzeUrl={jest.fn()} />,
+    );
+    // The fake window/radar preview was stripped — the hero is typographic.
+    expect(container.querySelector(".lp-preview")).toBeNull();
+    expect(container.querySelector(".lp-radar")).toBeNull();
+  });
+
+  it("renders the signature radar sweep in the hero", () => {
+    const { container } = render(
+      <LandingPage onLoad={() => {}} onAnalyzeUrl={() => {}} />,
+    );
+    // Editorial signature moment: pure-CSS agent radar behind the copy.
+    expect(container.querySelector(".lp-hero-radar")).toBeTruthy();
+  });
+
+  it("renders how-it-works with flow layout", () => {
+    const { container } = render(
+      <LandingPage onLoad={() => {}} onAnalyzeUrl={() => {}} />,
+    );
+    const how = container.querySelector("#how-it-works");
+    expect(how).toBeTruthy();
+    const steps = how.querySelectorAll(".lp-how-step");
+    expect(steps.length).toBe(3);
+    const nums = how.querySelectorAll(".lp-how-step-num");
+    expect(nums.length).toBe(3);
   });
 });

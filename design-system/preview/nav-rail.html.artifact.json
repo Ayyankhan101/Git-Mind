@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "preview/nav-rail.html",
+  "entry": "preview/nav-rail.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-08-09T04:13:40.722Z",
+  "updatedAt": "2026-08-09T04:13:40.722Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}
