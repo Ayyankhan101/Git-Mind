@@ -26,4 +26,4 @@ sentry-sdk[fastapi]>=2.68.0,<3.0
 PyJWT>=2.8,<3.0
 cryptography>=50.0.0,<51.0  # transitive: PyJWT RS256 signing (no direct import); bump: 6 advisories fixed in 44.0.1-49.0.0
 aiosmtplib>=5.1.1,<6.0  # bump: PYSEC-2026-2338 fixed in 5.1.1
-pre-commit>=4.6.1,<5.0  # dev hook (no runtime import)
+pre-commit>=4.6.2,<5.0  # dev hook (no runtime import)
