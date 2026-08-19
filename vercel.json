@@ -40,11 +40,7 @@
   ],
   "rewrites": [
     {
-      "source": "/manifest.json",
-      "destination": "/manifest.json"
-    },
-    {
-      "source": "/(.*)",
+      "source": "/((?!manifest\\.json$).*)",
       "destination": "/index.html"
     }
   ]
