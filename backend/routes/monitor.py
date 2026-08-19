@@ -65,7 +65,7 @@ async def subscribe_repo(req: MonitorSubscribeRequest, request: Request):
 
 @router.get("/monitor/status")
 async def monitor_status(request: Request):
-    from services.auth import _extract_token, get_gh_token
+    from services.auth import get_gh_token
 
     token = get_gh_token(request)
     if not token:

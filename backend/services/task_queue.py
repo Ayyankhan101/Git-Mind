@@ -21,7 +21,7 @@ from services.cache import get_redis
 logger = structlog.get_logger(__name__)
 
 
-class TaskQueueUnavailable(Exception):
+class TaskQueueUnavailableError(Exception):
     """Raised when Redis is unavailable for task queue operations."""
 
 
@@ -188,7 +188,7 @@ def submit(task_type: str, args: dict | None = None) -> str:
     """
     r = get_redis()
     if not r:
-        raise TaskQueueUnavailable("Redis unavailable — cannot submit tasks")
+        raise TaskQueueUnavailableError("Redis unavailable — cannot submit tasks")
 
     task_id = str(uuid.uuid4())
     task = {

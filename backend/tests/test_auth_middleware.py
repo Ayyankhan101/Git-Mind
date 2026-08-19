@@ -93,7 +93,7 @@ class TestAuthMiddleware:
         assert resp.status_code == 200
 
     def test_public_path_skips_auth(self, client):
-        """ /health is in _PUBLIC_PATHS — no auth needed."""
+        """/health is in _PUBLIC_PATHS — no auth needed."""
         resp = client.get("/health")
         assert resp.status_code == 200
 

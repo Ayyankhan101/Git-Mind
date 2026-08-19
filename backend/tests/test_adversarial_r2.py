@@ -18,6 +18,7 @@ AUTH = {"Authorization": "Bearer ghp_test_placeholder"}
 # 1. CONCURRENT REQUESTS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestConcurrency:
     """Parallel requests should not corrupt state."""
 
@@ -55,6 +56,7 @@ class TestConcurrency:
 # 2. EXTERNAL SERVICE FAILURES
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestExternalFailures:
     """System should degrade gracefully when external services fail."""
 
@@ -82,12 +84,15 @@ class TestExternalFailures:
         from services.session import put_session
 
         session_id = "00000000-0000-0000-0000-000000000097"
-        put_session(session_id, {
-            "repo_name": "test",
-            "chroma_collection_name": None,
-            "security_findings": [],
-            "chat_history": [],
-        })
+        put_session(
+            session_id,
+            {
+                "repo_name": "test",
+                "chroma_collection_name": None,
+                "security_findings": [],
+                "chat_history": [],
+            },
+        )
 
         with patch("routes.analysis.invoke_with_retry", side_effect=Exception("LLM timeout")):
             resp = client.post("/summary", json={"session_id": session_id}, headers=AUTH)
@@ -96,6 +101,7 @@ class TestExternalFailures:
     def test_redis_failure_graceful_fallback(self):
         """Redis failure should fall back to memory."""
         from services.cache import get_redis
+
         r = get_redis()
         # In test env, Redis is None (memory mode)
         # Just verify the fallback path works
@@ -105,6 +111,7 @@ class TestExternalFailures:
 # ═══════════════════════════════════════════════════════════════════════════════
 # 3. DATA CORRUPTION
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestDataCorruption:
     """Malformed data should not crash the system."""
@@ -119,18 +126,20 @@ class TestDataCorruption:
         from services.session import put_session
 
         session_id = "00000000-0000-0000-0000-000000000096"
-        put_session(session_id, {
-            "repo_name": "test",
-            "chroma_collection_name": "test-col",
-            "security_findings": [],
-            "chat_history": [],
-        })
+        put_session(
+            session_id,
+            {
+                "repo_name": "test",
+                "chroma_collection_name": "test-col",
+                "security_findings": [],
+                "chat_history": [],
+            },
+        )
 
         with patch("routes.chat.run_chat_agent", return_value=("👍 Done", [])):
-            resp = client.post("/chat", json={
-                "session_id": session_id,
-                "question": "🔥 What's the security status? 🛡️"
-            }, headers=AUTH)
+            resp = client.post(
+                "/chat", json={"session_id": session_id, "question": "🔥 What's the security status? 🛡️"}, headers=AUTH
+            )
             assert resp.status_code == 200
 
     def test_null_bytes_in_json(self):
@@ -174,7 +183,7 @@ class TestDataCorruption:
         """JSON array instead of object."""
         resp = client.post(
             "/analyze",
-            content=b'[1,2,3]',
+            content=b"[1,2,3]",
             headers={**AUTH, "Content-Type": "application/json"},
         )
         assert resp.status_code in (400, 422)
@@ -183,6 +192,7 @@ class TestDataCorruption:
 # ═══════════════════════════════════════════════════════════════════════════════
 # 4. URL VALIDATION EDGE CASES
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestURLEdgeCases:
     """URL validation should be strict."""
@@ -241,6 +251,7 @@ class TestURLEdgeCases:
 # 5. ERROR HANDLING GAPS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestErrorHandling:
     """Unhandled edge cases should return proper errors."""
 
@@ -254,12 +265,15 @@ class TestErrorHandling:
         from services.session import put_session
 
         session_id = "00000000-0000-0000-0000-000000000095"
-        put_session(session_id, {
-            "repo_name": "test",
-            "chroma_collection_name": None,
-            "security_findings": [],
-            "chat_history": [],
-        })
+        put_session(
+            session_id,
+            {
+                "repo_name": "test",
+                "chroma_collection_name": None,
+                "security_findings": [],
+                "chat_history": [],
+            },
+        )
 
         with patch("routes.analysis.invoke_with_retry", return_value=MagicMock(content="Test summary")):
             resp = client.post("/summary", json={"session_id": session_id}, headers=AUTH)
@@ -267,9 +281,7 @@ class TestErrorHandling:
 
     def test_monitor_subscribe_duplicate(self):
         """Duplicate monitor subscription — DB not initialized in test env."""
-        resp = client.post("/monitor/subscribe", json={
-            "repo_url": "https://github.com/x/y"
-        }, headers=AUTH)
+        resp = client.post("/monitor/subscribe", json={"repo_url": "https://github.com/x/y"}, headers=AUTH)
         # DB not initialized → 500, or 409 if duplicate
         assert resp.status_code in (409, 500)
 
@@ -280,26 +292,35 @@ class TestErrorHandling:
 
     def test_pr_impact_missing_session(self):
         """PR impact with missing session should return 404."""
-        resp = client.post("/pr-impact", json={
-            "pr_url": "https://github.com/x/y/pull/1",
-            "session_id": "00000000-0000-0000-0000-000000000001",
-        }, headers=AUTH)
+        resp = client.post(
+            "/pr-impact",
+            json={
+                "pr_url": "https://github.com/x/y/pull/1",
+                "session_id": "00000000-0000-0000-0000-000000000001",
+            },
+            headers=AUTH,
+        )
         assert resp.status_code in (400, 404, 502)
 
     def test_webhook_notify_real_slack_url_rejected(self):
         """Webhook with real Slack URL should fail at network level."""
         with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
             mock_post.side_effect = Exception("Connection refused")
-            resp = client.post("/webhook/notify", json={
-                "slack_webhook_url": "https://hooks.slack.com/services/T00/B00/xxx",
-                "message": "test",
-            }, headers=AUTH)
+            resp = client.post(
+                "/webhook/notify",
+                json={
+                    "slack_webhook_url": "https://hooks.slack.com/services/T00/B00/xxx",
+                    "message": "test",
+                },
+                headers=AUTH,
+            )
             assert resp.status_code in (500, 502, 504)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 6. INTEGER / BOUNDARY CASES
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestBoundaryCases:
     """Integer overflow, negative values, extreme inputs."""

@@ -29,6 +29,7 @@ AUTH = {"Authorization": "Bearer ghp_test_placeholder"}
 # 1. AUTH BYPASS ATTEMPTS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestAuthBypass:
     """Try to bypass auth middleware."""
 
@@ -91,6 +92,7 @@ class TestAuthBypass:
 # 2. RATE LIMITER BYPASS ATTEMPTS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestRateLimiterBypass:
     """Try to bypass rate limiting."""
 
@@ -120,6 +122,7 @@ class TestRateLimiterBypass:
     def test_service_key_unlimited(self):
         """Service key should bypass rate limits."""
         import services.rate_limiter as rl
+
         original = rl._SERVICE_KEY
         try:
             rl._SERVICE_KEY = "my-key"
@@ -138,6 +141,7 @@ class TestRateLimiterBypass:
 # ═══════════════════════════════════════════════════════════════════════════════
 # 3. SESSION STORE ATTACKS
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestSessionAttacks:
     """Try to break session store."""
@@ -189,6 +193,7 @@ class TestSessionAttacks:
 # 4. BODY LIMIT BYPASS ATTEMPTS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestBodyLimitBypass:
     """Try to bypass body size limits."""
 
@@ -233,6 +238,7 @@ class TestBodyLimitBypass:
 # ═══════════════════════════════════════════════════════════════════════════════
 # 5. WEBHOOK HMAC BYPASS ATTEMPTS
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestWebhookHMACBypass:
     """Try to bypass webhook HMAC verification."""
@@ -316,6 +322,7 @@ class TestWebhookHMACBypass:
 # 6. WEBSOCKET EDGE CASES
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestWebSocketEdgeCases:
     """WebSocket protocol edge cases."""
 
@@ -350,6 +357,7 @@ class TestWebSocketEdgeCases:
 # ═══════════════════════════════════════════════════════════════════════════════
 # 7. DATABASE EDGE CASES
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestDatabaseEdgeCases:
     """Database operation edge cases."""
@@ -387,12 +395,14 @@ class TestDatabaseEdgeCases:
         import asyncio
 
         from services.session import persist_analysis
+
         asyncio.run(persist_analysis("not-a-uuid", {}, "https://github.com/x/y", None))
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 8. MEMORY / RESOURCE EXHAUSTION
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestResourceExhaustion:
     """Try to exhaust resources."""
@@ -409,6 +419,7 @@ class TestResourceExhaustion:
 
         # Trigger cleanup by hitting a new endpoint
         from services.rate_limiter import _mem_rate_check
+
         _mem_rate_check("test_cleanup", "key")
 
         # Should have cleaned up
@@ -425,6 +436,7 @@ class TestResourceExhaustion:
 # ═══════════════════════════════════════════════════════════════════════════════
 # 9. INPUT VALIDATION
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestInputValidation:
     """Input validation across endpoints."""

@@ -33,8 +33,8 @@ from routes.incident import router as incident_router  # noqa: E402
 from routes.monitor import router as monitor_router  # noqa: E402
 from routes.org import router as org_router  # noqa: E402
 from routes.pr import router as pr_router  # noqa: E402
-from routes.repos import router as repos_router  # noqa: E402
 from routes.proxy import router as proxy_router  # noqa: E402
+from routes.repos import router as repos_router  # noqa: E402
 from routes.webhook import router as webhook_router  # noqa: E402
 from services.auth import AuthMiddleware  # noqa: E402
 from services.body_limit import BodyLimitMiddleware  # noqa: E402

@@ -159,11 +159,11 @@ async def analyze_endpoint(req: AnalyzeRequest, request: Request):
     logger.info("REST analysis triggered", session=session_id, repo=repo_url, auth=bool(gh_token))
 
     try:
-        from services.task_queue import submit, TaskQueueUnavailable
+        from services.task_queue import TaskQueueUnavailableError, submit
 
         task_id = submit("run_analysis", {"repo_url": repo_url, "gh_token": gh_token, "session_id": session_id})
         return {"task_id": task_id, "session_id": session_id}
-    except TaskQueueUnavailable:
+    except TaskQueueUnavailableError:
         logger.error("Task queue unavailable (Redis down)")
         return error_response("Service temporarily unavailable — task queue down", 503)
     except Exception as exc:
