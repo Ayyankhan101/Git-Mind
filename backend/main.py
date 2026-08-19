@@ -34,6 +34,7 @@ from routes.monitor import router as monitor_router  # noqa: E402
 from routes.org import router as org_router  # noqa: E402
 from routes.pr import router as pr_router  # noqa: E402
 from routes.repos import router as repos_router  # noqa: E402
+from routes.proxy import router as proxy_router  # noqa: E402
 from routes.webhook import router as webhook_router  # noqa: E402
 from services.auth import AuthMiddleware  # noqa: E402
 from services.body_limit import BodyLimitMiddleware  # noqa: E402
@@ -295,10 +296,23 @@ else:
         "http://localhost:3002",
         "http://localhost:8002",
         "https://gitmind-peach.vercel.app",
+        "https://gitmind.vercel.app",
     ]
+    # Allow all Vercel preview deployments
+    import re as _re
+
+    _VERCEL_RE = _re.compile(r"^https://gitmind-.*\.vercel\.app$")
+
+
+def _cors_origin_ok(origin: str) -> bool:
+    """Check if origin is allowed — static list + Vercel preview pattern."""
+    return origin in _CORS_ORIGINS or bool(_VERCEL_RE.match(origin))
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_CORS_ORIGINS,
+    allow_origins=_CORS_ORIGINS + ["https://gitmind-a4gs396kv-ayyankhan101s-projects.vercel.app"],
+    allow_origin_regex=r"^https://gitmind-.*\.vercel\.app$",
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type", "X-GH-Token", "X-Request-ID", "Authorization"],
 )
@@ -328,6 +342,7 @@ app.include_router(analyze_router)
 app.include_router(webhook_router)
 app.include_router(github_webhook_router)
 app.include_router(monitor_router)
+app.include_router(proxy_router)
 
 
 # ── Task polling ────────────────────────────────────────────────────────────

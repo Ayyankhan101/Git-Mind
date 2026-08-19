@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { FileText, ExternalLink, Copy, X } from "../icons";
 import { useFocusTrap } from "../hooks/useFocusTrap";
+import { BASE } from "../api";
 
 const LANG_EXT = {
   py: "Python",
@@ -38,7 +39,7 @@ export default function FilePreviewDrawer({
     const ownerRepo = ghMatch[1].replace(/\.git$/, "");
     const headers = { Accept: "application/vnd.github.v3+json" };
     if (ghToken) headers["Authorization"] = `Bearer ${ghToken}`;
-    fetch(`https://api.github.com/repos/${ownerRepo}`, { headers })
+    fetch(`${BASE}/proxy/github/repos/${ownerRepo}`, { headers })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.default_branch) setDefaultBranch(data.default_branch);
@@ -78,7 +79,7 @@ export default function FilePreviewDrawer({
     const controller = new AbortController();
     const headers = { Accept: "application/vnd.github.v3+json" };
     if (ghToken) headers["Authorization"] = `Bearer ${ghToken}`;
-    fetch(`https://api.github.com/repos/${ownerRepo}/contents/${path}`, {
+    fetch(`${BASE}/proxy/github/repos/${ownerRepo}/contents/${path}`, {
       headers,
       signal: controller.signal,
     })
