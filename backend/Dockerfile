@@ -16,9 +16,9 @@ RUN pip install maturin --break-system-packages && maturin build --release
 # ============================================================
 FROM python:3.11-slim-bookworm
 
-# System deps: git (clone), semgrep (SAST), curl (healthcheck), certs.
+# System deps: git (clone), semgrep (SAST), curl (healthcheck), certs, redis.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        git curl ca-certificates python3-pip && \
+        git curl ca-certificates python3-pip redis-server && \
     pip3 install --no-cache-dir semgrep && \
     rm -rf /var/lib/apt/lists/*
 
@@ -64,4 +64,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
     CMD curl -sf http://localhost:7860/health || exit 1
 
 # CACHEBUSTER 2026-06-24 — force rebuild after webhook asyncio fix
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
+# Start Redis in background, then start the app
+CMD ["sh", "-c", "redis-server --daemonize yes && uvicorn main:app --host 0.0.0.0 --port 7860"]
