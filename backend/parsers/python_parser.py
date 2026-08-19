@@ -109,9 +109,7 @@ def _extract_endpoints(tree: ast.AST, _source: str) -> list[dict]:
                         call_expr = f"{_resolve_attr(func)}.{func.attr}"
                         if call_expr in _FASTAPI_DECORATORS:
                             method = func.attr.upper()
-                            args = [
-                                ast.literal_eval(a) for a in decorator.args if isinstance(a, (ast.Constant, ast.Str))
-                            ]
+                            args = [ast.literal_eval(a) for a in decorator.args if isinstance(a, ast.Constant)]
                             path = args[0] if args else "/"
                             endpoints.append(
                                 {

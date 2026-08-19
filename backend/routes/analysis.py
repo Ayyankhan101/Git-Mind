@@ -176,29 +176,6 @@ async def summary_endpoint(req: SummaryRequest, request: Request):
     }
 
 
-@router.get("/analysis/{session_id}")
-async def get_analysis(session_id: str, request: Request):
-    if not _UUID_RE.match(session_id):
-        return error_response("Invalid session ID", 400)
-
-    client_ip = get_client_ip(request)
-    if not (await check_rate_limit("analysis_get", client_ip))[0]:
-        return await rate_limit_response("analysis_get", client_ip)
-
-    from services.database import get_analysis_db
-
-    snap = await get_analysis_db(session_id)
-    if snap is None:
-        return error_response("Analysis not found or has expired", 404)
-    # Hybrid access: fresh analyses (≤24h) are public share-by-URL links;
-    # older snapshots require authentication.
-    if time.time() - (snap.get("saved_at") or 0) > 86400:
-        from services.auth import require_gh_token_or_service_key
-
-        require_gh_token_or_service_key(request)
-    return _trim_analysis(snap)
-
-
 @router.get("/analysis/previous")
 async def get_previous_analysis(repo_url: str, exclude_session: str | None = None, request: Request = None):  # type: ignore[assignment]
     from services.auth import require_gh_token_or_service_key
@@ -238,3 +215,26 @@ async def get_analysis_history(repo_url: str, days: int = 0, request: Request = 
 
     history = await get_analysis_history_db(repo_url, since=since, limit=50)
     return {"history": list(reversed(history))}
+
+
+@router.get("/analysis/{session_id}")
+async def get_analysis(session_id: str, request: Request):
+    if not _UUID_RE.match(session_id):
+        return error_response("Invalid session ID", 400)
+
+    client_ip = get_client_ip(request)
+    if not (await check_rate_limit("analysis_get", client_ip))[0]:
+        return await rate_limit_response("analysis_get", client_ip)
+
+    from services.database import get_analysis_db
+
+    snap = await get_analysis_db(session_id)
+    if snap is None:
+        return error_response("Analysis not found or has expired", 404)
+    # Hybrid access: fresh analyses (≤24h) are public share-by-URL links;
+    # older snapshots require authentication.
+    if time.time() - (snap.get("saved_at") or 0) > 86400:
+        from services.auth import require_gh_token_or_service_key
+
+        require_gh_token_or_service_key(request)
+    return _trim_analysis(snap)
