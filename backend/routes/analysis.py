@@ -22,6 +22,7 @@ _PUBLIC_ANALYSIS_KEYS = (
     "repo_name",
     "repo_url",
     "architecture_diagram",
+    "architecture_graph",
     "api_docs",
     "security_findings",
     "cve_findings",

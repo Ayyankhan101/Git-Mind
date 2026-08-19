@@ -119,6 +119,7 @@ async def _run_analysis(repo_url: str, gh_token: str | None, session_id: str) ->
             "cve_findings": final_state.get("cve_findings", []),
             "api_docs": final_state.get("api_docs", []),
             "architecture_diagram": final_state.get("architecture_diagram"),
+            "architecture_graph": final_state.get("architecture_graph"),
             "git_audit": final_state.get("git_audit"),
             "solidity_audit": final_state.get("solidity_audit"),
             "code_audit": final_state.get("code_audit"),
