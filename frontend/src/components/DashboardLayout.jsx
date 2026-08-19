@@ -421,7 +421,7 @@ export default function DashboardLayout({
 
       <div
         className={`repo-drawer${drawerOpen ? " open" : ""}`}
-        aria-hidden={!drawerOpen}
+        {...(!drawerOpen && { inert: "" })}
       >
         <div className="drawer-close">
           <span className="drawer-close-title">Repositories</span>

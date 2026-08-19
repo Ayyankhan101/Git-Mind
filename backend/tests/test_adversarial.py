@@ -95,20 +95,27 @@ class TestRateLimiterBypass:
     """Try to bypass rate limiting."""
 
     def test_xff_ip_spoofing_changes_key(self):
-        """X-Forwarded-For should be used for rate limiting."""
+        """X-Forwarded-For should be used for rate limiting when trusted."""
         from starlette.requests import Request
 
+        import services.rate_limiter as rl
         from services.rate_limiter import get_client_ip
 
-        # Mock request with different XFF IPs
-        for ip in ["1.1.1.1", "2.2.2.2", "3.3.3.3"]:
-            scope = {
-                "type": "http",
-                "headers": [(b"x-forwarded-for", ip.encode())],
-                "client": ("0.0.0.0", 0),
-            }
-            req = Request(scope)
-            assert get_client_ip(req) == ip
+        # Patch _TRUSTED_PROXIES to include test client IP
+        original = rl._TRUSTED_PROXIES.copy()
+        try:
+            rl._TRUSTED_PROXIES = {"0.0.0.0"}
+            # Mock request with different XFF IPs
+            for ip in ["1.1.1.1", "2.2.2.2", "3.3.3.3"]:
+                scope = {
+                    "type": "http",
+                    "headers": [(b"x-forwarded-for", ip.encode())],
+                    "client": ("0.0.0.0", 0),
+                }
+                req = Request(scope)
+                assert get_client_ip(req) == ip
+        finally:
+            rl._TRUSTED_PROXIES = original
 
     def test_service_key_unlimited(self):
         """Service key should bypass rate limits."""
@@ -123,9 +130,9 @@ class TestRateLimiterBypass:
 
     @patch("routes.analyze.check_rate_limit", return_value=(True, 30, 0))
     def test_analyze_no_rate_limit_when_allowed(self, _mock):
-        """When rate limit allows, request proceeds."""
+        """When rate limit allows, request proceeds (503 if Redis down)."""
         resp = client.post("/analyze", json={"repo_url": "https://github.com/x/y"}, headers=AUTH)
-        assert resp.status_code in (200, 400, 500)  # Not 429
+        assert resp.status_code in (200, 400, 500, 503)  # Not 429
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

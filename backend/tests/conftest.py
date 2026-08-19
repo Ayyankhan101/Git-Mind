@@ -9,6 +9,7 @@ os.environ["GITHUB_TOKEN"] = "ghp_test_placeholder"
 os.environ["GITHUB_APP_WEBHOOK_SECRET"] = "test-secret"
 os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{tempfile.mktemp(suffix='.db')}"
 os.environ["DEBUG"] = "1"
+os.environ["ENVIRONMENT"] = "test"
 
 
 @pytest.fixture

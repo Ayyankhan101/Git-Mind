@@ -20,6 +20,11 @@ from services.cache import get_redis
 
 logger = structlog.get_logger(__name__)
 
+
+class TaskQueueUnavailable(Exception):
+    """Raised when Redis is unavailable for task queue operations."""
+
+
 _TASK_TTL = 60 * 10
 _TASK_TIMEOUT = 300
 _MAX_RETRIES = 3
@@ -100,56 +105,39 @@ async def _worker():
         except asyncio.CancelledError:
             task["status"] = "cancelled"
             raise
-        except TimeoutError:
-            if retries_left > 0:
-                task["retries"] = retries_left - 1
-                task["status"] = "pending"
-                delay = 2 ** (_MAX_RETRIES - retries_left)
-                # Re-enqueue with delay
-                await asyncio.sleep(delay)
-                await r.lpush(
-                    _QUEUE_KEY,
-                    orjson.dumps(
-                        {
-                            "task_id": task_id,
-                            "type": task.get("type"),
-                            "args": task.get("args", {}),
-                            "retries": retries_left - 1,
-                        }
-                    ).decode(),
-                )
-                logger.warning("Task timed out, retrying", task_id=task_id, retries_left=retries_left - 1)
-            else:
-                task["error"] = "Task timed out after retries"
-                task["status"] = "failed"
-                tasks_completed.labels(status="failed").inc()
-                logger.error("Task permanently failed (timeout)", task_id=task_id)
-        except Exception as exc:
-            if retries_left > 0:
-                task["retries"] = retries_left - 1
-                task["status"] = "pending"
-                delay = 2 ** (_MAX_RETRIES - retries_left)
-                await asyncio.sleep(delay)
-                await r.lpush(
-                    _QUEUE_KEY,
-                    orjson.dumps(
-                        {
-                            "task_id": task_id,
-                            "type": task.get("type"),
-                            "args": task.get("args", {}),
-                            "retries": retries_left - 1,
-                        }
-                    ).decode(),
-                )
-                logger.warning("Task failed, retrying", task_id=task_id, retries_left=retries_left - 1)
-            else:
-                task["error"] = str(exc)[:500]
-                task["status"] = "failed"
-                tasks_completed.labels(status="failed").inc()
-                logger.error("Task permanently failed", task_id=task_id, error=str(exc)[:200])
+        except (TimeoutError, Exception) as exc:
+            error_msg = "Task timed out after retries" if isinstance(exc, TimeoutError) else str(exc)[:500]
+            log_fn = logger.error if isinstance(exc, TimeoutError) and retries_left <= 0 else logger.warning
+            await _handle_task_failure(task, task_id, retries_left, r, error_msg, log_fn)
         finally:
             task["completed_at"] = time.time()
             _persist_task(task)
+
+
+async def _handle_task_failure(task: dict, task_id: str, retries_left: int, r, error_msg: str, log_fn) -> None:
+    """Handle task failure with retry logic."""
+    if retries_left > 0:
+        task["retries"] = retries_left - 1
+        task["status"] = "pending"
+        delay = 2 ** (_MAX_RETRIES - retries_left)
+        await asyncio.sleep(delay)
+        await r.lpush(
+            _QUEUE_KEY,
+            orjson.dumps(
+                {
+                    "task_id": task_id,
+                    "type": task.get("type"),
+                    "args": task.get("args", {}),
+                    "retries": retries_left - 1,
+                }
+            ).decode(),
+        )
+        log_fn("Task failed, retrying", task_id=task_id, retries_left=retries_left - 1)
+    else:
+        task["error"] = error_msg
+        task["status"] = "failed"
+        tasks_completed.labels(status="failed").inc()
+        log_fn("Task permanently failed", task_id=task_id, error=error_msg[:200])
 
 
 # ── Task registry ──────────────────────────────────────────────────────────────
@@ -200,7 +188,7 @@ def submit(task_type: str, args: dict | None = None) -> str:
     """
     r = get_redis()
     if not r:
-        raise RuntimeError("Redis unavailable — cannot submit tasks")
+        raise TaskQueueUnavailable("Redis unavailable — cannot submit tasks")
 
     task_id = str(uuid.uuid4())
     task = {

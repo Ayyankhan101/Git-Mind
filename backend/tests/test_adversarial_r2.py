@@ -29,14 +29,14 @@ class TestConcurrency:
 
     def test_parallel_rate_limited_requests(self):
         """Rapid requests — rate limiter allows 30/min for analyze_rest.
-        Redis unavailable → 500 for all (not rate limited, just queue failure)."""
+        Redis unavailable → 503 for all (not rate limited, just queue failure)."""
         responses = []
         for _ in range(15):
             resp = client.post("/analyze", json={"repo_url": "https://github.com/x/y"}, headers=AUTH)
             responses.append(resp.status_code)
 
-        # Redis unavailable → 500, or 200/429 if rate limited
-        assert all(code in (200, 429, 400, 500) for code in responses)
+        # Redis unavailable → 503, or 200/429 if rate limited
+        assert all(code in (200, 429, 400, 500, 503) for code in responses)
 
     def test_session_concurrent_read_write(self):
         """Reading and writing same session sequentially."""
@@ -208,9 +208,9 @@ class TestURLEdgeCases:
         assert resp.status_code == 400
 
     def test_github_url_with_trailing_dot(self):
-        """URL with trailing dot — passes URL regex, but Redis unavailable → 500."""
+        """URL with trailing dot — passes URL regex, but Redis unavailable → 503."""
         resp = client.post("/analyze", json={"repo_url": "https://github.com/x/y."}, headers=AUTH)
-        assert resp.status_code in (400, 422, 500)
+        assert resp.status_code in (400, 422, 500, 503)
 
     def test_github_url_with_spaces(self):
         """URL with spaces."""

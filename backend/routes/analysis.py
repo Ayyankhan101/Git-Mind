@@ -168,7 +168,12 @@ async def summary_endpoint(req: SummaryRequest, request: Request):
     def _gen() -> str:
         return invoke_with_retry(_LLM, prompt).content.strip()
 
-    summary = await asyncio.to_thread(_gen)
+    try:
+        summary = await asyncio.to_thread(_gen)
+    except Exception as exc:
+        logger.error("Summary LLM call failed", session=req.session_id, error=str(exc)[:200])
+        return error_response("Summary generation failed — LLM service unavailable", 502)
+
     logger.info("Summary generated", session=req.session_id)
     return {
         "summary": summary,
@@ -208,6 +213,9 @@ async def get_analysis_history(repo_url: str, days: int = 0, request: Request = 
 
     if not is_valid_gh_url(repo_url.strip()):
         return error_response("Invalid GitHub repo URL — must be https://github.com/{owner}/{repo}", 400)
+
+    if days < 0:
+        return error_response("days parameter must be non-negative", 400)
 
     since = None
     if days > 0:
