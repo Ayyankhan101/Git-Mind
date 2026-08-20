@@ -147,6 +147,7 @@ async def handle_analyze(ws: WebSocket) -> None:
                 {
                     "agent_status": {"architecture": "done", "api_docs": "done"},
                     "architecture_diagram": cached.get("architecture_diagram"),
+                    "architecture_graph": cached.get("architecture_graph"),
                     "api_docs": cached.get("api_docs", []),
                 }
             )
@@ -177,6 +178,7 @@ async def handle_analyze(ws: WebSocket) -> None:
                     "cve_findings": cached.get("cve_findings", []),
                     "api_docs": cached.get("api_docs", []),
                     "architecture_diagram": cached.get("architecture_diagram"),
+                    "architecture_graph": cached.get("architecture_graph"),
                     "git_audit": cached.get("git_audit"),
                     "solidity_audit": cached.get("solidity_audit"),
                     "code_audit": cached.get("code_audit"),
@@ -211,6 +213,7 @@ async def handle_analyze(ws: WebSocket) -> None:
 
                 for key in (
                     "architecture_diagram",
+                    "architecture_graph",
                     "api_docs",
                     "security_findings",
                     "cve_findings",
@@ -289,6 +292,7 @@ async def handle_analyze(ws: WebSocket) -> None:
             "cve_findings": final_state.get("cve_findings", []),
             "api_docs": final_state.get("api_docs", []),
             "architecture_diagram": final_state.get("architecture_diagram"),
+            "architecture_graph": final_state.get("architecture_graph"),
             "git_audit": final_state.get("git_audit"),
             "solidity_audit": final_state.get("solidity_audit"),
             "code_audit": final_state.get("code_audit"),

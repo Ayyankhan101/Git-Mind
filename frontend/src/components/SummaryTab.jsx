@@ -583,7 +583,15 @@ export default function SummaryTab({
 
         {/* Right Card — Repository Description (summary text) */}
         <div className="summary-card">
-          {data?.summary && <p className="lead">{data.summary}</p>}
+          {data?.summary && (
+            <div className="lead summary-text" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {data.summary.split(/(?<=[.!?])\s+/).filter(Boolean).map((sentence, i) => (
+                <p key={i} style={{ margin: 0, lineHeight: 1.65 }}>
+                  {sentence.trim()}
+                </p>
+              ))}
+            </div>
+          )}
           {!loading && !data && !error && (
             <p className="lead" style={{ color: "var(--text-3)" }}>
               Analysis of{" "}
