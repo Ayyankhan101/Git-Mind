@@ -111,15 +111,15 @@ def run_architecture_agent(file_tree: list[str], file_contents: dict[str, str]) 
             context=prompt,
         )
     except Exception as exc:
-        logger.warning("Architecture agent: LLM failed — %s; using fallback diagram", exc)
-        result = "graph TD\n    A[Analysis Incomplete]"
+        logger.warning("Architecture agent: LLM failed — %s; using file-tree fallback", exc)
+        result = _fallback_mermaid(file_tree, primary_lang)
 
     result = _strip_fences(result)
     result = _sanitize_mermaid(result)
 
     if not result.startswith("graph"):
-        logger.warning("Architecture agent: unexpected LLM output — using fallback diagram")
-        result = "graph TD\n    A[Analysis Incomplete]"
+        logger.warning("Architecture agent: unexpected LLM output — using file-tree fallback")
+        result = _fallback_mermaid(file_tree, primary_lang)
 
     return result
 
@@ -187,6 +187,78 @@ def _build_prompt(file_tree: list[str], file_contents: dict[str, str], primary_l
         budget -= cost
 
     return f"{_SYSTEM_PROMPT}\n\nPRIMARY LANGUAGE: {primary_lang}\n\nFILE TREE:\n{tree_str}\n\nKEY FILES:{key_content}"
+
+
+def _fallback_mermaid(file_tree: list[str], primary_lang: str = "Unknown") -> str:
+    """Generate a basic Mermaid diagram from the file tree when the LLM fails.
+
+    Groups files by top-level directory and creates nodes + edges.
+    No LLM call needed — purely deterministic.
+    """
+    from collections import defaultdict
+
+    # Group by top-level directory
+    dirs: dict[str, list[str]] = defaultdict(list)
+    for f in file_tree:
+        parts = f.strip("/").split("/")
+        if len(parts) >= 2:
+            dirs[parts[0]].append(f)
+        else:
+            dirs["root"].append(f)
+
+    if not dirs:
+        return "graph TD\n    A[Repository]"
+
+    # Build diagram
+    lines = ["graph TD"]
+    node_ids = []
+
+    # Create nodes for each directory
+    dir_labels = {
+        "src": "Source Code",
+        "lib": "Library",
+        "app": "Application",
+        "server": "Server",
+        "client": "Client",
+        "api": "API",
+        "routes": "Routes",
+        "models": "Models",
+        "views": "Views",
+        "templates": "Templates",
+        "static": "Static Assets",
+        "tests": "Tests",
+        "test": "Tests",
+        "config": "Configuration",
+        "scripts": "Scripts",
+        "docs": "Documentation",
+        "root": primary_lang + " Files",
+    }
+
+    for dir_name in sorted(dirs.keys()):
+        node_id = dir_name.lower().replace(" ", "_").replace("-", "_")
+        label = dir_labels.get(dir_name, dir_name.title())
+        count = len(dirs[dir_name])
+        lines.append(f"    {node_id}[{label} ({count} files)]")
+        node_ids.append((node_id, dir_name))
+
+    # Add edges: root connects to non-root dirs
+    root_id = None
+    other_ids = []
+    for nid, dname in node_ids:
+        if dname == "root":
+            root_id = nid
+        else:
+            other_ids.append((nid, dname))
+
+    if root_id and other_ids:
+        for nid, _ in other_ids[:8]:  # limit edges
+            lines.append(f"    {root_id} --> {nid}")
+    elif len(node_ids) >= 2:
+        # Chain them
+        for i in range(len(node_ids) - 1):
+            lines.append(f"    {node_ids[i][0]} --> {node_ids[i+1][0]}")
+
+    return "\n".join(lines)
 
 
 def _strip_fences(text: str) -> str:
