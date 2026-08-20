@@ -162,7 +162,7 @@ export function fetchSummary(sessionId) {
   return _post(
     `${BASE}/summary`,
     { session_id: sessionId },
-    30_000,
+    90_000,
     "Summary request timed out.",
   );
 }
