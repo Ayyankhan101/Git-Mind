@@ -118,7 +118,9 @@ export default function DiagramTab({
   // Single source of truth for "is there diagram input yet". Shared by the
   // render gates below AND the parse effect so the two can never disagree
   // (gate says render, effect clears nodes → blank canvas).
-  const hasGraphInput = !!archGraph?.nodes?.length;
+  // Prefer Mermaid when the JSON graph is too sparse (< 3 nodes) — the LLM
+  // diagram is usually richer than the static AST parser output.
+  const hasGraphInput = !!archGraph?.nodes?.length && archGraph.nodes.length >= 3;
   const hasMermaidInput =
     !!diagram && typeof diagram === "string" && diagram.startsWith("graph");
 

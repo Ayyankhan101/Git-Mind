@@ -170,6 +170,9 @@ async def summary_endpoint(req: SummaryRequest, request: Request):
         return invoke_with_retry(_LLM, prompt).content.strip()
 
     summary = await asyncio.to_thread(_gen)
+    # Strip <think>...</think> thinking tags that some LLMs emit
+    import re
+    summary = re.sub(r"<think>[\s\S]*?</think>" , "", summary).strip()
     logger.info("Summary generated", session=req.session_id)
     return {
         "summary": summary,
