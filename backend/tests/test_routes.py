@@ -88,13 +88,13 @@ class TestRouteValidation:
         resp = client.get("/analysis/bad")
         assert resp.json().get("error") == "Invalid session ID"
 
-    def test_org_audit_empty_repos(self, client):
-        resp = client.post("/org-audit", json={"repos": []})
+    def test_org_audit_empty_repos(self, auth_client):
+        resp = auth_client.post("/org-audit", json={"repos": []})
         assert resp.json().get("error") == "repos list is empty"
 
-    def test_org_audit_too_many_repos(self, client):
+    def test_org_audit_too_many_repos(self, auth_client):
         repos = [f"https://github.com/owner/repo{i}" for i in range(21)]
-        resp = client.post("/org-audit", json={"repos": repos})
+        resp = auth_client.post("/org-audit", json={"repos": repos})
         # Pydantic returns 422 with detail for list length validation
         assert resp.status_code == 422
 
@@ -127,12 +127,12 @@ class TestRepos:
 
 class TestPRList:
     @patch("httpx.AsyncClient.get", new_callable=AsyncMock)
-    def test_invalid_repo_returns_empty(self, mock_get, client):
+    def test_invalid_repo_returns_empty(self, mock_get, auth_client):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.is_error = False
         mock_resp.json.return_value = []
         mock_get.return_value = mock_resp
-        resp = client.get("/pr-list/unknown-owner/unknown-repo")
+        resp = auth_client.get("/pr-list/unknown-owner/unknown-repo")
         assert resp.status_code == 200
         assert resp.json() == {"prs": []}

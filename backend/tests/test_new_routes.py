@@ -4,7 +4,10 @@ from fastapi.testclient import TestClient
 
 from main import app
 
-client = TestClient(app)
+# These routes are auth-gated. Identity comes from the caller's header only —
+# the server's own GITHUB_TOKEN no longer authenticates anyone (see
+# tests/test_auth_identity.py), so the test client must present a token.
+client = TestClient(app, headers={"Authorization": "Bearer ghp_test_caller"})
 
 
 class TestAnalyzeEndpoint:

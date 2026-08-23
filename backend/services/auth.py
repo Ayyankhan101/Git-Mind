@@ -50,27 +50,37 @@ def _auth_error(detail: str) -> NoReturn:
 
 
 def get_gh_token(request) -> str | None:
-    token = _extract_token(request)
-    if token:
-        return token
-    return os.getenv("GITHUB_TOKEN") or None
+    """Caller identity. Headers only — never the server's own PAT.
+
+    Used for authorization and for deriving owner_hash, so falling back to
+    GITHUB_TOKEN here would authenticate every anonymous caller as the server
+    and collapse them into one shared owner bucket. For talking *to* GitHub,
+    use get_github_credential instead.
+    """
+    return _extract_token(request)
+
+
+def get_github_credential(request) -> str | None:
+    """Credential for outbound GitHub API calls.
+
+    Prefers the caller's token; falls back to the server PAT so anonymous
+    public-repo reads keep the 5000 req/hr limit instead of 60. Never use this
+    to decide who the caller is.
+    """
+    return _extract_token(request) or os.getenv("GITHUB_TOKEN") or None
 
 
 def require_gh_token(request) -> str:
     token = _extract_token(request)
     if not token:
-        token = os.getenv("GITHUB_TOKEN")
-    if not token:
-        _auth_error(
-            "GitHub token required — send Authorization: Bearer <token> header or set GITHUB_TOKEN",
-        )
+        _auth_error("GitHub token required — send Authorization: Bearer <token> header")
     return token  # type: ignore[return-value]
 
 
 def require_gh_token_or_service_key(request) -> str | None:
-    """Require a valid GitHub PAT or service key. Returns token or raises 401."""
-    token = _extract_token(request) or os.getenv("GITHUB_TOKEN")
-    service_key = (request.headers.get("X-Service-Key") or "").strip() or os.getenv("GITMIND_SERVICE_KEY")
+    """Require a caller-supplied GitHub PAT or service key. Returns token or raises 401."""
+    token = _extract_token(request)
+    service_key = (request.headers.get("X-Service-Key") or "").strip()
     if token:
         return token
     if service_key:
@@ -83,7 +93,10 @@ def hash_token(token: str) -> str:
 
 
 def get_service_key(request) -> str | None:
-    return (request.headers.get("X-Service-Key") or "").strip() or os.getenv("GITMIND_SERVICE_KEY")
+    """Caller-supplied service key. Headers only — the server's own key is not
+    a caller credential, and returning it here would hand every anonymous
+    request the rate-limit bypass in services.rate_limiter._is_service_key."""
+    return (request.headers.get("X-Service-Key") or "").strip() or None
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
@@ -101,8 +114,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if _is_public(path):
             return await call_next(request)
 
-        token = _extract_token(request) or os.getenv("GITHUB_TOKEN")
-        service_key = (request.headers.get("X-Service-Key") or "").strip() or os.getenv("GITMIND_SERVICE_KEY")
+        token = _extract_token(request)
+        service_key = (request.headers.get("X-Service-Key") or "").strip()
 
         if not token and not service_key:
             return JSONResponse(
