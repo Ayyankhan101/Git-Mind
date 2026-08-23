@@ -77,8 +77,14 @@ async def handle_analyze(ws: WebSocket) -> None:
         return
 
     _ws_auth_secret = os.environ.get("WS_AUTH_SECRET")
+    _environment = os.environ.get("ENVIRONMENT", "production")
     if not _ws_auth_secret:
-        logger.warning("WS_AUTH_SECRET not set — WebSocket auth disabled. Set WS_AUTH_SECRET in production.")
+        if _environment == "production":
+            logger.error("WS_AUTH_SECRET not set in production — rejecting WebSocket")
+            await ws.send_json({"error": "Server configuration error"})
+            await ws.close(code=1013)
+            return
+        logger.warning("WS_AUTH_SECRET not set — WebSocket auth disabled (dev mode)")
     else:
         import hmac
 

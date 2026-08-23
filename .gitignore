@@ -42,3 +42,4 @@ frontend/.lighthouseci/
 
 # Local LLM model files (large, downloaded locally)
 *.gguf
+.env*

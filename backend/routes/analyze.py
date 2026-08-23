@@ -119,6 +119,7 @@ async def _run_analysis(repo_url: str, gh_token: str | None, session_id: str) ->
             "cve_findings": final_state.get("cve_findings", []),
             "api_docs": final_state.get("api_docs", []),
             "architecture_diagram": final_state.get("architecture_diagram"),
+            "architecture_graph": final_state.get("architecture_graph"),
             "git_audit": final_state.get("git_audit"),
             "solidity_audit": final_state.get("solidity_audit"),
             "code_audit": final_state.get("code_audit"),
@@ -158,10 +159,13 @@ async def analyze_endpoint(req: AnalyzeRequest, request: Request):
     logger.info("REST analysis triggered", session=session_id, repo=repo_url, auth=bool(gh_token))
 
     try:
-        from services.task_queue import submit
+        from services.task_queue import TaskQueueUnavailableError, submit
 
         task_id = await submit("run_analysis", {"repo_url": repo_url, "gh_token": gh_token, "session_id": session_id})
         return {"task_id": task_id, "session_id": session_id}
+    except TaskQueueUnavailableError:
+        logger.error("Task queue unavailable (Redis down)")
+        return error_response("Service temporarily unavailable — task queue down", 503)
     except Exception as exc:
         logger.error("Failed to submit analysis task", error=str(exc))
         return error_response("Failed to submit analysis — try again later", 500)

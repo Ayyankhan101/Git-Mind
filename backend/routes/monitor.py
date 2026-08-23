@@ -65,7 +65,12 @@ async def subscribe_repo(req: MonitorSubscribeRequest, request: Request):
 
 @router.get("/monitor/status")
 async def monitor_status(request: Request):
-    token = require_gh_token(request)
+    from services.auth import get_gh_token
+
+    token = get_gh_token(request)
+    if not token:
+        return {"repos": []}
+
     from sqlalchemy import select
 
     from models.db import MonitoredRepo

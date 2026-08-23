@@ -4,21 +4,22 @@ from fastapi.testclient import TestClient
 
 from main import app
 
+client = TestClient(app)
 # These routes are auth-gated. Identity comes from the caller's header only —
-# the server's own GITHUB_TOKEN no longer authenticates anyone (see
-# tests/test_auth_identity.py), so the test client must present a token.
-client = TestClient(app, headers={"Authorization": "Bearer ghp_test_caller"})
+# the server's own GITHUB_TOKEN no longer authenticates anyone
+# (see tests/test_auth_identity.py), so each call must present a token.
+AUTH_HEADERS = {"Authorization": "Bearer ghp_test_placeholder"}
 
 
 class TestAnalyzeEndpoint:
     @patch("routes.analyze.check_rate_limit", return_value=(True, 30, 0))
     def test_analyze_invalid_url(self, _mock_rate):
-        response = client.post("/analyze", json={"repo_url": "not-a-url"})
+        response = client.post("/analyze", json={"repo_url": "not-a-url"}, headers=AUTH_HEADERS)
         assert response.status_code == 400
         assert "error" in response.json()
 
     def test_analyze_missing_url(self):
-        response = client.post("/analyze", json={})
+        response = client.post("/analyze", json={}, headers=AUTH_HEADERS)
         assert response.status_code == 422
 
     @patch("routes.analyze.check_rate_limit", return_value=(False, 0, 60))
@@ -28,6 +29,7 @@ class TestAnalyzeEndpoint:
             json={
                 "repo_url": "https://github.com/vercel/next.js",
             },
+            headers=AUTH_HEADERS,
         )
         assert response.status_code == 429
         assert "Rate limit" in response.json().get("error", "")
@@ -35,7 +37,7 @@ class TestAnalyzeEndpoint:
 
     @patch("routes.analyze.check_rate_limit", return_value=(True, 30, 0))
     def test_analyze_github_only(self, _mock_rate):
-        response = client.post("/analyze", json={"repo_url": "https://gitlab.com/user/repo"})
+        response = client.post("/analyze", json={"repo_url": "https://gitlab.com/user/repo"}, headers=AUTH_HEADERS)
         assert response.status_code == 400
         assert "error" in response.json()
 
@@ -48,12 +50,13 @@ class TestWebhookEndpoint:
                 "slack_webhook_url": "https://evil.com/hook",
                 "message": "test",
             },
+            headers=AUTH_HEADERS,
         )
         assert response.status_code == 400
         assert "error" in response.json()
 
     def test_webhook_missing_fields(self):
-        response = client.post("/webhook/notify", json={"message": "test"})
+        response = client.post("/webhook/notify", json={"message": "test"}, headers=AUTH_HEADERS)
         assert response.status_code == 422
 
     def test_webhook_rejects_non_slack(self):
@@ -63,6 +66,7 @@ class TestWebhookEndpoint:
                 "slack_webhook_url": "https://not-slack.example.com/hook",
                 "message": "hi",
             },
+            headers=AUTH_HEADERS,
         )
         assert response.status_code == 400
         assert "error" in response.json()
@@ -70,12 +74,12 @@ class TestWebhookEndpoint:
 
 class TestMonitorEndpoint:
     def test_monitor_subscribe_invalid_url(self):
-        response = client.post("/monitor/subscribe", json={"repo_url": "not-a-url"})
+        response = client.post("/monitor/subscribe", json={"repo_url": "not-a-url"}, headers=AUTH_HEADERS)
         assert response.status_code == 400
         assert "error" in response.json()
 
     def test_monitor_subscribe_missing_fields(self):
-        response = client.post("/monitor/subscribe", json={})
+        response = client.post("/monitor/subscribe", json={}, headers=AUTH_HEADERS)
         assert response.status_code == 422
 
     @patch("services.database.async_session_factory")
@@ -87,7 +91,7 @@ class TestMonitorEndpoint:
         mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
 
-        response = client.get("/monitor/status")
+        response = client.get("/monitor/status", headers=AUTH_HEADERS)
         assert response.status_code == 200
         assert response.json()["repos"] == []
 
@@ -100,6 +104,6 @@ class TestMonitorEndpoint:
         mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
 
-        response = client.delete("/monitor/nonexistent-id")
+        response = client.delete("/monitor/nonexistent-id", headers=AUTH_HEADERS)
         assert response.status_code == 404
         assert "error" in response.json()

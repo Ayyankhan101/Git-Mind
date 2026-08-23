@@ -1,7 +1,11 @@
+import os
 from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
+
+# Ensure ENVIRONMENT is test before importing app
+os.environ.setdefault("ENVIRONMENT", "test")
 
 from main import app
 
@@ -9,6 +13,7 @@ client = TestClient(app)
 
 
 class TestWsCrisis:
+    @patch.dict(os.environ, {"ENVIRONMENT": "test"})
     def test_invalid_payload_closes(self):
         with client.websocket_connect("/ws/crisis") as ws:
             ws.send_text("not json")
@@ -17,6 +22,7 @@ class TestWsCrisis:
 
     @patch("ws.crisis.check_rate_limit", return_value=(True, 30, 0))
     @patch("ws.crisis.get_session", return_value=None)
+    @patch.dict(os.environ, {"ENVIRONMENT": "test"})
     def test_session_not_found(self, mock_session, _mock_rate):
         with client.websocket_connect("/ws/crisis") as ws:
             ws.send_json({"session_id": "nonexistent", "finding_id": "f1", "gh_token": "ghp_test"})
@@ -26,6 +32,7 @@ class TestWsCrisis:
 
     @patch("ws.crisis.check_rate_limit", return_value=(True, 30, 0))
     @patch("ws.crisis.get_session")
+    @patch.dict(os.environ, {"ENVIRONMENT": "test"})
     def test_no_findings(self, mock_session, _mock_rate):
         mock_session.return_value = {"security_findings": []}
         with client.websocket_connect("/ws/crisis") as ws:
@@ -36,6 +43,7 @@ class TestWsCrisis:
     @patch("ws.crisis.check_rate_limit", return_value=(True, 30, 0))
     @patch("ws.crisis.get_session")
     @patch("ws.crisis.crisis_graph")
+    @patch.dict(os.environ, {"ENVIRONMENT": "test"})
     def test_normal_flow(self, mock_graph, mock_session, _mock_rate):
         mock_session.return_value = {"security_findings": [{"id": "f1", "title": "SQL injection"}]}
 

@@ -110,13 +110,17 @@ async def get_session(session_id: str) -> dict | None:
         return session
 
     # DB fallback
-    from services.database import get_analysis_db
+    try:
+        from services.database import get_analysis_db
 
-    restored = await get_analysis_db(session_id)
-    if restored:
-        await put_session(session_id, restored)
-        logger.info("Session restored from database", session_id=session_id)
-    return restored
+        restored = await get_analysis_db(session_id)
+        if restored:
+            await put_session(session_id, restored)
+            logger.info("Session restored from database", session_id=session_id)
+        return restored
+    except Exception as exc:
+        logger.warning("DB session lookup failed", error=str(exc)[:120])
+        return None
 
 
 def _session_to_snapshot(

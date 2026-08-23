@@ -169,39 +169,22 @@ async def summary_endpoint(req: SummaryRequest, request: Request):
     def _gen() -> str:
         return invoke_with_retry(_LLM, prompt).content.strip()
 
-    summary = await asyncio.to_thread(_gen)
+    try:
+        summary = await asyncio.to_thread(_gen)
+    except Exception as exc:
+        logger.error("Summary LLM call failed", session=req.session_id, error=str(exc)[:200])
+        return error_response("Summary generation failed — LLM service unavailable", 502)
+
     # Strip <think>...</think> thinking tags that some LLMs emit
     import re
 
     summary = re.sub(r"<think>[\s\S]*?</think>", "", summary).strip()
+
     logger.info("Summary generated", session=req.session_id)
     return {
         "summary": summary,
         "stats": stats,
     }
-
-
-@router.get("/analysis/{session_id}")
-async def get_analysis(session_id: str, request: Request):
-    if not _UUID_RE.match(session_id):
-        return error_response("Invalid session ID", 400)
-
-    client_ip = get_client_ip(request)
-    if not (await check_rate_limit("analysis_get", client_ip))[0]:
-        return await rate_limit_response("analysis_get", client_ip)
-
-    from services.database import get_analysis_db
-
-    snap = await get_analysis_db(session_id)
-    if snap is None:
-        return error_response("Analysis not found or has expired", 404)
-    # Hybrid access: fresh analyses (≤24h) are public share-by-URL links;
-    # older snapshots require authentication.
-    if time.time() - (snap.get("saved_at") or 0) > 86400:
-        from services.auth import require_gh_token_or_service_key
-
-        require_gh_token_or_service_key(request)
-    return _trim_analysis(snap)
 
 
 @router.get("/analysis/previous")
@@ -237,9 +220,35 @@ async def get_analysis_history(repo_url: str, days: int = 0, request: Request = 
     if not is_valid_gh_url(repo_url.strip()):
         return error_response("Invalid GitHub repo URL — must be https://github.com/{owner}/{repo}", 400)
 
+    if days < 0:
+        return error_response("days parameter must be non-negative", 400)
+
     since = None
     if days > 0:
         since = time.time() - days * 86400
 
     history = await get_analysis_history_db(repo_url, since=since, limit=50)
     return {"history": list(reversed(history))}
+
+
+@router.get("/analysis/{session_id}")
+async def get_analysis(session_id: str, request: Request):
+    if not _UUID_RE.match(session_id):
+        return error_response("Invalid session ID", 400)
+
+    client_ip = get_client_ip(request)
+    if not (await check_rate_limit("analysis_get", client_ip))[0]:
+        return await rate_limit_response("analysis_get", client_ip)
+
+    from services.database import get_analysis_db
+
+    snap = await get_analysis_db(session_id)
+    if snap is None:
+        return error_response("Analysis not found or has expired", 404)
+    # Hybrid access: fresh analyses (≤24h) are public share-by-URL links;
+    # older snapshots require authentication.
+    if time.time() - (snap.get("saved_at") or 0) > 86400:
+        from services.auth import require_gh_token_or_service_key
+
+        require_gh_token_or_service_key(request)
+    return _trim_analysis(snap)

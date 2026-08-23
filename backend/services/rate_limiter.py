@@ -20,6 +20,12 @@ from services.cache import get_redis
 
 logger = structlog.get_logger(__name__)
 
+# Trusted reverse proxies — only trust X-Forwarded-For from these IPs
+_TRUSTED_PROXIES: set[str] = set()
+_TRUSTED_PROXIES_RAW = os.getenv("TRUSTED_PROXIES", "")
+if _TRUSTED_PROXIES_RAW:
+    _TRUSTED_PROXIES = {p.strip() for p in _TRUSTED_PROXIES_RAW.split(",") if p.strip()}
+
 # endpoint -> (window_seconds, max_hits)
 _RATE_WINDOWS: dict[str, tuple[int, int]] = {
     "summary": (60, 5),
@@ -139,6 +145,17 @@ def _mem_rate_check(endpoint: str, key: str) -> tuple[bool, int, int]:
 
 
 def get_client_ip(request: Request) -> str:
+    """Extract client IP, respecting trusted proxy configuration."""
+    client_host = request.client.host if request.client else "unknown"
+
+    # If no trusted proxies configured, always use direct client IP
+    if not _TRUSTED_PROXIES:
+        return client_host
+
+    # Only trust X-Forwarded-For if request came from a trusted proxy
+    if client_host not in _TRUSTED_PROXIES:
+        return client_host
+
     forwarded = request.headers.get("X-Forwarded-For", "")
     if forwarded:
         ip = forwarded.split(",")[0].strip()
@@ -147,7 +164,7 @@ def get_client_ip(request: Request) -> str:
     real_ip = request.headers.get("X-Real-IP", "")
     if real_ip:
         return real_ip.strip()
-    return request.client.host if request.client else "unknown"
+    return client_host
 
 
 # ── Public API ───────────────────────────────────────────────────────────────
