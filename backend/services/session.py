@@ -25,14 +25,14 @@ _session_timestamps: dict[str, float] = {}
 _MAX_SESSIONS = 500
 
 
-def put_session(session_id: str, data: dict) -> None:
+async def put_session(session_id: str, data: dict) -> None:
     """Store session data to Redis (or memory in dev mode)."""
     # Strip sensitive fields before persistence
     safe = {k: v for k, v in data.items() if k != "gh_token"}
     r = get_redis()
     if r:
         try:
-            r.set(f"session:{session_id}", json.dumps(safe, default=str), ex=_SESSION_TTL)
+            await r.set(f"session:{session_id}", json.dumps(safe, default=str), ex=_SESSION_TTL)
             return
         except Exception as exc:
             logger.warning("Redis session set failed", error=str(exc)[:80])
@@ -114,7 +114,7 @@ async def get_session(session_id: str) -> dict | None:
 
     restored = await get_analysis_db(session_id)
     if restored:
-        put_session(session_id, restored)
+        await put_session(session_id, restored)
         logger.info("Session restored from database", session_id=session_id)
     return restored
 

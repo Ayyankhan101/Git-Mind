@@ -169,7 +169,7 @@ async def handle_analyze(ws: WebSocket) -> None:
                     "code_audit": cached.get("code_audit"),
                 }
             )
-            put_session(
+            await put_session(
                 session_id,
                 {
                     "repo_name": cached.get("repo_name", ""),
@@ -283,7 +283,7 @@ async def handle_analyze(ws: WebSocket) -> None:
             await asyncio.to_thread(shutil.rmtree, local_path, True)
             logger.info("Cleaned up temp dir", session=session_id, path=local_path)
 
-    put_session(
+    await put_session(
         session_id,
         {
             "repo_name": final_state["repo_name"],

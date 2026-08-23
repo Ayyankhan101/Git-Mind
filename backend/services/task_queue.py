@@ -33,11 +33,11 @@ tasks_submitted = Counter("tasks_submitted_total", "Background tasks submitted")
 tasks_completed = Counter("tasks_completed_total", "Background tasks completed", ["status"])
 
 
-def _persist_task(task: dict) -> None:
+async def _persist_task(task: dict) -> None:
     """Persist task state to Redis."""
     r = get_redis()
     if r:
-        r.set(
+        await r.set(
             f"{_TASK_PREFIX}{task['id']}",
             orjson.dumps(task, default=str).decode(),
             ex=_TASK_TTL,
@@ -78,7 +78,7 @@ async def _worker():
             continue
         task = orjson.loads(raw)
         task["status"] = "running"
-        _persist_task(task)
+        await _persist_task(task)
 
         # Deserialize coroutine factory
         # We store the task as a pickled callable via orjson (not supported).
@@ -87,7 +87,7 @@ async def _worker():
         if coro_factory is None:
             task["status"] = "failed"
             task["error"] = f"Unknown task type: {task.get('type')}"
-            _persist_task(task)
+            await _persist_task(task)
             tasks_completed.labels(status="failed").inc()
             continue
 
@@ -149,7 +149,7 @@ async def _worker():
                 logger.error("Task permanently failed", task_id=task_id, error=str(exc)[:200])
         finally:
             task["completed_at"] = time.time()
-            _persist_task(task)
+            await _persist_task(task)
 
 
 # ── Task registry ──────────────────────────────────────────────────────────────
@@ -191,7 +191,7 @@ def register_task_type(name: str, factory):
     _TASK_REGISTRY[name] = factory
 
 
-def submit(task_type: str, args: dict | None = None) -> str:
+async def submit(task_type: str, args: dict | None = None) -> str:
     """Submit a background task to Redis queue.
 
     ``task_type`` must be registered via ``register_task_type``.
@@ -214,20 +214,20 @@ def submit(task_type: str, args: dict | None = None) -> str:
         "error": None,
         "retries": _MAX_RETRIES,
     }
-    _persist_task(task)
+    await _persist_task(task)
     entry = {"task_id": task_id, "type": task_type, "args": args or {}, "retries": _MAX_RETRIES}
-    r.lpush(_QUEUE_KEY, orjson.dumps(entry).decode())
+    await r.lpush(_QUEUE_KEY, orjson.dumps(entry).decode())
     tasks_submitted.inc()
     logger.debug("Task submitted", task_id=task_id, type=task_type)
     return task_id
 
 
-def get_task(task_id: str) -> dict | None:
+async def get_task(task_id: str) -> dict | None:
     """Load task state from Redis."""
     r = get_redis()
     if not r:
         return None
-    raw = r.get(f"{_TASK_PREFIX}{task_id}")
+    raw = await r.get(f"{_TASK_PREFIX}{task_id}")
     if raw:
         return orjson.loads(raw)
     return None

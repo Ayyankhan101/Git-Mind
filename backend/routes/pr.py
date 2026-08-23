@@ -150,7 +150,7 @@ async def pr_impact_endpoint(req: PRImpactRequest, request: Request):
         "changed_files": changed_files,
         "diff_truncated": len(pr_diff) > 10_000,
     }
-    task_id = submit(
+    task_id = await submit(
         "compute_pr_impact",
         {
             "repo_url": repo_url,

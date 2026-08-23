@@ -33,7 +33,7 @@ async def _run_analysis(repo_url: str, gh_token: str | None, session_id: str) ->
         cached = await find_cached_snapshot(repo_url, sha)
         if cached:
             logger.info("Cache hit (REST)", sha=sha[:8], session=session_id)
-            put_session(
+            await put_session(
                 session_id,
                 {
                     "repo_name": cached.get("repo_name", ""),
@@ -110,7 +110,7 @@ async def _run_analysis(repo_url: str, gh_token: str | None, session_id: str) ->
     if local_path:
         await asyncio.to_thread(shutil.rmtree, local_path, True)
 
-    put_session(
+    await put_session(
         session_id,
         {
             "repo_name": final_state["repo_name"],
@@ -160,7 +160,7 @@ async def analyze_endpoint(req: AnalyzeRequest, request: Request):
     try:
         from services.task_queue import submit
 
-        task_id = submit("run_analysis", {"repo_url": repo_url, "gh_token": gh_token, "session_id": session_id})
+        task_id = await submit("run_analysis", {"repo_url": repo_url, "gh_token": gh_token, "session_id": session_id})
         return {"task_id": task_id, "session_id": session_id}
     except Exception as exc:
         logger.error("Failed to submit analysis task", error=str(exc))
