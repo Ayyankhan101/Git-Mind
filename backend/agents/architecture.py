@@ -256,7 +256,7 @@ def _fallback_mermaid(file_tree: list[str], primary_lang: str = "Unknown") -> st
     elif len(node_ids) >= 2:
         # Chain them
         for i in range(len(node_ids) - 1):
-            lines.append(f"    {node_ids[i][0]} --> {node_ids[i+1][0]}")
+            lines.append(f"    {node_ids[i][0]} --> {node_ids[i + 1][0]}")
 
     return "\n".join(lines)
 

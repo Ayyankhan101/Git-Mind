@@ -110,6 +110,7 @@ def architecture_node(state: RepoState) -> dict:
         _record_circuit_failure()
         logger.error("architecture_node failed: %s", exc)
         from agents.architecture import _fallback_mermaid
+
         fallback = _fallback_mermaid(state.get("file_tree", []))
         return {
             "architecture_diagram": fallback,
