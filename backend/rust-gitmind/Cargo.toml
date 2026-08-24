@@ -1,0 +1,13 @@
+[package]
+name = "gitmind-core"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "gitmind_core"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.23", features = ["extension-module", "abi3-py311"] }
+regex = "1"
+serde_json = "1"

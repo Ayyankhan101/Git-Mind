@@ -46,3 +46,6 @@ frontend/.lighthouseci/
 
 # Frontend coverage
 frontend/coverage/
+
+# Duplicate agent skills
+agent/
