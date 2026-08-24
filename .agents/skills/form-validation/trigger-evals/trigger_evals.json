@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "query": "I need to add real-time validation to my signup form. The errors should appear inline as users type or blur the field.",
+    "should_trigger": true
+  },
+  {
+    "id": 2,
+    "query": "My form error messages are confusing — they just say 'Invalid input'. How do I write better error messages?",
+    "should_trigger": true
+  },
+  {
+    "id": 3,
+    "query": "I want to add password strength validation with a visual indicator that shows weak/good/strong as the user types.",
+    "should_trigger": true
+  },
+  {
+    "id": 4,
+    "query": "When my form submission fails, the page scrolls to the top but the error is at the bottom. How do I focus the first error field?",
+    "should_trigger": true
+  },
+  {
+    "id": 5,
+    "query": "I'm building a multi-step form with 4 steps. Each step should validate before proceeding to the next. How do I handle this in React?",
+    "should_trigger": true
+  },
+  {
+    "id": 6,
+    "query": "My form submission is slow and users click submit multiple times. How do I add a loading state and prevent double submission?",
+    "should_trigger": true
+  },
+  {
+    "id": 7,
+    "query": "Review this: input.addEventListener('input', validate); — I'm validating on every keystroke. Is this a good approach?",
+    "should_trigger": true
+  },
+  {
+    "id": 8,
+    "query": "I need to create a responsive navbar with a hamburger menu for mobile",
+    "should_trigger": false
+  },
+  {
+    "id": 9,
+    "query": "Can you help me add dark mode toggle to my React app using CSS custom properties?",
+    "should_trigger": false
+  },
+  {
+    "id": 10,
+    "query": "I want to add scroll animations to my landing page using GSAP ScrollTrigger",
+    "should_trigger": false
+  },
+  {
+    "id": 11,
+    "query": "help me write unit tests for my Express.js API using Jest and Supertest",
+    "should_trigger": false
+  },
+  {
+    "id": 12,
+    "query": "I need to optimize my Next.js site for Core Web Vitals",
+    "should_trigger": false
+  }
+]

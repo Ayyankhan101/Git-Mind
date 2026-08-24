@@ -1,0 +1,82 @@
+{
+  "skill": "dark-mode",
+  "version": "1.0.0",
+  "evals": [
+    {
+      "id": "dm-01",
+      "name": "System preference detection",
+      "prompt": "Add dark mode that defaults to the user's system preference",
+      "assertions": [
+        "Uses prefers-color-scheme media query",
+        "CSS custom properties for colors",
+        "No hardcoded #fff or #000",
+        "Defaults to system preference"
+      ]
+    },
+    {
+      "id": "dm-02",
+      "name": "Manual toggle",
+      "prompt": "Add a dark/light mode toggle button with localStorage persistence",
+      "assertions": [
+        "Toggle button with sun/moon icon",
+        "Persists choice to localStorage",
+        "Uses data-theme attribute",
+        "Falls back to system preference when no saved choice"
+      ]
+    },
+    {
+      "id": "dm-03",
+      "name": "FOUC prevention",
+      "prompt": "Prevent the flash of wrong theme on page load",
+      "assertions": [
+        "Inline script in <head>",
+        "Checks localStorage before CSS loads",
+        "Sets data-theme attribute immediately",
+        "No visible flash"
+      ]
+    },
+    {
+      "id": "dm-04",
+      "name": "Smooth transition",
+      "prompt": "Make the theme switch animate smoothly instead of snapping",
+      "assertions": [
+        "Transition on background-color, color, border-color",
+        "No transition on initial page load",
+        "Duration around 200-300ms"
+      ]
+    },
+    {
+      "id": "dm-05",
+      "name": "WCAG contrast",
+      "prompt": "Ensure all text has sufficient contrast in both themes",
+      "assertions": [
+        "Text meets 4.5:1 contrast ratio",
+        "Large text meets 3:1 ratio",
+        "UI components meet 3:1 ratio",
+        "No low-contrast gray text on dark backgrounds"
+      ]
+    },
+    {
+      "id": "dm-06",
+      "name": "Component-specific colors",
+      "prompt": "Style cards, buttons, and code blocks for both themes",
+      "assertions": [
+        "Cards have appropriate background per theme",
+        "Buttons have sufficient contrast",
+        "Code blocks have theme-appropriate styling",
+        "Borders and shadows adjust per theme"
+      ]
+    },
+    {
+      "id": "dm-07",
+      "name": "Anti-pattern detection",
+      "prompt": "Review this dark mode: body { background: black; color: white; } .error { color: red; }",
+      "assertions": [
+        "Identifies hardcoded colors as anti-pattern",
+        "Identifies no CSS custom properties",
+        "Identifies no contrast checking",
+        "Provides corrected code with variables"
+      ]
+    }
+  ]
+}

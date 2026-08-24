@@ -1,0 +1,142 @@
+[
+  {
+    "id": 1,
+    "query": "I'm building a landing page for my AI startup and I want a hero section that scrolls beautifully — like the Apple product pages where things reveal as you scroll down. The whole site should feel premium and expensive. Using Next.js with Tailwind.",
+    "should_trigger": true
+  },
+  {
+    "id": 2,
+    "query": "need a portfolio site for my design agency. want smooth page transitions between projects, some 3D elements maybe, and hover effects on the project cards. react project. the site needs to feel really high-end not template-y",
+    "should_trigger": true
+  },
+  {
+    "id": 3,
+    "query": "What's the best animation library for a SaaS product page? I want scroll-triggered animations and parallax effects. I've been using Framer Motion but I need pinned sections that stay while you scroll through features. Is there something better?",
+    "should_trigger": true
+  },
+  {
+    "id": 4,
+    "query": "Can you build me a 3D product configurator for my sneaker brand? I want the shoe to rotate as the user scrolls and different colorways to appear at different scroll positions. Needs to feel smooth and premium. Next.js.",
+    "should_trigger": true
+  },
+  {
+    "id": 5,
+    "query": "I want to make my website feel more alive. Right now it's just static HTML with no motion. I want subtle animations on scroll, maybe some micro-interactions on buttons and icons, and smooth scrolling. What should I use?",
+    "should_trigger": true
+  },
+  {
+    "id": 6,
+    "query": "looking for pre-built animated components for my landing page. don't want to build everything from scratch. something with hero sections, feature grids, testimonials that already have animations built in. react + tailwind",
+    "should_trigger": true
+  },
+  {
+    "id": 7,
+    "query": "I need scroll animations but GSAP is too heavy for my bundle. what's the lightest way to get fade-in reveals and scroll triggers in react? performance is critical — this is a news site with lots of content",
+    "should_trigger": true
+  },
+  {
+    "id": 8,
+    "query": "building a creative agency portfolio in svelte. want cinematic scroll effects, maybe some particle backgrounds, and transitions between project pages. should feel like a motion design piece not a regular website",
+    "should_trigger": true
+  },
+  {
+    "id": 9,
+    "query": "比较一下GSAP、Framer Motion、和Motion.dev哪个适合做React网站的动画？我需要页面过渡、scroll动画、和一些3D效果",
+    "should_trigger": true
+  },
+  {
+    "id": 10,
+    "query": "I want my e-commerce product page to feel like Apple's — pinned image that stays while you scroll through specs, parallax on the background, fade-in animations on features. The site needs to be fast though, not bloated. What stack should I use?",
+    "should_trigger": true
+  },
+  {
+    "id": 11,
+    "query": "can you help me write a Python script to parse CSV files and generate a matplotlib chart? I need to visualize sales data from Q1",
+    "should_trigger": false
+  },
+  {
+    "id": 12,
+    "query": "I want to add a simple CSS fade-in animation to my div when it appears on the viewport. Just a basic opacity transition, nothing fancy. Vanilla JS preferred.",
+    "should_trigger": false
+  },
+  {
+    "id": 13,
+    "query": "help me set up authentication with NextAuth.js in my Next.js app. I need GitHub and Google providers, with JWT sessions",
+    "should_trigger": false
+  },
+  {
+    "id": 14,
+    "query": "I need to create a responsive navbar with a hamburger menu for mobile. Just basic toggle open/close, no animations needed. React + Tailwind.",
+    "should_trigger": false
+  },
+  {
+    "id": 15,
+    "query": "Can you help me optimize my Next.js site for Core Web Vitals? I need to reduce LCP and CLS scores. My Lighthouse score is 64.",
+    "should_trigger": false
+  },
+  {
+    "id": 16,
+    "query": "I want to build a dashboard with charts and data tables for my internal tool. Using React with Recharts. No fancy animations needed, just functional.",
+    "should_trigger": false
+  },
+  {
+    "id": 17,
+    "query": "help me convert this Streamlit app to a marimo notebook. it does data cleaning and generates a report",
+    "should_trigger": false
+  },
+  {
+    "id": 18,
+    "query": "I'm making a blog with MDX in Next.js. I need syntax highlighting, table of contents, and dark mode. Nothing animated.",
+    "should_trigger": false
+  },
+  {
+    "id": 19,
+    "query": "can you add a loading skeleton to my React components while data fetches? Just simple gray placeholder bars, nothing animated.",
+    "should_trigger": false
+  },
+  {
+    "id": 20,
+    "query": "I need to set up a CI/CD pipeline with GitHub Actions for my Next.js project. Deploy to Vercel on push to main.",
+    "should_trigger": false
+  },
+  {
+    "id": 21,
+    "query": "my accessibility auditor says my scroll animations need to respect prefers-reduced-motion. some users get motion sickness from parallax effects. how do I make my premium animations accessible without ruining the experience for everyone else?",
+    "should_trigger": true
+  },
+  {
+    "id": 22,
+    "query": "80% of our traffic is mobile. I want scroll animations and a pinned hero section but I'm worried about performance on older Android devices. what's the mobile-first animation strategy?",
+    "should_trigger": true
+  },
+  {
+    "id": 23,
+    "query": "should I use React Spring or Framer Motion for a drag-to-rearrange interface? the cards need to feel physical and responsive during drag. also need page transitions on the same site.",
+    "should_trigger": true
+  },
+  {
+    "id": 24,
+    "query": "I have a React app with GSAP ScrollTrigger and after navigating between pages a few times the site gets slow. I think there's a memory leak. how do I clean up GSAP properly in React?",
+    "should_trigger": true
+  },
+  {
+    "id": 25,
+    "query": "I'm animating a modal's width from 0 to 100% and height from 0 to auto. also loading GSAP, Framer Motion, and Anime.js even though I only use Framer Motion for fade-ins. is this approach ok?",
+    "should_trigger": true
+  },
+  {
+    "id": 26,
+    "query": "help me set up a PostgreSQL database with Prisma ORM for my Next.js app. need user auth tables and a posts table with relations",
+    "should_trigger": false
+  },
+  {
+    "id": 27,
+    "query": "I want to add dark mode to my React app using CSS custom properties and a toggle button. just basic theme switching, no animations needed",
+    "should_trigger": false
+  },
+  {
+    "id": 28,
+    "query": "can you help me write unit tests for my Express.js API? using Jest and Supertest. need tests for the user registration endpoint",
+    "should_trigger": false
+  }
+]

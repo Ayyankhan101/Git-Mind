@@ -1,0 +1,57 @@
+[
+  {
+    "id": 1,
+    "query": "All my animations feel inconsistent — different durations, different easings. How do I create a unified animation system?",
+    "should_trigger": true
+  },
+  {
+    "id": 2,
+    "query": "I need animation design tokens for durations, easings, and spring configs. Something I can reuse across my whole product.",
+    "should_trigger": true
+  },
+  {
+    "id": 3,
+    "query": "I want staggered entrance animations for my list items. They should animate in sequence, not all at once.",
+    "should_trigger": true
+  },
+  {
+    "id": 4,
+    "query": "How do I choreograph a page transition with multiple elements — background first, then content, then CTA?",
+    "should_trigger": true
+  },
+  {
+    "id": 5,
+    "query": "I need to define when to use ease-out vs ease-in vs spring for different types of animations",
+    "should_trigger": true
+  },
+  {
+    "id": 6,
+    "query": "My animations are janky on mobile. How do I make sure I'm only animating performant properties?",
+    "should_trigger": true
+  },
+  {
+    "id": 7,
+    "query": "help me set up a PostgreSQL database with Prisma for my Next.js app",
+    "should_trigger": false
+  },
+  {
+    "id": 8,
+    "query": "Can you help me add authentication with NextAuth.js?",
+    "should_trigger": false
+  },
+  {
+    "id": 9,
+    "query": "I want to build a responsive navbar with a hamburger menu",
+    "should_trigger": false
+  },
+  {
+    "id": 10,
+    "query": "help me convert this Streamlit app to a marimo notebook",
+    "should_trigger": false
+  },
+  {
+    "id": 11,
+    "query": "I need to add dark mode toggle using CSS custom properties",
+    "should_trigger": false
+  }
+]

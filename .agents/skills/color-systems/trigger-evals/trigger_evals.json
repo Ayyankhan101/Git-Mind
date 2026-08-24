@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "query": "I need to create a color palette for my SaaS dashboard. What colors should I use and how do I organize them?",
+    "should_trigger": true
+  },
+  {
+    "id": 2,
+    "query": "My colors look different on different screens. I've been using HSL but heard OKLCH is better for consistent palettes. Can you explain?",
+    "should_trigger": true
+  },
+  {
+    "id": 3,
+    "query": "How do I make sure all my text has enough contrast against its background? I need to meet WCAG AA standards.",
+    "should_trigger": true
+  },
+  {
+    "id": 4,
+    "query": "I'm using hardcoded hex values like #3b82f6 and #f8f9fa everywhere. Should I be using CSS custom properties instead?",
+    "should_trigger": true
+  },
+  {
+    "id": 5,
+    "query": "I want to convert my light-mode colors to work in dark mode. How do I create dark mode color tokens?",
+    "should_trigger": true
+  },
+  {
+    "id": 6,
+    "query": "My buttons don't have hover, focus, or disabled states. How do I add interactive color states?",
+    "should_trigger": true
+  },
+  {
+    "id": 7,
+    "query": "Review my CSS: .blue-button { background: #3b82f6; } .light-bg { background: #f8f9fa; } — what's wrong?",
+    "should_trigger": true
+  },
+  {
+    "id": 8,
+    "query": "I want to add a simple CSS fade-in animation to my div when it appears on viewport",
+    "should_trigger": false
+  },
+  {
+    "id": 9,
+    "query": "Can you help me set up authentication with NextAuth.js using GitHub and Google providers?",
+    "should_trigger": false
+  },
+  {
+    "id": 10,
+    "query": "I need to optimize my Next.js site for Core Web Vitals — reduce LCP and CLS",
+    "should_trigger": false
+  },
+  {
+    "id": 11,
+    "query": "help me convert this Streamlit app to a marimo notebook",
+    "should_trigger": false
+  },
+  {
+    "id": 12,
+    "query": "I want to add scroll animations to my landing page using GSAP",
+    "should_trigger": false
+  }
+]

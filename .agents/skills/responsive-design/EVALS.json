@@ -1,0 +1,79 @@
+{
+  "skill": "responsive-design",
+  "version": "1.0.0",
+  "evals": [
+    {
+      "id": "rd-01",
+      "name": "Mobile-first layout",
+      "prompt": "Build a 3-column card grid that stacks on mobile",
+      "assertions": [
+        "Uses min-width media queries (mobile-first)",
+        "Uses CSS Grid or Flexbox",
+        "Cards stack to single column on small screens",
+        "Has appropriate gap/spacing"
+      ]
+    },
+    {
+      "id": "rd-02",
+      "name": "Fluid typography",
+      "prompt": "Make the heading scale smoothly from mobile to desktop",
+      "assertions": [
+        "Uses clamp() for font-size",
+        "No fixed pixel values for responsive text",
+        "Scaling is smooth, not stepped"
+      ]
+    },
+    {
+      "id": "rd-03",
+      "name": "Container queries",
+      "prompt": "Build a card component that adapts its layout based on its container width",
+      "assertions": [
+        "Uses container-type: inline-size",
+        "Uses @container query",
+        "Works regardless of viewport size"
+      ]
+    },
+    {
+      "id": "rd-04",
+      "name": "Touch targets",
+      "prompt": "Make all interactive elements touch-friendly on mobile",
+      "assertions": [
+        "Minimum 44px touch target",
+        "Has :focus-visible styles",
+        "No tiny clickable elements"
+      ]
+    },
+    {
+      "id": "rd-05",
+      "name": "Responsive navigation",
+      "prompt": "Build a navigation that becomes a hamburger menu on mobile",
+      "assertions": [
+        "Hamburger toggle on mobile",
+        "Full inline links on desktop",
+        "Drawer/overlay pattern for mobile menu",
+        "Accessible (aria-expanded, keyboard support)"
+      ]
+    },
+    {
+      "id": "rd-06",
+      "name": "Responsive images",
+      "prompt": "Serve different image sizes for mobile and desktop",
+      "assertions": [
+        "Uses <picture> element or srcset",
+        "Has loading='lazy' for below-fold images",
+        "Images don't overflow their containers"
+      ]
+    },
+    {
+      "id": "rd-07",
+      "name": "Anti-pattern detection",
+      "prompt": "Review this CSS: .container { width: 1200px; } @media (max-width: 768px) { .container { width: 100%; } }",
+      "assertions": [
+        "Identifies fixed width as anti-pattern",
+        "Identifies max-width media query as desktop-first",
+        "Suggests min-width and max-width instead",
+        "Provides corrected code"
+      ]
+    }
+  ]
+}

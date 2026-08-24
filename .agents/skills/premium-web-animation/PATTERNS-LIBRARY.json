@@ -1,0 +1,311 @@
+{
+  "version": "1.2.0",
+  "last_updated": "2026-08-19",
+  "total_feedback_entries": 0,
+  "composition_recipes": [
+    {
+      "id": "recipe-001",
+      "name": "Cinematic Landing Page",
+      "use_case": "Landing page with scroll reveals, parallax, smooth scrolling",
+      "libraries": ["GSAP", "ScrollTrigger", "Lenis"],
+      "success_rate": 1.0,
+      "times_validated": 6,
+      "validated_in": ["eval-1", "eval-3", "eval-4"],
+      "notes": "GSAP handles scroll choreography, Lenis provides smooth scroll foundation. ~28kB total.",
+      "key_code_pattern": "gsap.context() + ScrollTrigger pin:true + Lenis RAF loop",
+      "added": "2026-08-19"
+    },
+    {
+      "id": "recipe-002",
+      "name": "Portfolio with Transitions",
+      "use_case": "Portfolio with page transitions, card hover effects, loading animations",
+      "libraries": ["Motion", "React Spring", "Anime.js"],
+      "success_rate": 1.0,
+      "times_validated": 3,
+      "validated_in": ["eval-2"],
+      "notes": "Motion for page transitions (AnimatePresence), React Spring for gesture-driven hover (useSpring api), Anime.js for micro-details (stagger).",
+      "key_code_pattern": "AnimatePresence + useSpring + animate()",
+      "added": "2026-08-19"
+    },
+    {
+      "id": "recipe-003",
+      "name": "3D Product Viewer with Scroll",
+      "use_case": "3D product that rotates on scroll with colorway reveals",
+      "libraries": ["Three.js", "React Three Fiber", "GSAP ScrollTrigger", "Lenis"],
+      "success_rate": 1.0,
+      "times_validated": 3,
+      "validated_in": ["eval-6"],
+      "notes": "Three.js for 3D rendering, GSAP for scroll-linked rotation, Lenis for smooth scroll. Lazy-load Three.js for bundle size.",
+      "key_code_pattern": "Canvas + ScrollTrigger scrub + Lenis RAF loop",
+      "added": "2026-08-19"
+    },
+    {
+      "id": "recipe-004",
+      "name": "Lightweight Scroll Animations",
+      "use_case": "Performance-critical site with simple scroll reveals, tight bundle budget",
+      "libraries": ["Trig.js", "Lenis"],
+      "success_rate": 1.0,
+      "times_validated": 2,
+      "validated_in": ["eval-5"],
+      "notes": "Trig.js (~2kB) for scroll triggers, Lenis (~3kB) for smooth scroll. Total ~5kB. Use when GSAP is too heavy.",
+      "key_code_pattern": "Trig trigger + CSS transition + Lenis",
+      "added": "2026-08-19"
+    },
+    {
+      "id": "recipe-005",
+      "name": "Mobile-First Premium Animation",
+      "use_case": "Site with 80%+ mobile traffic, needs animation on desktop but performance on mobile",
+      "libraries": ["GSAP", "ScrollTrigger", "Lenis"],
+      "success_rate": 1.0,
+      "times_validated": 2,
+      "validated_in": ["eval-9"],
+      "notes": "Use ScrollTrigger.matchMedia() for responsive animations. Desktop: full pinned sections. Mobile: simple reveals.",
+      "key_code_pattern": "ScrollTrigger.matchMedia() with desktop/mobile breakpoints",
+      "added": "2026-08-19"
+    },
+    {
+      "id": "recipe-006",
+      "name": "Svelte Premium Site",
+      "use_case": "Creative portfolio in Svelte with scroll effects and transitions",
+      "libraries": ["GSAP", "Lenis", "Motion (motion-svelte)"],
+      "success_rate": 1.0,
+      "times_validated": 1,
+      "validated_in": ["eval-12"],
+      "notes": "GSAP works directly in Svelte. Use onMount/onDestroy instead of useEffect. Motion has motion-svelte package.",
+      "key_code_pattern": "onMount + gsap.context() + onDestroy ctx.revert()",
+      "added": "2026-08-19"
+    },
+    {
+      "id": "recipe-007",
+      "name": "Dashboard with Mixed Interactions",
+      "use_case": "Dashboard with sidebar transitions, drag-to-rearrange, theme toggle",
+      "libraries": ["Motion", "React Spring"],
+      "success_rate": 1.0,
+      "times_validated": 1,
+      "validated_in": ["eval-7"],
+      "notes": "Motion for component transitions (sidebar, toggle). React Spring for gesture-driven drag (useSpring api.start).",
+      "key_code_pattern": "AnimatePresence + useSpring with api.start()",
+      "added": "2026-08-19"
+    },
+    {
+      "id": "recipe-008",
+      "name": "Accessible Premium Animation",
+      "use_case": "Site that needs premium animations but must respect prefers-reduced-motion",
+      "libraries": ["GSAP", "ScrollTrigger", "Lenis"],
+      "success_rate": 1.0,
+      "times_validated": 2,
+      "validated_in": ["eval-8"],
+      "notes": "Check window.matchMedia(prefers-reduced-motion) before animating. CSS @media fallback. Show content immediately when reduced motion preferred.",
+      "key_code_pattern": "matchMedia check + gsap.set() fallback + CSS @media",
+      "added": "2026-08-19"
+    }
+  ],
+  "anti_patterns": [
+    {
+      "id": "ap-001",
+      "name": "Animate layout properties",
+      "description": "Animating width, height, top, left causes layout reflows. Use transform and opacity instead.",
+      "severity": "high",
+      "detection_signal": "Janky animations, layout shifts during animation",
+      "fix": "Use scale + opacity or translateX/Y instead",
+      "times_detected": 3,
+      "first_detected": "2026-08-19",
+      "validated_in": ["eval-10"]
+    },
+    {
+      "id": "ap-002",
+      "name": "Missing GSAP cleanup in React",
+      "description": "GSAP animations created in useEffect without gsap.context() cleanup accumulate ScrollTrigger instances.",
+      "severity": "critical",
+      "detection_signal": "Site gets slower after navigating between pages",
+      "fix": "Wrap in gsap.context(), return ctx.revert() in cleanup. Or use useGSAP hook.",
+      "times_detected": 2,
+      "first_detected": "2026-08-19",
+      "validated_in": ["eval-13"]
+    },
+    {
+      "id": "ap-003",
+      "name": "Loading unnecessary animation libraries",
+      "description": "Shipping GSAP + Framer Motion + Anime.js when only one is needed.",
+      "severity": "medium",
+      "detection_signal": "Bundle size complaints, redundant code",
+      "fix": "Pick the minimum set. Lenis + GSAP covers 80% of cases.",
+      "times_detected": 2,
+      "first_detected": "2026-08-19",
+      "validated_in": ["eval-10"]
+    },
+    {
+      "id": "ap-004",
+      "name": "Using Framer Motion for scroll choreography",
+      "description": "Framer Motion can't pin sections, scrub to scroll position, or sequence multi-element timelines.",
+      "severity": "high",
+      "detection_signal": "User asks for pinned sections with Framer Motion",
+      "fix": "Redirect to GSAP ScrollTrigger. Explain why.",
+      "times_detected": 4,
+      "first_detected": "2026-08-19",
+      "validated_in": ["eval-4", "eval-3"]
+    },
+    {
+      "id": "ap-005",
+      "name": "Ignoring prefers-reduced-motion",
+      "description": "Not checking user motion preferences. Some users get nauseous from animations.",
+      "severity": "high",
+      "detection_signal": "Accessibility audit failures",
+      "fix": "Check matchMedia(prefers-reduced-motion) before animating. CSS @media fallback.",
+      "times_detected": 1,
+      "first_detected": "2026-08-19",
+      "validated_in": ["eval-8"]
+    },
+    {
+      "id": "ap-006",
+      "name": "No mobile animation adaptation",
+      "description": "Using same animation complexity on mobile as desktop. Causes jank on older devices.",
+      "severity": "medium",
+      "detection_signal": "Mobile performance complaints",
+      "fix": "Use ScrollTrigger.matchMedia() for responsive animations.",
+      "times_detected": 1,
+      "first_detected": "2026-08-19",
+      "validated_in": ["eval-9"]
+    },
+    {
+      "id": "ap-007",
+      "name": "Over-animating",
+      "description": "Animating every element. If everything moves, nothing stands out.",
+      "severity": "low",
+      "detection_signal": "Cluttered, overwhelming animations",
+      "fix": "Animate only what serves a purpose: guide attention, create hierarchy, or add delight.",
+      "times_detected": 0,
+      "first_detected": "2026-08-19",
+      "validated_in": []
+    }
+  ],
+  "trigger_insights": [
+    {
+      "id": "ti-001",
+      "pattern": "User says 'feel expensive' / 'premium' / 'alive'",
+      "should_trigger": true,
+      "reasoning": "Core skill language. Always triggers.",
+      "confidence": 0.99,
+      "validated": true,
+      "validated_queries": [1, 2, 5, 10]
+    },
+    {
+      "id": "ti-002",
+      "pattern": "User says 'cinematic' / 'Apple-level' / 'smooth scrolling'",
+      "should_trigger": true,
+      "reasoning": "Explicit trigger phrases in description.",
+      "confidence": 0.99,
+      "validated": true,
+      "validated_queries": [1, 8, 10]
+    },
+    {
+      "id": "ti-003",
+      "pattern": "User mentions specific animation library by name (GSAP, Framer Motion, Three.js, etc.)",
+      "should_trigger": true,
+      "reasoning": "Library names are in the skill description. Direct match.",
+      "confidence": 0.95,
+      "validated": true,
+      "validated_queries": [3, 4, 7, 9]
+    },
+    {
+      "id": "ti-004",
+      "pattern": "User says 'simple CSS animation' / 'nothing fancy' / 'no animations needed'",
+      "should_trigger": false,
+      "reasoning": "Simple CSS transitions are not premium animation. Skill adds no value.",
+      "confidence": 0.98,
+      "validated": true,
+      "validated_queries": [12, 14, 16, 18, 19]
+    },
+    {
+      "id": "ti-005",
+      "pattern": "User mentions 'pre-built components' / 'copy-paste' / 'don't want to build from scratch'",
+      "should_trigger": true,
+      "reasoning": "VengeanceUI trigger. Pre-built animated components.",
+      "confidence": 0.95,
+      "validated": true,
+      "validated_queries": [6]
+    },
+    {
+      "id": "ti-006",
+      "pattern": "User asks about bundle size / performance / lightweight",
+      "should_trigger": true,
+      "reasoning": "Trig.js and bundle budget sections address this.",
+      "confidence": 0.92,
+      "validated": true,
+      "validated_queries": [5, 7]
+    },
+    {
+      "id": "ti-007",
+      "pattern": "User asks about accessibility / prefers-reduced-motion",
+      "should_trigger": true,
+      "reasoning": "Explicit trigger phrase in description.",
+      "confidence": 0.97,
+      "validated": true,
+      "validated_queries": [21]
+    },
+    {
+      "id": "ti-008",
+      "pattern": "User asks about mobile animation performance",
+      "should_trigger": true,
+      "reasoning": "Explicit trigger phrase in description.",
+      "confidence": 0.96,
+      "validated": true,
+      "validated_queries": [22]
+    },
+    {
+      "id": "ti-009",
+      "pattern": "User compares React Spring vs Motion / Framer Motion vs GSAP",
+      "should_trigger": true,
+      "reasoning": "Explicit trigger phrases in description.",
+      "confidence": 0.97,
+      "validated": true,
+      "validated_queries": [3, 9, 23]
+    },
+    {
+      "id": "ti-010",
+      "pattern": "User asks about completely unrelated topic (auth, database, CI/CD, testing)",
+      "should_trigger": false,
+      "reasoning": "No animation language. Clearly out of scope.",
+      "confidence": 0.99,
+      "validated": true,
+      "validated_queries": [11, 13, 15, 17, 20, 26, 28]
+    }
+  ],
+  "learned_compositions": [
+    {
+      "id": "lc-001",
+      "description": "Framer Motion is fine for simple viewport-enter animations (fade-in, slide-up)",
+      "rule": "Don't redirect to GSAP if user only needs whileInView",
+      "learned_from": "eval-4 analysis",
+      "added": "2026-08-19"
+    },
+    {
+      "id": "lc-002",
+      "description": "Motion and React Spring can coexist on the same site without conflicts",
+      "rule": "Motion for page transitions, React Spring for gesture-driven — they don't overlap",
+      "learned_from": "eval-7 analysis",
+      "added": "2026-08-19"
+    },
+    {
+      "id": "lc-003",
+      "description": "Three.js lazy-loading is essential for bundle-conscious projects",
+      "rule": "Always suggest dynamic import for Three.js unless user explicitly wants full bundle",
+      "learned_from": "eval-11 analysis",
+      "added": "2026-08-19"
+    },
+    {
+      "id": "lc-004",
+      "description": "CSS 3D transforms can replace Three.js for simple rotation",
+      "rule": "If 3D is just rotation (no orbit/zoom/geometry), CSS perspective + rotateY is sufficient",
+      "learned_from": "eval-11 analysis",
+      "added": "2026-08-19"
+    },
+    {
+      "id": "lc-005",
+      "description": "useGSAP hook is cleaner than manual gsap.context() for new code",
+      "rule": "Recommend useGSAP for new components, gsap.context() for existing codebases",
+      "learned_from": "eval-13 analysis",
+      "added": "2026-08-19"
+    }
+  ]
+}

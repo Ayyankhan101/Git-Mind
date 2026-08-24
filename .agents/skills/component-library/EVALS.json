@@ -1,0 +1,85 @@
+{
+  "skill": "component-library",
+  "version": "1.0.0",
+  "evals": [
+    {
+      "id": "comp-01",
+      "name": "Consistent prop API",
+      "prompt": "Design a prop API for Button, Input, and Select components",
+      "assertions": [
+        "Uses same size names (sm/md/lg)",
+        "Uses same variant pattern",
+        "Has consistent default values",
+        "Follows same prop naming convention"
+      ]
+    },
+    {
+      "id": "comp-02",
+      "name": "Compound components",
+      "prompt": "Build a Select component using compound component pattern",
+      "assertions": [
+        "Uses context for state sharing",
+        "Has Select.Trigger, Select.Content, Select.Item",
+        "Each sub-component has clear responsibility",
+        "Is composable and flexible"
+      ]
+    },
+    {
+      "id": "comp-03",
+      "name": "Design tokens",
+      "token": "Create design tokens for colors, spacing, and typography",
+      "assertions": [
+        "Uses CSS custom properties",
+        "Has semantic naming (not appearance-based)",
+        "Provides spacing scale",
+        "Provides typography scale"
+      ]
+    },
+    {
+      "id": "comp-04",
+      "name": "Variant system",
+      "prompt": "Add primary, secondary, ghost, and danger variants to Button",
+      "assertions": [
+        "Uses data attributes or className for variants",
+        "Each variant has distinct visual style",
+        "Uses design tokens for colors",
+        "Has hover/active/disabled states"
+      ]
+    },
+    {
+      "id": "comp-05",
+      "name": "Form field pattern",
+      "prompt": "Create a FormField wrapper that handles labels, errors, and hints",
+      "assertions": [
+        "Associates label with input via htmlFor/id",
+        "Links error via aria-describedby",
+        "Links hint via aria-describedby",
+        "Marks required fields with aria-required"
+      ]
+    },
+    {
+      "id": "comp-06",
+      "name": "Button component",
+      "prompt": "Build a complete Button component with variants, sizes, loading, and icons",
+      "assertions": [
+        "Has variant prop (primary/secondary/ghost/danger)",
+        "Has size prop (sm/md/lg)",
+        "Has loading state with spinner",
+        "Has leftIcon/rightIcon support",
+        "Uses forwardRef",
+        "Has proper aria attributes"
+      ]
+    },
+    {
+      "id": "comp-07",
+      "name": "Anti-pattern detection",
+      "prompt": "Review: <Card header={<Header/>} body={<Body/>} footer={<Footer/>} icon={<Icon/>} badge={<Badge/>} action={<Button/>} meta={<Meta/>} />,
+      "assertions": [
+        "Identifies configuration explosion",
+        "Suggests composition pattern",
+        "Recommends slots or children pattern",
+        "Reduces prop count"
+      ]
+    }
+  ]
+}

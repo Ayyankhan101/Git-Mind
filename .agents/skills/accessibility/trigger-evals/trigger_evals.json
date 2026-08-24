@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "query": "My website needs to be accessible. How do I make it work with screen readers and keyboard navigation?",
+    "should_trigger": true
+  },
+  {
+    "id": 2,
+    "query": "The accessibility audit flagged missing ARIA labels on my custom dropdown. How do I add proper ARIA attributes?",
+    "should_trigger": true
+  },
+  {
+    "id": 3,
+    "query": "My modal traps keyboard focus outside the dialog. Users can tab to elements behind the modal. How do I fix this?",
+    "should_trigger": true
+  },
+  {
+    "id": 4,
+    "query": "I need to add focus indicators to my components. Currently there's no visible focus ring when tabbing.",
+    "should_trigger": true
+  },
+  {
+    "id": 5,
+    "query": "The contrast ratio of my text is 3.2:1 which fails WCAG AA. How do I fix the color contrast?",
+    "should_trigger": true
+  },
+  {
+    "id": 6,
+    "query": "I want to respect prefers-reduced-motion for users who get motion sickness from animations",
+    "should_trigger": true
+  },
+  {
+    "id": 7,
+    "query": "My form has inputs without labels. Screen readers can't identify what each field is for.",
+    "should_trigger": true
+  },
+  {
+    "id": 8,
+    "query": "I want to add dark mode toggle to my React app",
+    "should_trigger": false
+  },
+  {
+    "id": 9,
+    "query": "Can you help me set up a CI/CD pipeline with GitHub Actions?",
+    "should_trigger": false
+  },
+  {
+    "id": 10,
+    "query": "I need to optimize my Next.js site for Core Web Vitals",
+    "should_trigger": false
+  },
+  {
+    "id": 11,
+    "query": "help me write unit tests for my Express.js API",
+    "should_trigger": false
+  },
+  {
+    "id": 12,
+    "query": "I want to add scroll animations to my landing page using GSAP",
+    "should_trigger": false
+  }
+]

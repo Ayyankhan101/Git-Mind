@@ -1,0 +1,57 @@
+[
+  {
+    "id": 1,
+    "query": "I need to build a component library for my team. How do I structure it with consistent APIs and design tokens?",
+    "should_trigger": true
+  },
+  {
+    "id": 2,
+    "query": "I want to create a Button component with variants (primary, secondary, ghost) and sizes (sm, md, lg)",
+    "should_trigger": true
+  },
+  {
+    "id": 3,
+    "query": "How do I build compound components in React? I want a Select with Trigger, Content, and Item sub-components.",
+    "should_trigger": true
+  },
+  {
+    "id": 4,
+    "query": "I'm building a design system. How do I set up design tokens for colors, spacing, and typography?",
+    "should_trigger": true
+  },
+  {
+    "id": 5,
+    "query": "My Card component has too many props — header, body, footer, icon, badge, action. How do I make it more composable?",
+    "should_trigger": true
+  },
+  {
+    "id": 6,
+    "query": "I need a FormField component that handles labels, errors, hints, and accessibility automatically",
+    "should_trigger": true
+  },
+  {
+    "id": 7,
+    "query": "help me write unit tests for my Express.js API using Jest",
+    "should_trigger": false
+  },
+  {
+    "id": 8,
+    "query": "I want to add dark mode toggle to my React app",
+    "should_trigger": false
+  },
+  {
+    "id": 9,
+    "query": "Can you help me optimize my Next.js site for Core Web Vitals?",
+    "should_trigger": false
+  },
+  {
+    "id": 10,
+    "query": "I want to add scroll animations to my landing page using GSAP",
+    "should_trigger": false
+  },
+  {
+    "id": 11,
+    "query": "help me set up authentication with NextAuth.js",
+    "should_trigger": false
+  }
+]

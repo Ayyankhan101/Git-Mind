@@ -1,0 +1,57 @@
+[
+  {
+    "id": 1,
+    "query": "The text on my website feels cramped and hard to read. How do I improve the typography and readability?",
+    "should_trigger": true
+  },
+  {
+    "id": 2,
+    "query": "I want my headings to scale smoothly from mobile to desktop without using media queries. What's the best approach for fluid typography?",
+    "should_trigger": true
+  },
+  {
+    "id": 3,
+    "query": "Can you help me choose two fonts that pair well together for a tech startup landing page? One for headings, one for body text.",
+    "should_trigger": true
+  },
+  {
+    "id": 4,
+    "query": "My custom web font causes invisible text on page load. How do I add a font without the FOUT/FOIT problem?",
+    "should_trigger": true
+  },
+  {
+    "id": 5,
+    "query": "The body text line width is too long — users get lost when reading. What's the optimal line length for readability?",
+    "should_trigger": true
+  },
+  {
+    "id": 6,
+    "query": "Review my CSS: h1 { font-size: 48px; line-height: 1.8; } p { font-size: 14px; line-height: 1.2; } — is this good typography?",
+    "should_trigger": true
+  },
+  {
+    "id": 7,
+    "query": "I need to set up a CI/CD pipeline with GitHub Actions for my Next.js project",
+    "should_trigger": false
+  },
+  {
+    "id": 8,
+    "query": "Can you help me add authentication with NextAuth.js to my Next.js app?",
+    "should_trigger": false
+  },
+  {
+    "id": 9,
+    "query": "I want to build a responsive navbar with a hamburger menu for mobile",
+    "should_trigger": false
+  },
+  {
+    "id": 10,
+    "query": "help me write a Python script to parse CSV files and generate a matplotlib chart",
+    "should_trigger": false
+  },
+  {
+    "id": 11,
+    "query": "I need to add scroll animations to my landing page using GSAP ScrollTrigger",
+    "should_trigger": false
+  }
+]
