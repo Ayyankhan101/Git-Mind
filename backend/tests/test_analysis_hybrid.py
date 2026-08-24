@@ -3,7 +3,7 @@ and _trim_analysis strips internal fields."""
 
 import time
 
-from routes.analysis import _PUBLIC_ANALYSIS_KEYS, _trim_analysis
+from routes.analysis import ALL_PUBLIC_KEYS, _trim_analysis
 
 
 class TestTrimAnalysis:
@@ -39,10 +39,10 @@ class TestTrimAnalysis:
         assert result["head_sha"] == "abc123"
 
     def test_all_public_keys_pass_through(self):
-        snap = {k: f"val-{k}" for k in _PUBLIC_ANALYSIS_KEYS}
+        snap = {k: f"val-{k}" for k in ALL_PUBLIC_KEYS}
         snap["owner_hash"] = "SECRET"
         result = _trim_analysis(snap)
-        for key in _PUBLIC_ANALYSIS_KEYS:
+        for key in ALL_PUBLIC_KEYS:
             assert key in result, f"Missing public key: {key}"
         assert "owner_hash" not in result
 

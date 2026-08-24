@@ -12,6 +12,7 @@ from collections import OrderedDict
 import structlog
 
 from services.cache import get_redis
+from state import initial_state  # noqa: F401 — re-export for backward compatibility
 
 logger = structlog.get_logger(__name__)
 
@@ -57,34 +58,6 @@ def prune_expired_sessions() -> int:
     if expired:
         logger.debug("Pruned expired in-memory sessions", count=len(expired))
     return len(expired)
-
-
-def initial_state(repo_url: str, gh_token: str | None = None) -> dict:
-    return {
-        "repo_url": repo_url,
-        "gh_token": gh_token,
-        "local_path": None,
-        "file_tree": [],
-        "file_contents": {},
-        "repo_name": "",
-        "architecture_diagram": None,
-        "api_docs": [],
-        "security_findings": [],
-        "cve_findings": [],
-        "chroma_collection_name": None,
-        "git_audit": None,
-        "solidity_audit": None,
-        "code_audit": None,
-        "head_sha": None,
-        "chat_history": [],
-        "selected_finding_id": None,
-        "crisis_messages": [],
-        "crisis_turn": 0,
-        "public_signals": [],
-        "reporter_published": False,
-        "crisis_resolved": False,
-        "events": [],
-    }
 
 
 async def get_session(session_id: str) -> dict | None:
