@@ -49,3 +49,6 @@ frontend/coverage/
 
 # Duplicate agent skills
 agent/
+
+# Skills lock file
+skills-lock.json
