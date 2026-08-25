@@ -271,8 +271,11 @@
   font-weight: 800;
   line-height: 0.98;
   letter-spacing: -0.045em;
-  color: var(--text-1);
   margin: 0;
+  background: linear-gradient(135deg, var(--primary), var(--accent-2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .lp-title-line {
@@ -284,7 +287,7 @@
 }
 
 .lp-hero-sub {
-  font-size: 16px;
+  font-size: 20px;
   line-height: 1.6;
   color: var(--text-2);
   margin: 0;
@@ -406,11 +409,11 @@
 
 .lp-hero-input {
   flex: 1;
-  padding: 12px 0;
+  padding: 16px 0;
   background: transparent;
   border: none;
   outline: none;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text-1);
 }
 
@@ -734,18 +737,21 @@
 .lp-feature-card--xl {
   /* Flagship tile: spans the full 6-column grid. */
   grid-column: span 6;
+  min-height: 280px;
   padding: 32px;
   background: var(--lp-glass-bg);
 }
 
 .lp-feature-card--lg {
   grid-column: span 4;
+  min-height: 200px;
   padding: 32px;
   background: var(--lp-glass-bg);
 }
 
 .lp-feature-card--sm {
   grid-column: span 2;
+  min-height: 160px;
 }
 
 .lp-feature-card--lg .lp-feature-title,
@@ -764,10 +770,10 @@
 }
 
 .lp-feature-card:hover {
-  border-color: var(--lp-glass-border-bright);
+  border-color: var(--border-accent);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.3),
-    0 0 0 1px var(--lp-glass-border-bright);
+    0 0 20px var(--primary-muted);
   transform: translateY(-2px);
 }
 
@@ -833,14 +839,14 @@
 }
 
 .lp-feature-title {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--text-1);
   margin: 0 0 8px;
 }
 
 .lp-feature-desc {
-  font-size: 13px;
+  font-size: 16px;
   line-height: 1.5;
   color: var(--text-2);
   margin: 0;
@@ -851,7 +857,7 @@
    the page. Tokens only: --primary-strong + --text-on-primary stay
    accessible in all 13 themes (verified in Daylight and the dark set). */
 .lp-stats {
-  padding: 56px 0;
+  padding: 96px 0;
   background: var(--primary-strong);
   color: var(--text-on-primary);
   position: relative;
