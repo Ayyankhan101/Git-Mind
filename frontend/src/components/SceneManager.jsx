@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import ThreeCanvas from "./ThreeCanvas";
 import { useThreeScene } from "../hooks/useThreeScene";
 import { useReducedMotion } from "../hooks/useReducedMotion";
