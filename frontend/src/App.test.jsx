@@ -9,6 +9,18 @@ jest.mock("./components/LandingPage", () => {
   };
 });
 
+jest.mock("./components/SceneManager", () => {
+  return function MockSceneManager({ children }) {
+    return children?.({ prefersReduced: false }) || null;
+  };
+});
+
+jest.mock("./components/PostProcessing", () => {
+  return function MockPostProcessing() {
+    return null;
+  };
+});
+
 jest.mock("./api", () => ({
   fetchRepos: jest.fn(),
   loadSharedAnalysis: jest.fn().mockRejectedValue(new Error("no share")),

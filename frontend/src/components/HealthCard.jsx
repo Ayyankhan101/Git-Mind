@@ -1,4 +1,6 @@
 import React, { useEffect, useRef } from "react";
+import SceneManager from "./SceneManager";
+import HealthGauge3D from "./HealthGauge3D";
 
 const GRADE_COLOR = {
   A: "var(--success)",
@@ -86,6 +88,13 @@ export default function HealthCard({ health, variant }) {
       <div className="health-card-inner">
         {/* Grade ring */}
         <div className="health-grade-ring">
+          <SceneManager
+            style={{ position: "absolute", inset: 0, zIndex: 1 }}
+          >
+            {({ prefersReduced }) => (
+              <HealthGauge3D score={health.score} prefersReduced={prefersReduced} />
+            )}
+          </SceneManager>
           <svg
             viewBox="0 0 96 96"
             width="96"

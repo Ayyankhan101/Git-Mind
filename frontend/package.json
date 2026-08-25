@@ -67,7 +67,13 @@
       "^react-markdown$": "<rootDir>/src/__mocks__/react-markdown.js",
       "^remark-gfm$": "<rootDir>/src/__mocks__/remark-gfm.js",
       "^react-syntax-highlighter$": "<rootDir>/src/__mocks__/react-syntax-highlighter.js",
-      "^react-syntax-highlighter/dist/esm/styles/hljs$": "<rootDir>/src/__mocks__/react-syntax-highlighter-styles.js"
+      "^react-syntax-highlighter/dist/esm/styles/hljs$": "<rootDir>/src/__mocks__/react-syntax-highlighter-styles.js",
+      "^./SceneManager$": "<rootDir>/src/__mocks__/SceneManager.js",
+      "^./LandingScene$": "<rootDir>/src/__mocks__/LandingScene.js",
+      "^./DashboardScene$": "<rootDir>/src/__mocks__/DashboardScene.js",
+      "^./SummaryScene$": "<rootDir>/src/__mocks__/SummaryScene.js",
+      "^./HealthGauge3D$": "<rootDir>/src/__mocks__/HealthGauge3D.js",
+      "^./PostProcessing$": "<rootDir>/src/__mocks__/PostProcessing.js"
     }
   },
   "size-limit": [

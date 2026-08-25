@@ -21,6 +21,8 @@ import Lenis from "lenis";
 import "./LandingPage.css";
 import HealthCard from "./HealthCard";
 import ThemeSwitcher from "./ThemeSwitcher";
+import SceneManager from "./SceneManager";
+import LandingScene from "./LandingScene";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -568,7 +570,14 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
 
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="lp-hero" ref={heroRef}>
-        <div className="lp-hero-inner">
+        <SceneManager
+          style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}
+        >
+          {({ prefersReduced }) => (
+            <LandingScene prefersReduced={prefersReduced} />
+          )}
+        </SceneManager>
+        <div className="lp-hero-inner" style={{ position: "relative", zIndex: 1 }}>
           <div className="lp-hero-copy">
             {/* Signature moment: agent radar sweep behind the copy — pure
                 CSS rings + rotating conic sweep echoing the AgentPipeline

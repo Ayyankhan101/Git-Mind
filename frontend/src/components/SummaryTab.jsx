@@ -13,6 +13,8 @@ import { fs } from "../typeScale";
 import { fetchSummary, subscribeMonitor, fetchMonitorStatus } from "../api";
 import * as tokenManager from "../tokenManager";
 import HealthCard from "./HealthCard";
+import SceneManager from "./SceneManager";
+import SummaryScene from "./SummaryScene";
 
 const SEV_COLORS = {
   critical: "var(--sev-critical)",
@@ -422,8 +424,15 @@ export default function SummaryTab({
   return (
     <div className="summary">
       <FloatingShapes />
+      <SceneManager
+        style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}
+      >
+        {({ prefersReduced }) => (
+          <SummaryScene prefersReduced={prefersReduced} />
+        )}
+      </SceneManager>
 
-      <div className="tab-header">
+      <div className="tab-header" style={{ position: "relative", zIndex: 1 }}>
         <div className="tab-header-main">
           <span className="tab-header-icon">
             <BarChart3 size={15} />

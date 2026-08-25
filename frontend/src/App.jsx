@@ -11,6 +11,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import LandingPage from "./components/LandingPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ToastSystem from "./components/ToastSystem";
+import SceneManager from "./components/SceneManager";
+import DashboardScene from "./components/DashboardScene";
+import PostProcessing from "./components/PostProcessing";
 import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix } from "./api";
 import { appReducer, initialState } from "./appReducer";
 import * as tokenManager from "./tokenManager";
@@ -767,23 +770,30 @@ export default function App() {
               </div>
             }
           >
-            <DashboardLayout
-              state={state}
-              dispatch={dispatch}
-              sessionId={SESSION_ID}
-              usernameRef={usernameRef}
-              handleLoadRepos={handleLoadRepos}
-              handleSelectRepo={handleSelectRepo}
-              handleAnalyze={handleAnalyze}
-              handleShare={handleShare}
-              handleExport={handleExport}
-              handleFix={handleFix}
-              handlePaletteAction={handlePaletteAction}
-              statusClass={statusClass}
-              statusText={statusText}
-              dismissToast={dismissToast}
-              toasts={toasts}
-            />
+            <SceneManager style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+              {({ prefersReduced }) => (
+                <DashboardScene prefersReduced={prefersReduced} />
+              )}
+            </SceneManager>
+            <div style={{ position: "relative", zIndex: 1 }}>
+              <DashboardLayout
+                state={state}
+                dispatch={dispatch}
+                sessionId={SESSION_ID}
+                usernameRef={usernameRef}
+                handleLoadRepos={handleLoadRepos}
+                handleSelectRepo={handleSelectRepo}
+                handleAnalyze={handleAnalyze}
+                handleShare={handleShare}
+                handleExport={handleExport}
+                handleFix={handleFix}
+                handlePaletteAction={handlePaletteAction}
+                statusClass={statusClass}
+                statusText={statusText}
+                dismissToast={dismissToast}
+                toasts={toasts}
+              />
+            </div>
           </Suspense>
         </ErrorBoundary>
       )}
@@ -842,6 +852,7 @@ export default function App() {
           />
         </Suspense>
       </ErrorBoundary>
+      <PostProcessing enabled={!isLanding} />
       <ToastSystem toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
