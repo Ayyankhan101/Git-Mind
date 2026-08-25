@@ -427,8 +427,12 @@ export default function SummaryTab({
       <SceneManager
         style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}
       >
-        {({ prefersReduced }) => (
-          <SummaryScene prefersReduced={prefersReduced} />
+        {({ sceneRef, subscribe, prefersReduced }) => (
+          <SummaryScene
+            sceneRef={sceneRef}
+            subscribe={subscribe}
+            prefersReduced={prefersReduced}
+          />
         )}
       </SceneManager>
 

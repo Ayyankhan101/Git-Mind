@@ -573,8 +573,12 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
         <SceneManager
           style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}
         >
-          {({ prefersReduced }) => (
-            <LandingScene prefersReduced={prefersReduced} />
+          {({ sceneRef, subscribe, prefersReduced }) => (
+            <LandingScene
+              sceneRef={sceneRef}
+              subscribe={subscribe}
+              prefersReduced={prefersReduced}
+            />
           )}
         </SceneManager>
         <div className="lp-hero-inner" style={{ position: "relative", zIndex: 1 }}>

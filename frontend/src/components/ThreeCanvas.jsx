@@ -2,18 +2,19 @@ import React, { useRef, useEffect } from "react";
 
 /**
  * ThreeCanvas - Lightweight Three.js canvas wrapper.
- * Renders a <canvas> element and calls onInit/Animate/Dispose callbacks.
+ * Owns the single RAF loop: init on mount, renderFrame each frame,
+ * dispose on unmount.
  *
  * Props:
  *   - onInit: (canvas) => void - Initialize Three.js scene
- *   - animate: (time) => void - Animation loop
+ *   - renderFrame: (time) => void - Called every frame to render
  *   - onDispose: () => void - Cleanup
  *   - style: object - Canvas style
  *   - className: string - Canvas class
  */
 export default function ThreeCanvas({
   onInit,
-  animate,
+  renderFrame,
   onDispose,
   style = {},
   className = "",
@@ -27,19 +28,17 @@ export default function ThreeCanvas({
 
     onInit?.(canvas);
 
-    if (animate) {
-      const loop = (time) => {
-        animate(time);
-        rafRef.current = requestAnimationFrame(loop);
-      };
+    const loop = (time) => {
+      renderFrame?.(time);
       rafRef.current = requestAnimationFrame(loop);
-    }
+    };
+    rafRef.current = requestAnimationFrame(loop);
 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       onDispose?.();
     };
-  }, [onInit, animate, onDispose]);
+  }, [onInit, renderFrame, onDispose]);
 
   return (
     <canvas

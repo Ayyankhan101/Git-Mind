@@ -89,10 +89,15 @@ export default function HealthCard({ health, variant }) {
         {/* Grade ring */}
         <div className="health-grade-ring">
           <SceneManager
-            style={{ position: "absolute", inset: 0, zIndex: 1 }}
+            style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none" }}
           >
-            {({ prefersReduced }) => (
-              <HealthGauge3D score={health.score} prefersReduced={prefersReduced} />
+            {({ sceneRef, subscribe, prefersReduced }) => (
+              <HealthGauge3D
+                sceneRef={sceneRef}
+                subscribe={subscribe}
+                score={health.score}
+                prefersReduced={prefersReduced}
+              />
             )}
           </SceneManager>
           <svg

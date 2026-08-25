@@ -771,8 +771,12 @@ export default function App() {
             }
           >
             <SceneManager style={{ position: "absolute", inset: 0, zIndex: 0 }}>
-              {({ prefersReduced }) => (
-                <DashboardScene prefersReduced={prefersReduced} />
+              {({ sceneRef, subscribe, prefersReduced }) => (
+                <DashboardScene
+                  sceneRef={sceneRef}
+                  subscribe={subscribe}
+                  prefersReduced={prefersReduced}
+                />
               )}
             </SceneManager>
             <div style={{ position: "relative", zIndex: 1 }}>

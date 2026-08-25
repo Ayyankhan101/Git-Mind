@@ -2,16 +2,18 @@ import { useRef, useCallback, useEffect } from "react";
 import * as THREE from "three";
 
 /**
- * Manages Three.js scene lifecycle: init, animate, resize, dispose.
+ * Manages Three.js scene lifecycle: init, renderFrame, dispose.
+ * No internal RAF loop — ThreeCanvas drives the single animation loop
+ * and calls renderFrame(time) each frame.
+ *
  * Usage:
- *   const { sceneRef, init, animate, dispose } = useThreeScene();
+ *   const { sceneRef, init, renderFrame, dispose } = useThreeScene();
  */
 export function useThreeScene() {
   const sceneRef = useRef({
     scene: null,
     camera: null,
     renderer: null,
-    rafId: null,
     disposed: false,
   });
 
@@ -49,23 +51,15 @@ export function useThreeScene() {
     return s;
   }, []);
 
-  const animate = useCallback((callback) => {
+  const renderFrame = useCallback(() => {
     const s = sceneRef.current;
-    if (!s.renderer) return;
-
-    const loop = (time) => {
-      if (s.disposed) return;
-      callback({ scene: s.scene, camera: s.camera, renderer: s.renderer, time });
-      s.renderer.render(s.scene, s.camera);
-      s.rafId = requestAnimationFrame(loop);
-    };
-    s.rafId = requestAnimationFrame(loop);
+    if (!s.renderer || s.disposed) return;
+    s.renderer.render(s.scene, s.camera);
   }, []);
 
   const dispose = useCallback(() => {
     const s = sceneRef.current;
     s.disposed = true;
-    if (s.rafId) cancelAnimationFrame(s.rafId);
     if (s.renderer) {
       s.renderer.dispose();
       s.renderer = null;
@@ -78,5 +72,5 @@ export function useThreeScene() {
     return () => dispose();
   }, [dispose]);
 
-  return { sceneRef, init, animate, dispose };
+  return { sceneRef, init, renderFrame, dispose };
 }
