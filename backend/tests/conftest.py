@@ -19,6 +19,9 @@ def app():
     return app
 
 
+# NOTE: GITHUB_TOKEN above is the *server's* credential. It no longer
+# authenticates a caller (see tests/test_auth_identity.py), so tests hitting
+# auth-gated routes must pass an Authorization header explicitly.
 @pytest.fixture
 def client(app):
     with TestClient(app) as c:

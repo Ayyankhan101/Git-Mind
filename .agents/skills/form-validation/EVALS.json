@@ -1,0 +1,83 @@
+{
+  "skill": "form-validation",
+  "version": "1.0.0",
+  "evals": [
+    {
+      "id": "form-01",
+      "name": "Inline validation",
+      "prompt": "Add real-time validation to my signup form",
+      "assertions": [
+        "Validates on blur (not every keystroke)",
+        "Shows errors inline near the field",
+        "Uses aria-invalid and aria-describedby",
+        "Validates again on submit"
+      ]
+    },
+    {
+      "id": "form-02",
+      "name": "Error messages",
+      "prompt": "Improve the error messages on my form",
+      "assertions": [
+        "Messages are specific (not 'Invalid input')",
+        "Messages say what's wrong AND how to fix",
+        "Messages use role='alert'",
+        "Messages are visually near the field"
+      ]
+    },
+    {
+      "id": "form-03",
+      "name": "Password validation",
+      "prompt": "Add password strength validation with visual feedback",
+      "assertions": [
+        "Checks length, uppercase, lowercase, number, special char",
+        "Shows strength indicator (weak/good/strong)",
+        "Updates in real-time after first error",
+        "Accessible via aria-live"
+      ]
+    },
+    {
+      "id": "form-04",
+      "name": "Focus management",
+      "prompt": "When form submission fails, focus the first error",
+      "assertions": [
+        "Finds first aria-invalid='true' element",
+        "Moves focus to it",
+        "Scrolls it into view",
+        "Announces error to screen readers"
+      ]
+    },
+    {
+      "id": "form-05",
+      "name": "Multi-step form",
+      "prompt": "Build a 3-step form that validates each step before proceeding",
+      "assertions": [
+        "Validates current step before advancing",
+        "Shows progress indicator",
+        "Focuses first input in new step",
+        "Allows going back to previous steps"
+      ]
+    },
+    {
+      "id": "form-06",
+      "name": "Loading states",
+      "prompt": "Add loading state to form submission",
+      "assertions": [
+        "Disables submit button during submission",
+        "Shows spinner or loading text",
+        "Prevents double submission",
+        "Re-enables on error"
+      ]
+    },
+    {
+      "id": "form-07",
+      "name": "Anti-pattern detection",
+      "prompt": "Review: input.addEventListener('input', validate); // validate on every keystroke",
+      "assertions": [
+        "Identifies validate-on-every-keystroke as anti-pattern",
+        "Suggests validate-on-blur approach",
+        "Mentions real-time only after first error",
+        "Explains why keystroke validation is annoying"
+      ]
+    }
+  ]
+}

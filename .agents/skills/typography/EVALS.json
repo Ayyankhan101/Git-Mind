@@ -1,0 +1,70 @@
+{
+  "skill": "typography",
+  "version": "1.0.0",
+  "evals": [
+    {
+      "id": "typo-01",
+      "name": "Type scale",
+      "prompt": "Create a harmonious type scale for a marketing site",
+      "assertions": [
+        "Uses a modular scale ratio",
+        "Uses CSS custom properties",
+        "Uses clamp() for fluid sizing",
+        "Has clear hierarchy (4+ levels)"
+      ]
+    },
+    {
+      "id": "typo-02",
+      "name": "Line height",
+      "prompt": "Fix this text that feels cramped: p { line-height: 1.2; font-size: 16px; }",
+      "assertions": [
+        "Increases line-height to 1.5-1.7 for body",
+        "Uses tighter line-height for headings",
+        "Explains why 1.2 is too tight for body text"
+      ]
+    },
+    {
+      "id": "typo-03",
+      "name": "Measure control",
+      "prompt": "This paragraph is hard to read because lines are too long",
+      "assertions": [
+        "Sets max-width to 45-75ch",
+        "Explains optimal line length",
+        "Uses ch unit, not px"
+      ]
+    },
+    {
+      "id": "typo-04",
+      "name": "Font loading",
+      "prompt": "Add a custom font without causing invisible text on load",
+      "assertions": [
+        "Uses font-display: swap",
+        "Preloads critical fonts",
+        "Includes system font fallback",
+        "No font-display: block"
+      ]
+    },
+    {
+      "id": "typo-05",
+      "name": "Font pairing",
+      "prompt": "Choose fonts for a tech startup landing page",
+      "assertions": [
+        "Maximum 2 font families",
+        "Contrasting but harmonious pairing",
+        "Includes system font fallback",
+        "Considers x-height compatibility"
+      ]
+    },
+    {
+      "id": "typo-06",
+      "name": "Anti-pattern detection",
+      "prompt": "Review: h1 { font-size: 48px; line-height: 1.8; } p { font-size: 14px; line-height: 1.2; }",
+      "assertions": [
+        "Identifies px units as anti-pattern",
+        "Identifies loose heading line-height",
+        "Identifies tight body line-height",
+        "Provides corrected code"
+      ]
+    }
+  ]
+}

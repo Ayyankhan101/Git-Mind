@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "query": "My website looks great on desktop but completely breaks on mobile. The cards stack weirdly and the text is tiny. How do I make this responsive?",
+    "should_trigger": true
+  },
+  {
+    "id": 2,
+    "query": "I need a layout that adapts from single column on mobile to 3 columns on desktop. Using React + Tailwind. What breakpoints should I use?",
+    "should_trigger": true
+  },
+  {
+    "id": 3,
+    "query": "The font size on my heading looks huge on mobile but perfect on desktop. I want it to scale smoothly between screen sizes without media queries.",
+    "should_trigger": true
+  },
+  {
+    "id": 4,
+    "query": "I'm building a card component that needs to show a horizontal layout when the container is wide enough and vertical when narrow. Should I use media queries or something else?",
+    "should_trigger": true
+  },
+  {
+    "id": 5,
+    "query": "My navigation links are too small to tap on mobile. Users keep missing the buttons. What's the minimum touch target size I should use?",
+    "should_trigger": true
+  },
+  {
+    "id": 6,
+    "query": "I want to serve different image sizes for mobile and desktop to save bandwidth. What's the best approach — srcset, picture element, or something else?",
+    "should_trigger": true
+  },
+  {
+    "id": 7,
+    "query": "Review my CSS: .container { width: 1200px; } @media (max-width: 768px) { .container { width: 100%; } } — is this a good responsive approach?",
+    "should_trigger": true
+  },
+  {
+    "id": 8,
+    "query": "help me set up a PostgreSQL database with Prisma for my Next.js app",
+    "should_trigger": false
+  },
+  {
+    "id": 9,
+    "query": "I need to add dark mode toggle to my React app using CSS custom properties",
+    "should_trigger": false
+  },
+  {
+    "id": 10,
+    "query": "Can you help me write unit tests for my Express API using Jest and Supertest?",
+    "should_trigger": false
+  },
+  {
+    "id": 11,
+    "query": "I want to add scroll animations to my landing page using GSAP",
+    "should_trigger": false
+  },
+  {
+    "id": 12,
+    "query": "help me convert this Streamlit app to a marimo notebook for data cleaning",
+    "should_trigger": false
+  }
+]

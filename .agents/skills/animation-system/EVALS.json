@@ -1,0 +1,72 @@
+{
+  "skill": "animation-system",
+  "version": "1.0.0",
+  "evals": [
+    {
+      "id": "anim-01",
+      "name": "Duration tokens",
+      "prompt": "Create a duration scale for my animation system",
+      "assertions": [
+        "Uses CSS custom properties",
+        "Has at least 4 levels (fast, normal, slow, etc.)",
+        "Provides usage guidelines for each",
+        "Uses consistent base (100ms or similar)"
+      ]
+    },
+    {
+      "id": "anim-02",
+      "name": "Easing tokens",
+      "prompt": "Define easing curves for different animation types",
+      "assertions": [
+        "Has ease-out for entering elements",
+        "Has ease-in for exiting elements",
+        "Has spring/ease-spring for playful interactions",
+        "Provides when-to-use guidance"
+      ]
+    },
+    {
+      "id": "anim-03",
+      "name": "Stagger patterns",
+      "prompt": "Create a stagger animation for a list of items",
+      "assertions": [
+        "Items animate sequentially, not all at once",
+        "Uses 50-100ms delay between items",
+        "Uses CSS or JS for staggering",
+        "Provides dynamic stagger option"
+      ]
+    },
+    {
+      "id": "anim-04",
+      "name": "Entrance choreography",
+      "prompt": "Choreograph a hero section entrance with multiple elements",
+      "assertions": [
+        "Background animates first",
+        "Content animates after background",
+        "CTA animates last",
+        "Uses staggered delays"
+      ]
+    },
+    {
+      "id": "anim-05",
+      "name": "Performance",
+      "prompt": "Review my animations for performance issues",
+      "assertions": [
+        "Only animates transform and opacity",
+        "Avoids width, height, top, left",
+        "Uses will-change sparingly",
+        "Mentions GPU acceleration"
+      ]
+    },
+    {
+      "id": "anim-06",
+      "name": "Reduced motion",
+      "prompt": "Add reduced motion support to my animation system",
+      "assertions": [
+        "Uses prefers-reduced-motion",
+        "Provides alternative for reduced motion",
+        "Doesn't disable all motion",
+        "Mentions user preference respect"
+      ]
+    }
+  ]
+}

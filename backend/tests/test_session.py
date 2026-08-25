@@ -41,21 +41,21 @@ class TestInitialState:
 
 
 class TestPutSession:
-    def test_stores_and_retrieves(self):
-        put_session(VALID_UUID, {"key": "value"})
+    async def test_stores_and_retrieves(self):
+        await put_session(VALID_UUID, {"key": "value"})
         session = _sessions.get(VALID_UUID)
         assert session == {"key": "value"}
 
-    def test_moves_to_end_on_access(self):
-        put_session("session_a", {"a": 1})
-        put_session("session_b", {"b": 2})
+    async def test_moves_to_end_on_access(self):
+        await put_session("session_a", {"a": 1})
+        await put_session("session_b", {"b": 2})
         session = _sessions.get("session_a")
         assert session == {"a": 1}
 
 
 class TestGetSession:
     async def test_returns_from_memory(self):
-        put_session(VALID_UUID, {"from": "memory"})
+        await put_session(VALID_UUID, {"from": "memory"})
         result = await get_session(VALID_UUID)
         assert result == {"from": "memory"}
 

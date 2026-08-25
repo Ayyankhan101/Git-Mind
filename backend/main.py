@@ -362,7 +362,7 @@ async def get_task_status(task_id: str, request: Request):
     allowed, remaining, retry_after = await check_rate_limit("task", identity, service_key=svc_key)
     if not allowed:
         return await rate_limit_response("task", identity)
-    task = get_task(task_id)
+    task = await get_task(task_id)
     if task is None:
         return {"error": "Task not found"}
     return {

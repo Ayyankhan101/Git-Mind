@@ -1,0 +1,83 @@
+{
+  "skill_name": "premium-web-animation",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I'm building a landing page for my AI writing tool startup. I want a hero section that feels cinematic — like the text and background elements reveal as the user scrolls down. Also want smooth scrolling across the whole page. Using Next.js and React.",
+      "expected_output": "GSAP + ScrollTrigger for scroll reveals, Lenis for smooth scroll, properly structured React components.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Need to add some life to my portfolio site. I want page transitions that feel smooth when navigating between projects, little hover effects on the project cards, and a loading animation for the images. React project.",
+      "expected_output": "Motion for page transitions, React Spring for card hover, Anime.js for loading animations.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I want a really premium scroll experience for my product showcase page. Think Apple-level — pinned sections, parallax layers, content that fades and slides in at the right moments. The site needs to feel fast though, not bloated. What should I use and can you set it up?",
+      "expected_output": "GSAP + ScrollTrigger with pin, multi-layer parallax, Lenis, performance notes with Trig.js alternative.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "I want to use Framer Motion for my landing page. It needs a hero section that stays pinned while you scroll through 3 feature cards that reveal one by one. The hero should have a big headline that fades out and a product image that scales up. Can you build this with Framer Motion?",
+      "expected_output": "Should redirect to GSAP ScrollTrigger with pin:true, not Framer Motion. Framer Motion can't do pinned scroll-scrubbed timelines well.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "I'm building a SaaS product page and I want scroll animations — fade-ins, reveals, stuff like that. But I'm really worried about bundle size. I don't want to ship GSAP (it's huge). What's the lightest way to get smooth scroll-triggered animations in React?",
+      "expected_output": "Should recommend Trig.js for lightweight scroll triggers + Lenis for smooth scroll. Should explain why Trig.js is lighter than GSAP.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "I want to build a product page for my sneaker brand with a 3D rotating shoe that the user can spin. As they scroll down, the shoe should rotate automatically and different colorways should fade in. The whole thing should feel premium and smooth. Next.js.",
+      "expected_output": "Three.js + React Three Fiber for 3D shoe, GSAP ScrollTrigger for scroll-linked rotation, Lenis for smooth scroll. Multi-library composition.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "I'm building a dashboard with a sidebar that slides in/out, cards that you can drag to rearrange, and a dark mode toggle that smoothly transitions colors. Which animation library should I use for each of these? I'm using React.",
+      "expected_output": "Motion for sidebar/toggle (component transitions), React Spring for drag (gesture-driven). Correct library split.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "I need to add scroll animations to my marketing site, but my accessibility auditor flagged that we need to respect prefers-reduced-motion. Some users get motion sickness from parallax and scroll effects. How do I make my animations accessible while still keeping the premium feel for users who want it?",
+      "expected_output": "JavaScript matchMedia check + CSS media query fallback. Content visible without animation when reduced motion preferred.",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "I'm building a product launch page that gets 80% of its traffic from mobile. I want scroll animations and a pinned hero section, but I'm worried about mobile performance — especially on older Android devices. The page needs to feel premium on desktop but not kill performance on mobile. What's the strategy?",
+      "expected_output": "ScrollTrigger.matchMedia() for responsive animations. Different complexity for mobile vs desktop. Real device testing mention.",
+      "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "I have a React component that animates a modal's width from 0 to 100% and height from 0 to auto. It also has a GSAP animation in useEffect but I'm not cleaning it up — it seems to work fine though. And I'm loading GSAP, Framer Motion, AND Anime.js in my project even though I only use Framer Motion for a few fade-ins. Can you review my animation approach?",
+      "expected_output": "Flags layout property animation, missing GSAP cleanup, and unnecessary library loading. Provides corrected code.",
+      "files": []
+    },
+    {
+      "id": 11,
+      "prompt": "I need a 3D product viewer for my e-commerce site — the product needs to rotate as users scroll. But my performance budget is strict: total animation libraries must be under 50kB gzipped. Three.js alone is ~150kB. Is there a way to do this, or should I give up on 3D?",
+      "expected_output": "Acknowledges budget conflict. Provides alternatives: CSS 3D, dynamic import, pre-rendered. Tradeoff analysis.",
+      "files": []
+    },
+    {
+      "id": 12,
+      "prompt": "I'm building a creative portfolio in Svelte. I want cinematic scroll effects, smooth page transitions between project pages, and hover effects on project cards. The site should feel like a motion design piece. How do I set this up in Svelte?",
+      "expected_output": "Adapts all code to Svelte syntax (onMount/onDestroy). Mentions motion-svelte. No React-specific code.",
+      "files": []
+    },
+    {
+      "id": 13,
+      "prompt": "I have a React app with multiple pages that use GSAP ScrollTrigger. Users report that after navigating between pages a few times, the site gets progressively slower and scroll animations start lagging. I think there might be a memory leak. How do I properly clean up GSAP in React?",
+      "expected_output": "Explains gsap.context() + ctx.revert(). Mentions useGSAP hook. Explains ScrollTrigger accumulation mechanism.",
+      "files": []
+    }
+  ]
+}

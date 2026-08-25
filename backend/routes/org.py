@@ -8,7 +8,7 @@ from fastapi import APIRouter, Request
 from agents.cve_scanner import run_cve_scanner
 from models.requests import OrgAuditRequest
 from routes._errors import error_response, match_gh_repo_url
-from services.auth import get_gh_token
+from services.auth import get_github_credential
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
 
@@ -40,7 +40,7 @@ async def org_audit_endpoint(req: OrgAuditRequest, request: Request):
     if not (await check_rate_limit("org_audit", client_ip))[0]:
         return await rate_limit_response("org_audit", client_ip)
 
-    token = get_gh_token(request)
+    token = get_github_credential(request)
     gh_headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}
     if token:
         gh_headers["Authorization"] = f"Bearer {token}"

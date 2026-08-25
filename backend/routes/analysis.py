@@ -12,32 +12,23 @@ from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
 from services.session import _UUID_RE, get_session
 from settings import get_llm
+from state import PUBLIC_FIELDS
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
 
 _LLM = get_llm(temperature_key="analysis")
 
-_PUBLIC_ANALYSIS_KEYS = (
-    "repo_name",
-    "repo_url",
-    "architecture_diagram",
-    "architecture_graph",
-    "api_docs",
-    "security_findings",
-    "cve_findings",
-    "git_audit",
-    "solidity_audit",
-    "code_audit",
-    "health",
-    "head_sha",
-    "saved_at",
-)
+# Extra public keys added during pipeline (not in base RepoState)
+_EXTRA_PUBLIC_KEYS = ("architecture_graph", "health", "saved_at")
+
+# Combined: base PUBLIC_FIELDS + pipeline extras
+ALL_PUBLIC_KEYS = PUBLIC_FIELDS + _EXTRA_PUBLIC_KEYS
 
 
 def _trim_analysis(snap: dict) -> dict:
     """Strip internal fields (owner_hash, chroma_collection_name, chat_history)."""
-    return {k: snap.get(k) for k in _PUBLIC_ANALYSIS_KEYS if k in snap}
+    return {k: snap.get(k) for k in ALL_PUBLIC_KEYS if k in snap}
 
 
 def _count_by_severity(findings: list[dict]) -> tuple[int, int]:
@@ -174,6 +165,11 @@ async def summary_endpoint(req: SummaryRequest, request: Request):
     except Exception as exc:
         logger.error("Summary LLM call failed", session=req.session_id, error=str(exc)[:200])
         return error_response("Summary generation failed — LLM service unavailable", 502)
+
+    # Strip <think>...</think> thinking tags that some LLMs emit
+    import re
+
+    summary = re.sub(r"<think>[\s\S]*?</think>", "", summary).strip()
 
     logger.info("Summary generated", session=req.session_id)
     return {

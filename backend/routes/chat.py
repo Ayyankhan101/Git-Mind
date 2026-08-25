@@ -75,6 +75,29 @@ async def chat_endpoint(req: ChatRequest, request: Request):
     if not session.get("chroma_collection_name"):
         return error_response("Knowledge base not ready — RAG setup may have failed.", 503)
 
+    # Defensive: check if ChromaDB collection still exists (ephemeral storage)
+    from chroma_utils import _client, search_codebase
+    collection_name = session["chroma_collection_name"]
+    try:
+        _client.get_collection(collection_name)
+    except Exception:
+        # Collection lost (ephemeral storage). Re-embed if file_contents available.
+        file_contents = session.get("file_contents")
+        if file_contents:
+            from agents.rag_setup import run_rag_setup
+            try:
+                new_name = await asyncio.to_thread(
+                    run_rag_setup, file_contents, session["repo_name"], session.get("repo_url", "")
+                )
+                session["chroma_collection_name"] = new_name
+                collection_name = new_name
+                logger.info("Re-embedded codebase after collection loss", new_collection=new_name)
+            except Exception as exc:
+                logger.warning("Re-embed failed: %s", exc)
+                return error_response("Knowledge base lost (server restart). Re-run analysis.", 503)
+        else:
+            return error_response("Knowledge base lost (server restart). Re-run analysis.", 503)
+
     graph_context = _build_graph_context(session)
 
     answer, sources = await asyncio.to_thread(
@@ -121,6 +144,28 @@ async def chat_stream_endpoint(req: ChatRequest, request: Request):
         if not session.get("chroma_collection_name"):
             yield f"data: {json.dumps({'error': 'Knowledge base not ready — RAG setup may have failed.'})}\n\n"
             return
+
+        # Defensive: check if ChromaDB collection still exists (ephemeral storage)
+        from chroma_utils import _client
+        collection_name = session["chroma_collection_name"]
+        try:
+            _client.get_collection(collection_name)
+        except Exception:
+            file_contents = session.get("file_contents")
+            if file_contents:
+                from agents.rag_setup import run_rag_setup
+                try:
+                    new_name = await asyncio.to_thread(
+                        run_rag_setup, file_contents, session["repo_name"], session.get("repo_url", "")
+                    )
+                    session["chroma_collection_name"] = new_name
+                    collection_name = new_name
+                except Exception:
+                    yield f"data: {json.dumps({'error': 'Knowledge base lost (server restart). Re-run analysis.'})}\n\n"
+                    return
+            else:
+                yield f"data: {json.dumps({'error': 'Knowledge base lost (server restart). Re-run analysis.'})}\n\n"
+                return
 
         graph_context = _build_graph_context(session)
         full_answer = ""

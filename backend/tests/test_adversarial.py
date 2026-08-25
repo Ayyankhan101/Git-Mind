@@ -169,24 +169,24 @@ class TestSessionAttacks:
         # Pydantic max length catches this
         assert resp.status_code == 422
 
-    def test_session_store_lru_eviction(self):
+    async def test_session_store_lru_eviction(self):
         """Session store should evict when full."""
         from services.session import _MAX_SESSIONS, _sessions, put_session
 
         # Fill to capacity
         for i in range(_MAX_SESSIONS + 10):
-            put_session(f"00000000-0000-0000-0000-{i:012d}", {"data": f"test-{i}"})
+            await put_session(f"00000000-0000-0000-0000-{i:012d}", {"data": f"test-{i}"})
 
         # Should have evicted oldest
         assert len(_sessions) <= _MAX_SESSIONS
 
-    def test_concurrent_session_writes(self):
+    async def test_concurrent_session_writes(self):
         """Multiple writes to same session should not crash."""
         from services.session import put_session
 
         session_id = "00000000-0000-0000-0000-000000000099"
         for i in range(100):
-            put_session(session_id, {"counter": i, "data": "x" * 1000})
+            await put_session(session_id, {"counter": i, "data": "x" * 1000})
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

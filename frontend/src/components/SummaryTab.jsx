@@ -239,10 +239,27 @@ export default function SummaryTab({
   useEffect(() => {
     if (!enabled || data || loading) return;
     setLoading(true);
-    fetchSummary(sessionId)
-      .then((d) => setData(d))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+    setError(null);
+    let cancelled = false;
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 5000;
+    async function tryFetch(attempt) {
+      try {
+        const d = await fetchSummary(sessionId);
+        if (!cancelled) setData(d);
+      } catch (err) {
+        if (!cancelled && attempt < MAX_RETRIES) {
+          // Retry after delay — session may still be processing
+          setTimeout(() => tryFetch(attempt + 1), RETRY_DELAY);
+          return;
+        }
+        if (!cancelled) setError(err.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    tryFetch(0);
+    return () => { cancelled = true; };
   }, [enabled, sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Check if repo is already being watched
@@ -583,7 +600,19 @@ export default function SummaryTab({
 
         {/* Right Card — Repository Description (summary text) */}
         <div className="summary-card">
-          {data?.summary && <p className="lead">{data.summary}</p>}
+          {data?.summary && (() => {
+            // Strip <think>...</think> thinking tags that some LLMs emit
+            const clean = data.summary.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+            return (
+              <div className="lead summary-text" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {clean.split(/(?<=[.!?])\s+/).filter(Boolean).map((sentence, i) => (
+                  <p key={i} style={{ margin: 0, lineHeight: 1.65 }}>
+                    {sentence.trim()}
+                  </p>
+                ))}
+              </div>
+            );
+          })()}
           {!loading && !data && !error && (
             <p className="lead" style={{ color: "var(--text-3)" }}>
               Analysis of{" "}

@@ -10,6 +10,7 @@ from services.auth import (
     AuthMiddleware,
     _is_public,
     get_gh_token,
+    get_github_credential,
     hash_token,
 )
 
@@ -111,14 +112,28 @@ class TestTokenExtraction:
         req = Request(scope)
         assert get_gh_token(req) == "ghp_abc123"
 
-    def test_get_gh_token_falls_back_to_env(self):
+    def test_get_gh_token_does_not_fall_back_to_env(self, monkeypatch):
+        """Identity is header-only.
+
+        This previously asserted the opposite. Falling back to the server's
+        GITHUB_TOKEN here made the default-deny gate accept every anonymous
+        request as the server, and collapsed every caller into one owner_hash
+        bucket. The env fallback moved to get_github_credential, which is only
+        for outbound GitHub calls.
+        """
         from starlette.requests import Request
 
-        os.environ["GITHUB_TOKEN"] = "ghp_env_token"
-        scope = {"type": "http", "headers": []}
-        req = Request(scope)
-        assert get_gh_token(req) == "ghp_env_token"
-        del os.environ["GITHUB_TOKEN"]
+        monkeypatch.setenv("GITHUB_TOKEN", "ghp_env_token")
+        req = Request({"type": "http", "headers": []})
+        assert get_gh_token(req) is None
+
+    def test_github_credential_falls_back_to_env(self, monkeypatch):
+        """Outbound calls keep the server PAT so public reads stay at 5000/hr."""
+        from starlette.requests import Request
+
+        monkeypatch.setenv("GITHUB_TOKEN", "ghp_env_token")
+        req = Request({"type": "http", "headers": []})
+        assert get_github_credential(req) == "ghp_env_token"
 
     def test_hash_token_deterministic(self):
         h1 = hash_token("secret-token")

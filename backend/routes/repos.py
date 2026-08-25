@@ -6,7 +6,7 @@ import structlog
 from fastapi import APIRouter, Request
 
 from routes._errors import error_response
-from services.auth import get_gh_token
+from services.auth import get_github_credential
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
 
@@ -21,7 +21,7 @@ async def list_repos(username: str, request: Request):
     if not _USERNAME_RE.match(username):
         return error_response("Invalid GitHub username", 400)
 
-    token = get_gh_token(request)
+    token = get_github_credential(request)
     client_ip = get_client_ip(request)
     if not (await check_rate_limit("repos", client_ip))[0]:
         return await rate_limit_response("repos", client_ip)

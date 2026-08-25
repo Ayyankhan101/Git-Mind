@@ -12,6 +12,7 @@ from collections import OrderedDict
 import structlog
 
 from services.cache import get_redis
+from state import initial_state  # noqa: F401 — re-export for backward compatibility
 
 logger = structlog.get_logger(__name__)
 
@@ -25,14 +26,14 @@ _session_timestamps: dict[str, float] = {}
 _MAX_SESSIONS = 500
 
 
-def put_session(session_id: str, data: dict) -> None:
+async def put_session(session_id: str, data: dict) -> None:
     """Store session data to Redis (or memory in dev mode)."""
     # Strip sensitive fields before persistence
     safe = {k: v for k, v in data.items() if k != "gh_token"}
     r = get_redis()
     if r:
         try:
-            r.set(f"session:{session_id}", json.dumps(safe, default=str), ex=_SESSION_TTL)
+            await r.set(f"session:{session_id}", json.dumps(safe, default=str), ex=_SESSION_TTL)
             return
         except Exception as exc:
             logger.warning("Redis session set failed", error=str(exc)[:80])
@@ -57,34 +58,6 @@ def prune_expired_sessions() -> int:
     if expired:
         logger.debug("Pruned expired in-memory sessions", count=len(expired))
     return len(expired)
-
-
-def initial_state(repo_url: str, gh_token: str | None = None) -> dict:
-    return {
-        "repo_url": repo_url,
-        "gh_token": gh_token,
-        "local_path": None,
-        "file_tree": [],
-        "file_contents": {},
-        "repo_name": "",
-        "architecture_diagram": None,
-        "api_docs": [],
-        "security_findings": [],
-        "cve_findings": [],
-        "chroma_collection_name": None,
-        "git_audit": None,
-        "solidity_audit": None,
-        "code_audit": None,
-        "head_sha": None,
-        "chat_history": [],
-        "selected_finding_id": None,
-        "crisis_messages": [],
-        "crisis_turn": 0,
-        "public_signals": [],
-        "reporter_published": False,
-        "crisis_resolved": False,
-        "events": [],
-    }
 
 
 async def get_session(session_id: str) -> dict | None:
@@ -115,7 +88,7 @@ async def get_session(session_id: str) -> dict | None:
 
         restored = await get_analysis_db(session_id)
         if restored:
-            put_session(session_id, restored)
+            await put_session(session_id, restored)
             logger.info("Session restored from database", session_id=session_id)
         return restored
     except Exception as exc:

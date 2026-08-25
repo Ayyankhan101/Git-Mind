@@ -43,3 +43,12 @@ frontend/.lighthouseci/
 # Local LLM model files (large, downloaded locally)
 *.gguf
 .env*
+
+# Frontend coverage
+frontend/coverage/
+
+# Duplicate agent skills
+agent/
+
+# Skills lock file
+skills-lock.json

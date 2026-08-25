@@ -72,9 +72,48 @@ def _event(agent: str, status: str, detail: str | None = None) -> dict:
     return {"agent": agent, "status": status, "ts": time.time(), "detail": detail}
 
 
+# ── Node helper ────────────────────────────────────────────────────────────────
+# Higher-order function that handles scanner-fail guard, circuit-breaker guard,
+# try/catch, and event emission. Each agent node becomes a one-liner.
+
+
+def run_agent_node(
+    name: str,
+    fn: "callable",
+    state: RepoState,
+    *,
+    default: dict | None = None,
+    fallback: "callable | None" = None,
+) -> dict:
+    """Run an agent function with standard error isolation.
+
+    Args:
+        name: Agent name for events (e.g. "architecture", "security").
+        fn: Callable that receives state and returns a dict to merge.
+        state: Current RepoState.
+        default: Safe default dict on scanner-fail or circuit-breaker open.
+        fallback: Optional callable(state, exc) -> dict for custom error recovery.
+    """
+    from agent_types import validate_agent_output
+
+    if state.get("_scanner_failed"):
+        return {**(default or {}), "events": [_event(name, "skipped", "scanner failed")]}
+    if _is_circuit_open():
+        return {**(default or {}), "events": [_event(name, "skipped", "circuit breaker open")]}
+    try:
+        result = fn(state)
+        validate_agent_output(name, result)
+        _record_circuit_success()
+        return {**result, "events": [_event(name, "done")]}
+    except Exception as exc:
+        _record_circuit_failure()
+        logger.error("%s_node failed: %s", name, exc)
+        if fallback:
+            return {**fallback(state, exc), "events": [_event(name, "error", str(exc)[:500])]}
+        return {**(default or {}), "events": [_event(name, "error", str(exc)[:500])]}
+
+
 # ── Node functions ─────────────────────────────────────────────────────────────
-# Each node is fully error-isolated: a failure returns safe defaults + an error
-# event. The rest of the parallel pipeline continues unaffected.
 
 
 def scanner_node(state: RepoState) -> dict:
@@ -93,143 +132,93 @@ def scanner_node(state: RepoState) -> dict:
         }
 
 
+def _architecture_fallback(state: RepoState, exc: Exception) -> dict:
+    from agents.architecture import _fallback_mermaid
+
+    return {
+        "architecture_diagram": _fallback_mermaid(state.get("file_tree", [])),
+        "architecture_graph": {"nodes": [], "edges": []},
+    }
+
+
+def _security_fallback(state: RepoState, exc: Exception) -> dict:
+    return {"security_findings": _synthetic_finding()}
+
+
+def _architecture_fn(state: RepoState) -> dict:
+    result = run_with_graph(state["file_tree"], state["file_contents"])
+    return {
+        "architecture_diagram": result["architecture_diagram"],
+        "architecture_graph": result["architecture_graph"],
+    }
+
+
 def architecture_node(state: RepoState) -> dict:
-    if state.get("_scanner_failed"):
-        return {"architecture_diagram": None, "events": [_event("architecture", "skipped", "scanner failed")]}
-    if _is_circuit_open():
-        return {"architecture_diagram": None, "events": [_event("architecture", "skipped", "circuit breaker open")]}
-    try:
-        result = run_with_graph(state["file_tree"], state["file_contents"])
-        _record_circuit_success()
-        return {
-            "architecture_diagram": result["architecture_diagram"],
-            "architecture_graph": result["architecture_graph"],
-            "events": [_event("architecture", "done")],
-        }
-    except Exception as exc:
-        _record_circuit_failure()
-        logger.error("architecture_node failed: %s", exc)
-        return {
-            "architecture_diagram": "graph TD\n    A[Architecture Analysis Failed]",
-            "architecture_graph": {"nodes": [], "edges": []},
-            "events": [_event("architecture", "error", str(exc)[:500])],
-        }
+    return run_agent_node("architecture", _architecture_fn, state, fallback=_architecture_fallback)
 
 
 def api_doc_node(state: RepoState) -> dict:
-    if state.get("_scanner_failed"):
-        return {"api_docs": [], "events": [_event("api_docs", "skipped", "scanner failed")]}
-    if _is_circuit_open():
-        return {"api_docs": [], "events": [_event("api_docs", "skipped", "circuit breaker open")]}
-    try:
-        docs = run_api_doc_agent(state["file_contents"])
-        _record_circuit_success()
-        return {"api_docs": docs, "events": [_event("api_docs", "done")]}
-    except Exception as exc:
-        _record_circuit_failure()
-        logger.error("api_doc_node failed: %s", exc)
-        return {"api_docs": [], "events": [_event("api_docs", "error", str(exc)[:500])]}
+    return run_agent_node(
+        "api_docs",
+        lambda s: {"api_docs": run_api_doc_agent(s["file_contents"])},
+        state,
+        default={"api_docs": []},
+    )
 
 
 def security_node(state: RepoState) -> dict:
-    if state.get("_scanner_failed"):
-        return {"security_findings": [], "events": [_event("security", "skipped", "scanner failed")]}
-    if _is_circuit_open():
-        return {"security_findings": [], "events": [_event("security", "skipped", "circuit breaker open")]}
-    try:
-        findings = run_security_agent(state["local_path"] or "")
-        _record_circuit_success()
-        return {"security_findings": findings, "events": [_event("security", "done")]}
-    except Exception as exc:
-        _record_circuit_failure()
-        logger.error("security_node failed: %s", exc)
-        return {
-            "security_findings": _synthetic_finding(),
-            "events": [_event("security", "error", str(exc)[:500])],
-        }
+    return run_agent_node(
+        "security",
+        lambda s: {"security_findings": run_security_agent(s["local_path"] or "")},
+        state,
+        default={"security_findings": []},
+        fallback=_security_fallback,
+    )
 
 
 def rag_setup_node(state: RepoState) -> dict:
-    if state.get("_scanner_failed"):
-        return {"chroma_collection_name": None, "events": [_event("chat", "skipped", "scanner failed")]}
-    if _is_circuit_open():
-        return {"chroma_collection_name": None, "events": [_event("chat", "skipped", "circuit breaker open")]}
-    try:
-        name = run_rag_setup(state["file_contents"], state["repo_name"], state["repo_url"])
-        _record_circuit_success()
-        return {"chroma_collection_name": name, "events": [_event("chat", "done")]}
-    except Exception as exc:
-        _record_circuit_failure()
-        logger.error("rag_setup_node failed: %s", exc)
-        return {
-            "chroma_collection_name": None,
-            "events": [_event("chat", "error", str(exc)[:500])],
-        }
+    return run_agent_node(
+        "chat",
+        lambda s: {"chroma_collection_name": run_rag_setup(s["file_contents"], s["repo_name"], s["repo_url"])},
+        state,
+        default={"chroma_collection_name": None},
+    )
 
 
 def cve_node(state: RepoState) -> dict:
-    if state.get("_scanner_failed"):
-        return {"cve_findings": [], "events": [_event("cve_scanner", "skipped", "scanner failed")]}
-    if _is_circuit_open():
-        return {"cve_findings": [], "events": [_event("cve_scanner", "skipped", "circuit breaker open")]}
-    try:
-        findings = run_cve_scanner(state["file_contents"])
-        _record_circuit_success()
-        return {"cve_findings": findings, "events": [_event("cve_scanner", "done")]}
-    except Exception as exc:
-        _record_circuit_failure()
-        logger.error("cve_node failed: %s", exc)
-        return {"cve_findings": [], "events": [_event("cve_scanner", "error", str(exc)[:500])]}
+    return run_agent_node(
+        "cve_scanner",
+        lambda s: {"cve_findings": run_cve_scanner(s["file_contents"])},
+        state,
+        default={"cve_findings": []},
+    )
 
 
 def sol_node(state: RepoState) -> dict:
-    if state.get("_scanner_failed"):
-        return {"solidity_audit": None, "events": [_event("solidity", "skipped", "scanner failed")]}
-    if _is_circuit_open():
-        return {"solidity_audit": None, "events": [_event("solidity", "skipped", "circuit breaker open")]}
-    try:
-        result = solidity_agent(dict(state))
-        _record_circuit_success()
-        return {"solidity_audit": result.get("solidity_audit"), "events": [_event("solidity", "done")]}
-    except Exception as exc:
-        _record_circuit_failure()
-        logger.error("sol_node failed: %s", exc)
-        return {"solidity_audit": None, "events": [_event("solidity", "error", str(exc)[:500])]}
+    return run_agent_node(
+        "solidity",
+        lambda s: {"solidity_audit": solidity_agent(dict(s)).get("solidity_audit")},
+        state,
+        default={"solidity_audit": None},
+    )
 
 
 def code_audit_node(state: RepoState) -> dict:
-    if state.get("_scanner_failed"):
-        return {"code_audit": None, "events": [_event("code_audit", "skipped", "scanner failed")]}
-    if _is_circuit_open():
-        return {"code_audit": None, "events": [_event("code_audit", "skipped", "circuit breaker open")]}
-    try:
-        results = run_code_audit(state["file_tree"], state["file_contents"])
-        _record_circuit_success()
-        return {"code_audit": results, "events": [_event("code_audit", "done")]}
-    except Exception as exc:
-        _record_circuit_failure()
-        logger.error("code_audit_node failed: %s", exc)
-        return {"code_audit": None, "events": [_event("code_audit", "error", str(exc)[:500])]}
+    return run_agent_node(
+        "code_audit",
+        lambda s: {"code_audit": run_code_audit(s["file_tree"], s["file_contents"])},
+        state,
+        default={"code_audit": None},
+    )
 
 
 def git_audit_node(state: RepoState) -> dict:
-    if state.get("_scanner_failed"):
-        return {"git_audit": None, "events": [_event("git_audit", "skipped", "scanner failed")]}
-    if _is_circuit_open():
-        return {"git_audit": None, "events": [_event("git_audit", "skipped", "circuit breaker open")]}
-    try:
-        result = run_git_audit(
-            state["repo_url"],
-            state["file_tree"],
-            state["file_contents"],
-            state.get("gh_token"),
-        )
-        _record_circuit_success()
-        return {"git_audit": result, "events": [_event("git_audit", "done")]}
-    except Exception as exc:
-        _record_circuit_failure()
-        logger.error("git_audit_node failed: %s", exc)
-        return {"git_audit": None, "events": [_event("git_audit", "error", str(exc)[:500])]}
+    return run_agent_node(
+        "git_audit",
+        lambda s: {"git_audit": run_git_audit(s["repo_url"], s["file_tree"], s["file_contents"], s.get("gh_token"))},
+        state,
+        default={"git_audit": None},
+    )
 
 
 # ── Graph definition ───────────────────────────────────────────────────────────

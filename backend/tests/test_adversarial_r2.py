@@ -3,7 +3,6 @@
 Tests that the system degrades gracefully under stress.
 """
 
-import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi.testclient import TestClient
@@ -39,16 +38,16 @@ class TestConcurrency:
         # Redis unavailable → 503, or 200/429 if rate limited
         assert all(code in (200, 429, 400, 500, 503) for code in responses)
 
-    def test_session_concurrent_read_write(self):
+    async def test_session_concurrent_read_write(self):
         """Reading and writing same session sequentially."""
         from services.session import get_session, put_session
 
         session_id = "00000000-0000-0000-0000-000000000098"
-        put_session(session_id, {"data": "initial", "counter": 0})
+        await put_session(session_id, {"data": "initial", "counter": 0})
 
         for i in range(10):
-            put_session(session_id, {"data": f"write-{i}", "counter": i})
-            result = asyncio.run(get_session(session_id))
+            await put_session(session_id, {"data": f"write-{i}", "counter": i})
+            result = await get_session(session_id)
             assert result is not None
 
 
@@ -79,12 +78,12 @@ class TestExternalFailures:
             resp = client.get("/repos/test-user", headers=AUTH)
             assert resp.status_code in (200, 502)
 
-    def test_llm_timeout_on_summary(self):
+    async def test_llm_timeout_on_summary(self):
         """LLM timeout on /summary should return error."""
         from services.session import put_session
 
         session_id = "00000000-0000-0000-0000-000000000097"
-        put_session(
+        await put_session(
             session_id,
             {
                 "repo_name": "test",
@@ -121,12 +120,12 @@ class TestDataCorruption:
         resp = client.post("/analyze", json={"repo_url": "https://github.com/🇺🇸/test"}, headers=AUTH)
         assert resp.status_code in (400, 422)
 
-    def test_emoji_in_chat_question(self):
+    async def test_emoji_in_chat_question(self):
         """Emoji in chat question."""
         from services.session import put_session
 
         session_id = "00000000-0000-0000-0000-000000000096"
-        put_session(
+        await put_session(
             session_id,
             {
                 "repo_name": "test",
@@ -260,12 +259,12 @@ class TestErrorHandling:
         resp = client.get("/analysis/00000000-0000-0000-0000-999999999999", headers=AUTH)
         assert resp.status_code in (404, 500)
 
-    def test_summary_without_chroma(self):
+    async def test_summary_without_chroma(self):
         """Summary without chroma_collection_name should handle gracefully."""
         from services.session import put_session
 
         session_id = "00000000-0000-0000-0000-000000000095"
-        put_session(
+        await put_session(
             session_id,
             {
                 "repo_name": "test",

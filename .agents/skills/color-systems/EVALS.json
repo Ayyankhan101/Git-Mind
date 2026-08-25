@@ -1,0 +1,72 @@
+{
+  "skill": "color-systems",
+  "version": "1.0.0",
+  "evals": [
+    {
+      "id": "color-01",
+      "name": "Semantic naming",
+      "prompt": "Create a color system for a SaaS dashboard",
+      "assertions": [
+        "Uses semantic names (not appearance-based)",
+        "Uses CSS custom properties",
+        "Has primary, neutral, success, error, warning",
+        "Includes hover/active/disabled states"
+      ]
+    },
+    {
+      "id": "color-02",
+      "name": "OKLCH palette",
+      "prompt": "Generate a color palette that feels perceptually uniform",
+      "assertions": [
+        "Uses OKLCH color space",
+        "Generates 10 shades per color",
+        "Colors feel equally bright at same lightness",
+        "Explains why OKLCH over HSL"
+      ]
+    },
+    {
+      "id": "color-03",
+      "name": "WCAG contrast",
+      "prompt": "Ensure all text in my design has sufficient contrast",
+      "assertions": [
+        "Checks 4.5:1 for normal text",
+        "Checks 3:1 for large text and UI",
+        "Provides contrast ratio calculations",
+        "Suggests fixes for failing combinations"
+      ]
+    },
+    {
+      "id": "color-04",
+      "name": "Dark mode tokens",
+      "prompt": "Convert my light-mode colors to work in dark mode",
+      "assertions": [
+        "Creates separate dark mode tokens",
+        "Adjusts primary color for dark backgrounds",
+        "Maintains contrast ratios in dark mode",
+        "Uses data-theme or prefers-color-scheme"
+      ]
+    },
+    {
+      "id": "color-05",
+      "name": "Interactive states",
+      "prompt": "Add hover, focus, and disabled states to my buttons",
+      "assertions": [
+        "Has hover state (darker/lighter)",
+        "Has active/pressed state",
+        "Has focus-visible ring",
+        "Has disabled state with reduced opacity"
+      ]
+    },
+    {
+      "id": "color-06",
+      "name": "Anti-pattern detection",
+      "prompt": "Review: .blue-button { background: #3b82f6; } .light-bg { background: #f8f9fa; }",
+      "assertions": [
+        "Identifies hardcoded hex as anti-pattern",
+        "Identifies appearance-based naming",
+        "Suggests semantic naming",
+        "Provides CSS custom property approach"
+      ]
+    }
+  ]
+}

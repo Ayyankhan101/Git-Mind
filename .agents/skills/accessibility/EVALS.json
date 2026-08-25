@@ -1,0 +1,94 @@
+{
+  "skill": "accessibility",
+  "version": "1.0.0",
+  "evals": [
+    {
+      "id": "a11y-01",
+      "name": "Semantic HTML",
+      "prompt": "Convert this div soup to semantic HTML: <div class='nav'><div class='link'>Home</div></div>",
+      "assertions": [
+        "Uses <nav> for navigation",
+        "Uses <a> for links",
+        "Uses <ul>/<li> for nav items",
+        "Adds aria-label if needed"
+      ]
+    },
+    {
+      "id": "a11y-02",
+      "name": "Keyboard navigation",
+      "prompt": "Make this dropdown menu fully keyboard navigable",
+      "assertions": [
+        "Arrow keys navigate items",
+        "Escape closes menu",
+        "Focus returns to trigger",
+        "Tab moves to next item"
+      ]
+    },
+    {
+      "id": "a11y-03",
+      "name": "ARIA attributes",
+      "prompt": "Add proper ARIA to this tab component",
+      "assertions": [
+        "Uses role='tablist'",
+        "Uses role='tab' and role='tabpanel'",
+        "Has aria-selected",
+        "Has aria-controls linking tabs to panels"
+      ]
+    },
+    {
+      "id": "a11y-04",
+      "name": "Focus management",
+      "prompt": "When this modal opens, trap focus inside it",
+      "assertions": [
+        "Traps focus within modal",
+        "First focusable element receives focus",
+        "Escape closes modal",
+        "Focus returns to trigger on close"
+      ]
+    },
+    {
+      "id": "a11y-05",
+      "name": "Screen reader support",
+      "prompt": "Make this image chart accessible to screen readers",
+      "assertions": [
+        "Has descriptive alt text",
+        "Doesn't just say 'chart' or 'image'",
+        "Describes the data/trend",
+        "Uses figcaption for complex images"
+      ]
+    },
+    {
+      "id": "a11y-06",
+      "name": "Form accessibility",
+      "prompt": "Make this form accessible — inputs have no labels",
+      "assertions": [
+        "Every input has a <label>",
+        "Labels use htmlFor/id",
+        "Required fields marked with aria-required",
+        "Errors linked via aria-describedby"
+      ]
+    },
+    {
+      "id": "a11y-07",
+      "name": "Color contrast",
+      "prompt": "This gray text on white background fails WCAG. Fix it.",
+      "assertions": [
+        "Increases contrast to 4.5:1 minimum",
+        "Explains WCAG AA requirements",
+        "Provides specific color values",
+        "Checks both text and UI component contrast"
+      ]
+    },
+    {
+      "id": "a11y-08",
+      "name": "Reduced motion",
+      "prompt": "Add prefers-reduced-motion support to my animations",
+      "assertions": [
+        "Uses @media (prefers-reduced-motion: reduce)",
+        "Disables or reduces animation duration",
+        "Respects scroll-behavior: auto",
+        "Doesn't remove all motion (just reduces)"
+      ]
+    }
+  ]
+}

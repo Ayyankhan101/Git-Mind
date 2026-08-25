@@ -9,7 +9,7 @@ from fastapi import APIRouter, Request
 from agents.pr_review import run_pr_review
 from models.requests import PRImpactRequest, PRReviewRequest
 from routes._errors import error_response, match_gh_pr_url
-from services.auth import get_gh_token
+from services.auth import get_github_credential
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
 from services.session import _UUID_RE, get_session
@@ -25,7 +25,7 @@ async def pr_review_endpoint(req: PRReviewRequest, request: Request):
     client_ip = get_client_ip(request)
     if not (await check_rate_limit("pr", f"{req.pr_url}:{client_ip}"))[0]:
         return await rate_limit_response("pr", f"{req.pr_url}:{client_ip}")
-    token = get_gh_token(request)
+    token = get_github_credential(request)
     try:
         result = await asyncio.to_thread(run_pr_review, req.pr_url, token)
         return result
@@ -43,7 +43,7 @@ async def list_open_prs(owner: str, repo: str, request: Request):
     client_ip = get_client_ip(request)
     if not (await check_rate_limit("pr", f"{owner}/{repo}:{client_ip}"))[0]:
         return await rate_limit_response("pr", f"{owner}/{repo}:{client_ip}")
-    token = get_gh_token(request)
+    token = get_github_credential(request)
     gh_headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}
     if token:
         gh_headers["Authorization"] = f"Bearer {token}"
@@ -93,7 +93,7 @@ async def pr_impact_endpoint(req: PRImpactRequest, request: Request):
     if not base_session:
         return error_response("Session not found — analyze the base repo first", 404)
 
-    token = get_gh_token(request)
+    token = get_github_credential(request)
     gh_headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}
     if token:
         gh_headers["Authorization"] = f"Bearer {token}"
@@ -150,7 +150,7 @@ async def pr_impact_endpoint(req: PRImpactRequest, request: Request):
         "changed_files": changed_files,
         "diff_truncated": len(pr_diff) > 10_000,
     }
-    task_id = submit(
+    task_id = await submit(
         "compute_pr_impact",
         {
             "repo_url": repo_url,

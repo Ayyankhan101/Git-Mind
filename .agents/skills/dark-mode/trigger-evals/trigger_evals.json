@@ -1,0 +1,57 @@
+[
+  {
+    "id": 1,
+    "query": "I want to add dark mode to my React app that respects the user's system preference. How do I detect prefers-color-scheme?",
+    "should_trigger": true
+  },
+  {
+    "id": 2,
+    "query": "My dark mode implementation flashes a white screen before switching to dark. How do I prevent this FOUC?",
+    "should_trigger": true
+  },
+  {
+    "id": 3,
+    "query": "I need a theme toggle button that switches between light and dark mode and remembers the user's choice. What's the best approach?",
+    "should_trigger": true
+  },
+  {
+    "id": 4,
+    "query": "The text in my dark mode has poor contrast — gray text on dark backgrounds. How do I ensure WCAG AA compliance for both themes?",
+    "should_trigger": true
+  },
+  {
+    "id": 5,
+    "query": "I want my theme switch to animate smoothly instead of snapping between light and dark. How do I add a transition?",
+    "should_trigger": true
+  },
+  {
+    "id": 6,
+    "query": "Review my dark mode: body { background: black; color: white; } .error { color: red; } — what's wrong with this approach?",
+    "should_trigger": true
+  },
+  {
+    "id": 7,
+    "query": "I'm building a blog with MDX in Next.js. Need syntax highlighting and table of contents. Nothing animated.",
+    "should_trigger": false
+  },
+  {
+    "id": 8,
+    "query": "Can you help me optimize my Next.js site for Core Web Vitals? Need to reduce LCP and CLS.",
+    "should_trigger": false
+  },
+  {
+    "id": 9,
+    "query": "I need to set up authentication with NextAuth.js using GitHub and Google providers",
+    "should_trigger": false
+  },
+  {
+    "id": 10,
+    "query": "help me add a loading skeleton to my React components while data fetches",
+    "should_trigger": false
+  },
+  {
+    "id": 11,
+    "query": "I want to build a dashboard with charts and data tables using React and Recharts",
+    "should_trigger": false
+  }
+]
