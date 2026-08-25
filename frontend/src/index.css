@@ -1654,6 +1654,50 @@ h3,
 .health-card--band .health-bar-label {
   color: color-mix(in srgb, var(--text-on-primary) 72%, transparent);
 }
+
+/* ── Card System ──────────────────────────────────────────────── */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--card-shadow);
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+.card--elevated {
+  box-shadow: var(--shadow-md);
+}
+.card--interactive {
+  cursor: pointer;
+}
+.card--interactive:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-accent);
+  border-color: var(--border-accent);
+}
+
+/* ── Micro-interactions ───────────────────────────────────────── */
+.hover-lift {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+.hover-lift:hover {
+  transform: translateY(-1px);
+}
+.hover-glow {
+  transition: box-shadow var(--duration-fast) var(--ease-out);
+}
+.hover-glow:hover {
+  box-shadow: var(--shadow-accent);
+}
+.hover-scale {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
 /* ── API Docs ─────────────────────────────────────────────────── */
 .endpoint {
   display: grid;
@@ -3846,6 +3890,7 @@ h3,
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  animation: tabFadeIn var(--duration-normal) var(--ease-out);
 }
 .diagram-tab > .diagram-wrap {
   position: relative;
@@ -4361,6 +4406,16 @@ h3,
   }
   to {
     opacity: 1;
+  }
+}
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 @keyframes fadeSlideUp {
