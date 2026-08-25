@@ -99,6 +99,22 @@
   --space-2xl: 48px;
   --space-3xl: 64px;
 
+  /* Spacing scale (numeric) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+
+  /* Card tokens */
+  --card-bg: var(--surface-1);
+  --card-border: var(--border-subtle);
+  --card-shadow: var(--shadow-sm);
+
   /* Transitions */
   --duration-fast: 120ms;
   --duration-normal: 200ms;
@@ -113,6 +129,11 @@
   --code-number: #fbbf24;
   --code-operator: #93c5fd;
   --code-punctuation: #a8a7b3;
+
+  /* Three.js tokens (obsidian default) */
+  --three-primary: #3b82f6;
+  --three-accent: #8b5cf6;
+  --three-fog: #090a0f;
 }
 
 /* ============================================================

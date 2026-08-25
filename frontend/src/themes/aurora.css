@@ -51,6 +51,11 @@
   --code-number: #fbbf24;
   --code-operator: #93c5fd;
   --code-punctuation: #c8b8e0;
+
+  /* Three.js tokens */
+  --three-primary: #a855f7;
+  --three-accent: #22d3ee;
+  --three-fog: #0f0a18;
 }
 
 /* Aurora gradient accent (only theme with gradient) */

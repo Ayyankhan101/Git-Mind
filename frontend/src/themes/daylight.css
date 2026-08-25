@@ -58,4 +58,9 @@
   --code-number: #d97706;
   --code-operator: #2563eb;
   --code-punctuation: #475569;
+
+  /* Three.js tokens */
+  --three-primary: #3b82f6;
+  --three-accent: #8b5cf6;
+  --three-fog: #f8fafc;
 }
