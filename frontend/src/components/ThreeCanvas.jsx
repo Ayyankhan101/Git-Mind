@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useEffect } from "react";
 
 /**
  * ThreeCanvas - Lightweight Three.js canvas wrapper.

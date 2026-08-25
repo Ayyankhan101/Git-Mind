@@ -1,5 +1,4 @@
 import React, { useRef, useMemo } from "react";
-import * as THREE from "three";
 
 /**
  * Particle network for dashboard background.
