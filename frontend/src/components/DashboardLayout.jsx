@@ -46,12 +46,9 @@ export default function DashboardLayout({
   handlePaletteAction,
   statusClass,
   statusText,
-  dismissToast,
-  toasts,
 }) {
   const {
     theme,
-    density,
     githubUser,
     ghToken,
     repos,
@@ -76,18 +73,12 @@ export default function DashboardLayout({
     agentWarnings,
     fixLoading,
     fixResult,
-    crisisFinding,
     globalError,
     retryUrl,
-    showKbHelp,
-    showPalette,
-    filePreview,
     shareCopied,
     prAutoUrl,
-    showOrgAudit,
     drawerOpen,
     repoHistory,
-    recents,
     loadedUsers,
   } = state;
 

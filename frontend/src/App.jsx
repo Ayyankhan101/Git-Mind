@@ -815,8 +815,6 @@ export default function App() {
                 handlePaletteAction={handlePaletteAction}
                 statusClass={statusClass}
                 statusText={statusText}
-                dismissToast={dismissToast}
-                toasts={toasts}
               />
             </div>
           </Suspense>
