@@ -352,7 +352,7 @@ export default function SummaryTab({
         )}
       </SceneManager>
 
-      <div className="tab-header" style={{ position: "relative", zIndex: 1 }}>
+      <div className="tab-header">
         <div className="tab-header-main">
           <span className="tab-header-icon">
             <BarChart3 size={15} />

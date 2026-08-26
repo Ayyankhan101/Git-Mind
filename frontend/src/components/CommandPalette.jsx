@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useEscClose } from "../hooks/useEscClose";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import {
   Search,
@@ -143,17 +144,7 @@ export default function CommandPalette({
     }
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  useEscClose(open, onClose);
 
   const groups = useMemo(() => {
     const q = query.trim();
