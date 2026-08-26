@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 /**
  * Caps long lists behind a "Show more" button instead of rendering
@@ -6,8 +6,13 @@ import { useState, useCallback } from "react";
  * cap >50-item lists). Count state survives filter changes; Math.min
  * keeps `visible` within bounds.
  */
-export function useVisibleCap(total, step = 50) {
+export function useVisibleCap(total, step = 50, resetKey = null) {
   const [count, setCount] = useState(step);
+  // New filter/subset → back to the first page instead of leaking the
+  // expanded count into unrelated rows.
+  useEffect(() => {
+    setCount(step);
+  }, [resetKey, step]);
   const visible = Math.min(count, total);
   const hasMore = total > visible;
   const showMore = useCallback(() => setCount((c) => c + step), [step]);

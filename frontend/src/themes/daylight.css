@@ -3,6 +3,10 @@
    ============================================================ */
 [data-theme="daylight"],
 .daylight {
+  /* Lighter scrims for the bright canvas. */
+  --scrim-strong: rgba(15, 23, 42, 0.4);
+  --scrim-default: rgba(15, 23, 42, 0.32);
+  --scrim-soft: rgba(15, 23, 42, 0.24);
   /* Native controls match the bright canvas (light scrollbars/inputs). */
   color-scheme: light;
 
