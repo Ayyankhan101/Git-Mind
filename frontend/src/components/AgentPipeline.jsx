@@ -85,7 +85,9 @@ export default function AgentPipeline({
         <div className="pipeline-mini-summary">
           <span className="dot" />
           <span>{doneCount}/7 agents complete</span>
-          <span className="mono">· {formatTime(elapsedSec)}</span>
+          <span className="mono" style={{ fontVariantNumeric: "tabular-nums" }}>
+            · {formatTime(elapsedSec)}
+          </span>
         </div>
       )}
 

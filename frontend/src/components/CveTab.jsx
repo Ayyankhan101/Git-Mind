@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useVisibleCap, ShowMoreButton } from "../hooks/useVisibleCap";
 import { Lock, ExternalLink } from "../icons";
 import { fs } from "../typeScale";
 
@@ -148,6 +149,7 @@ export default function CveTab({ findings, isAnalyzing, analyzed }) {
       return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
     });
   }, [findings, filter]);
+  const cap = useVisibleCap(sorted.length);
 
   if (!analyzed && !isAnalyzing) {
     return (
@@ -218,10 +220,13 @@ export default function CveTab({ findings, isAnalyzing, analyzed }) {
       </div>
 
       <div className="row-list">
-        {sorted.map((pkg, i) => (
+        {sorted.slice(0, cap.visible).map((pkg, i) => (
           <PkgRow key={`${pkg.package}-${pkg.version}-${i}`} pkg={pkg} />
         ))}
       </div>
+      {cap.hasMore && (
+        <ShowMoreButton onClick={cap.showMore} remaining={cap.remaining} />
+      )}
     </div>
   );
 }

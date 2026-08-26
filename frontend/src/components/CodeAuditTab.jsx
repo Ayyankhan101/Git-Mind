@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useVisibleCap, ShowMoreButton } from "../hooks/useVisibleCap";
 import { Code, ExternalLink, Wrench, ChevronDown, ChevronUp } from "../icons";
 import { fs } from "../typeScale";
 
@@ -147,6 +148,7 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
 function LangSection({ langResult, onFix, fixLoading, fixResult }) {
   const { language, tool, findings, file_count } = langResult;
   const [langExpanded, setLangExpanded] = useState(true);
+  const cap = useVisibleCap(findings.length);
   const color = LANG_COLORS[language] || "#888";
 
   return (
@@ -210,7 +212,7 @@ function LangSection({ langResult, onFix, fixLoading, fixResult }) {
 
       {langExpanded && (
         <div className="row-list" style={{ marginTop: 4 }}>
-          {findings.map((f, i) => (
+          {findings.slice(0, cap.visible).map((f, i) => (
             <FindingRow
               key={f.id || i}
               finding={f}
@@ -219,6 +221,9 @@ function LangSection({ langResult, onFix, fixLoading, fixResult }) {
               fixResult={fixResult}
             />
           ))}
+          {cap.hasMore && (
+            <ShowMoreButton onClick={cap.showMore} remaining={cap.remaining} />
+          )}
         </div>
       )}
     </div>

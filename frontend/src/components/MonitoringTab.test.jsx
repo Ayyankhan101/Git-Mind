@@ -254,13 +254,13 @@ test("renders relative last-check time", async () => {
         id: "mon-5",
         repo_url: "https://github.com/foo/bar",
         last_sha: "abc",
-        last_check_at: Math.floor(Date.now() / 1000) - 5 * 60, // 5m ago
+        last_check_at: Math.floor(Date.now() / 1000) - 5 * 60, // 5 minutes ago
       },
     ],
   });
   render(<MonitoringTab />);
   expect(await screen.findByText("foo/bar")).toBeInTheDocument();
-  expect(screen.getByText(/5m ago/)).toBeInTheDocument();
+  expect(screen.getByText(/5 minutes ago/)).toBeInTheDocument();
 });
 
 test("renders 'just now' for fresh checks and Slack badge", async () => {

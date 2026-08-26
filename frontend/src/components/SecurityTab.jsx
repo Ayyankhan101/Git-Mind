@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useVisibleCap, ShowMoreButton } from "../hooks/useVisibleCap";
 import { ShieldAlert, Wrench, ExternalLink } from "../icons";
 import { fs } from "../typeScale";
 
@@ -425,6 +426,7 @@ export default function SecurityTab({
       return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
     });
   }, [findings, filter]);
+  const cap = useVisibleCap(sorted.length);
 
   if (!analyzed && !isAnalyzing) {
     return (
@@ -496,7 +498,7 @@ export default function SecurityTab({
       </div>
 
       <div className="row-list">
-        {sorted.map((f, i) => (
+        {sorted.slice(0, cap.visible).map((f, i) => (
           <FindingRow
             key={f.id || i}
             finding={f}
@@ -510,6 +512,9 @@ export default function SecurityTab({
           />
         ))}
       </div>
+      {cap.hasMore && (
+        <ShowMoreButton onClick={cap.showMore} remaining={cap.remaining} />
+      )}
     </div>
   );
 }

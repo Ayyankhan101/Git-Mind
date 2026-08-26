@@ -227,8 +227,13 @@ export default function ChatTab({ sessionId, enabled, repoName }) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onInput={(e) => {
-            e.target.style.height = "auto";
-            e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+            // rAF-batch the height write: reading scrollHeight per
+            // keystroke interleaves layout reads/writes (thrash).
+            const el = e.target;
+            requestAnimationFrame(() => {
+              el.style.height = "auto";
+              el.style.height = Math.min(el.scrollHeight, 120) + "px";
+            });
           }}
           onKeyDown={handleKeyDown}
           disabled={busy}

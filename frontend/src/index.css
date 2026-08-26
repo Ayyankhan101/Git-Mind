@@ -210,7 +210,8 @@ a,
 input,
 textarea,
 select,
-[role="button"] {
+[role="button"],
+[role="option"] {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
@@ -507,6 +508,7 @@ h3,
 .nav-badge {
   font-size: 10px;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
   padding: 1px 5px;
   border-radius: var(--radius-full);
   background: var(--accent-dim);
@@ -4520,10 +4522,10 @@ h3,
 }
 @keyframes progressFill {
   from {
-    width: 0;
+    transform: scaleX(0);
   }
   to {
-    width: 100%;
+    transform: scaleX(1);
   }
 }
 @keyframes float {

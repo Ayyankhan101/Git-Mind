@@ -18,17 +18,12 @@ import {
 import { fs } from "../typeScale";
 import { reviewPR, prImpact, fetchOpenPRs } from "../api";
 import * as tokenManager from "../tokenManager";
+import { relativeTime } from "../utils/relativeTime";
+
+export { relativeTime };
 import OpenPRsList from "./OpenPRsList";
 
-export function relativeTime(iso) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 2) return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
-}
+
 
 const VERDICT_CLASS = {
   APPROVE: "approve",

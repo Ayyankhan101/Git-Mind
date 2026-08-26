@@ -16,17 +16,7 @@ import {
   unsubscribeMonitor,
 } from "../api";
 import * as tokenManager from "../tokenManager";
-
-function relativeTime(ts) {
-  if (!ts) return "never";
-  const diff = Date.now() - ts * 1000;
-  const m = Math.floor(diff / 60000);
-  if (m < 2) return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
-}
+import { relativeTime } from "../utils/relativeTime";
 
 function StatusBadge({ last_sha }) {
   if (!last_sha) {
