@@ -4807,6 +4807,13 @@ button:disabled {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+  /* Scroll-driven animations ignore animation-duration (timeline-based)
+     — disable them outright. */
+  .scroll-reveal,
+  .scroll-reveal-right,
+  .scroll-reveal-scale {
+    animation: none !important;
+  }
 }
 
 /* ── Responsive ───────────────────────────────────────────────── */

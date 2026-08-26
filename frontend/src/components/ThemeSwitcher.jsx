@@ -120,7 +120,7 @@ export default function ThemeSwitcher({ theme, dispatch }) {
         e.preventDefault();
         setFocusIdx((i) => (i - 1 + THEMES.length) % THEMES.length);
       }
-      if (e.key === "Enter" && focusIdx >= 0) {
+      if ((e.key === "Enter" || e.key === " ") && focusIdx >= 0) {
         e.preventDefault();
         selectTheme(THEMES[focusIdx]);
       }

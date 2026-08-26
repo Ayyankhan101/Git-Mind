@@ -132,7 +132,14 @@ export default function App() {
   // (ThemeSwitcher + command palette). webpack fetches only the one
   // theme file being used; the other 12 stay off the network.
   useEffect(() => {
-    loadTheme(theme);
+    // Keep the browser UI tint in sync with the resolved page bg.
+    loadTheme(theme).then(() => {
+      const bg = getComputedStyle(document.documentElement)
+        .getPropertyValue("--bg")
+        .trim();
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta && bg) meta.setAttribute("content", bg);
+    });
   }, [theme]);
   const timerRef = useRef(null);
   // Escape closes only the topmost layer (stack in useEscClose).

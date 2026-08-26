@@ -70,6 +70,12 @@ const RepoCard = memo(function RepoCard({
     <div
       className={`repo-card${selected ? " selected" : ""}${focused ? " focused" : ""}`}
       onClick={() => onSelect(repo.url)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect(repo.url);
+        }
+      }}
       onMouseEnter={(e) => onHover(e, repo)}
       onMouseLeave={onLeave}
       tabIndex={0}
