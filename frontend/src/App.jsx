@@ -11,13 +11,16 @@ import { useLocation, useNavigate } from "react-router-dom";
 import LandingPage from "./components/LandingPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ToastSystem from "./components/ToastSystem";
-import SceneManager from "./components/SceneManager";
-import DashboardScene from "./components/DashboardScene";
 import PostProcessing from "./components/PostProcessing";
 import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix } from "./api";
 import { appReducer, initialState } from "./appReducer";
 import * as tokenManager from "./tokenManager";
 import { loadTheme } from "./themeLoader";
+
+// three.js (~150KB gz) is pulled in through SceneManager — keep it out of
+// the main bundle so the landing page paints without the WebGL stack.
+const SceneManager = lazy(() => import("./components/SceneManager"));
+const DashboardScene = lazy(() => import("./components/DashboardScene"));
 
 // Dashboard shell (CommandBar/NavRail/Sidebar + all tabs) is lazy-loaded so
 // the landing page doesn't ship the full 400KB+ dashboard bundle.
@@ -770,16 +773,34 @@ export default function App() {
               </div>
             }
           >
-            <SceneManager style={{ position: "absolute", inset: 0, zIndex: 0 }}>
-              {({ sceneRef, subscribe, prefersReduced }) => (
-                <DashboardScene
-                  sceneRef={sceneRef}
-                  subscribe={subscribe}
-                  prefersReduced={prefersReduced}
-                />
-              )}
-            </SceneManager>
-            <div style={{ position: "relative", zIndex: 1 }}>
+            <Suspense fallback={null}>
+              <SceneManager
+                style={{ position: "absolute", inset: 0, zIndex: 0 }}
+              >
+                {({ sceneRef, subscribe, prefersReduced }) => (
+                  <Suspense fallback={null}>
+                    <DashboardScene
+                      sceneRef={sceneRef}
+                      subscribe={subscribe}
+                      prefersReduced={prefersReduced}
+                    />
+                  </Suspense>
+                )}
+              </SceneManager>
+            </Suspense>
+            <div
+              style={{
+                position: "relative",
+                zIndex: 1,
+                // The .app grid defines 4 cells for the dashboard shell,
+                // but NavRail/CommandBar live inside DashboardLayout —
+                // this single wrapper must span the entire grid or it
+                // auto-places into the 52×48px corner cell.
+                gridColumn: "1 / -1",
+                gridRow: "1 / -1",
+                minHeight: 0,
+              }}
+            >
               <DashboardLayout
                 state={state}
                 dispatch={dispatch}

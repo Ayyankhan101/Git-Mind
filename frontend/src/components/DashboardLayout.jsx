@@ -18,7 +18,6 @@ import CommandBar from "./CommandBar";
 import NavRail from "./NavRail";
 import Sidebar from "./Sidebar";
 import ErrorBoundary from "./ErrorBoundary";
-import ToastSystem from "./ToastSystem";
 import { LANG_COLOR } from "../constants";
 
 const DiagramTab = React.lazy(() => import("./DiagramTab"));
@@ -28,15 +27,10 @@ const ChatTab = React.lazy(() => import("./ChatTab"));
 const SummaryTab = React.lazy(() => import("./SummaryTab"));
 const CveTab = React.lazy(() => import("./CveTab"));
 const PRReviewTab = React.lazy(() => import("./PRReviewTab"));
-const CrisisChat = React.lazy(() => import("./CrisisChat"));
-const KeyboardHelp = React.lazy(() => import("./KeyboardHelp"));
-const FilePreviewDrawer = React.lazy(() => import("./FilePreviewDrawer"));
 const GitAuditTab = React.lazy(() => import("./GitAuditTab"));
 const SolidityTab = React.lazy(() => import("./SolidityTab"));
 const CodeAuditTab = React.lazy(() => import("./CodeAuditTab"));
 const MonitoringTab = React.lazy(() => import("./MonitoringTab"));
-const OrgAuditModal = React.lazy(() => import("./OrgAuditModal"));
-const CommandPalette = React.lazy(() => import("./CommandPalette"));
 
 export default function DashboardLayout({
   state,
@@ -192,6 +186,10 @@ export default function DashboardLayout({
         theme={theme}
       />
 
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
+
       <NavRail
         activeTab={activeTab}
         drawerOpen={drawerOpen}
@@ -203,7 +201,8 @@ export default function DashboardLayout({
         dispatch={dispatch}
       />
 
-      <div className="main">
+      <main id="main-content" className="main">
+        <h1 className="sr-only">{repoName ? `${repoName} dashboard` : "GitMind dashboard"}</h1>
         {globalError && (
           <div
             className="error-banner-inline error-banner-inline--danger"
@@ -417,7 +416,7 @@ export default function DashboardLayout({
             </Suspense>
           </ErrorBoundary>
         </div>
-      </div>
+      </main>
 
       <div
         className={`repo-drawer${drawerOpen ? " open" : ""}`}
@@ -459,53 +458,9 @@ export default function DashboardLayout({
           loadedUsers={loadedUsers}
         />
       </div>
-
-      <ErrorBoundary>
-        <Suspense fallback={null}>
-          {showOrgAudit && (
-            <OrgAuditModal
-              repos={repos}
-              token={ghToken || null}
-              onClose={() =>
-                dispatch({ type: "SET_SHOW_ORG_AUDIT", show: false })
-              }
-            />
-          )}
-          {crisisFinding && (
-            <CrisisChat
-              finding={crisisFinding}
-              sessionId={state.sessionId}
-              repoName={repoName}
-              onClose={() =>
-                dispatch({ type: "SET_CRISIS_FINDING", finding: null })
-              }
-            />
-          )}
-          <KeyboardHelp
-            open={showKbHelp}
-            onClose={() => dispatch({ type: "SET_SHOW_KB_HELP", show: false })}
-          />
-          <FilePreviewDrawer
-            path={filePreview?.path}
-            line={filePreview?.line}
-            repoUrl={selectedRepoUrl}
-            ghToken={ghToken}
-            onClose={() =>
-              dispatch({ type: "SET_FILE_PREVIEW", preview: null })
-            }
-          />
-          <CommandPalette
-            open={showPalette}
-            onClose={() => dispatch({ type: "SET_SHOW_PALETTE", show: false })}
-            onAction={handlePaletteAction}
-            repos={repos}
-            recents={recents}
-            theme={theme}
-            density={density}
-          />
-        </Suspense>
-      </ErrorBoundary>
-      <ToastSystem toasts={toasts} onDismiss={dismissToast} />
+      {/* Global overlays (OrgAuditModal, CrisisChat, KeyboardHelp,
+          FilePreviewDrawer, CommandPalette, ToastSystem) are owned by
+          App.jsx — rendering them here too mounted every dialog twice. */}
     </div>
   );
 }

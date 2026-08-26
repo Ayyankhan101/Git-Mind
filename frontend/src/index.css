@@ -95,39 +95,6 @@
 }
 
 /* ── Light Mode Fallback (backward compat) ────────────────────── */
-[data-theme="light"] {
-  color-scheme: light;
-  --bg: #ffffff;
-  --surface-1: #f8f9fb;
-  --surface-2: #f0f1f5;
-  --surface-3: #e8eaef;
-  --surface-4: #d4d4d4;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --primary-strong: #1d4ed8;
-  --primary-subtle: rgba(59, 130, 246, 0.08);
-  --primary-muted: rgba(59, 130, 246, 0.15);
-  --text-primary: #1a1d27;
-  --text-secondary: #5c6070;
-  --text-tertiary: #6b7280;
-  --text-on-primary: #ffffff;
-  --border-subtle: #e2e4ea;
-  --border-default: #d0d3dc;
-  --border-strong: #b8bcc8;
-  --border-accent: rgba(59, 130, 246, 0.25);
-  --success: #16a34a;
-  --success-bg: rgba(22, 163, 74, 0.08);
-  --warning: #d97706;
-  --warning-bg: rgba(217, 119, 6, 0.08);
-  --warning-border: rgba(217, 119, 6, 0.3);
-  --danger: #dc2626;
-  --danger-bg: rgba(220, 38, 38, 0.08);
-  --info: #9333ea;
-  --info-bg: rgba(147, 51, 234, 0.08);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
-}
 
 /* ── Global Theme Transition ───────────────────────────────────── */
 body,
@@ -196,6 +163,34 @@ a:hover {
   text-decoration: underline;
 }
 
+/* ── Skip link & screen-reader helpers ───────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -48px;
+  left: 8px;
+  z-index: 1000;
+  padding: 10px 16px;
+  background: var(--primary);
+  color: var(--text-on-primary);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  transition: top var(--duration-fast);
+}
+.skip-link:focus {
+  top: 8px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ── Touch & Interaction ────────────────────────────────────────
    `touch-action: manipulation` kills the 300ms double-tap zoom
    delay on mobile; the tap-highlight override keeps taps from
@@ -228,6 +223,8 @@ h3,
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
+  /* Anchor for the absolute-positioned 3D background canvas. */
+  position: relative;
   /* Smooth the nav-rail hover expand (52px → 180px). */
   transition: grid-template-columns var(--duration-normal) var(--ease-out);
 }
@@ -555,13 +552,13 @@ h3,
   background: var(--success);
   box-shadow:
     0 0 0 2px var(--surface),
-    0 0 4px rgba(52, 211, 153, 0.3);
+    0 0 4px color-mix(in srgb, var(--success) 30%, transparent);
 }
 .nav-agent-dot.failed {
   background: var(--danger);
   box-shadow:
     0 0 0 2px var(--surface),
-    0 0 4px rgba(239, 68, 68, 0.3);
+    0 0 4px color-mix(in srgb, var(--danger) 30%, transparent);
 }
 
 /* ── Main Content ─────────────────────────────────────────────── */
@@ -686,28 +683,6 @@ h3,
 }
 
 /* ── Cards ────────────────────────────────────────────────────── */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border-s);
-  border-radius: var(--radius-lg);
-  padding: 16px;
-  /* 1px inner top highlight — machined edge, keeps dark cards from
-     reading as flat cutouts on the canvas. */
-  box-shadow: var(--inner-highlight);
-  transition:
-    border-color var(--duration-fast),
-    box-shadow var(--duration-fast),
-    transform var(--duration-fast);
-}
-.card:hover {
-  border-color: var(--border-m);
-  box-shadow: var(--shadow-sm), var(--inner-highlight);
-  transform: translateY(-1px);
-}
-.card:active:not(:disabled) {
-  transform: scale(0.995);
-}
-.card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -809,7 +784,7 @@ h3,
 .sev-pill.high {
   color: var(--sev-high);
   border-color: var(--sev-high);
-  background: rgba(249, 115, 22, 0.08);
+  background: color-mix(in srgb, var(--sev-high) 8%, transparent);
 }
 .sev-pill.medium {
   color: var(--sev-medium);
@@ -1114,7 +1089,7 @@ h3,
   padding: 10px 14px;
   margin: 0 0 12px;
   background: var(--danger-bg);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  border: 1px solid color-mix(in srgb, var(--danger) 25%, transparent);
   border-radius: var(--radius-md);
   color: var(--danger);
   font-size: 12px;
@@ -1522,7 +1497,7 @@ h3,
   justify-content: center;
 }
 .stat-icon--warn {
-  background: rgba(249, 115, 22, 0.1);
+  background: color-mix(in srgb, var(--sev-high) 10%, transparent);
   color: var(--sev-high);
 }
 .stat-icon--ok {
@@ -1662,11 +1637,19 @@ h3,
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-md);
+  padding: 16px;
   box-shadow: var(--card-shadow);
   transition:
     transform var(--duration-fast) var(--ease-out),
     box-shadow var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out);
+}
+.card:hover {
+  border-color: var(--border-m);
+  transform: translateY(-1px);
+}
+.card:active:not(:disabled) {
+  transform: scale(0.995);
 }
 .card--elevated {
   box-shadow: var(--shadow-md);
@@ -1700,6 +1683,25 @@ h3,
   transform: scale(1.02);
 }
 
+/* ── Post-processing vignette ─────────────────────────────────── */
+/* Above the 3D canvas (z 0), below all UI (z 2+) — never over
+   modals/toasts. Disabled on light themes where edge darkening reads
+   as dirt. */
+.vignette-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 50%,
+    var(--vignette-color) 100%
+  );
+}
+[data-theme="daylight"] .vignette-overlay {
+  display: none;
+}
+
 /* ── API Docs ─────────────────────────────────────────────────── */
 .endpoint {
   display: grid;
@@ -1726,15 +1728,15 @@ h3,
 }
 .method.GET {
   color: var(--success);
-  border-color: rgba(34, 197, 94, 0.3);
+  border-color: color-mix(in srgb, var(--success) 30%, transparent);
 }
 .method.POST {
   color: var(--info);
-  border-color: rgba(168, 85, 247, 0.3);
+  border-color: color-mix(in srgb, var(--accent-2) 30%, transparent);
 }
 .method.DELETE {
   color: var(--danger);
-  border-color: rgba(239, 68, 68, 0.3);
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent);
 }
 .method.PUT {
   color: var(--warning);
@@ -1742,7 +1744,7 @@ h3,
 }
 .method.PATCH {
   color: var(--sev-high);
-  border-color: rgba(249, 115, 22, 0.3);
+  border-color: color-mix(in srgb, var(--sev-high) 30%, transparent);
 }
 .endpoint-route {
   font-family: var(--font-mono);
@@ -2010,11 +2012,11 @@ h3,
   white-space: pre;
 }
 .diff-line.add {
-  background: rgba(34, 197, 94, 0.06);
+  background: color-mix(in srgb, var(--success) 6%, transparent);
   color: var(--success);
 }
 .diff-line.del {
-  background: rgba(239, 68, 68, 0.06);
+  background: color-mix(in srgb, var(--danger) 6%, transparent);
   color: var(--danger);
 }
 .diff-line.ctx {
@@ -2719,7 +2721,7 @@ h3,
   white-space: pre;
 }
 .code-line.hl {
-  background: rgba(239, 68, 68, 0.06);
+  background: color-mix(in srgb, var(--danger) 6%, transparent);
   border-left: 3px solid var(--danger);
   padding-left: 17px;
 }
@@ -3627,7 +3629,7 @@ h3,
 .crisis-resolved-banner {
   padding: 10px 14px;
   background: var(--success-bg);
-  border: 1px solid rgba(34, 197, 94, 0.25);
+  border: 1px solid color-mix(in srgb, var(--success) 25%, transparent);
   border-radius: var(--radius-md);
   color: var(--success);
   font-size: 12px;
@@ -3635,7 +3637,7 @@ h3,
 .crisis-leaked-banner {
   padding: 10px 14px;
   background: var(--danger-bg);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  border: 1px solid color-mix(in srgb, var(--danger) 25%, transparent);
   border-radius: var(--radius-md);
   color: var(--danger);
   font-size: 12px;
@@ -3765,7 +3767,7 @@ h3,
   gap: 8px;
   padding: 10px 14px;
   background: var(--danger-bg);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  border: 1px solid color-mix(in srgb, var(--danger) 25%, transparent);
   border-radius: var(--radius-md);
   color: var(--danger);
   font-size: 12px;
@@ -3865,7 +3867,7 @@ h3,
   gap: 4px;
   padding: 2px 8px;
   background: var(--success-bg);
-  border: 1px solid rgba(34, 197, 94, 0.25);
+  border: 1px solid color-mix(in srgb, var(--success) 25%, transparent);
   border-radius: var(--radius-full);
   font-size: 11px;
   color: var(--success);
@@ -3996,7 +3998,7 @@ h3,
 .diagram-error {
   padding: 16px;
   background: var(--danger-bg);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  border: 1px solid color-mix(in srgb, var(--danger) 25%, transparent);
   border-radius: var(--radius-md);
   color: var(--danger);
   font-size: 13px;
@@ -4320,7 +4322,7 @@ h3,
 .fix-result {
   padding: 12px;
   background: var(--success-bg);
-  border: 1px solid rgba(34, 197, 94, 0.25);
+  border: 1px solid color-mix(in srgb, var(--success) 25%, transparent);
   border-radius: var(--radius-md);
   font-size: 12px;
   color: var(--text-2);
@@ -4992,6 +4994,41 @@ button:disabled {
     right: 16px;
   }
 }
+/* Touch targets: 44px floor applies through the whole tablet/large-phone
+   band, not just ≤480 — .btn-icon (32px) and .tab (~37px) were sub-44
+   for 481–768px viewports. */
+@media (max-width: 768px) {
+  .btn {
+    min-height: 44px;
+  }
+  .btn-icon {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .tab {
+    min-height: 44px;
+  }
+  .nav-item {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .input,
+  .sev-filter button {
+    min-height: 44px;
+  }
+}
+
+/* iOS Safari auto-zooms the viewport on focus for inputs with
+   font-size < 16px — bump every text entry surface in the same band
+   where the hero input already does this. */
+@media (max-width: 1024px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 @media (max-width: 480px) {
   .onboarding-examples {
     grid-template-columns: 1fr;

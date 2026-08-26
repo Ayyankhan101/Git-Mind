@@ -334,7 +334,7 @@ export default function Sidebar({
 
       {error && <div className="sidebar-error">{error}</div>}
 
-      <div className="sb-list">
+      <div className="sb-list" role="listbox" aria-label="Saved repositories">
         {/* Saved views toggle */}
         {repos.length > 0 && (
           <div style={{ borderBottom: "1px solid var(--border)" }}>

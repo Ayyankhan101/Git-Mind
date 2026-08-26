@@ -137,82 +137,6 @@ function Donut({ segments, size = 120, thickness = 14 }) {
   );
 }
 
-// 3D floating geometric shapes
-function FloatingShapes() {
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    const prefersReduced =
-      window.matchMedia("(prefers-reduced-motion: reduce)")?.matches ?? false;
-    if (prefersReduced || !containerRef.current) return;
-
-    const shapes = containerRef.current.querySelectorAll(".float-shape");
-    const ctx = gsap.context(() => {
-      shapes.forEach((shape, i) => {
-        gsap.to(shape, {
-          y: `${8 + i * 3}`,
-          rotationX: 360,
-          rotationY: 180 + i * 60,
-          duration: 12 + i * 4,
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut",
-          delay: i * 1.5,
-        });
-      });
-    }, containerRef);
-
-    return () => ctx.revert();
-  }, []);
-
-  return (
-    <div className="float-shapes-container" ref={containerRef}>
-      <div
-        className="float-shape float-octahedron"
-        style={{ top: "10%", left: "5%" }}
-      >
-        <div className="float-shape-inner">
-          <div className="float-face float-face-1" />
-          <div className="float-face float-face-2" />
-          <div className="float-face float-face-3" />
-          <div className="float-face float-face-4" />
-        </div>
-      </div>
-      <div
-        className="float-shape float-cube"
-        style={{ top: "60%", right: "8%", left: "auto" }}
-      >
-        <div className="float-shape-inner">
-          <div className="float-face float-face-front" />
-          <div className="float-face float-face-back" />
-          <div className="float-face float-face-left" />
-          <div className="float-face float-face-right" />
-          <div className="float-face float-face-top" />
-          <div className="float-face float-face-bottom" />
-        </div>
-      </div>
-      <div
-        className="float-shape float-ring"
-        style={{ top: "30%", right: "15%", left: "auto" }}
-      >
-        <div className="float-shape-inner" />
-      </div>
-      <div
-        className="float-shape float-pyramid"
-        style={{ top: "70%", left: "15%" }}
-      >
-        <div className="float-shape-inner">
-          <div className="float-face float-pyr-base" />
-          <div className="float-face float-pyr-side-1" />
-          <div className="float-face float-pyr-side-2" />
-          <div className="float-face float-pyr-side-3" />
-          <div className="float-face float-pyr-side-4" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function SummaryTab({
   sessionId,
   enabled,
@@ -279,6 +203,12 @@ export default function SummaryTab({
   // GSAP entrance for stat cards
   useEffect(() => {
     if (!statsRef.current) return;
+    // CSS kill-switches can't stop JS tweens — skip the entrance entirely
+    // for reduced-motion users (cards stay visible at full opacity).
+    if (
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
     const cards = statsRef.current.querySelectorAll(".stat");
     gsap.fromTo(
       cards,
@@ -369,24 +299,11 @@ export default function SummaryTab({
             display: "block",
           }}
         />
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1.4fr 1fr",
-            gap: 14,
-            marginBottom: 24,
-          }}
-        >
+        <div className="summary-grid" style={{ marginBottom: 24 }}>
           <span className="sk" style={{ height: 180, display: "block" }} />
           <span className="sk" style={{ height: 180, display: "block" }} />
         </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 14,
-          }}
-        >
+        <div className="stat-grid">
           {[0, 1, 2].map((i) => (
             <span
               key={i}
@@ -423,7 +340,6 @@ export default function SummaryTab({
 
   return (
     <div className="summary">
-      <FloatingShapes />
       <SceneManager
         style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}
       >
