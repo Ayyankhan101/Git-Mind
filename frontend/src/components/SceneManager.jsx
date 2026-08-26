@@ -22,6 +22,11 @@ export default function SceneManager({ children, className = "", style = {} }) {
   const [ready, setReady] = useState(false);
   const [sceneVersion, setSceneVersion] = useState(0);
   const subscribersRef = useRef(new Set());
+  // Ref mirror keeps handleFrame identity stable — a prefers-reduced-motion
+  // flip mid-session must NOT re-run ThreeCanvas's effect (that disposes
+  // the renderer and rebuilds the whole WebGL context).
+  const reducedRef = useRef(prefersReduced);
+  reducedRef.current = prefersReduced;
 
   const subscribe = useCallback((fn) => {
     subscribersRef.current.add(fn);
@@ -46,11 +51,11 @@ export default function SceneManager({ children, className = "", style = {} }) {
 
   const handleFrame = useCallback(
     (time) => {
-      if (prefersReduced) return;
+      if (reducedRef.current) return;
       subscribersRef.current.forEach((fn) => fn(time));
       renderFrame();
     },
-    [prefersReduced, renderFrame]
+    [renderFrame]
   );
 
   // Reduced motion: render one static frame so the scene is visible

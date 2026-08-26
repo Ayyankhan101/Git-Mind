@@ -149,7 +149,7 @@ export default function CveTab({ findings, isAnalyzing, analyzed }) {
       return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
     });
   }, [findings, filter]);
-  const cap = useVisibleCap(sorted.length);
+  const cap = useVisibleCap(sorted.length, 50, filter);
 
   if (!analyzed && !isAnalyzing) {
     return (

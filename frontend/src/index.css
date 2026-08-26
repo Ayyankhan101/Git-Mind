@@ -2182,7 +2182,7 @@ h3,
 .crisis-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 17, 23, 0.72);
+  background: var(--scrim-strong);
   z-index: 390;
   animation: fadeIn 180ms ease-out;
   /* Keep the page behind from scrolling/zooming with the panel. */
@@ -2348,7 +2348,7 @@ h3,
 .palette-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 17, 23, 0.6);
+  background: var(--scrim-default);
   z-index: 100;
   display: flex;
   align-items: flex-start;
@@ -2565,7 +2565,7 @@ h3,
 .kbhelp-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 17, 23, 0.6);
+  background: var(--scrim-default);
   z-index: 110;
   display: flex;
   align-items: center;
@@ -2659,7 +2659,7 @@ h3,
 .drawer-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 17, 23, 0.5);
+  background: var(--scrim-soft);
   z-index: 60;
   animation: fadeIn 180ms ease-out;
 }

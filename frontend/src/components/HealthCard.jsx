@@ -62,7 +62,7 @@ function MiniBar({ value, color, delay = 0 }) {
   );
 }
 
-export default function HealthCard({ health, variant }) {
+export default function HealthCard({ health, variant, static: isStatic }) {
   if (!health) return null;
   const gradeColor = GRADE_COLOR[health.grade] || "var(--text-3)";
   /* "band": the editorial stats-band treatment (--primary-strong fill,
@@ -88,18 +88,22 @@ export default function HealthCard({ health, variant }) {
       <div className="health-card-inner">
         {/* Grade ring */}
         <div className="health-grade-ring">
-          <SceneManager
-            style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none" }}
-          >
-            {({ sceneRef, subscribe, prefersReduced }) => (
-              <HealthGauge3D
-                sceneRef={sceneRef}
-                subscribe={subscribe}
-                score={health.score}
-                prefersReduced={prefersReduced}
-              />
-            )}
-          </SceneManager>
+          {/* static variant (landing sample card) skips WebGL — no
+              context boot for decorative preview content. */}
+          {!isStatic && (
+            <SceneManager
+              style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none" }}
+            >
+              {({ sceneRef, subscribe, prefersReduced }) => (
+                <HealthGauge3D
+                  sceneRef={sceneRef}
+                  subscribe={subscribe}
+                  score={health.score}
+                  prefersReduced={prefersReduced}
+                />
+              )}
+            </SceneManager>
+          )}
           <svg
             viewBox="0 0 96 96"
             width="96"

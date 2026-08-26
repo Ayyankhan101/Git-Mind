@@ -639,7 +639,7 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
                 <span className="lp-hero-preview-tag">Sample output</span>
               </div>
               <Suspense fallback={null}>
-                <HealthCard health={SAMPLE_HEALTH} />
+                <HealthCard health={SAMPLE_HEALTH} static />
               </Suspense>
               <div className="lp-hero-preview-stats">
                 {REPORT_STATS.map(({ value, label, Icon }) => (
