@@ -8,7 +8,8 @@ import { useReducedMotion } from "../hooks/useReducedMotion";
  * ThreeCanvas owns the single RAF loop; SceneManager exposes
  * { sceneRef, subscribe, prefersReduced } to scene children via
  * render prop. Children are mounted only after scene init (ready),
- * so their effects can safely add objects to sceneRef.current.scene.
+ * and remount (keyed by sceneVersion) whenever the scene is rebuilt,
+ * so their effects always target the live Scene.
  *
  * Props:
  *   - children: ({ sceneRef, subscribe, prefersReduced }) => React.ReactNode
@@ -19,6 +20,7 @@ export default function SceneManager({ children, className = "", style = {} }) {
   const { sceneRef, init, renderFrame, dispose } = useThreeScene();
   const prefersReduced = useReducedMotion();
   const [ready, setReady] = useState(false);
+  const [sceneVersion, setSceneVersion] = useState(0);
   const subscribersRef = useRef(new Set());
 
   const subscribe = useCallback((fn) => {
@@ -35,6 +37,9 @@ export default function SceneManager({ children, className = "", style = {} }) {
         antialias: true,
       });
       setReady(true);
+      // Fresh Scene instance → remount children so their effects
+      // re-add meshes to the live scene.
+      setSceneVersion((v) => v + 1);
     },
     [init]
   );
@@ -70,7 +75,15 @@ export default function SceneManager({ children, className = "", style = {} }) {
         onDispose={dispose}
         style={{ position: "absolute", inset: 0 }}
       />
-      {ready && children?.({ sceneRef, subscribe, prefersReduced })}
+      {ready && (
+        <SceneManagerChildren key={sceneVersion}>
+          {children?.({ sceneRef, subscribe, prefersReduced })}
+        </SceneManagerChildren>
+      )}
     </div>
   );
+}
+
+function SceneManagerChildren({ children }) {
+  return <>{children}</>;
 }

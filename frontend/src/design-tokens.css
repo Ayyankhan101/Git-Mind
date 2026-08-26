@@ -40,7 +40,7 @@
   /* Text */
   --text-primary: #f3f4f6;
   --text-secondary: #9ca3af;
-  --text-tertiary: #6b7280;
+  --text-tertiary: #737b8a;
   --text-on-primary: #ffffff;
 
   /* Borders */
@@ -134,6 +134,9 @@
   --three-primary: #3b82f6;
   --three-accent: #8b5cf6;
   --three-fog: #090a0f;
+
+  /* Vignette overlay (PostProcessing) — dark themes only. */
+  --vignette-color: rgba(0, 0, 0, 0.3);
 }
 
 /* ============================================================
@@ -440,32 +443,6 @@ body {
   animation-delay: 300ms;
 }
 
-/* Hover animation helpers */
-.hover-lift {
-  transition:
-    transform var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
-}
-.hover-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-.hover-glow {
-  transition: box-shadow var(--duration-fast) var(--ease-out);
-}
-.hover-glow:hover {
-  box-shadow:
-    0 0 16px var(--primary-muted),
-    0 0 32px var(--primary-subtle);
-}
-
-.hover-scale {
-  transition: transform var(--duration-fast) var(--ease-out);
-}
-.hover-scale:hover {
-  transform: scale(1.02);
-}
 
 /* Code block typing effect */
 .typing-cursor::after {

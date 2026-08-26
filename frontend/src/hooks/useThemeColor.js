@@ -18,14 +18,19 @@ export function useThemeColor(varName, fallback = "#3b82f6") {
 
   useEffect(() => {
     setColor(resolve(varName, fallback));
-    const observer = new MutationObserver(() => {
-      setColor(resolve(varName, fallback));
-    });
+    const reresolve = () => setColor(resolve(varName, fallback));
+    const observer = new MutationObserver(reresolve);
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["data-theme"],
     });
-    return () => observer.disconnect();
+    // Theme CSS chunks load async after the data-theme attribute flips;
+    // re-resolve when the chunk actually lands.
+    document.documentElement.addEventListener("theme-applied", reresolve);
+    return () => {
+      observer.disconnect();
+      document.documentElement.removeEventListener("theme-applied", reresolve);
+    };
   }, [varName, fallback]);
 
   return color;

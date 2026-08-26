@@ -26,11 +26,22 @@ const themeLoaders = {
 /**
  * Ensure a theme's CSS chunk is loaded. Safe to call repeatedly — webpack
  * dedupes the module and the browser caches the chunk.
+ *
+ * Dispatches a `theme-applied` event on <html> once the chunk has landed,
+ * so consumers that resolved colors before the CSS arrived (e.g.
+ * useThemeColor) can re-resolve. Closes the chunk-load race where the
+ * data-theme attribute flips before the palette exists.
  */
 export function loadTheme(theme) {
   const load = themeLoaders[theme];
   if (!load) return Promise.resolve();
   // Swallow chunk-load failures: a missing stylesheet must never break the
   // app — the base tokens still render a usable UI.
-  return load().catch(() => {});
+  return load()
+    .catch(() => {})
+    .then(() => {
+      document.documentElement.dispatchEvent(
+        new CustomEvent("theme-applied"),
+      );
+    });
 }

@@ -1,4 +1,11 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  Suspense,
+  lazy,
+} from "react";
 import {
   Search,
   ArrowRight,
@@ -21,8 +28,10 @@ import Lenis from "lenis";
 import "./LandingPage.css";
 import HealthCard from "./HealthCard";
 import ThemeSwitcher from "./ThemeSwitcher";
-import SceneManager from "./SceneManager";
-import LandingScene from "./LandingScene";
+
+// three.js stays out of the landing bundle until the hero mounts.
+const SceneManager = lazy(() => import("./SceneManager"));
+const LandingScene = lazy(() => import("./LandingScene"));
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -416,23 +425,20 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
       anchors: true,
     });
 
-    const raf = (time) => {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    };
-    requestAnimationFrame(raf);
-
-    lenis.on("scroll", ScrollTrigger.update);
-    gsap.ticker.add((time) => {
+    /* Single driver: gsap.ticker only. The previous version ALSO drove
+       lenis from a self-scheduled rAF (two updates per frame) and its
+       cleanup removed a freshly-created anonymous fn — a no-op — leaving
+       an orphan loop calling lenis.raf on the destroyed instance. */
+    const driveLenis = (time) => {
       lenis.raf(time * 1000);
-    });
+    };
+    lenis.on("scroll", ScrollTrigger.update);
+    gsap.ticker.add(driveLenis);
     gsap.ticker.lagSmoothing(0);
 
     return () => {
+      gsap.ticker.remove(driveLenis);
       lenis.destroy();
-      gsap.ticker.remove((time) => {
-        lenis.raf(time * 1000);
-      });
     };
   }, []);
 
@@ -570,17 +576,26 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
 
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="lp-hero" ref={heroRef}>
-        <SceneManager
-          style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}
-        >
-          {({ sceneRef, subscribe, prefersReduced }) => (
-            <LandingScene
-              sceneRef={sceneRef}
-              subscribe={subscribe}
-              prefersReduced={prefersReduced}
-            />
-          )}
-        </SceneManager>
+        <Suspense fallback={null}>
+          <SceneManager
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 0,
+              pointerEvents: "none",
+            }}
+          >
+            {({ sceneRef, subscribe, prefersReduced }) => (
+              <Suspense fallback={null}>
+                <LandingScene
+                  sceneRef={sceneRef}
+                  subscribe={subscribe}
+                  prefersReduced={prefersReduced}
+                />
+              </Suspense>
+            )}
+          </SceneManager>
+        </Suspense>
         <div className="lp-hero-inner" style={{ position: "relative", zIndex: 1 }}>
           <div className="lp-hero-copy">
             {/* Signature moment: agent radar sweep behind the copy — pure
