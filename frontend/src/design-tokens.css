@@ -137,6 +137,12 @@
 
   /* Vignette overlay (PostProcessing) — dark themes only. */
   --vignette-color: rgba(0, 0, 0, 0.3);
+
+  /* Modal/drawer backdrop scrims — theme-aware so light themes don't
+     inherit near-black dimming tuned for dark canvases. */
+  --scrim-strong: rgba(15, 17, 23, 0.72);
+  --scrim-default: rgba(15, 17, 23, 0.6);
+  --scrim-soft: rgba(15, 17, 23, 0.5);
 }
 
 /* ============================================================
