@@ -2188,9 +2188,6 @@ h3,
   /* Keep the page behind from scrolling/zooming with the panel. */
   overscroll-behavior: contain;
 }
-[data-theme="light"] .crisis-backdrop {
-  background: rgba(0, 0, 0, 0.3);
-}
 .crisis-panel {
   position: fixed;
   top: 0;
@@ -2358,9 +2355,6 @@ h3,
   justify-content: center;
   padding-top: 12vh;
   animation: fadeIn 180ms ease-out;
-}
-[data-theme="light"] .palette-backdrop {
-  background: rgba(0, 0, 0, 0.25);
 }
 .palette {
   width: 540px;
@@ -2579,9 +2573,6 @@ h3,
   padding: 36px;
   animation: fadeIn 180ms ease-out;
 }
-[data-theme="light"] .kbhelp-backdrop {
-  background: rgba(0, 0, 0, 0.25);
-}
 .kbhelp {
   width: 720px;
   max-width: 100%;
@@ -2671,9 +2662,6 @@ h3,
   background: rgba(15, 17, 23, 0.5);
   z-index: 60;
   animation: fadeIn 180ms ease-out;
-}
-[data-theme="light"] .drawer-backdrop {
-  background: rgba(0, 0, 0, 0.2);
 }
 .drawer {
   position: fixed;

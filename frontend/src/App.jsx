@@ -143,13 +143,17 @@ export default function App() {
   }, [theme]);
   const timerRef = useRef(null);
   // Escape closes only the topmost layer (stack in useEscClose).
-  useEscClose(
-    Boolean(showKbHelp) || Boolean(filePreview) || Boolean(globalError),
-    () => {
-      dispatch({ type: "SET_SHOW_KB_HELP", show: false });
-      dispatch({ type: "SET_FILE_PREVIEW", preview: null });
-      dispatch({ type: "SET_GLOBAL_ERROR", error: null });
-    },
+  // Separate entries per layer — one joint entry closed all three at
+  // once. Registration order = stack order: kbhelp (topmost visual)
+  // registers last, so it wins Esc first.
+  useEscClose(Boolean(globalError), () =>
+    dispatch({ type: "SET_GLOBAL_ERROR", error: null }),
+  );
+  useEscClose(Boolean(filePreview), () =>
+    dispatch({ type: "SET_FILE_PREVIEW", preview: null }),
+  );
+  useEscClose(Boolean(showKbHelp), () =>
+    dispatch({ type: "SET_SHOW_KB_HELP", show: false }),
   );
   const timeoutRef = useRef(null);
   const startRef = useRef(null);
