@@ -313,9 +313,11 @@ function HeroForm({ onLoad, onAnalyzeUrl, inputRef }) {
           <Search size={16} className="lp-hero-input-icon" />
           <input
             ref={inputRef}
+            type="url"
+            inputMode="url"
             className="lp-hero-input"
             name="github-repo"
-            placeholder="GitHub username or repo URL"
+            placeholder="e.g. facebook/react — username or repo URL…"
             aria-label="GitHub username or repository URL"
             autoComplete="off"
             spellCheck={false}
@@ -357,7 +359,8 @@ function HeroForm({ onLoad, onAnalyzeUrl, inputRef }) {
             <input
               type="password"
               className="lp-token-input"
-              placeholder="Personal access token (optional)"
+              name="github-token"
+              placeholder="Personal access token — ghp_… (optional)…"
               aria-label="GitHub personal access token"
               autoComplete="off"
               spellCheck={false}
@@ -657,7 +660,7 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
         <div className="lp-section-inner">
           <div className="lp-section-header">
             <div>
-              <span className="lp-section-label">What's Inside</span>
+              <span className="lp-section-label">What’s Inside</span>
               <h2 className="lp-section-title">
                 Everything you need to ship safer
               </h2>

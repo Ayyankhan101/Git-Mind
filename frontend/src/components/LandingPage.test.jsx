@@ -73,14 +73,14 @@ describe("LandingPage", () => {
   it("renders the input field for GitHub URL or username", () => {
     render(<LandingPage onLoad={jest.fn()} onAnalyzeUrl={jest.fn()} />);
     expect(
-      screen.getByPlaceholderText("GitHub username or repo URL"),
+      screen.getByLabelText("GitHub username or repository URL"),
     ).toBeInTheDocument();
   });
 
   it("calls onLoad with username when plain text is submitted", () => {
     const onLoad = jest.fn();
     render(<LandingPage onLoad={onLoad} onAnalyzeUrl={jest.fn()} />);
-    const input = screen.getByPlaceholderText("GitHub username or repo URL");
+    const input = screen.getByLabelText("GitHub username or repository URL");
     fireEvent.change(input, { target: { value: "facebook" } });
     fireEvent.submit(
       screen.getByRole("form", { name: "Analyze a GitHub repository" }),
@@ -91,7 +91,7 @@ describe("LandingPage", () => {
   it("calls onAnalyzeUrl when GitHub URL is submitted", () => {
     const onAnalyzeUrl = jest.fn();
     render(<LandingPage onLoad={jest.fn()} onAnalyzeUrl={onAnalyzeUrl} />);
-    const input = screen.getByPlaceholderText("GitHub username or repo URL");
+    const input = screen.getByLabelText("GitHub username or repository URL");
     fireEvent.change(input, {
       target: { value: "https://github.com/facebook/react" },
     });
@@ -110,7 +110,7 @@ describe("LandingPage", () => {
     fireEvent.change(screen.getByLabelText("GitHub personal access token"), {
       target: { value: "ghp_test123" },
     });
-    const input = screen.getByPlaceholderText("GitHub username or repo URL");
+    const input = screen.getByLabelText("GitHub username or repository URL");
     fireEvent.change(input, { target: { value: "facebook" } });
     fireEvent.submit(
       screen.getByRole("form", { name: "Analyze a GitHub repository" }),

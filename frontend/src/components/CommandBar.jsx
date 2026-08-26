@@ -65,7 +65,8 @@ export default function CommandBar({
         <Search size={14} />
         <input
           ref={usernameRef}
-          placeholder="github username"
+          placeholder="github username…"
+          name="github-user"
           aria-label="GitHub username"
           autoComplete="off"
           spellCheck={false}
@@ -116,8 +117,9 @@ export default function CommandBar({
                 placeholder={
                   ghToken && !isValidGhToken(ghToken)
                     ? "unrecognized format"
-                    : "Paste personal access token"
+                    : "Personal access token — ghp_…"
                 }
+                name="github-token"
                 aria-label="GitHub personal access token"
                 autoComplete="off"
                 spellCheck={false}

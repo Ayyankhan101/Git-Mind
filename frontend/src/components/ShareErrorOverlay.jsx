@@ -45,8 +45,11 @@ export default function ShareErrorOverlay({
           <div className="share-error-form">
             <input
               type="password"
+              name="github-token"
+              autoComplete="off"
+              spellCheck={false}
               aria-label="GitHub token"
-              placeholder="Paste your GitHub token"
+              placeholder="Paste your GitHub token…"
               value={token}
               onChange={(e) => setToken(e.target.value)}
               onKeyDown={(e) => {
