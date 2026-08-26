@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { useEscClose } from "../hooks/useEscClose";
 import { fs } from "../typeScale";
 import { useFocusTrap } from "../hooks/useFocusTrap";

@@ -1,7 +1,7 @@
 import React from "react";
 import { GitPullRequest, GitBranch } from "../icons";
 import { fs } from "../typeScale";
-import { relativeTime } from "./PRReviewTab";
+import { relativeTime } from "../utils/relativeTime";
 
 export default function OpenPRsList({
   openPRs,

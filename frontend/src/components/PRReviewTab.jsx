@@ -18,9 +18,6 @@ import {
 import { fs } from "../typeScale";
 import { reviewPR, prImpact, fetchOpenPRs } from "../api";
 import * as tokenManager from "../tokenManager";
-import { relativeTime } from "../utils/relativeTime";
-
-export { relativeTime };
 import OpenPRsList from "./OpenPRsList";
 
 

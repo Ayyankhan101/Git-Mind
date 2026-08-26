@@ -26,8 +26,12 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import "./LandingPage.css";
-import HealthCard from "./HealthCard";
 import ThemeSwitcher from "./ThemeSwitcher";
+import { loadTheme } from "../themeLoader";
+
+// HealthCard pulls three.js via HealthGauge3D — keep it out of the
+// landing entry chunk.
+const HealthCard = lazy(() => import("./HealthCard"));
 
 // three.js stays out of the landing bundle until the hero mounts.
 const SceneManager = lazy(() => import("./SceneManager"));
@@ -390,6 +394,10 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
       setLandingTheme(action.theme);
       document.documentElement.setAttribute("data-theme", action.theme);
       localStorage.setItem("gm-theme", action.theme);
+      // Fetch the theme's CSS chunk — without this the palette tokens
+      // never land on the landing route (dashboard path goes through
+      // appReducer, which App.jsx backs with loadTheme()).
+      loadTheme(action.theme);
     }
   }, []);
 
@@ -630,7 +638,9 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
                 <span className="lp-hero-preview-repo">facebook/react</span>
                 <span className="lp-hero-preview-tag">Sample output</span>
               </div>
-              <HealthCard health={SAMPLE_HEALTH} />
+              <Suspense fallback={null}>
+                <HealthCard health={SAMPLE_HEALTH} />
+              </Suspense>
               <div className="lp-hero-preview-stats">
                 {REPORT_STATS.map(({ value, label, Icon }) => (
                   <div key={label} className="lp-hero-preview-stat">
