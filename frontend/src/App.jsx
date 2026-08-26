@@ -16,6 +16,7 @@ import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix } from "./api";
 import { appReducer, initialState } from "./appReducer";
 import * as tokenManager from "./tokenManager";
 import { loadTheme } from "./themeLoader";
+import { useEscClose } from "./hooks/useEscClose";
 
 // three.js (~150KB gz) is pulled in through SceneManager — keep it out of
 // the main bundle so the landing page paints without the WebGL stack.
@@ -108,6 +109,7 @@ export default function App() {
     showOrgAudit,
     shareError,
     recents,
+    globalError,
   } = state;
 
   // ── Refs ──────────────────────────────────────────────────
@@ -130,9 +132,25 @@ export default function App() {
   // (ThemeSwitcher + command palette). webpack fetches only the one
   // theme file being used; the other 12 stay off the network.
   useEffect(() => {
-    loadTheme(theme);
+    // Keep the browser UI tint in sync with the resolved page bg.
+    loadTheme(theme).then(() => {
+      const bg = getComputedStyle(document.documentElement)
+        .getPropertyValue("--bg")
+        .trim();
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta && bg) meta.setAttribute("content", bg);
+    });
   }, [theme]);
   const timerRef = useRef(null);
+  // Escape closes only the topmost layer (stack in useEscClose).
+  useEscClose(
+    Boolean(showKbHelp) || Boolean(filePreview) || Boolean(globalError),
+    () => {
+      dispatch({ type: "SET_SHOW_KB_HELP", show: false });
+      dispatch({ type: "SET_FILE_PREVIEW", preview: null });
+      dispatch({ type: "SET_GLOBAL_ERROR", error: null });
+    },
+  );
   const timeoutRef = useRef(null);
   const startRef = useRef(null);
   const analyzingRef = useRef(false);
@@ -455,11 +473,6 @@ export default function App() {
         e.preventDefault();
         dispatch({ type: "SET_SHOW_PALETTE", show: true });
       }
-      if (e.key === "Escape") {
-        dispatch({ type: "SET_SHOW_KB_HELP", show: false });
-        dispatch({ type: "SET_FILE_PREVIEW", preview: null });
-        dispatch({ type: "SET_GLOBAL_ERROR", error: null });
-      }
       if (mod && e.key === "1") {
         e.preventDefault();
         dispatch({ type: "SET_ACTIVE_TAB", tab: "summary" });
@@ -751,6 +764,13 @@ export default function App() {
 
   return (
     <div className="app">
+      {/* Skip link lives at .app root: inside the dashboard's z-1 wrapper
+         stacking context its z-1000 would be trapped below overlays. */}
+      {!isLanding && (
+        <a className="skip-link" href="#main-content">
+          Skip to content
+        </a>
+      )}
       {isLanding ? (
         <LandingPage
           onLoad={(user, token) => {
@@ -788,6 +808,11 @@ export default function App() {
                 )}
               </SceneManager>
             </Suspense>
+            {/* Layer order: canvas (z0, above) → vignette (z0, later DOM)
+                → content wrapper (z1). The vignette must sit between them:
+                the wrapper is a stacking context, so anything rendered
+                after it paints over the entire dashboard UI. */}
+            <PostProcessing enabled={!isLanding} />
             <div
               style={{
                 position: "relative",
@@ -875,7 +900,6 @@ export default function App() {
           />
         </Suspense>
       </ErrorBoundary>
-      <PostProcessing enabled={!isLanding} />
       <ToastSystem toasts={toasts} onDismiss={dismissToast} />
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useEscClose } from "../hooks/useEscClose";
 import { fs } from "../typeScale";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import { X, FileText, AlertTriangle, Copy, Check as CheckIcon } from "../icons";
@@ -112,13 +113,7 @@ export default function CrisisChat({ finding, sessionId, onClose, repoName }) {
   }, [messages]);
 
   // Escape key handler
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  useEscClose(true, onClose);
 
   useEffect(() => {
     if (resolved || leaked || error) return;

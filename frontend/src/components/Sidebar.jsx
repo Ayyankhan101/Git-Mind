@@ -70,6 +70,12 @@ const RepoCard = memo(function RepoCard({
     <div
       className={`repo-card${selected ? " selected" : ""}${focused ? " focused" : ""}`}
       onClick={() => onSelect(repo.url)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect(repo.url);
+        }
+      }}
       onMouseEnter={(e) => onHover(e, repo)}
       onMouseLeave={onLeave}
       tabIndex={0}
@@ -482,6 +488,9 @@ export default function Sidebar({
                   <input
                     ref={filterRef}
                     placeholder="Filter repos…"
+                    name="repo-filter"
+                    autoComplete="off"
+                    spellCheck={false}
                     value={filter}
                     onChange={(e) => {
                       setFilter(e.target.value);
@@ -551,7 +560,7 @@ export default function Sidebar({
                     color: "var(--text-3)",
                   }}
                 >
-                  No repos match "{filter}"
+                  No repos match “{filter}”
                 </div>
               )}
             </div>

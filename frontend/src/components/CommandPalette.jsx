@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useEscClose } from "../hooks/useEscClose";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import {
   Search,
@@ -143,17 +144,7 @@ export default function CommandPalette({
     }
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  useEscClose(open, onClose);
 
   const groups = useMemo(() => {
     const q = query.trim();
@@ -236,6 +227,9 @@ export default function CommandPalette({
             ref={inputRef}
             className="palette-input"
             placeholder="Type a command or search…"
+            name="palette-search"
+            autoComplete="off"
+            spellCheck={false}
             aria-label="Search commands"
             value={query}
             onChange={(e) => {
@@ -255,7 +249,7 @@ export default function CommandPalette({
           aria-label="Commands"
         >
           {groups.length === 0 && (
-            <div className="palette-empty">No results for "{query}"</div>
+            <div className="palette-empty">No results for “{query}”</div>
           )}
           {groups.map((g) => (
             <div key={g.label}>

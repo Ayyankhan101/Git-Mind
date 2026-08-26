@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useEscClose } from "../hooks/useEscClose";
 import { FileText, ExternalLink, Copy, X } from "../icons";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import { BASE } from "../api";
@@ -47,14 +48,7 @@ export default function FilePreviewDrawer({
       .catch(() => {});
   }, [repoUrl, ghToken]);
 
-  useEffect(() => {
-    if (!path) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [path, onClose]);
+  useEscClose(!!path, onClose);
 
   useEffect(() => {
     if (!path) {

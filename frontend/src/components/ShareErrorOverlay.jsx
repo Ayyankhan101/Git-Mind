@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { AlertTriangle, Lock, X, RefreshCw } from "../icons";
+import { useEscClose } from "../hooks/useEscClose";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 export default function ShareErrorOverlay({
   error,
@@ -9,6 +11,8 @@ export default function ShareErrorOverlay({
 }) {
   const [token, setToken] = useState("");
   const locked = error?.kind === "locked";
+  useEscClose(true, onClose);
+  const panelRef = useFocusTrap(true);
   return (
     <div
       className="share-error-backdrop"
@@ -19,7 +23,7 @@ export default function ShareErrorOverlay({
       aria-modal="true"
       aria-label="Shared analysis error"
     >
-      <div className="share-error-panel">
+      <div className="share-error-panel" ref={panelRef}>
         <button
           className="btn-icon"
           style={{ position: "absolute", top: 12, right: 12 }}
@@ -41,8 +45,11 @@ export default function ShareErrorOverlay({
           <div className="share-error-form">
             <input
               type="password"
+              name="github-token"
+              autoComplete="off"
+              spellCheck={false}
               aria-label="GitHub token"
-              placeholder="Paste your GitHub token"
+              placeholder="Paste your GitHub token…"
               value={token}
               onChange={(e) => setToken(e.target.value)}
               onKeyDown={(e) => {

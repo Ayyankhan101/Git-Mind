@@ -177,10 +177,6 @@ export default function DashboardLayout({
         theme={theme}
       />
 
-      <a className="skip-link" href="#main-content">
-        Skip to content
-      </a>
-
       <NavRail
         activeTab={activeTab}
         drawerOpen={drawerOpen}

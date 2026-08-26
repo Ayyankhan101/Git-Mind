@@ -365,6 +365,7 @@
 .lp-hero-preview-stat-value {
   font-weight: 600;
   color: var(--text-1);
+  font-variant-numeric: tabular-nums;
 }
 
 .lp-hero-preview-stat-label {

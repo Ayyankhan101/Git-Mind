@@ -1,4 +1,6 @@
-import React, { useEffect } from "react";
+import React from "react";
+import { useEscClose } from "../hooks/useEscClose";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import { Keyboard, X } from "../icons";
 
 const isMac =
@@ -50,14 +52,8 @@ const SHORTCUTS = [
 ];
 
 export default function KeyboardHelp({ open, onClose }) {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  useEscClose(open, onClose);
+  const panelRef = useFocusTrap(open);
 
   if (!open) return null;
 
@@ -68,6 +64,7 @@ export default function KeyboardHelp({ open, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-label="Keyboard shortcuts"
+        ref={panelRef}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="kbhelp-header">

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef } from "react";
+import { useEscClose } from "../hooks/useEscClose";
 import { fs } from "../typeScale";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import {
@@ -201,13 +202,7 @@ export default function OrgAuditModal({ repos, token, onClose }) {
   const repoRes = result?.repos || [];
 
   // Escape key handler
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  useEscClose(true, onClose);
 
   return (
     <div
