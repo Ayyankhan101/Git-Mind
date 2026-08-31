@@ -19,7 +19,12 @@ export default function NavRail({
   const mod = IS_MAC ? "⌘" : "Ctrl";
 
   return (
-    <nav className="nav-rail" role="navigation" aria-label="Main navigation">
+    <nav className="nav-rail" role="navigation" aria-label="Main navigation" onKeyDown={(e) => {
+      const items = [...e.currentTarget.querySelectorAll(".nav-item")];
+      const idx = items.indexOf(document.activeElement);
+      if (e.key === "ArrowRight") { e.preventDefault(); items[(idx + 1) % items.length]?.focus(); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); items[(idx - 1 + items.length) % items.length]?.focus(); }
+    }}>
       <span className="nav-mark">GitMind</span>
 
       <div className="nav-items">
