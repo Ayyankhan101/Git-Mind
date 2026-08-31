@@ -2,7 +2,6 @@ import React, {
   useEffect,
   useRef,
   useState,
-  useCallback,
   Suspense,
   lazy,
 } from "react";
@@ -26,8 +25,6 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import "./LandingPage.css";
-import ThemeSwitcher from "./ThemeSwitcher";
-import { loadTheme } from "../themeLoader";
 
 // HealthCard pulls three.js via HealthGauge3D — keep it out of the
 // landing entry chunk.
@@ -386,20 +383,6 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
   const [activeSection, setActiveSection] = useState("");
   const [reducedMotion, setReducedMotion] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [landingTheme, setLandingTheme] = useState(
-    () => localStorage.getItem("gm-theme") || "default",
-  );
-  const landingDispatch = useCallback((action) => {
-    if (action.type === "SET_THEME") {
-      setLandingTheme(action.theme);
-      document.documentElement.setAttribute("data-theme", action.theme);
-      localStorage.setItem("gm-theme", action.theme);
-      // Fetch the theme's CSS chunk — without this the palette tokens
-      // never land on the landing route (dashboard path goes through
-      // appReducer, which App.jsx backs with loadTheme()).
-      loadTheme(action.theme);
-    }
-  }, []);
 
   /* Respect prefers-reduced-motion: the marquee renders a single
      (non-duplicated) copy, so the wrapped static list never repeats
@@ -567,7 +550,6 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
                 How it works
               </a>
             </div>
-            <ThemeSwitcher theme={landingTheme} dispatch={landingDispatch} />
             <button
               className="lp-nav-hamburger"
               onClick={() => setMobileMenuOpen((o) => !o)}
@@ -788,7 +770,6 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
             <span className="lp-footer-copy">Built with AI</span>
           </div>
           <div className="lp-footer-right">
-            <ThemeSwitcher theme={landingTheme} dispatch={landingDispatch} />
             <a
               href="https://github.com/Ayyankhan101/Git-Mind"
               target="_blank"
