@@ -11,8 +11,8 @@ const THEMES = [
   {
     id: "default",
     name: "Default",
-    sub: "Deep Blue + Violet",
-    swatches: ["#0a0f1e", "#8b5cf6"],
+    sub: "Cream + Coral",
+    swatches: ["#faf9f5", "#cc785c"],
   },
   {
     id: "amber",
@@ -78,7 +78,7 @@ const THEMES = [
     id: "daylight",
     name: "Daylight",
     sub: "Light Mode",
-    swatches: ["#f8fafc", "#3b82f6"],
+    swatches: ["#f8fafc", "#cc785c"],
   },
 ];
 

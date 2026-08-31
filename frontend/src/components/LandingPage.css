@@ -1608,9 +1608,9 @@
 }
 
 [data-theme="daylight"] .lp-badge {
-  color: #2563eb;
-  background: rgba(59, 130, 246, 0.08);
-  border-color: rgba(59, 130, 246, 0.25);
+  color: #cc785c;
+  background: rgba(204, 120, 92, 0.08);
+  border-color: rgba(204, 120, 92, 0.25);
 }
 
 /* Soften the dark section overlays on light backgrounds */
