@@ -9,7 +9,7 @@ import { useThemeColor } from "../hooks/useThemeColor";
  * material is rebuilt whenever the theme changes.
  */
 export default function HealthGauge3D({ sceneRef, subscribe, score = 75 }) {
-  const themePrimary = useThemeColor("--three-primary", "#3b82f6");
+  const themePrimary = useThemeColor("--three-primary", "#cc785c");
 
   const material = useMemo(() => {
     const tp = new THREE.Color(themePrimary);

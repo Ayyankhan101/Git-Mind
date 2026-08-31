@@ -7,9 +7,9 @@ import { useThemeColor } from "../hooks/useThemeColor";
  * Vanilla Three.js, theme-aware colors, per-frame drift via subscribe.
  */
 export default function SummaryScene({ sceneRef, subscribe, prefersReduced }) {
-  const primary = useThemeColor("--three-primary", "#3b82f6");
-  const accent = useThemeColor("--three-accent", "#8b5cf6");
-  const fog = useThemeColor("--three-fog", "#94a3b8");
+  const primary = useThemeColor("--three-primary", "#cc785c");
+  const accent = useThemeColor("--three-accent", "#c89b3c");
+  const fog = useThemeColor("--three-fog", "#faf9f5");
 
   const shapes = useMemo(
     () => [

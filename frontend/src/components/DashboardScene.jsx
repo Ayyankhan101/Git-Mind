@@ -12,7 +12,7 @@ const SPACE = { xy: 20, z: 10, zOffset: -5 };
  * within CONNECT_DISTANCE units. Theme-aware colors.
  */
 export default function DashboardScene({ sceneRef, subscribe, prefersReduced }) {
-  const primary = useThemeColor("--three-primary", "#3b82f6");
+  const primary = useThemeColor("--three-primary", "#cc785c");
 
   const particles = useMemo(() => {
     const positions = new Float32Array(PARTICLE_COUNT * 3);

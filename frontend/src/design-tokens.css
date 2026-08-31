@@ -1,67 +1,66 @@
 /* ============================================================
-   GitMind — Midnight Studio Design Tokens
-   Extracted from source project: GitMind Frontend Refactor
+   GitMind — Design Tokens
+   Anthropic editorial surface: cream canvas, coral accent
    ============================================================ */
 
 :root {
-  /* Native controls (scrollbars, form fields, date pickers) follow the
-     dark canvas. Overridden to `light` for the Daylight theme below. */
-  color-scheme: dark;
+  /* Native controls (scrollbars, form fields, date pickers) follow
+     the light canvas. */
+  color-scheme: light;
 
-  /* Core Palette — Freebuff canvas + slate surfaces */
-  --bg: #090a0f;
-  --bg-alt: #06070b;
-  --surface-0: #101216;
-  --surface-1: #14161c;
-  --surface-2: #1a1d26;
-  --surface-3: #21242f;
-  --surface-4: #2a2e3b;
+  /* Core Palette — warm cream canvas + soft surfaces */
+  --bg: #faf9f5;
+  --bg-alt: #f2f0ea;
+  --surface-0: #f2f0ea;
+  --surface-1: #ede9e3;
+  --surface-2: #e5e1db;
+  --surface-3: #ffffff;
+  --surface-4: #f8f6f2;
 
-  /* Accent — electric blue (freebuff) */
-  --primary: #3b82f6;
-  --primary-hover: #60a5fa;
-  --primary-strong: #2f6fe4;
-  --primary-muted: rgba(59, 130, 246, 0.15);
-  --primary-subtle: rgba(59, 130, 246, 0.08);
+  /* Accent — warm coral (Anthropic editorial) */
+  --primary: #cc785c;
+  --primary-hover: #d48a6e;
+  --primary-strong: #b56a4e;
+  --primary-muted: rgba(204, 120, 92, 0.15);
+  --primary-subtle: rgba(204, 120, 92, 0.08);
 
-  /* Gradient partner — violet (freebuff blue→violet) */
-  --accent-2: #8b5cf6;
+  /* Gradient partner — warm taupe (coral→taupe) */
+  --accent-2: #8c7b6b;
 
   /* Semantic */
-  --success: #34d399;
-  --success-bg: rgba(52, 211, 153, 0.08);
-  --warning: #fbbf24;
-  --warning-bg: rgba(251, 191, 36, 0.08);
-  --danger: #f87171;
-  --danger-bg: rgba(248, 113, 113, 0.08);
-  --info: #60a5fa;
-  --info-bg: rgba(96, 165, 250, 0.08);
+  --success: #2d8a56;
+  --success-bg: rgba(45, 138, 86, 0.08);
+  --warning: #c89b3c;
+  --warning-bg: rgba(200, 155, 60, 0.08);
+  --danger: #c94a3a;
+  --danger-bg: rgba(201, 74, 58, 0.08);
+  --info: #cc785c;
+  --info-bg: rgba(204, 120, 92, 0.08);
 
-  /* Text */
-  --text-primary: #f3f4f6;
-  --text-secondary: #9ca3af;
-  --text-tertiary: #78808f;
+  /* Text — dark ink on cream, warm secondary tones */
+  --text-primary: #1a1615;
+  --text-secondary: #6b6460;
+  --text-tertiary: #9c9590;
   --text-on-primary: #ffffff;
 
-  /* Borders */
-  --border-subtle: rgba(255, 255, 255, 0.05);
-  --border-default: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.12);
-  --border-accent: rgba(59, 130, 246, 0.3);
+  /* Borders — warm taupe tinted */
+  --border-subtle: rgba(42, 39, 36, 0.06);
+  --border-default: rgba(42, 39, 36, 0.12);
+  --border-strong: rgba(42, 39, 36, 0.20);
+  --border-accent: rgba(204, 120, 92, 0.3);
 
-  /* Glass */
-  --glass-bg: rgba(9, 10, 15, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.06);
+  /* Glass — warm cream frosted */
+  --glass-bg: rgba(250, 249, 245, 0.7);
+  --glass-border: rgba(42, 39, 36, 0.08);
 
-  /* Shadows — tinted toward the midnight-blue canvas: no pure-black
-     drop shadows on dark surfaces, the faint blue cast keeps depth. */
-  --shadow-sm: 0 1px 2px rgba(2, 6, 18, 0.4);
-  --shadow-md: 0 4px 12px rgba(2, 6, 18, 0.5);
-  --shadow-lg: 0 8px 32px rgba(2, 6, 18, 0.55);
-  --shadow-accent: 0 4px 20px rgba(59, 130, 246, 0.22);
+  /* Shadows — warm cream canvas: tinted drop shadows on light surfaces */
+  --shadow-sm: 0 1px 3px rgba(42, 39, 36, 0.06);
+  --shadow-md: 0 4px 12px rgba(42, 39, 36, 0.08);
+  --shadow-lg: 0 8px 32px rgba(42, 39, 36, 0.10);
+  --shadow-accent: 0 4px 20px rgba(204, 120, 92, 0.18);
 
   /* 1px inner top highlight — machined edge for elevated surfaces */
-  --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 
   /* Radii */
   --radius-sm: 6px;
@@ -70,10 +69,10 @@
   --radius-xl: 24px;
   --radius-full: 999px;
 
-  /* Typography — Geist (Vercel's typeface) replaces Inter for a
-     machine-tooled, developer-native voice. Geist Mono covers code. */
-  --font-sans: "Geist", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: "Geist Mono", "JetBrains Mono", "SF Mono", monospace;
+  /* Typography — System font stack with editorial serif fallback.
+     Phase 2: Copernicus (display) + StyreneB (body) if available. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
 
   /* Type scale — single source of truth for font sizes.
      Reference from JSX via the `fs` helper in src/typeScale.js.
@@ -121,7 +120,7 @@
   --duration-slow: 350ms;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Code Syntax */
+  /* Code Syntax — tuned for dark code cards (code-window-card) */
   --code-keyword: #c4b5fd;
   --code-string: #a5d6a7;
   --code-comment: #6d6c7a;
@@ -130,19 +129,18 @@
   --code-operator: #93c5fd;
   --code-punctuation: #a8a7b3;
 
-  /* Three.js tokens (obsidian default) */
-  --three-primary: #3b82f6;
-  --three-accent: #8b5cf6;
-  --three-fog: #090a0f;
+  /* Three.js tokens */
+  --three-primary: #cc785c;
+  --three-accent: #c89b3c;
+  --three-fog: #faf9f5;
 
-  /* Vignette overlay (PostProcessing) — dark themes only. */
-  --vignette-color: rgba(0, 0, 0, 0.3);
+  /* Vignette overlay (PostProcessing) — subtle on light canvas */
+  --vignette-color: rgba(0, 0, 0, 0.08);
 
-  /* Modal/drawer backdrop scrims — theme-aware so light themes don't
-     inherit near-black dimming tuned for dark canvases. */
-  --scrim-strong: rgba(15, 17, 23, 0.72);
-  --scrim-default: rgba(15, 17, 23, 0.6);
-  --scrim-soft: rgba(15, 17, 23, 0.5);
+  /* Modal/drawer backdrop scrims — light-aware for cream canvas */
+  --scrim-strong: rgba(42, 39, 36, 0.48);
+  --scrim-default: rgba(42, 39, 36, 0.36);
+  --scrim-soft: rgba(42, 39, 36, 0.24);
 }
 
 /* ============================================================
