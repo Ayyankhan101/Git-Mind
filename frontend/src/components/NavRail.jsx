@@ -20,35 +20,40 @@ export default function NavRail({
 
   return (
     <nav className="nav-rail" role="navigation" aria-label="Main navigation">
-      <button
-        className={`nav-item${drawerOpen ? " active" : ""}`}
-        onClick={() => dispatch({ type: "SET_DRAWER_OPEN", open: !drawerOpen })}
-        data-tip="Repositories"
-        aria-label="Repositories"
-      >
-        <FolderOpen size={18} />
-      </button>
+      <span className="nav-mark">GitMind</span>
 
-      <div className="nav-divider" />
-
-      {tabs.map(({ key, Icon, label, count, alert }) => (
+      <div className="nav-items">
         <button
-          key={key}
-          className={`nav-item${activeTab === key ? " active" : ""}`}
-          onClick={() => dispatch({ type: "SET_ACTIVE_TAB", tab: key })}
-          data-tip={label}
-          aria-label={label}
-          aria-current={activeTab === key ? "page" : undefined}
+          className={`nav-item${drawerOpen ? " active" : ""}`}
+          onClick={() => dispatch({ type: "SET_DRAWER_OPEN", open: !drawerOpen })}
+          data-tip="Repositories"
+          aria-label="Repositories"
         >
-          <Icon size={18} />
-          <span className="nav-label">{label}</span>
-          {count > 0 && (
-            <span className={`nav-badge${alert ? " warn" : " info"}`}>
-              {count > 99 ? "99+" : count}
-            </span>
-          )}
+          <FolderOpen size={18} />
+          <span className="nav-label">Repos</span>
         </button>
-      ))}
+
+        <div className="nav-divider" />
+
+        {tabs.map(({ key, Icon, label, count, alert }) => (
+          <button
+            key={key}
+            className={`nav-item${activeTab === key ? " active" : ""}`}
+            onClick={() => dispatch({ type: "SET_ACTIVE_TAB", tab: key })}
+            data-tip={label}
+            aria-label={label}
+            aria-current={activeTab === key ? "page" : undefined}
+          >
+            <Icon size={18} />
+            <span className="nav-label">{label}</span>
+            {count > 0 && (
+              <span className={`nav-badge${alert ? " warn" : " info"}`}>
+                {count > 99 ? "99+" : count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
 
       {(isAnalyzing || analyzed) && (
         <div
@@ -77,38 +82,38 @@ export default function NavRail({
         </div>
       )}
 
-      <div className="nav-spacer" />
+      <div className="nav-actions">
+        {repos.length > 0 && (
+          <button
+            className="nav-item"
+            onClick={() => dispatch({ type: "SET_SHOW_ORG_AUDIT", show: true })}
+            data-tip="Org Audit"
+            aria-label="Org Audit"
+          >
+            <Building2 size={18} />
+          </button>
+        )}
 
-      {repos.length > 0 && (
         <button
           className="nav-item"
-          onClick={() => dispatch({ type: "SET_SHOW_ORG_AUDIT", show: true })}
-          data-tip="Org Audit"
-          aria-label="Org Audit"
+          onClick={() => dispatch({ type: "SET_SHOW_PALETTE", show: true })}
+          data-tip={`${mod}+K`}
+          aria-label="Command palette"
         >
-          <Building2 size={18} />
+          <Command size={18} />
         </button>
-      )}
 
-      <button
-        className="nav-item"
-        onClick={() => dispatch({ type: "SET_SHOW_PALETTE", show: true })}
-        data-tip={`${mod}+K`}
-        aria-label="Command palette"
-      >
-        <Command size={18} />
-      </button>
-
-      <button
-        className="nav-item"
-        onClick={() => dispatch({ type: "SET_SHOW_KB_HELP", show: true })}
-        data-tip="Shortcuts"
-        aria-label="Keyboard shortcuts"
-      >
-        <span style={{ fontSize: fs.base, fontWeight: 700, lineHeight: 1 }}>
-          ?
-        </span>
-      </button>
+        <button
+          className="nav-item"
+          onClick={() => dispatch({ type: "SET_SHOW_KB_HELP", show: true })}
+          data-tip="Shortcuts"
+          aria-label="Keyboard shortcuts"
+        >
+          <span style={{ fontSize: fs.base, fontWeight: 700, lineHeight: 1 }}>
+            ?
+          </span>
+        </button>
+      </div>
     </nav>
   );
 }

@@ -14,7 +14,6 @@ import {
   Binary,
   Activity,
 } from "../icons";
-import CommandBar from "./CommandBar";
 import NavRail from "./NavRail";
 import Sidebar from "./Sidebar";
 import ErrorBoundary from "./ErrorBoundary";
@@ -36,16 +35,10 @@ export default function DashboardLayout({
   state,
   dispatch,
   sessionId,
-  usernameRef,
   handleLoadRepos,
   handleSelectRepo,
   handleAnalyze,
-  handleShare,
-  handleExport,
   handleFix,
-  handlePaletteAction,
-  statusClass,
-  statusText,
 }) {
   const {
     theme,
@@ -75,7 +68,6 @@ export default function DashboardLayout({
     fixResult,
     globalError,
     retryUrl,
-    shareCopied,
     prAutoUrl,
     drawerOpen,
     repoHistory,
@@ -160,23 +152,6 @@ export default function DashboardLayout({
 
   return (
     <div className="app">
-      <CommandBar
-        githubUser={githubUser}
-        ghToken={ghToken}
-        reposLoading={reposLoading}
-        isAnalyzing={isAnalyzing}
-        analyzed={analyzed}
-        shareCopied={shareCopied}
-        statusClass={statusClass}
-        statusText={statusText}
-        usernameRef={usernameRef}
-        dispatch={dispatch}
-        handleLoadRepos={handleLoadRepos}
-        handleShare={handleShare}
-        handleExport={handleExport}
-        theme={theme}
-      />
-
       <NavRail
         activeTab={activeTab}
         drawerOpen={drawerOpen}

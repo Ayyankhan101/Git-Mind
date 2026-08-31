@@ -90,7 +90,6 @@ export default function App() {
     repos,
     selectedRepoUrl,
     repoName,
-    isAnalyzing,
     analyzed,
     elapsedSec,
     diagram,
@@ -158,7 +157,6 @@ export default function App() {
   const timeoutRef = useRef(null);
   const startRef = useRef(null);
   const analyzingRef = useRef(false);
-  const usernameRef = useRef(null);
   const toastTimers = useRef({});
 
   // ── Toast helpers ─────────────────────────────────────────
@@ -521,13 +519,6 @@ export default function App() {
         e.preventDefault();
         handleAnalyze(selectedRepoUrl);
       }
-      if (
-        e.key === "/" &&
-        !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)
-      ) {
-        e.preventDefault();
-        usernameRef.current?.focus();
-      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -756,14 +747,6 @@ export default function App() {
     [handleShare, handleExport, handleSelectRepo],
   ); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Status text ───────────────────────────────────────────
-  const statusClass = analyzed ? "done" : isAnalyzing ? "running" : "";
-  const statusText = analyzed
-    ? `Done · ${elapsedSec}s`
-    : isAnalyzing
-      ? `Analyzing · ${elapsedSec}s`
-      : "Ready";
-
   const isLanding = location.pathname === "/";
 
   return (
@@ -822,9 +805,8 @@ export default function App() {
                 position: "relative",
                 zIndex: 1,
                 // The .app grid defines 4 cells for the dashboard shell,
-                // but NavRail/CommandBar live inside DashboardLayout —
-                // this single wrapper must span the entire grid or it
-                // auto-places into the 52×48px corner cell.
+                // NavRail lives inside DashboardLayout —
+                // this single wrapper must span the entire grid.
                 gridColumn: "1 / -1",
                 gridRow: "1 / -1",
                 minHeight: 0,
@@ -834,16 +816,10 @@ export default function App() {
                 state={state}
                 dispatch={dispatch}
                 sessionId={SESSION_ID}
-                usernameRef={usernameRef}
                 handleLoadRepos={handleLoadRepos}
                 handleSelectRepo={handleSelectRepo}
                 handleAnalyze={handleAnalyze}
-                handleShare={handleShare}
-                handleExport={handleExport}
                 handleFix={handleFix}
-                handlePaletteAction={handlePaletteAction}
-                statusClass={statusClass}
-                statusText={statusText}
               />
             </div>
           </Suspense>
