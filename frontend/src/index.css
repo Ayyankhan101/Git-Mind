@@ -228,32 +228,22 @@ h3,
 /* ── Layout Shell ─────────────────────────────────────────────── */
 .app {
   display: grid;
-  grid-template-columns: 52px 1fr;
-  grid-template-rows: 48px 1fr;
+  grid-template-columns: 1fr;
+  grid-template-rows: 56px 1fr;
   width: 100vw;
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
   /* Anchor for the absolute-positioned 3D background canvas. */
   position: relative;
-  /* Smooth the nav-rail hover expand (52px → 180px). */
-  transition: grid-template-columns var(--duration-normal) var(--ease-out);
 }
 .app:has(> .lp) {
   display: flex;
   flex-direction: column;
-  /* height: auto lets the shell grow with the landing page instead of
-     relying on overflow propagation from a fixed-height box. Landing
-     scrolls with the WINDOW — Lenis + GSAP ScrollTrigger are wired to
-     the window scroller; a nested scroll container froze scrolling and
-     left every below-fold section at opacity: 0. */
   height: auto;
   min-height: 100vh;
   min-height: 100dvh;
   overflow: visible;
-}
-.app:has(.nav-rail:hover):not(:has(> .lp)) {
-  grid-template-columns: 180px 1fr;
 }
 
 /* ── Command Bar (Top Bar) ───────────────────────────────────── */
@@ -372,71 +362,86 @@ h3,
   background: var(--success);
 }
 
-/* ── Nav Rail ─────────────────────────────────────────────────── */
+/* ── Top Nav ─────────────────────────────────────────────────── */
 .nav-rail {
   grid-column: 1;
-  grid-row: 2;
-  width: 100%;
+  grid-row: 1;
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  padding: 10px 6px;
-  background: var(--surface);
-  border-right: 1px solid var(--border-s);
-  gap: 4px;
-  overflow: hidden;
-  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  align-items: center;
+  height: 56px;
+  padding: 0 16px;
+  background: var(--glass-bg, var(--surface));
+  border-bottom: 1px solid var(--border-s);
+  backdrop-filter: blur(12px) saturate(1.2);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  gap: 8px;
+}
+.nav-mark {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  margin-right: 16px;
+  flex-shrink: 0;
+}
+.nav-items {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.nav-items::-webkit-scrollbar {
+  display: none;
+}
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 .nav-item {
   position: relative;
   display: flex;
-  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-  height: 44px;
-  padding: 0 12px;
+  gap: 6px;
+  height: 36px;
+  padding: 0 10px;
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--text-3);
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   transition:
     color var(--duration-fast),
     background var(--duration-fast);
-  overflow: hidden;
   white-space: nowrap;
-}
-.nav-rail:not(:hover) .nav-item {
-  justify-content: center;
-  gap: 0;
-}
-.nav-rail:hover .nav-item {
-  justify-content: flex-start;
-  gap: 10px;
-}
-.nav-rail:not(:hover) .nav-label {
-  display: none;
+  flex-shrink: 0;
 }
 .nav-item:hover {
-  color: var(--text-1);
+  color: var(--text-primary);
   background: var(--hover);
 }
 .nav-item.active {
-  color: var(--accent);
-  background: var(--accent-dim);
+  color: var(--primary);
+  background: var(--primary-muted);
 }
-.nav-item.active::before {
+.nav-item.active::after {
   content: "";
   position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  /* 3px --primary left-edge indicator (upgraded from 2px accent):
-     reads as the active page marker against the primary-muted bg. */
-  width: 3px;
-  border-radius: 0 3px 3px 0;
+  bottom: 0;
+  left: 10px;
+  right: 10px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
   background: var(--primary);
 }
 .nav-item:disabled {
@@ -450,60 +455,17 @@ h3,
   transition: color var(--duration-fast);
 }
 .nav-label {
-  opacity: 0;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
-  color: var(--text-2);
-  transition: opacity var(--duration-normal) ease-in-out 0.1s;
-  pointer-events: none;
+  color: inherit;
   white-space: nowrap;
 }
-.nav-rail:hover .nav-label {
-  opacity: 1;
-}
-
-/* Staggered reveal: each nav item gets increasing delay */
-.nav-item:nth-child(1) .nav-label {
-  transition-delay: 0ms;
-}
-.nav-item:nth-child(2) .nav-label {
-  transition-delay: 30ms;
-}
-.nav-item:nth-child(3) .nav-label {
-  transition-delay: 60ms;
-}
-.nav-item:nth-child(4) .nav-label {
-  transition-delay: 90ms;
-}
-.nav-item:nth-child(5) .nav-label {
-  transition-delay: 120ms;
-}
-.nav-item:nth-child(6) .nav-label {
-  transition-delay: 150ms;
-}
-.nav-item:nth-child(7) .nav-label {
-  transition-delay: 180ms;
-}
-.nav-item:nth-child(8) .nav-label {
-  transition-delay: 210ms;
-}
-.nav-item:nth-child(9) .nav-label {
-  transition-delay: 240ms;
-}
-.nav-item:nth-child(10) .nav-label {
-  transition-delay: 270ms;
-}
-
 .nav-divider {
-  width: 32px;
-  height: 1px;
+  width: 1px;
+  height: 20px;
   background: var(--border-s);
-  margin: 6px auto;
-  opacity: 0.6;
-}
-.nav-spacer {
-  flex: 1;
-  min-height: 8px;
+  margin: 0 4px;
+  flex-shrink: 0;
 }
 .nav-badge {
   font-size: 10px;
@@ -511,8 +473,8 @@ h3,
   font-variant-numeric: tabular-nums;
   padding: 1px 5px;
   border-radius: var(--radius-full);
-  background: var(--accent-dim);
-  color: var(--accent);
+  background: var(--primary-muted);
+  color: var(--primary);
 }
 .nav-badge.warn {
   background: var(--danger-bg);
@@ -520,34 +482,33 @@ h3,
 }
 
 /* ── Nav Agent Dots (mini pipeline) ───────────────────────────── */
-/* Mirrors the Sidebar agent pipeline: a thin vertical connector
-   behind the dots so the 6-agents-in-parallel story reads at a
-   glance, even in the collapsed 52px rail. */
+/* Horizontal row of dots showing agent pipeline status. */
 .nav-agents {
   position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 8px 16px;
+  flex-direction: row;
+  gap: 4px;
+  padding: 0 8px;
+  align-items: center;
 }
 .nav-agents::before {
   content: "";
   position: absolute;
-  left: 19px;
-  top: 9px;
-  bottom: 9px;
-  width: 1px;
+  top: 50%;
+  left: 8px;
+  right: 8px;
+  height: 1px;
   background: var(--border-m);
-  opacity: 0.7;
+  opacity: 0.5;
+  transform: translateY(-50%);
 }
 .nav-agent-dot {
   position: relative;
   z-index: 1;
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--border-m);
-  /* Solid ring (rail-colored) breaks the connector behind each dot. */
   box-shadow: 0 0 0 2px var(--surface);
   transition:
     background var(--duration-fast),
@@ -575,7 +536,7 @@ h3,
 
 /* ── Main Content ─────────────────────────────────────────────── */
 .main {
-  grid-column: 2;
+  grid-column: 1;
   grid-row: 2;
   display: flex;
   flex-direction: column;
@@ -1042,9 +1003,9 @@ h3,
 [data-tip]::after {
   content: attr(data-tip);
   position: absolute;
-  left: calc(100% + 8px);
-  top: 50%;
-  transform: translateY(-50%);
+  left: 50%;
+  top: calc(100% + 6px);
+  transform: translateX(-50%);
   padding: 4px 8px;
   font-size: 11px;
   background: var(--elevated);
@@ -1059,9 +1020,6 @@ h3,
 }
 [data-tip]:hover::after {
   opacity: 1;
-}
-.nav-rail:not(:hover) [data-tip]::after {
-  display: none;
 }
 
 /* ── Scrollbar ────────────────────────────────────────────────── */
@@ -4810,7 +4768,7 @@ button:disabled {
 @media (max-width: 768px) {
   .app {
     grid-template-columns: 1fr;
-    grid-template-rows: 48px 1fr;
+    grid-template-rows: 1fr;
   }
   .nav-rail {
     position: fixed;
@@ -4822,15 +4780,13 @@ button:disabled {
     flex-direction: row;
     justify-content: flex-start;
     align-items: center;
-    border-right: none;
+    border-bottom: none;
     border-top: 1px solid var(--border-s);
     padding: 0 8px;
     gap: 4px;
     z-index: 50;
     display: flex;
     background: var(--surface);
-    /* 14 items x 44px > any phone width: scroll the rail instead of
-       clipping the last tabs off-screen. */
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
@@ -4839,22 +4795,13 @@ button:disabled {
   .nav-rail::-webkit-scrollbar {
     display: none;
   }
-  .nav-rail:hover {
-    width: 100%;
-  }
-  /* The desktop hover-expand must not fire on mobile — the rail is a
-     fixed bottom bar, and the 180px column would squash the content.
-     Same specificity as the base :has() rule so this wins on phones. */
-  .app:has(.nav-rail:hover):not(:has(> .lp)) {
-    grid-template-columns: 1fr;
+  .nav-mark {
+    display: none;
   }
   .nav-divider {
     width: 1px;
     height: 24px;
     margin: 0 4px;
-  }
-  .nav-spacer {
-    display: none;
   }
   .nav-agents {
     flex-direction: row;
@@ -4867,7 +4814,7 @@ button:disabled {
     gap: 0;
     flex-shrink: 0;
   }
-  .nav-item.active::before {
+  .nav-item.active::after {
     display: none;
   }
   .nav-item.active {
@@ -4877,37 +4824,11 @@ button:disabled {
   .nav-label {
     display: none;
   }
-  .nav-rail:hover .nav-label {
-    display: none;
-  }
-  .nav-rail:hover .nav-item {
-    justify-content: center;
-    gap: 0;
-  }
   .main {
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 1;
     min-height: 0;
     padding-bottom: calc(64px + env(safe-area-inset-bottom));
-  }
-  .command-bar {
-    grid-column: 1;
-    grid-row: 1;
-    gap: 6px;
-    padding: 0 10px;
-    /* Grid items stretch tracks to their min-content width by default;
-       with the full desktop control set that is ~500px, which pushes
-       .main (and every tab) off-screen. Allow the track to stay put. */
-    min-width: 0;
-  }
-  .cb-wordmark {
-    display: none;
-  }
-  .cb-divider {
-    display: none;
-  }
-  .cb-input {
-    min-width: 64px;
   }
   /* The desktop spacer pushes the trailing actions right; on mobile the
      username input should claim the freed space instead. */
