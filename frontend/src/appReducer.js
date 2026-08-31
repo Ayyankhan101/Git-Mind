@@ -94,10 +94,10 @@ export function appReducer(state, action) {
   switch (action.type) {
     // ── UI ──────────────────────────────────────────────────────────────────
     case "SET_THEME": {
-      const root = document.documentElement;
-      if (action.theme === "obsidian") root.removeAttribute("data-theme");
-      else root.setAttribute("data-theme", action.theme);
       localStorage.setItem("gm-theme", action.theme);
+      document.documentElement.dispatchEvent(
+        new CustomEvent("theme-applied"),
+      );
       return { ...state, theme: action.theme };
     }
     case "SET_DENSITY": {

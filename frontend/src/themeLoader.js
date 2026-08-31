@@ -1,47 +1,12 @@
 /**
- * Lazy theme loader.
+ * Theme loader — single-surface design (cream/coral).
  *
- * Each theme's CSS lives in its own file under src/themes/ and is code-split
- * by webpack into a separate chunk. Only the ACTIVE theme's chunk is fetched —
- * the 12 inactive themes (≈28 KB raw) never hit the network on first paint.
- *
- * "obsidian" (the Freebuff default) has no file: its palette is baked into the
- * base :root tokens in design-tokens.css, so it's always already loaded.
+ * Theme system removed in Phase 4. loadTheme() kept as no-op for
+ * backward compatibility with callers (LandingPage, appReducer).
  */
-const themeLoaders = {
-  default: () => import("./themes/default.css"),
-  amber: () => import("./themes/amber.css"),
-  verdant: () => import("./themes/verdant.css"),
-  glacier: () => import("./themes/glacier.css"),
-  aurora: () => import("./themes/aurora.css"),
-  spatial: () => import("./themes/spatial.css"),
-  daylight: () => import("./themes/daylight.css"),
-  matrix: () => import("./themes/matrix.css"),
-  neon: () => import("./themes/neon.css"),
-  carbon: () => import("./themes/carbon.css"),
-  plasma: () => import("./themes/plasma.css"),
-  circuit: () => import("./themes/circuit.css"),
-};
-
-/**
- * Ensure a theme's CSS chunk is loaded. Safe to call repeatedly — webpack
- * dedupes the module and the browser caches the chunk.
- *
- * Dispatches a `theme-applied` event on <html> once the chunk has landed,
- * so consumers that resolved colors before the CSS arrived (e.g.
- * useThemeColor) can re-resolve. Closes the chunk-load race where the
- * data-theme attribute flips before the palette exists.
- */
-export function loadTheme(theme) {
-  const load = themeLoaders[theme];
-  if (!load) return Promise.resolve();
-  // Swallow chunk-load failures: a missing stylesheet must never break the
-  // app — the base tokens still render a usable UI.
-  return load()
-    .catch(() => {})
-    .then(() => {
-      document.documentElement.dispatchEvent(
-        new CustomEvent("theme-applied"),
-      );
-    });
+export function loadTheme(_theme) {
+  document.documentElement.dispatchEvent(
+    new CustomEvent("theme-applied"),
+  );
+  return Promise.resolve();
 }
