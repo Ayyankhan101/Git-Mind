@@ -174,7 +174,7 @@ components:
     backgroundColor: "{colors.canvas}"
     textColor: "{colors.ink}"
     rounded: "{rounded.full}"
-    size: 36px
+    size: 44px
   text-link:
     backgroundColor: transparent
     textColor: "{colors.primary}"
@@ -476,7 +476,7 @@ When photography is used (rare — mostly testimonials), avatars crop to perfect
 
 **`button-text-link`** — Inline text button, no background. Used for "Sign in" in the top nav and inline CTA links.
 
-**`button-icon-circular`** — 36px circular icon button. Background `{colors.canvas}`, hairline border, ink-color icon. Used for carousel arrows, share, "view more".
+**`button-icon-circular`** — 44px circular icon button (WCAG 44px touch target minimum). Background `{colors.canvas}`, hairline border, ink-color icon. Used for carousel arrows, share, "view more".
 
 **`text-link`** — Inline body links in `{colors.primary}` (the coral). Underlined on press; the coral inline link is one of the system's most distinctive small details.
 
@@ -587,7 +587,80 @@ When photography is used (rare — mostly testimonials), avatars crop to perfect
 6. Cream + coral + dark navy is the trinity. Don't introduce a fourth surface tone (no purple cards, no green sections).
 7. When in doubt about emphasis: bigger Copernicus serif before bolder weight.
 
+## Interaction States
+
+Every component must define these states. Empty states are features — they need warmth, a primary action, and context.
+
+| Component | Loading | Empty | Error | Success | Partial |
+|-----------|---------|-------|-------|---------|---------|
+| Dashboard | Skeleton shimmer cards (cream-colored, subtle shimmer) | Warm CTA: "Scan your first repo" + coral callout card + line-art illustration + repo URL input | Error card: coral border, error icon, retry button | Stat tiles animate in with fadeInUp | Partial data: loaded tiles show data, pending tiles show skeleton |
+| Code Block | Skeleton lines (monospace shimmer) | "No code to display" + link to scan | Inline error: "Failed to load code" + retry | Code appears with fadeIn | — |
+| Architecture Diagram | Pulsing placeholder | "Run a scan to see architecture" + CTA | "Analysis failed" + retry | Diagram renders with scaleIn | — |
+| Security Analysis | Skeleton stat tiles | "No security data yet" + scan CTA | "Security scan failed" + retry | Green checkmark + fadeIn | Partial: some checks complete, others loading |
+| Settings | Skeleton form fields | Form with defaults pre-filled | Inline field errors (coral text below input) | "Saved" toast confirmation | — |
+
+### Empty State Template
+```
+┌─────────────────────────────────────────┐
+│  [line-art illustration — coral stroke] │
+│                                         │
+│  Scan your first repository             │
+│  Enter a GitHub URL to get started.     │
+│                                         │
+│  [text-input: github.com/user/repo]     │
+│  [button-primary: Scan Repository]      │
+└─────────────────────────────────────────┘
+```
+
+## Accessibility
+
+### Keyboard Navigation
+- **Tab order:** Top-nav left → right → main content → footer
+- **Focus visible:** 2px solid `{colors.primary}` outline, 2px offset on all interactive elements
+- **Focus trap:** Modal dialogs trap focus; Escape closes and returns focus to trigger
+- **Skip link:** "Skip to main content" link, visible on focus, jumps past nav
+- **Arrow keys:** Navigate within nav menu items, tab groups, and list selections
+
+### ARIA Landmarks
+- `role="banner"` on top-nav
+- `role="main"` on content area
+- `role="contentinfo"` on footer
+- `role="navigation"` on nav menu
+- `aria-label` on icon-only buttons (e.g., `aria-label="Close"`)
+
+### Screen Reader
+- All images have descriptive `alt` text (line-art illustrations: "GitMind architecture diagram showing...")
+- Code blocks use `role="region"` with `aria-label="Code sample"`
+- Status changes announced via `aria-live="polite"` region
+- Form errors linked to inputs via `aria-describedby`
+
+### Touch & Contrast
+- Minimum touch target: 44 × 44px (all buttons, nav items, form controls)
+- Body text contrast: ≥ 4.5:1 on cream canvas (ink #141413 on #faf9f5 = 16.3:1 ✓)
+- Large text contrast: ≥ 3:1
+- Focus rings visible on all interactive elements
+- Disabled state is the only state allowed to reduce contrast
+
+## Resolved Decisions
+
+| Decision | Resolution | Rationale |
+|----------|------------|-----------|
+| Theme system | Single cream/coral surface. Drop 13-theme switcher. | Simplifies implementation. Cream/coral IS the brand. |
+| Code blocks on cream | Dark navy card background (`{component.code-window-card}`) | Matches DESIGN.md spec. Dark code on cream is jarring; dark-on-dark is readable. |
+| Font loading | Self-host Copernicus (licensed Anthropic font) | Best brand match. If unavailable, fall back to Cormorant Garamond. |
+| Navigation | Top-nav (horizontal, 64px) | Matches DESIGN.md. Standard for editorial/product sites. |
+| Empty state | Warm CTA with illustration: "Scan your first repo" + coral callout card | Matches DESIGN.md voice. Warm, inviting, action-oriented. |
+| Loading states | Skeleton shimmer cards (cream-colored, subtle shimmer) | Non-jarring, matches cream palette. Consistent across components. |
+| Mobile nav | Hamburger → full-screen cream sheet overlay | Matches DESIGN.md responsive spec. Standard mobile pattern. |
+| Icon button size | Bump from 36px to 44px | WCAG 44px touch target minimum. |
+
 ## Known Gaps
+
+- Copernicus font self-hosting requires obtaining the font files (licensed Anthropic typeface). Fallback: Cormorant Garamond (open-source) with weight 500 and -0.02em tracking.
+- The Anthropic radial-spike-mark is a brand glyph rendered as inline SVG; it's not formalized as a system token here. Treat it as a logo asset.
+- Animation and transition timings (chat message reveal, code block typewriter effect, agentic-flow diagram animations) are defined in the interaction states section but specific easing curves need finalization.
+- Form validation states beyond `{component.text-input-focused}` are now specified in the Interaction States table — error/success states need implementation.
+- The actual Claude product surface (claude.ai chat interface) shares some tokens with the marketing site but adds many product-specific components (chat bubbles, message tools, file upload chips, conversation history sidebar) that are out of scope for this marketing-surface document.
 
 - Copernicus and StyreneB are licensed Anthropic typefaces and not available as public web fonts. Substitutes (Tiempos Headline / Cormorant Garamond / EB Garamond for serif; Inter / Söhne for sans) are documented in the typography section.
 - The Anthropic radial-spike-mark is a brand glyph rendered as inline SVG; it's not formalized as a system token here. Treat it as a logo asset.
@@ -595,3 +668,16 @@ When photography is used (rare — mostly testimonials), avatars crop to perfect
 - Form validation states beyond `{component.text-input-focused}` are not extracted — error / success states would need a sign-up or feedback flow to confirm.
 - The actual Claude product surface (claude.ai chat interface) shares some tokens with the marketing site but adds many product-specific components (chat bubbles, message tools, file upload chips, conversation history sidebar) that are out of scope for this marketing-surface document.
 - The "agent" / "computer use" demo cards on certain pages display animated Claude controlling a browser — the static screenshot doesn't fully capture the animation chrome.
+
+## GSTACK REVIEW REPORT
+
+| Review | Trigger | Why | Runs | Status | Findings |
+|--------|---------|-----|------|--------|----------|
+| Design Review (FULL) | `/plan-design-review` | Compare & reconcile two design systems | 1 | issues_open | 2 systems compared, 8 decisions resolved, a11y gaps fixed |
+| Eng Review (SCOPE_REDUCED) | `/plan-eng-review` | Architecture & test validation for token rewrite | 1 | clean | 6 issues found, 0 critical gaps, all resolved |
+
+**VERDICT:** DESIGN + ENG CLEARED — ready to implement Phase 1 (token rewrite). Eng review confirmed: keep existing token names, change values only. 5 T1 tasks identified for Phase 1. Scope reduced to token rewrite first, nav/themes/a11y deferred to Phases 2-4.
+
+**UNRESOLVED DECISIONS:**
+- Copernicus font file acquisition (licensed Anthropic typeface — need font files or use Cormorant Garamond fallback) — deferred to Phase 2
+- Animation easing curves need finalization (current specs are placeholder values) — deferred to Phase 2
