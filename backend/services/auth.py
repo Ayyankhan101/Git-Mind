@@ -21,6 +21,14 @@ _PUBLIC_PATH_PREFIXES = ("/repos", "/analysis/")
 # Webhook paths — HMAC-verified inside the route handler, not by this middleware.
 _WEBHOOK_PATH_PREFIXES = ("/github/webhook",)
 
+# Known route prefixes — paths NOT matching these are unknown and should get
+# a proper 404 from FastAPI rather than a 401 from this middleware.
+_KNOWN_ROUTE_PREFIXES = (
+    "/health", "/docs", "/openapi.json", "/metrics", "/summary", "/fix",
+    "/chat", "/incident-report", "/repos", "/analysis", "/pr", "/org",
+    "/github", "/webhook", "/monitor", "/proxy",
+)
+
 
 def _is_public(path: str) -> bool:
     if path in _PUBLIC_PATHS:
@@ -28,6 +36,11 @@ def _is_public(path: str) -> bool:
     if any(path.startswith(prefix) for prefix in _PUBLIC_PATH_PREFIXES):
         return True
     return any(path.startswith(prefix) for prefix in _WEBHOOK_PATH_PREFIXES)
+
+
+def _is_known_route(path: str) -> bool:
+    """Check if path matches any registered route prefix."""
+    return any(path.startswith(prefix) for prefix in _KNOWN_ROUTE_PREFIXES)
 
 
 def _extract_token(request: Request) -> str | None:
@@ -112,6 +125,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
         path = request.url.path
 
         if _is_public(path):
+            return await call_next(request)
+
+        # Let unknown paths through — FastAPI will return 404, not our middleware 401.
+        if not _is_known_route(path):
             return await call_next(request)
 
         token = _extract_token(request)
