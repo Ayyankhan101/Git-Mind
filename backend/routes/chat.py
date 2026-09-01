@@ -73,10 +73,13 @@ async def chat_endpoint(req: ChatRequest, request: Request):
     if not session:
         return error_response("Session not found. Run /ws/analyze first.", 404)
     if not session.get("chroma_collection_name"):
-        return error_response("Knowledge base not ready — RAG setup may have failed.", 503)
+        return error_response(
+            "Knowledge base not ready — RAG setup may have failed.", 503
+        )
 
     # Defensive: check if ChromaDB collection still exists (ephemeral storage)
     from chroma_utils import _client
+
     collection_name = session["chroma_collection_name"]
     try:
         _client.get_collection(collection_name)
@@ -85,18 +88,29 @@ async def chat_endpoint(req: ChatRequest, request: Request):
         file_contents = session.get("file_contents")
         if file_contents:
             from agents.rag_setup import run_rag_setup
+
             try:
                 new_name = await asyncio.to_thread(
-                    run_rag_setup, file_contents, session["repo_name"], session.get("repo_url", "")
+                    run_rag_setup,
+                    file_contents,
+                    session["repo_name"],
+                    session.get("repo_url", ""),
                 )
                 session["chroma_collection_name"] = new_name
                 collection_name = new_name
-                logger.info("Re-embedded codebase after collection loss", new_collection=new_name)
+                logger.info(
+                    "Re-embedded codebase after collection loss",
+                    new_collection=new_name,
+                )
             except Exception as exc:
                 logger.warning("Re-embed failed: %s", exc)
-                return error_response("Knowledge base lost (server restart). Re-run analysis.", 503)
+                return error_response(
+                    "Knowledge base lost (server restart). Re-run analysis.", 503
+                )
         else:
-            return error_response("Knowledge base lost (server restart). Re-run analysis.", 503)
+            return error_response(
+                "Knowledge base lost (server restart). Re-run analysis.", 503
+            )
 
     graph_context = _build_graph_context(session)
 
@@ -147,6 +161,7 @@ async def chat_stream_endpoint(req: ChatRequest, request: Request):
 
         # Defensive: check if ChromaDB collection still exists (ephemeral storage)
         from chroma_utils import _client
+
         collection_name = session["chroma_collection_name"]
         try:
             _client.get_collection(collection_name)
@@ -154,9 +169,13 @@ async def chat_stream_endpoint(req: ChatRequest, request: Request):
             file_contents = session.get("file_contents")
             if file_contents:
                 from agents.rag_setup import run_rag_setup
+
                 try:
                     new_name = await asyncio.to_thread(
-                        run_rag_setup, file_contents, session["repo_name"], session.get("repo_url", "")
+                        run_rag_setup,
+                        file_contents,
+                        session["repo_name"],
+                        session.get("repo_url", ""),
                     )
                     session["chroma_collection_name"] = new_name
                     collection_name = new_name

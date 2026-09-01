@@ -15,6 +15,18 @@ jest.mock("./components/SceneManager", () => {
   };
 });
 
+jest.mock("./components/DashboardLayout", () => {
+  return function MockDashboardLayout() {
+    return (
+      <nav>
+        <button aria-label="Keyboard shortcuts">?</button>
+        <button aria-label="Command palette">⌘K</button>
+        <button aria-label="Repositories">Repos</button>
+      </nav>
+    );
+  };
+});
+
 jest.mock("./components/PostProcessing", () => {
   return function MockPostProcessing() {
     return null;

@@ -161,6 +161,7 @@ export default function DashboardLayout({
         repos={repos}
         tabs={tabs}
         dispatch={dispatch}
+        theme={theme}
       />
 
       <main id="main-content" className="main">

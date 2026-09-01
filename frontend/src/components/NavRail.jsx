@@ -1,6 +1,7 @@
 import React from "react";
 import { FolderOpen, Command, Building2 } from "../icons";
 import { fs } from "../typeScale";
+import ThemeSwitcher from "./ThemeSwitcher";
 
 const IS_MAC = /Mac/i.test(
   navigator.userAgentData?.platform ?? navigator.platform,
@@ -15,6 +16,7 @@ export default function NavRail({
   repos,
   tabs,
   dispatch,
+  theme,
 }) {
   const mod = IS_MAC ? "⌘" : "Ctrl";
 
@@ -88,6 +90,8 @@ export default function NavRail({
       )}
 
       <div className="nav-actions">
+        <ThemeSwitcher theme={theme} dispatch={dispatch} />
+
         {repos.length > 0 && (
           <button
             className="nav-item"
