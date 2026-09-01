@@ -4,7 +4,11 @@ import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from models.db import Analysis, Base
-from services.database import _analysis_row_to_dict, get_analysis_db, persist_analysis_db
+from services.database import (
+    _analysis_row_to_dict,
+    get_analysis_db,
+    persist_analysis_db,
+)
 
 
 @pytest.fixture

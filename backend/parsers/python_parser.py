@@ -51,7 +51,11 @@ def _extract_imports(tree: ast.AST) -> list[dict]:
             module = node.module or ""
             for alias in node.names:
                 # Take the top-level package name (skip relative dots)
-                parts = [p for p in module.replace("\\", "/").split(".") if p and p != ".." and p != "."]
+                parts = [
+                    p
+                    for p in module.replace("\\", "/").split(".")
+                    if p and p != ".." and p != "."
+                ]
                 source = parts[0] if parts else ""
                 imports.append(
                     {
@@ -77,7 +81,11 @@ def _extract_classes(tree: ast.AST) -> list[dict]:
                 {
                     "name": node.name,
                     "bases": bases,
-                    "methods": [m.name for m in node.body if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef))],
+                    "methods": [
+                        m.name
+                        for m in node.body
+                        if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef))
+                    ],
                     "lineno": node.lineno,
                 }
             )
@@ -91,7 +99,9 @@ def _extract_functions(tree: ast.AST) -> list[dict]:
             fns.append(
                 {
                     "name": node.name,
-                    "decorators": [d.id for d in node.decorator_list if isinstance(d, ast.Name)],
+                    "decorators": [
+                        d.id for d in node.decorator_list if isinstance(d, ast.Name)
+                    ],
                     "lineno": node.lineno,
                 }
             )
@@ -109,7 +119,11 @@ def _extract_endpoints(tree: ast.AST, _source: str) -> list[dict]:
                         call_expr = f"{_resolve_attr(func)}.{func.attr}"
                         if call_expr in _FASTAPI_DECORATORS:
                             method = func.attr.upper()
-                            args = [ast.literal_eval(a) for a in decorator.args if isinstance(a, ast.Constant)]
+                            args = [
+                                ast.literal_eval(a)
+                                for a in decorator.args
+                                if isinstance(a, ast.Constant)
+                            ]
                             path = args[0] if args else "/"
                             endpoints.append(
                                 {
@@ -144,7 +158,9 @@ _NODE_TYPE_KEYWORDS = {
 }
 
 
-def _classify_node(name: str, file_path: str, classes: list[dict], endpoints: list) -> tuple[str, str]:
+def _classify_node(
+    name: str, file_path: str, classes: list[dict], endpoints: list
+) -> tuple[str, str]:
     lower = name.lower()
     path_lower = file_path.lower()
 
@@ -202,7 +218,11 @@ def _build_smart_label(
     if len(path_parts) >= 2:
         parent = path_parts[-2].lower()
         # Only add parent if it's not the same as the stem
-        if parent and parent != stem.lower() and parent not in ("src", "lib", "app", "."):
+        if (
+            parent
+            and parent != stem.lower()
+            and parent not in ("src", "lib", "app", ".")
+        ):
             parent_label = _humanize_label(parent)
             # Avoid duplication (e.g., "Auth Auth Middleware" → "Auth Middleware")
             if parent_label.lower() not in parts[0].lower():
@@ -301,7 +321,11 @@ def parse_python(file_path: str, source: str) -> dict | None:
 
     # Build smart label from file content (class names, endpoints, context)
     path = file_path.replace("\\", "/")
-    stem = path.rsplit("/", 1)[-1].rsplit(".", 1)[0] if "/" in path else path.rsplit(".", 1)[0]
+    stem = (
+        path.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+        if "/" in path
+        else path.rsplit(".", 1)[0]
+    )
     label = _build_smart_label(stem, file_path, classes, fns, endpoints)
 
     node_type, layer = _classify_node(stem, file_path, classes, endpoints)
@@ -314,7 +338,8 @@ def parse_python(file_path: str, source: str) -> dict | None:
         "language": "Python",
         "framework": framework,
         "imports": imports,
-        "exports": [c["name"] for c in classes] + [f["name"] for f in fns if not f["name"].startswith("_")],
+        "exports": [c["name"] for c in classes]
+        + [f["name"] for f in fns if not f["name"].startswith("_")],
         "endpoints": endpoints,
         "classes": classes,
         "functions": fns,

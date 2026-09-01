@@ -51,7 +51,9 @@ def _build_summary_audit_context(session: dict) -> tuple[str, dict]:
     security = session.get("security_findings", [])
     sec_crit, sec_high = _count_by_severity(security)
     crit_names = ", ".join(
-        f.get("rule") or f.get("check") or "unknown" for f in security if f.get("severity") == "critical"
+        f.get("rule") or f.get("check") or "unknown"
+        for f in security
+        if f.get("severity") == "critical"
     )[:200]
 
     git_audit = session.get("git_audit") or {}
@@ -63,11 +65,19 @@ def _build_summary_audit_context(session: dict) -> tuple[str, dict]:
     solidity = session.get("solidity_audit") or {}
     sol_findings = solidity.get("findings") or []
     sol_crit, sol_high = _count_by_severity(sol_findings)
-    sol_names = ", ".join(f.get("title") or "unknown" for f in sol_findings if f.get("severity") == "critical")[:200]
+    sol_names = ", ".join(
+        f.get("title") or "unknown"
+        for f in sol_findings
+        if f.get("severity") == "critical"
+    )[:200]
 
     code_findings = _flatten_code_audit_findings(session.get("code_audit"))
     code_crit, code_high = _count_by_severity(code_findings)
-    code_names = ", ".join(f.get("title") or "unknown" for f in code_findings if f.get("severity") == "critical")[:200]
+    code_names = ", ".join(
+        f.get("title") or "unknown"
+        for f in code_findings
+        if f.get("severity") == "critical"
+    )[:200]
 
     health = session.get("health") or {}
     health_line = ""
@@ -140,7 +150,8 @@ async def summary_endpoint(req: SummaryRequest, request: Request):
     )
 
     context = (
-        "\n\n".join(f"--- {c['filepath']} ---\n{c['content'][:350]}" for c in chunks) or "No code context available."
+        "\n\n".join(f"--- {c['filepath']} ---\n{c['content'][:350]}" for c in chunks)
+        or "No code context available."
     )
 
     audit_context, stats = _build_summary_audit_context(session)
@@ -163,8 +174,12 @@ async def summary_endpoint(req: SummaryRequest, request: Request):
     try:
         summary = await asyncio.to_thread(_gen)
     except Exception as exc:
-        logger.error("Summary LLM call failed", session=req.session_id, error=str(exc)[:200])
-        return error_response("Summary generation failed — LLM service unavailable", 502)
+        logger.error(
+            "Summary LLM call failed", session=req.session_id, error=str(exc)[:200]
+        )
+        return error_response(
+            "Summary generation failed — LLM service unavailable", 502
+        )
 
     # Strip <think>...</think> thinking tags that some LLMs emit
     import re
@@ -190,7 +205,9 @@ async def get_previous_analysis(repo_url: str, exclude_session: str | None = Non
             return await rate_limit_response("analysis_previous", client_ip)
 
     if not is_valid_gh_url(repo_url.strip()):
-        return error_response("Invalid GitHub repo URL — must be https://github.com/{owner}/{repo}", 400)
+        return error_response(
+            "Invalid GitHub repo URL — must be https://github.com/{owner}/{repo}", 400
+        )
 
     snap = await get_previous_analysis_db(repo_url, exclude_session)
     if snap is None:
@@ -209,7 +226,9 @@ async def get_analysis_history(repo_url: str, days: int = 0, request: Request = 
         return await rate_limit_response("analysis_history", client_ip)
 
     if not is_valid_gh_url(repo_url.strip()):
-        return error_response("Invalid GitHub repo URL — must be https://github.com/{owner}/{repo}", 400)
+        return error_response(
+            "Invalid GitHub repo URL — must be https://github.com/{owner}/{repo}", 400
+        )
 
     if days < 0:
         return error_response("days parameter must be non-negative", 400)

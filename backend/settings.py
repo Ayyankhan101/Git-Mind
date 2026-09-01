@@ -43,7 +43,11 @@ def get_llm(
     temperature:
         Override temperature (ignores temperature_key).
     """
-    temp = temperature if temperature is not None else TEMPERATURES.get(temperature_key, 0.1)
+    temp = (
+        temperature
+        if temperature is not None
+        else TEMPERATURES.get(temperature_key, 0.1)
+    )
     llm = ChatGroq(model=LLM_MODEL, temperature=temp)
     if json_mode:
         llm = llm.bind(response_format={"type": "json_object"})  # type: ignore[assignment]
@@ -64,5 +68,9 @@ def get_dspy_lm(
     """
     from dspy_setup import dspy
 
-    temp = temperature if temperature is not None else TEMPERATURES.get(temperature_key, 0.1)
+    temp = (
+        temperature
+        if temperature is not None
+        else TEMPERATURES.get(temperature_key, 0.1)
+    )
     return dspy.LM(model=f"groq/{LLM_MODEL}", temperature=temp, cache=False)

@@ -20,7 +20,9 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     with op.batch_alter_table("monitored_repos", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("email_recipients", sa.String(length=500), nullable=True))
+        batch_op.add_column(
+            sa.Column("email_recipients", sa.String(length=500), nullable=True)
+        )
 
 
 def downgrade() -> None:

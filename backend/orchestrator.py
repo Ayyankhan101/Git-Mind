@@ -97,9 +97,15 @@ def run_agent_node(
     from agent_types import validate_agent_output
 
     if state.get("_scanner_failed"):
-        return {**(default or {}), "events": [_event(name, "skipped", "scanner failed")]}
+        return {
+            **(default or {}),
+            "events": [_event(name, "skipped", "scanner failed")],
+        }
     if _is_circuit_open():
-        return {**(default or {}), "events": [_event(name, "skipped", "circuit breaker open")]}
+        return {
+            **(default or {}),
+            "events": [_event(name, "skipped", "circuit breaker open")],
+        }
     try:
         result = fn(state)
         validate_agent_output(name, result)
@@ -109,7 +115,10 @@ def run_agent_node(
         _record_circuit_failure()
         logger.error("%s_node failed: %s", name, exc)
         if fallback:
-            return {**fallback(state, exc), "events": [_event(name, "error", str(exc)[:500])]}
+            return {
+                **fallback(state, exc),
+                "events": [_event(name, "error", str(exc)[:500])],
+            }
         return {**(default or {}), "events": [_event(name, "error", str(exc)[:500])]}
 
 
@@ -154,7 +163,9 @@ def _architecture_fn(state: RepoState) -> dict:
 
 
 def architecture_node(state: RepoState) -> dict:
-    return run_agent_node("architecture", _architecture_fn, state, fallback=_architecture_fallback)
+    return run_agent_node(
+        "architecture", _architecture_fn, state, fallback=_architecture_fallback
+    )
 
 
 def api_doc_node(state: RepoState) -> dict:
@@ -179,7 +190,11 @@ def security_node(state: RepoState) -> dict:
 def rag_setup_node(state: RepoState) -> dict:
     return run_agent_node(
         "chat",
-        lambda s: {"chroma_collection_name": run_rag_setup(s["file_contents"], s["repo_name"], s["repo_url"])},
+        lambda s: {
+            "chroma_collection_name": run_rag_setup(
+                s["file_contents"], s["repo_name"], s["repo_url"]
+            )
+        },
         state,
         default={"chroma_collection_name": None},
     )
@@ -215,7 +230,11 @@ def code_audit_node(state: RepoState) -> dict:
 def git_audit_node(state: RepoState) -> dict:
     return run_agent_node(
         "git_audit",
-        lambda s: {"git_audit": run_git_audit(s["repo_url"], s["file_tree"], s["file_contents"], s.get("gh_token"))},
+        lambda s: {
+            "git_audit": run_git_audit(
+                s["repo_url"], s["file_tree"], s["file_contents"], s.get("gh_token")
+            )
+        },
         state,
         default={"git_audit": None},
     )

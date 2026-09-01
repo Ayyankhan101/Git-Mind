@@ -66,7 +66,9 @@ def _patient_call(fn, *args, max_attempts: int = 4, **kwargs):
             m = re.search(r"in (\d+)(?:m\s*)?(\d+)?\.?\d*s", msg)
             wait = (int(m.group(1)) * 60 + int(m.group(2) or 0)) if m else 60
             wait = min(max(wait, 30), 120)
-            print(f"   ⏳ rate-limited (attempt {attempt}/{max_attempts}) — waiting {wait}s")
+            print(
+                f"   ⏳ rate-limited (attempt {attempt}/{max_attempts}) — waiting {wait}s"
+            )
             time.sleep(min(wait, _budget_left() - 10))
 
 
@@ -90,13 +92,20 @@ def verify_solidity():
                     {
                         "name": "transfer",
                         "visibility": "public",
-                        "parameters": [{"name": "to", "type": "address"}, {"name": "amount", "type": "uint256"}],
+                        "parameters": [
+                            {"name": "to", "type": "address"},
+                            {"name": "amount", "type": "uint256"},
+                        ],
                         "body": "balances[msg.sender] -= amount; balances[to] += amount;",
                         "modifiers": [],
                     }
                 ],
-                "state_variables": [{"name": "balances", "type": "mapping(address => uint256)"}],
-                "modifiers": [{"name": "onlyOwner", "body": "require(msg.sender == owner)"}],
+                "state_variables": [
+                    {"name": "balances", "type": "mapping(address => uint256)"}
+                ],
+                "modifiers": [
+                    {"name": "onlyOwner", "body": "require(msg.sender == owner)"}
+                ],
                 "events": [{"name": "Transfer", "parameters": []}],
             }
         ]
@@ -108,11 +117,23 @@ def verify_solidity():
     findings = _patient_call(_run)
     assert isinstance(findings, list)
     for f in findings:
-        for k in ("id", "contract", "function", "severity", "title", "description", "remediation"):
-            assert isinstance(f.get(k), str) and f[k], f"solidity finding missing {k}: {f}"
+        for k in (
+            "id",
+            "contract",
+            "function",
+            "severity",
+            "title",
+            "description",
+            "remediation",
+        ):
+            assert (
+                isinstance(f.get(k), str) and f[k]
+            ), f"solidity finding missing {k}: {f}"
         assert f.get("swc") is None or isinstance(f.get("swc"), str)
     if not findings:
-        record("solidity", "live_ok", "triage ran live, 0 issues found (typed empty list)")
+        record(
+            "solidity", "live_ok", "triage ran live, 0 issues found (typed empty list)"
+        )
     else:
         record(
             "solidity",
@@ -146,7 +167,9 @@ def verify_api_doc():
     assert isinstance(endpoints, list) and endpoints, "expected endpoints"
     for e in endpoints:
         assert isinstance(e.get("method"), str) and isinstance(e.get("route"), str)
-        assert isinstance(e.get("description"), str) and isinstance(e.get("parameters"), str)
+        assert isinstance(e.get("description"), str) and isinstance(
+            e.get("parameters"), str
+        )
         assert e.get("auth_required") in (True, False, None)
     routes = ", ".join(f"{e['method']} {e['route']}" for e in endpoints)
     record("api_doc", "live_ok", f"{len(endpoints)} typed endpoints: {routes}")
@@ -200,15 +223,23 @@ def verify_pr_review():
     review = result["review"]
     assert review.startswith("## Summary") and "## Verdict" in review
     # The frontend's parseReview regex must be able to parse the issues
-    issue_re = re.compile(r"^(.+?):(\d+)\s*[—–-]+\s*\[([A-Z]+)\]\s*(.+?)\s*[—–-]+\s*(.+)$")
+    issue_re = re.compile(
+        r"^(.+?):(\d+)\s*[—–-]+\s*\[([A-Z]+)\]\s*(.+?)\s*[—–-]+\s*(.+)$"
+    )
     parsed = sum(1 for line in review.splitlines() if issue_re.match(line.strip()))
     verdict = (
-        "APPROVE" if "APPROVE" in review else "REQUEST CHANGES" if "REQUEST CHANGES" in review else "NEEDS DISCUSSION"
+        "APPROVE"
+        if "APPROVE" in review
+        else "REQUEST CHANGES" if "REQUEST CHANGES" in review else "NEEDS DISCUSSION"
     )
     if "could not be generated" in review:
         record("pr_review", "fallback", "rate-limited — degraded review returned")
     else:
-        record("pr_review", "live_ok", f"verdict={verdict}, {parsed} frontend-parseable issues")
+        record(
+            "pr_review",
+            "live_ok",
+            f"verdict={verdict}, {parsed} frontend-parseable issues",
+        )
 
 
 def verify_impact():
@@ -254,13 +285,19 @@ def verify_impact():
     pred = _patient_call(_run)
     for k in ("merge_risk", "recommendation", "one_liner", "narrative", "confidence"):
         assert isinstance(pred.get(k), str) and pred[k], f"impact missing {k}"
-    assert isinstance(pred["affected_areas"], list) and isinstance(pred["breaking_changes"], list)
+    assert isinstance(pred["affected_areas"], list) and isinstance(
+        pred["breaking_changes"], list
+    )
     # run_merge_prediction degrades to a fallback dict on failure — flag it so the
     # report distinguishes fresh LLM output from the (also typed) fallback.
     if pred.get("narrative", "").startswith("Impact prediction could not be generated"):
         record("impact", "fallback", "rate-limited — typed fallback dict returned")
     else:
-        record("impact", "live_ok", f"risk={pred['merge_risk']} confidence={pred['confidence']}")
+        record(
+            "impact",
+            "live_ok",
+            f"risk={pred['merge_risk']} confidence={pred['confidence']}",
+        )
 
 
 async def verify_graph():
@@ -296,8 +333,17 @@ async def verify_graph():
             assert e.get("auth_required") in (True, False, None)
         sec = final.get("security_findings") or []
         for f in sec:
-            assert isinstance(f["line_start"], int), f"line_start: {f.get('line_start')!r}"
-            for k in ("id", "file", "severity", "title", "exploit_story", "remediation"):
+            assert isinstance(
+                f["line_start"], int
+            ), f"line_start: {f.get('line_start')!r}"
+            for k in (
+                "id",
+                "file",
+                "severity",
+                "title",
+                "exploit_story",
+                "remediation",
+            ):
                 assert isinstance(f.get(k), str) and f[k], f"finding missing {k}: {f}"
         ca = final.get("code_audit")
         for r in ca or []:
@@ -324,9 +370,17 @@ async def verify_graph():
                 f"{len(sec)} security findings, code_audit langs={langs}, health={health['grade']}{health['score']})",
             )
         else:
-            record("architecture", "fallback", "graph ran but LLM calls were rate-limited (fallback diagram)")
+            record(
+                "architecture",
+                "fallback",
+                "graph ran but LLM calls were rate-limited (fallback diagram)",
+            )
         if not live_sec:
-            record("security", "fallback", "rate-limited — no/demo findings (semgrep triage)")
+            record(
+                "security",
+                "fallback",
+                "rate-limited — no/demo findings (semgrep triage)",
+            )
     finally:
         lp = final.get("local_path")
         if lp:
@@ -344,7 +398,11 @@ async def main() -> None:
         try:
             fn()
         except Exception as exc:
-            record(fn.__name__.removeprefix("verify_"), "fallback", f"{type(exc).__name__}: {str(exc)[:120]}")
+            record(
+                fn.__name__.removeprefix("verify_"),
+                "fallback",
+                f"{type(exc).__name__}: {str(exc)[:120]}",
+            )
 
     if _budget_left() > 180:
         try:
@@ -360,12 +418,16 @@ async def main() -> None:
         try:
             await verify_graph()
         except Exception as exc:
-            record("architecture", "fallback", f"{type(exc).__name__}: {str(exc)[:120]}")
+            record(
+                "architecture", "fallback", f"{type(exc).__name__}: {str(exc)[:120]}"
+            )
 
     print("\n=== SUMMARY ===")
     print(json.dumps(results, indent=2))
     live = [r["agent"] for r in results if r["status"] == "live_ok"]
-    print(f"\nLive-typed confirmed: {len(live)}/{len(results)} — {', '.join(live) or 'none'}")
+    print(
+        f"\nLive-typed confirmed: {len(live)}/{len(results)} — {', '.join(live) or 'none'}"
+    )
 
 
 def verify_optimize(agent: str, min_gold: int | None = None) -> None:
@@ -396,14 +458,24 @@ def verify_optimize(agent: str, min_gold: int | None = None) -> None:
         record("optimize", "error", f"no gold valset for {agent}")
         return
     if not trainset:
-        record("optimize", "error", f"no telemetry trainset for {agent} (run the live agents first)")
+        record(
+            "optimize",
+            "error",
+            f"no telemetry trainset for {agent} (run the live agents first)",
+        )
         return
     if min_gold is not None:
         if len(valset) < min_gold:
-            record("optimize", "error", f"gold valset too small ({len(valset)} < {min_gold}) — refusing to gate on it")
+            record(
+                "optimize",
+                "error",
+                f"gold valset too small ({len(valset)} < {min_gold}) — refusing to gate on it",
+            )
             return
         valset = valset[:min_gold]
-        print(f"   ℹ {agent}: gating on a {min_gold}-example gold valset (window-saving)")
+        print(
+            f"   ℹ {agent}: gating on a {min_gold}-example gold valset (window-saving)"
+        )
     try:
         out = opt_run.compile_agent(
             agent,
@@ -426,7 +498,9 @@ def verify_optimize(agent: str, min_gold: int | None = None) -> None:
         # deterministic and spends no window.
         prog = opt_registry.load_program(agent)
         assert isinstance(prog, dspy.Module), "promoted program is not a dspy module"
-        assert getattr(prog, "_opt_version", ""), "promoted program lost its cache-key version stamp"
+        assert getattr(
+            prog, "_opt_version", ""
+        ), "promoted program lost its cache-key version stamp"
         from dspy import BaseLM as _BaseLM
 
         from llm_cache import run_dspy_cached as _run_cached
@@ -439,7 +513,9 @@ def verify_optimize(agent: str, min_gold: int | None = None) -> None:
 
         class _FakeLM(_BaseLM):
             def __init__(self):
-                super().__init__(model="fake/promoted-check", model_type="chat", temperature=0.0)
+                super().__init__(
+                    model="fake/promoted-check", model_type="chat", temperature=0.0
+                )
 
             def __call__(self, *_args, **_kwargs):
                 return [known_good]
@@ -450,17 +526,29 @@ def verify_optimize(agent: str, min_gold: int | None = None) -> None:
             patch("llm_cache._record_harvest"),
         ):
             payload = _run_cached(
-                prog, f"optimize-e2e:{agent}", lm=_FakeLM(), output_field=field, **dict(telemetry.inputs())
+                prog,
+                f"optimize-e2e:{agent}",
+                lm=_FakeLM(),
+                output_field=field,
+                **dict(telemetry.inputs()),
             )
-        assert _validate_output(agent, payload), f"promoted {agent} output failed the typed contract"
-        record("optimize", "live_ok", f"{agent} promoted -> {out} (typed output verified)")
+        assert _validate_output(
+            agent, payload
+        ), f"promoted {agent} output failed the typed contract"
+        record(
+            "optimize", "live_ok", f"{agent} promoted -> {out} (typed output verified)"
+        )
 
 
 if __name__ == "__main__":
     import argparse
 
     ap = argparse.ArgumentParser(description="Live DSPy E2E + opt-in MIPROv2 compile")
-    ap.add_argument("--optimize", metavar="AGENT", help="live MIPROv2 compile for one agent (off-peak only)")
+    ap.add_argument(
+        "--optimize",
+        metavar="AGENT",
+        help="live MIPROv2 compile for one agent (off-peak only)",
+    )
     ap.add_argument(
         "--min-gold",
         type=int,

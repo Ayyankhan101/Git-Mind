@@ -37,11 +37,19 @@ async def init_db():
     )
     if proc.returncode != 0:
         if is_sqlite:
-            logger.warning("Alembic failed (rc=%d), falling back to create_all: %s", proc.returncode, proc.stderr[:300])
+            logger.warning(
+                "Alembic failed (rc=%d), falling back to create_all: %s",
+                proc.returncode,
+                proc.stderr[:300],
+            )
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
         else:
-            logger.error("Alembic migration failed (rc=%d): %s", proc.returncode, proc.stderr[:500])
+            logger.error(
+                "Alembic migration failed (rc=%d): %s",
+                proc.returncode,
+                proc.stderr[:500],
+            )
             raise RuntimeError(f"Alembic migration failed: {proc.stderr[:500]}")
     if proc.stderr:
         logger.warning("Alembic stderr: %s", proc.stderr[:500])
@@ -96,12 +104,16 @@ async def delete_expired_analyses(cutoff: float) -> int:
     from models.db import Analysis, ShaIndex
 
     async with async_session_factory() as session:
-        result = await session.execute(delete(Analysis).where(Analysis.saved_at < cutoff))
+        result = await session.execute(
+            delete(Analysis).where(Analysis.saved_at < cutoff)
+        )
         removed = result.rowcount  # type: ignore[attr-defined]
         if removed:
             remaining = await session.execute(select(Analysis.id))
             remaining_ids = {row[0] for row in remaining.fetchall()}
-            await session.execute(delete(ShaIndex).where(ShaIndex.session_id.notin_(remaining_ids)))
+            await session.execute(
+                delete(ShaIndex).where(ShaIndex.session_id.notin_(remaining_ids))
+            )
         await session.commit()
         return removed or 0
 
@@ -116,7 +128,9 @@ async def get_sha_index_entry(sha: str) -> str | None:
         return row.session_id
 
 
-async def get_previous_analysis_db(repo_url: str, exclude_session: str | None = None) -> dict | None:
+async def get_previous_analysis_db(
+    repo_url: str, exclude_session: str | None = None
+) -> dict | None:
     from sqlalchemy import desc
 
     from models.db import Analysis
@@ -141,13 +155,17 @@ async def get_previous_analysis_db(repo_url: str, exclude_session: str | None = 
         }
 
 
-async def get_analysis_history_db(repo_url: str, since: float | None = None, limit: int = 50) -> list[dict]:
+async def get_analysis_history_db(
+    repo_url: str, since: float | None = None, limit: int = 50
+) -> list[dict]:
     from sqlalchemy import desc
 
     from models.db import Analysis
 
     async with async_session_factory() as session:
-        query = select(Analysis).where(Analysis.repo_url == repo_url, Analysis.health.isnot(None))
+        query = select(Analysis).where(
+            Analysis.repo_url == repo_url, Analysis.health.isnot(None)
+        )
         if since:
             query = query.where(Analysis.saved_at >= since)
         query = query.order_by(desc(Analysis.saved_at)).limit(limit)
@@ -181,5 +199,7 @@ async def delete_sha_entries_for_sessions(removed_ids: set[str]) -> None:
     from models.db import ShaIndex
 
     async with async_session_factory() as session:
-        await session.execute(delete(ShaIndex).where(ShaIndex.session_id.in_(removed_ids)))
+        await session.execute(
+            delete(ShaIndex).where(ShaIndex.session_id.in_(removed_ids))
+        )
         await session.commit()

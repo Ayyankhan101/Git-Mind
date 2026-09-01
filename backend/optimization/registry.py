@@ -49,7 +49,9 @@ class ProgramSpec:
     factory: Callable[[], object]  # returns a fresh, unoptimized student
     output_field: str  # the signature's output field (e.g. "findings")
     input_fields: tuple[str, ...]  # the signature's input fields
-    output_model: type | None = None  # Pydantic model; None ⇒ plain-str output (architecture)
+    output_model: type | None = (
+        None  # Pydantic model; None ⇒ plain-str output (architecture)
+    )
     output_list: bool = False  # True when the output field is a list of models
 
 
@@ -72,7 +74,11 @@ def define_program(
     closes over the *signature class*, so each ``build_program`` call returns a
     pristine student — MIPROv2 compile may mutate or replace it.
     """
-    factory = (lambda s=signature: dspy.ChainOfThought(s)) if cot else (lambda s=signature: dspy.Predict(s))
+    factory = (
+        (lambda s=signature: dspy.ChainOfThought(s))
+        if cot
+        else (lambda s=signature: dspy.Predict(s))
+    )
     register(
         name,
         factory=factory,
@@ -120,7 +126,9 @@ def get_spec(name: str) -> ProgramSpec:
     try:
         return _REGISTRY[name]
     except KeyError:
-        raise KeyError(f"no program registered for {name!r} — is the agent module imported?") from None
+        raise KeyError(
+            f"no program registered for {name!r} — is the agent module imported?"
+        ) from None
 
 
 def agent_names() -> list[str]:
@@ -143,7 +151,11 @@ def load_program(name: str) -> object:
             logger.info("loaded promoted program %s from %s", name, artifact.name)
             return program
         except Exception as exc:
-            logger.warning("promoted program %s unloadable (%s) — falling back to student", name, exc)
+            logger.warning(
+                "promoted program %s unloadable (%s) — falling back to student",
+                name,
+                exc,
+            )
     program = build_program(name)
     setattr(program, AGENT_ATTR, name)
     return program

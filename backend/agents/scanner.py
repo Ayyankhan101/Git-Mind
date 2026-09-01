@@ -68,7 +68,9 @@ _MAX_FILE_BYTES = 100 * 1024  # 100 KB — skips minified / generated files
 _MAX_FILES = 150
 
 
-def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None = None) -> dict:
+def clone_and_scan(
+    repo_url: str, token: str | None = None, branch: str | None = None
+) -> dict:
     """
     Shallow-clone a GitHub repo and return the file inventory.
     Pass `token` (PAT) to clone private repos via x-access-token auth.
@@ -85,7 +87,9 @@ def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None =
     _askpass_script = None
     _env = {"GIT_TERMINAL_PROMPT": "0"}
     if token:
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False) as _askpass_script:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".sh", delete=False
+        ) as _askpass_script:
             _askpass_script.write(f'#!/bin/sh\necho "{token}"\n')
             _askpass_name = _askpass_script.name
         os.chmod(_askpass_name, stat.S_IRUSR | stat.S_IXUSR)
@@ -94,7 +98,13 @@ def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None =
 
     dest = tempfile.mkdtemp(prefix="gitmind_")
     _active_temp_dirs[dest] = time.time()
-    logger.info("Cloning %s → %s (auth=%s, branch=%s)", repo_url, dest, bool(token), branch or "default")
+    logger.info(
+        "Cloning %s → %s (auth=%s, branch=%s)",
+        repo_url,
+        dest,
+        bool(token),
+        branch or "default",
+    )
 
     head_sha = None
     clone_kwargs: dict = {"depth": 1}
@@ -153,7 +163,9 @@ def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None =
         if cap_reached:
             break
         # Prune irrelevant directories in-place (modifies dirs to control os.walk)
-        dirs[:] = sorted(d for d in dirs if d not in _SKIP_DIRS and not d.startswith("."))
+        dirs[:] = sorted(
+            d for d in dirs if d not in _SKIP_DIRS and not d.startswith(".")
+        )
 
         for filename in sorted(files):
             if len(file_tree) >= _MAX_FILES:
@@ -178,7 +190,9 @@ def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None =
                     logger.warning("50 MB cap reached — stopping file reads")
                     break
                 file_contents[rel] = filepath.read_text(errors="ignore")
-                file_tree.append(rel)  # only after successful read — keeps tree and contents in sync
+                file_tree.append(
+                    rel
+                )  # only after successful read — keeps tree and contents in sync
             except OSError:
                 pass  # unreadable file — skip silently
 
@@ -199,7 +213,9 @@ def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None =
     }
 
 
-_GITHUB_URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+/?$")
+_GITHUB_URL_RE = re.compile(
+    r"^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+/?$"
+)
 
 # Deterministic clone failures — raising immediately instead of retrying.
 # Covers: repo missing, auth errors, HTTP 4xx (except 408 timeout / 429 rate
@@ -232,7 +248,9 @@ def _is_transient_clone_failure(exc: git.exc.GitCommandError) -> bool:
 
 def _validate_url(repo_url: str) -> None:
     if not _GITHUB_URL_RE.match(repo_url):
-        raise ValueError(f"Only public GitHub URLs are supported (https://github.com/owner/repo). Got: {repo_url!r}")
+        raise ValueError(
+            f"Only public GitHub URLs are supported (https://github.com/owner/repo). Got: {repo_url!r}"
+        )
 
 
 def _clone_failure_message(repo_url: str, exc: git.exc.GitCommandError) -> str:

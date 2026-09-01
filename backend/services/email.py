@@ -88,5 +88,7 @@ async def send_alert_email(
         logger.info("Email alert sent", recipients=recipients, repo=repo_name)
         return True
     except Exception as exc:
-        logger.warning("Email alert failed", recipients=recipients, error=str(exc)[:200])
+        logger.warning(
+            "Email alert failed", recipients=recipients, error=str(exc)[:200]
+        )
         return False

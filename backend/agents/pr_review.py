@@ -51,7 +51,9 @@ class PRReviewSignature(dspy.Signature):
     - issue severity: CRITICAL (security/data-loss), HIGH (bug/crash), MEDIUM (logic/perf), LOW (style/naming).
     - issues: empty list when there are no significant issues."""
 
-    pr_context: str = dspy.InputField(desc="Repository, PR metadata, and the diff to review")
+    pr_context: str = dspy.InputField(
+        desc="Repository, PR metadata, and the diff to review"
+    )
     review: PRReviewOutput = dspy.OutputField(desc="Structured PR review")
 
 
@@ -68,7 +70,9 @@ _predictor = define_program(
 def _parse_pr_url(pr_url: str) -> tuple[str, str, str]:
     m = re.match(r"https?://github\.com/([^/]+)/([^/]+)/pull/(\d+)", pr_url.strip())
     if not m:
-        raise ValueError("Not a valid GitHub PR URL. Expected: https://github.com/owner/repo/pull/123")
+        raise ValueError(
+            "Not a valid GitHub PR URL. Expected: https://github.com/owner/repo/pull/123"
+        )
     return m.group(1), m.group(2), m.group(3)
 
 
@@ -87,9 +91,13 @@ def fetch_pr_data(pr_url: str, token: str | None = None) -> dict:
     with httpx.Client(timeout=15.0) as client:
         meta_resp = client.get(api_base, headers=headers)
         if meta_resp.status_code == 404:
-            raise ValueError(f"PR not found: {owner}/{repo}#{pr_num} — check the URL and repo visibility")
+            raise ValueError(
+                f"PR not found: {owner}/{repo}#{pr_num} — check the URL and repo visibility"
+            )
         if meta_resp.status_code == 403:
-            raise ValueError("GitHub rate limit hit — set GITHUB_TOKEN env var to raise limit")
+            raise ValueError(
+                "GitHub rate limit hit — set GITHUB_TOKEN env var to raise limit"
+            )
         meta_resp.raise_for_status()
         meta = meta_resp.json()
 
@@ -125,7 +133,11 @@ def run_pr_review(pr_url: str, token: str | None = None) -> dict:
         f"Author: {pr['author']}  →  merging into {pr['base_branch']}\n"
         f"Stats: +{pr['additions']} -{pr['deletions']} across {pr['changed_files']} file(s)\n"
         f"Description: {pr['body'] or 'None provided'}\n"
-        + ("\n⚠ Diff was truncated to first 14 000 chars.\n" if pr["diff_truncated"] else "")
+        + (
+            "\n⚠ Diff was truncated to first 14 000 chars.\n"
+            if pr["diff_truncated"]
+            else ""
+        )
         + f"\nDiff:\n{pr['diff']}"
     )
 
@@ -153,7 +165,9 @@ def run_pr_review(pr_url: str, token: str | None = None) -> dict:
         }
 
     review = _render_review(review_data)
-    logger.info("PR review complete for %s/%s#%s", pr["owner"], pr["repo"], pr["pr_num"])
+    logger.info(
+        "PR review complete for %s/%s#%s", pr["owner"], pr["repo"], pr["pr_num"]
+    )
 
     return {
         "pr_url": pr_url,

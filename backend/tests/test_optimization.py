@@ -153,7 +153,9 @@ def test_harvest_dedupes_same_inputs(tmp_path):
 
 def test_harvest_rejects_invalid_output(tmp_path):
     with patch("llm_cache._HARVEST_DIR", tmp_path / ".dspy_harvest"):
-        _record_harvest("security", "SecurityTriage", {"raw_findings": "[]"}, {"bad": 1})
+        _record_harvest(
+            "security", "SecurityTriage", {"raw_findings": "[]"}, {"bad": 1}
+        )
         exs = trainsets.harvest("security")
     assert exs == []
 
@@ -236,10 +238,22 @@ def test_run_dspy_cached_version_bump_changes_key():
         patch("llm_cache._record_harvest"),
     ):
         prog = registry.build_program("security")
-        run_dspy_cached(prog, "ns", lm=FakeLM('{"findings": []}'), output_field="findings", raw_findings="[]")
+        run_dspy_cached(
+            prog,
+            "ns",
+            lm=FakeLM('{"findings": []}'),
+            output_field="findings",
+            raw_findings="[]",
+        )
         prog2 = registry.build_program("security")
         prog2._opt_version = "v2"
-        run_dspy_cached(prog2, "ns", lm=FakeLM('{"findings": []}'), output_field="findings", raw_findings="[]")
+        run_dspy_cached(
+            prog2,
+            "ns",
+            lm=FakeLM('{"findings": []}'),
+            output_field="findings",
+            raw_findings="[]",
+        )
     assert len(seen) == 2
     assert seen[0] != seen[1]
 
@@ -249,7 +263,9 @@ def test_run_dspy_cached_version_bump_changes_key():
 
 def test_estimate_scales_with_trainset():
     assert budget.estimate_compile_tokens(100) > budget.estimate_compile_tokens(10)
-    assert budget.estimate_compile_tokens(10, auto="heavy") > budget.estimate_compile_tokens(10, auto="light")
+    assert budget.estimate_compile_tokens(
+        10, auto="heavy"
+    ) > budget.estimate_compile_tokens(10, auto="light")
 
 
 def test_guard_aborts_over_budget():
@@ -277,9 +293,13 @@ def test_cli_demos_zero_disables_demos():
         patch("optimization.run._register_agents"),
         patch(
             "optimization.run.harvest",
-            return_value=[dspy.Example(raw_findings="[]", findings=[]).with_inputs("raw_findings")],
+            return_value=[
+                dspy.Example(raw_findings="[]", findings=[]).with_inputs("raw_findings")
+            ],
         ),
-        patch("optimization.run.load_gold", return_value=trainsets.load_gold("security")),
+        patch(
+            "optimization.run.load_gold", return_value=trainsets.load_gold("security")
+        ),
         patch("optimization.run.compile_agent", side_effect=fake_compile_agent),
     ):
         run.main(["--agent", "security", "--demos", "0", "--auto", "none"])
@@ -298,13 +318,19 @@ def test_cli_demos_unset_uses_default():
         patch("optimization.run._register_agents"),
         patch(
             "optimization.run.harvest",
-            return_value=[dspy.Example(raw_findings="[]", findings=[]).with_inputs("raw_findings")],
+            return_value=[
+                dspy.Example(raw_findings="[]", findings=[]).with_inputs("raw_findings")
+            ],
         ),
-        patch("optimization.run.load_gold", return_value=trainsets.load_gold("security")),
+        patch(
+            "optimization.run.load_gold", return_value=trainsets.load_gold("security")
+        ),
         patch("optimization.run.compile_agent", side_effect=fake_compile_agent),
     ):
         run.main(["--agent", "security"])  # no --demos
-    assert seen["kwargs"]["max_bootstrapped_demos"] == run.DEFAULT_MAX_BOOTSTRAPPED_DEMOS
+    assert (
+        seen["kwargs"]["max_bootstrapped_demos"] == run.DEFAULT_MAX_BOOTSTRAPPED_DEMOS
+    )
 
 
 def test_cli_rollback_restores_previous_artifact(tmp_path):
@@ -356,7 +382,9 @@ def test_promoted_program_passes_typed_contract(tmp_path):
         prog = registry.load_program("security")
 
         assert isinstance(prog, dspy.Module)
-        assert getattr(prog, "_opt_version", ""), "promoted program lost its cache-key version stamp"
+        assert getattr(
+            prog, "_opt_version", ""
+        ), "promoted program lost its cache-key version stamp"
 
         gold = trainsets.load_gold("security")[0]
         field = registry.get_spec("security").output_field
@@ -376,9 +404,15 @@ def test_promoted_program_passes_typed_contract(tmp_path):
             patch("llm_cache._record_harvest"),
         ):
             payload = run_dspy_cached(
-                prog, "optimize-e2e:security", lm=FakePromoLM(), output_field=field, **dict(gold.inputs())
+                prog,
+                "optimize-e2e:security",
+                lm=FakePromoLM(),
+                output_field=field,
+                **dict(gold.inputs()),
             )
-        assert metrics.validate_output("security", payload), "promoted output failed the typed contract"
+        assert metrics.validate_output(
+            "security", payload
+        ), "promoted output failed the typed contract"
 
 
 def test_verify_optimize_min_gold_caps_valset(tmp_path):
@@ -459,7 +493,11 @@ def test_compile_agent_rejects_below_baseline(tmp_path):
             patch("optimization.run.dspy.Evaluate", lambda **_: evaluator),
             patch("optimization.run.dspy.MIPROv2", FakeMIPROv2),
         ):
-            out = run.compile_agent("security", trainset=_security_trainset(), valset=trainsets.load_gold("security"))
+            out = run.compile_agent(
+                "security",
+                trainset=_security_trainset(),
+                valset=trainsets.load_gold("security"),
+            )
     assert out is None
     assert not (opt / "active.json").exists()  # active program untouched
 
@@ -475,7 +513,11 @@ def test_compile_agent_promotes_above_baseline(tmp_path):
             patch("optimization.run.dspy.Evaluate", lambda **_: evaluator),
             patch("optimization.run.dspy.MIPROv2", FakeMIPROv2),
         ):
-            out = run.compile_agent("security", trainset=_security_trainset(), valset=trainsets.load_gold("security"))
+            out = run.compile_agent(
+                "security",
+                trainset=_security_trainset(),
+                valset=trainsets.load_gold("security"),
+            )
         assert out is not None and out.is_dir()
         assert (out / "program.pkl").exists()
         active = json.loads((opt / "active.json").read_text())

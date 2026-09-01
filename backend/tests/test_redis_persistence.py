@@ -83,7 +83,9 @@ async def test_session_round_trips_through_redis(fake_redis):
 
 @pytest.mark.asyncio
 async def test_put_session_strips_gh_token(fake_redis):
-    await session_svc.put_session("sess-2", {"repo_name": "x", "gh_token": "ghp_secret"})
+    await session_svc.put_session(
+        "sess-2", {"repo_name": "x", "gh_token": "ghp_secret"}
+    )
 
     loaded = await session_svc.get_session("sess-2")
     assert "gh_token" not in loaded
@@ -99,7 +101,9 @@ async def test_submit_enqueues_task(fake_redis):
     The dropped lpush() made submit() return a valid-looking id for a job that
     would never run, and POST /analyze reported success for nothing.
     """
-    task_id = await task_queue.submit("run_analysis", {"repo_url": "https://github.com/octocat/Hello-World"})
+    task_id = await task_queue.submit(
+        "run_analysis", {"repo_url": "https://github.com/octocat/Hello-World"}
+    )
 
     assert task_id
     queued = fake_redis.lists.get("queue:tasks") or []
@@ -108,7 +112,9 @@ async def test_submit_enqueues_task(fake_redis):
 
 @pytest.mark.asyncio
 async def test_submitted_task_is_retrievable(fake_redis):
-    task_id = await task_queue.submit("run_analysis", {"repo_url": "https://github.com/octocat/Hello-World"})
+    task_id = await task_queue.submit(
+        "run_analysis", {"repo_url": "https://github.com/octocat/Hello-World"}
+    )
 
     task = await task_queue.get_task(task_id)
     assert task is not None, "task state was never persisted"
@@ -132,5 +138,12 @@ async def test_redis_write_paths_are_awaitable(fake_redis):
     Guards the actual defect class: a plain `def` calling the async client
     creates a coroutine that is discarded, so the write silently no-ops.
     """
-    for fn in (session_svc.put_session, task_queue.submit, task_queue.get_task, task_queue._persist_task):
-        assert asyncio.iscoroutinefunction(fn), f"{fn.__name__} must be async to await the Redis client"
+    for fn in (
+        session_svc.put_session,
+        task_queue.submit,
+        task_queue.get_task,
+        task_queue._persist_task,
+    ):
+        assert asyncio.iscoroutinefunction(
+            fn
+        ), f"{fn.__name__} must be async to await the Redis client"

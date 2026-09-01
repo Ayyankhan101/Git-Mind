@@ -45,7 +45,8 @@ class SolidityTriage(dspy.Signature):
     Analyze the contracts below for: re-entrancy vulnerabilities, unchecked external calls,
     integer overflow / underflow, access control issues (tx.origin, missing onlyOwner),
     uninitialized storage pointers, front-running / race conditions, gas griefing, and
-    logic errors in function visibility. If no issues are found, return an empty list."""
+    logic errors in function visibility. If no issues are found, return an empty list.
+    """
 
     contracts_json: str = dspy.InputField(
         desc="Structured AST dump: contracts, functions, state variables, modifiers, events"
@@ -154,7 +155,9 @@ def solidity_agent(state: dict) -> dict:
                 if not source:
                     continue
                 try:
-                    resp = client.post(f"{_SIDECAR_BASE}/parse", json={"source": source})
+                    resp = client.post(
+                        f"{_SIDECAR_BASE}/parse", json={"source": source}
+                    )
                     if resp.status_code == 200:
                         parsed_contracts.extend(resp.json().get("contracts", []))
                         sidecar_ok = True

@@ -69,7 +69,9 @@ def _record_to_example(spec, rec: dict) -> object | None:
         return None
     if not validate_output(spec.name, output):
         return None
-    return dspy.Example(**inputs, **{spec.output_field: output}).with_inputs(*spec.input_fields)
+    return dspy.Example(**inputs, **{spec.output_field: output}).with_inputs(
+        *spec.input_fields
+    )
 
 
 def load_gold(agent: str) -> list:
@@ -92,7 +94,12 @@ def load_gold(agent: str) -> list:
     for i, entry in enumerate(raw, 1):
         ex = _entry_to_example(spec, entry)
         if ex is None:
-            logger.warning("gold %s entry %d rejected — fails %s validation", agent, i, spec.output_field)
+            logger.warning(
+                "gold %s entry %d rejected — fails %s validation",
+                agent,
+                i,
+                spec.output_field,
+            )
             continue
         examples.append(ex)
     return examples

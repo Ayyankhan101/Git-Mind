@@ -49,7 +49,9 @@ class TestPublicFields:
     def test_public_fields_excludes_internal(self):
         """PUBLIC_FIELDS does not contain internal fields."""
         for field in _INTERNAL_FIELDS:
-            assert field not in PUBLIC_FIELDS, f"Internal field {field} in PUBLIC_FIELDS"
+            assert (
+                field not in PUBLIC_FIELDS
+            ), f"Internal field {field} in PUBLIC_FIELDS"
 
     def test_public_fields_includes_key_fields(self):
         """PUBLIC_FIELDS includes important public fields from RepoState."""

@@ -23,7 +23,11 @@ def setup_logging() -> None:
         structlog.processors.StackInfoRenderer(),
     ]
 
-    renderer = structlog.processors.JSONRenderer() if use_json else structlog.dev.ConsoleRenderer()
+    renderer = (
+        structlog.processors.JSONRenderer()
+        if use_json
+        else structlog.dev.ConsoleRenderer()
+    )
 
     structlog.configure(
         processors=[
@@ -86,13 +90,17 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         status = str(response.status_code)
 
         http_requests_total.labels(method=method, path=normalized, status=status).inc()
-        http_request_duration_seconds.labels(method=method, path=normalized).observe(duration)
+        http_request_duration_seconds.labels(method=method, path=normalized).observe(
+            duration
+        )
         return response
 
 
 import re as _re  # noqa: E402
 
-_UUID_RE = _re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", _re.IGNORECASE)
+_UUID_RE = _re.compile(
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", _re.IGNORECASE
+)
 _NUM_RE = _re.compile(r"\d{4,}")
 
 
@@ -108,7 +116,9 @@ def setup_metrics(app: FastAPI) -> None:
 
     @app.get("/metrics")
     async def metrics():
-        return PlainTextResponse(generate_latest(REGISTRY), media_type="text/plain; version=0.0.4")
+        return PlainTextResponse(
+            generate_latest(REGISTRY), media_type="text/plain; version=0.0.4"
+        )
 
 
 def setup_tracing(_app: FastAPI) -> None:
@@ -117,9 +127,13 @@ def setup_tracing(_app: FastAPI) -> None:
     provider = TracerProvider()
     if endpoint:
         try:
-            from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+            from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+                OTLPSpanExporter,
+            )
 
-            provider.add_span_processor(SimpleSpanProcessor(OTLPSpanExporter(endpoint=endpoint)))
+            provider.add_span_processor(
+                SimpleSpanProcessor(OTLPSpanExporter(endpoint=endpoint))
+            )
         except ImportError:
             provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
     else:

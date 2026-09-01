@@ -58,7 +58,9 @@ def _get_or_build(collection) -> _BM25Index | None:
 
         # Build SQLite FTS5 index in memory
         conn = sqlite3.connect(":memory:", check_same_thread=False)
-        conn.execute("CREATE VIRTUAL TABLE IF NOT EXISTS docs USING fts5(id, filepath, content)")
+        conn.execute(
+            "CREATE VIRTUAL TABLE IF NOT EXISTS docs USING fts5(id, filepath, content)"
+        )
 
         rows = []
         for i, (doc, meta) in enumerate(zip(docs, metas, strict=False)):
@@ -66,7 +68,9 @@ def _get_or_build(collection) -> _BM25Index | None:
             # FTS5 tokenises content automatically; we also store filepath for retrieval
             rows.append((str(i), fp, doc))
 
-        conn.executemany("INSERT INTO docs(id, filepath, content) VALUES (?, ?, ?)", rows)
+        conn.executemany(
+            "INSERT INTO docs(id, filepath, content) VALUES (?, ?, ?)", rows
+        )
         conn.commit()
 
         index = _BM25Index(conn, docs, metas)

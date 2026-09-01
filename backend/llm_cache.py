@@ -83,7 +83,9 @@ except OSError:
 
     _CACHE_DIR = Path(tempfile.gettempdir()) / "gitmind_llm_cache"
     _CACHE_DIR.mkdir(exist_ok=True)
-    logger.warning("LLM cache falling back to %s (preferred dir not writable)", _CACHE_DIR)
+    logger.warning(
+        "LLM cache falling back to %s (preferred dir not writable)", _CACHE_DIR
+    )
 
 _cache = diskcache.Cache(str(_CACHE_DIR), size_limit=2_000_000_000)  # 2 GB max
 
@@ -194,11 +196,15 @@ def run_dspy_cached(program, cache_namespace: str, *, lm, output_field: str, **i
         result = program(**inputs)
 
     payload = _to_plain(getattr(result, output_field))
-    set_cached(cache_namespace, key, json.dumps(payload, default=str, ensure_ascii=False))
+    set_cached(
+        cache_namespace, key, json.dumps(payload, default=str, ensure_ascii=False)
+    )
     # Misses only — we want actual LLM outputs, not replays. The harvest log is
     # named by the program's agent (stamped by the registry) when available, else
     # by the cache namespace.
-    _record_harvest(getattr(program, "_agent", None) or cache_namespace, sig_name, inputs, payload)
+    _record_harvest(
+        getattr(program, "_agent", None) or cache_namespace, sig_name, inputs, payload
+    )
     return payload
 
 

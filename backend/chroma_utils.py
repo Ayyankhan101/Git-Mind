@@ -59,12 +59,16 @@ else:
     _TMP_BASE.mkdir(exist_ok=True)
     _CHROMA_PATH = _TMP_BASE
     _REGISTRY_PATH = _TMP_BASE / "registry.json"
-    logger.warning("ChromaDB falling back to %s (preferred dir not writable)", _CHROMA_PATH)
+    logger.warning(
+        "ChromaDB falling back to %s (preferred dir not writable)", _CHROMA_PATH
+    )
 
 _client = chromadb.PersistentClient(path=str(_CHROMA_PATH))
 
 _lock: threading.Lock = threading.Lock()
-_collections: dict[str, chromadb.Collection | None] = {}  # None = sentinel (in-progress)
+_collections: dict[str, chromadb.Collection | None] = (
+    {}
+)  # None = sentinel (in-progress)
 _embed_events: dict[str, threading.Event] = {}  # guards concurrent embeds
 
 
@@ -287,7 +291,9 @@ def search_codebase(
         event = _embed_events.get(collection_name) if collection is None else None
 
     if event is not None:
-        logger.debug("search_codebase: waiting for '%s' to finish embedding", collection_name)
+        logger.debug(
+            "search_codebase: waiting for '%s' to finish embedding", collection_name
+        )
         event.wait(timeout=30)
         with _lock:
             collection = _collections.get(collection_name)
@@ -378,11 +384,16 @@ def search_codebase(
     fused: dict[str, dict[str, Any]] = {}
     for candidate in vector_candidates:
         key = _candidate_key(candidate["filepath"], candidate["content"])
-        fused[key] = {**candidate, "hybrid_score": 1.0 / (60 + candidate["vector_rank"])}
+        fused[key] = {
+            **candidate,
+            "hybrid_score": 1.0 / (60 + candidate["vector_rank"]),
+        }
     for candidate in bm25_candidates:
         key = _candidate_key(candidate["filepath"], candidate["content"])
         existing = fused.get(key, candidate)
-        existing["hybrid_score"] = existing.get("hybrid_score", 0.0) + 1.0 / (60 + candidate["bm25_rank"])
+        existing["hybrid_score"] = existing.get("hybrid_score", 0.0) + 1.0 / (
+            60 + candidate["bm25_rank"]
+        )
         existing.setdefault("filepath", candidate["filepath"])
         existing.setdefault("content", candidate["content"])
         existing.setdefault("language", candidate["language"])

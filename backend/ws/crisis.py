@@ -52,7 +52,9 @@ async def handle_crisis(ws: WebSocket) -> None:
     client_ip = getattr(ws.client, "host", "unknown")
     rate_key = f"{client_ip}:{session_id}" if session_id else client_ip
     if not (await check_rate_limit("analyze", rate_key))[0]:
-        await ws.send_json({"error": "Rate limit exceeded — max 3 analyses per minute. Please wait."})
+        await ws.send_json(
+            {"error": "Rate limit exceeded — max 3 analyses per minute. Please wait."}
+        )
         await ws.close()
         return
 
@@ -119,7 +121,12 @@ async def handle_crisis(ws: WebSocket) -> None:
 
         if not state_ref.get("reporter_published"):
             state_ref["crisis_resolved"] = True
-            await ws_send({"kind": "resolved", "content": "Crisis contained — Legal-approved statement issued."})
+            await ws_send(
+                {
+                    "kind": "resolved",
+                    "content": "Crisis contained — Legal-approved statement issued.",
+                }
+            )
 
     except WebSocketDisconnect:
         logger.info("Crisis client disconnected", session=session_id)

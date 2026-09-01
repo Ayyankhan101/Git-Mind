@@ -8,7 +8,9 @@ from parsers.router import parse_files
 logger = structlog.get_logger(__name__)
 
 
-def build_architecture_graph(_file_tree: list[str], file_contents: dict[str, str]) -> dict:
+def build_architecture_graph(
+    _file_tree: list[str], file_contents: dict[str, str]
+) -> dict:
     """
     Parse all source files and build a rich architecture graph JSON.
     Returns a dict with 'nodes' and 'edges' ready for React Flow.

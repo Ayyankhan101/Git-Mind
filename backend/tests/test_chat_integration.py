@@ -14,7 +14,8 @@ class TestChatEndpoint:
 
     @patch("routes.chat.get_session")
     @patch("routes.chat.run_chat_agent")
-    def test_chat_with_valid_session(self, mock_chat, mock_get_session):
+    @patch("chroma_utils._client")
+    def test_chat_with_valid_session(self, mock_client, mock_chat, mock_get_session):
         """Chat should work with valid session and chroma_collection_name."""
         session_id = "12345678-1234-1234-1234-123456789012"
         mock_get_session.return_value = {
@@ -80,9 +81,7 @@ class TestChatEndpoint:
 
     @patch("routes.chat.get_session")
     @patch("chroma_utils._client")
-    def test_chat_with_lost_collection_no_contents(
-        self, mock_client, mock_get_session
-    ):
+    def test_chat_with_lost_collection_no_contents(self, mock_client, mock_get_session):
         """Chat should return 503 if ChromaDB collection lost and no file_contents."""
         session_id = "12345678-1234-1234-1234-123456789012"
         mock_get_session.return_value = {

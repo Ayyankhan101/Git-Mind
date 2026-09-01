@@ -30,7 +30,9 @@ class TestHealthEndpoint:
 
 class TestRoutesWithoutSession:
     def test_summary_needs_session(self, client):
-        resp = client.post("/summary", json={"session_id": "00000000-0000-0000-0000-000000000001"})
+        resp = client.post(
+            "/summary", json={"session_id": "00000000-0000-0000-0000-000000000001"}
+        )
         assert resp.status_code == 404
         assert resp.json().get("error") == "Session not found. Run /ws/analyze first."
 
@@ -107,7 +109,9 @@ class TestPRReview:
         assert resp.json().get("error") is not None
 
     def test_pr_review_missing(self, client):
-        resp = client.post("/pr-review", json={"pr_url": "https://github.com/owner/repo/pull/0"})
+        resp = client.post(
+            "/pr-review", json={"pr_url": "https://github.com/owner/repo/pull/0"}
+        )
         assert resp.json().get("error") is not None
 
 

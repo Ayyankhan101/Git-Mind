@@ -131,7 +131,9 @@ async def _run_analysis(repo_url: str, gh_token: str | None, session_id: str) ->
     )
 
     await persist_analysis(session_id, final_state, repo_url, sha, owner_hash)
-    logger.info("REST analysis complete", session=session_id, repo=final_state["repo_name"])
+    logger.info(
+        "REST analysis complete", session=session_id, repo=final_state["repo_name"]
+    )
 
     return {
         "session_id": session_id,
@@ -147,21 +149,33 @@ async def analyze_endpoint(req: AnalyzeRequest, request: Request):
     gh_token = (req.gh_token or "").strip() or None
 
     if not is_valid_gh_url(repo_url):
-        return error_response("Invalid GitHub URL — must be https://github.com/{owner}/{repo}", 400)
+        return error_response(
+            "Invalid GitHub URL — must be https://github.com/{owner}/{repo}", 400
+        )
 
     client_ip = get_client_ip(request)
     service_key = get_service_key(request)
-    if not (await check_rate_limit("analyze_rest", client_ip, service_key=service_key))[0]:
+    if not (await check_rate_limit("analyze_rest", client_ip, service_key=service_key))[
+        0
+    ]:
         return await rate_limit_response("analyze_rest", client_ip)
 
     session_id = str(uuid.uuid4())
 
-    logger.info("REST analysis triggered", session=session_id, repo=repo_url, auth=bool(gh_token))
+    logger.info(
+        "REST analysis triggered",
+        session=session_id,
+        repo=repo_url,
+        auth=bool(gh_token),
+    )
 
     try:
         from services.task_queue import TaskQueueUnavailableError, submit
 
-        task_id = await submit("run_analysis", {"repo_url": repo_url, "gh_token": gh_token, "session_id": session_id})
+        task_id = await submit(
+            "run_analysis",
+            {"repo_url": repo_url, "gh_token": gh_token, "session_id": session_id},
+        )
         return {"task_id": task_id, "session_id": session_id}
     except TaskQueueUnavailableError:
         logger.error("Task queue unavailable (Redis down)")

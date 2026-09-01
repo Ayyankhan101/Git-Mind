@@ -44,7 +44,9 @@ def build_graph(parsed_files: dict[str, dict]) -> dict:
             "language": info.get("language", "Unknown"),
             "framework": info.get("framework", ""),
             "endpoints": info.get("endpoints", []),
-            "imports": [i["source"] for i in info.get("imports", []) if i.get("source")],
+            "imports": [
+                i["source"] for i in info.get("imports", []) if i.get("source")
+            ],
             "exports": info.get("exports", []),
             "file_path": file_path,
         }
@@ -73,11 +75,18 @@ def build_graph(parsed_files: dict[str, dict]) -> dict:
     # ── Rank nodes (primary = most imports/exports/endpoints) ──
     if nodes:
         max_score = (
-            max(len(n.get("imports", [])) + len(n.get("exports", [])) + len(n.get("endpoints", [])) * 2 for n in nodes)
+            max(
+                len(n.get("imports", []))
+                + len(n.get("exports", []))
+                + len(n.get("endpoints", [])) * 2
+                for n in nodes
+            )
             or 1
         )
         for node in nodes:
-            score = len(node["imports"]) + len(node["exports"]) + len(node["endpoints"]) * 2
+            score = (
+                len(node["imports"]) + len(node["exports"]) + len(node["endpoints"]) * 2
+            )
             ratio = score / max_score
             if ratio > 0.6:
                 node["importance"] = "primary"
@@ -94,7 +103,11 @@ def _make_node_id(file_path: str) -> str:
     parts = path.split("/")
     # Use up to 2 context levels for disambiguation
     relevant = parts[-(min(3, len(parts))) :]
-    candidate = "_".join(relevant).rsplit(".", 1)[0] if "." in relevant[-1] else "_".join(relevant)
+    candidate = (
+        "_".join(relevant).rsplit(".", 1)[0]
+        if "." in relevant[-1]
+        else "_".join(relevant)
+    )
     return candidate.lower().replace(" ", "_")
 
 

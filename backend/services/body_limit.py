@@ -9,7 +9,9 @@ from starlette.responses import JSONResponse
 
 logger = structlog.get_logger(__name__)
 
-_MAX_BODY_BYTES = int(os.getenv("MAX_REQUEST_BODY_BYTES", str(5 * 1024 * 1024)))  # 5MB default
+_MAX_BODY_BYTES = int(
+    os.getenv("MAX_REQUEST_BODY_BYTES", str(5 * 1024 * 1024))
+)  # 5MB default
 
 
 class BodyLimitMiddleware(BaseHTTPMiddleware):
@@ -23,16 +25,23 @@ class BodyLimitMiddleware(BaseHTTPMiddleware):
             # Reject requests without Content-Length to prevent chunked encoding bypass
             transfer_encoding = request.headers.get("transfer-encoding", "")
             if "chunked" in transfer_encoding:
-                logger.warning("Request missing Content-Length with chunked encoding", path=request.url.path)
+                logger.warning(
+                    "Request missing Content-Length with chunked encoding",
+                    path=request.url.path,
+                )
                 return JSONResponse(
                     status_code=413,
-                    content={"error": "Chunked encoding without Content-Length not allowed"},
+                    content={
+                        "error": "Chunked encoding without Content-Length not allowed"
+                    },
                 )
             # Allow requests with no body (GET, DELETE, etc.)
             if request.method not in ("POST", "PUT", "PATCH"):
                 return await call_next(request)
             # For POST/PUT/PATCH without Content-Length, reject
-            logger.warning("Request missing Content-Length header", path=request.url.path)
+            logger.warning(
+                "Request missing Content-Length header", path=request.url.path
+            )
             return JSONResponse(
                 status_code=411,
                 content={"error": "Content-Length header required"},
@@ -47,6 +56,8 @@ class BodyLimitMiddleware(BaseHTTPMiddleware):
             )
             return JSONResponse(
                 status_code=413,
-                content={"error": f"Request body too large — max {self.max_bytes} bytes"},
+                content={
+                    "error": f"Request body too large — max {self.max_bytes} bytes"
+                },
             )
         return await call_next(request)

@@ -32,7 +32,9 @@ class TestConcurrency:
         Redis unavailable → 503 for all (not rate limited, just queue failure)."""
         responses = []
         for _ in range(15):
-            resp = client.post("/analyze", json={"repo_url": "https://github.com/x/y"}, headers=AUTH)
+            resp = client.post(
+                "/analyze", json={"repo_url": "https://github.com/x/y"}, headers=AUTH
+            )
             responses.append(resp.status_code)
 
         # Redis unavailable → 503, or 200/429 if rate limited
@@ -93,8 +95,12 @@ class TestExternalFailures:
             },
         )
 
-        with patch("routes.analysis.invoke_with_retry", side_effect=Exception("LLM timeout")):
-            resp = client.post("/summary", json={"session_id": session_id}, headers=AUTH)
+        with patch(
+            "routes.analysis.invoke_with_retry", side_effect=Exception("LLM timeout")
+        ):
+            resp = client.post(
+                "/summary", json={"session_id": session_id}, headers=AUTH
+            )
             assert resp.status_code in (500, 502, 504)
 
     def test_redis_failure_graceful_fallback(self):
@@ -117,7 +123,9 @@ class TestDataCorruption:
 
     def test_unicode_in_repo_url(self):
         """Unicode characters in repo URL."""
-        resp = client.post("/analyze", json={"repo_url": "https://github.com/🇺🇸/test"}, headers=AUTH)
+        resp = client.post(
+            "/analyze", json={"repo_url": "https://github.com/🇺🇸/test"}, headers=AUTH
+        )
         assert resp.status_code in (400, 422)
 
     async def test_emoji_in_chat_question(self):
@@ -135,11 +143,17 @@ class TestDataCorruption:
             },
         )
 
-        with patch("routes.chat.run_chat_agent", return_value=("👍 Done", [])), \
-             patch("chroma_utils._client") as mock_chroma:
+        with patch("routes.chat.run_chat_agent", return_value=("👍 Done", [])), patch(
+            "chroma_utils._client"
+        ) as mock_chroma:
             mock_chroma.get_collection.return_value = MagicMock()
             resp = client.post(
-                "/chat", json={"session_id": session_id, "question": "🔥 What's the security status? 🛡️"}, headers=AUTH
+                "/chat",
+                json={
+                    "session_id": session_id,
+                    "question": "🔥 What's the security status? 🛡️",
+                },
+                headers=AUTH,
             )
             assert resp.status_code == 200
 
@@ -156,7 +170,10 @@ class TestDataCorruption:
         """Extremely long field value."""
         resp = client.post(
             "/chat",
-            json={"session_id": "00000000-0000-0000-0000-000000000001", "question": "x" * 100000},
+            json={
+                "session_id": "00000000-0000-0000-0000-000000000001",
+                "question": "x" * 100000,
+            },
             headers=AUTH,
         )
         assert resp.status_code in (400, 404, 413, 422)
@@ -200,37 +217,53 @@ class TestURLEdgeCases:
 
     def test_github_url_with_port(self):
         """URL with port number."""
-        resp = client.post("/analyze", json={"repo_url": "https://github.com:443/x/y"}, headers=AUTH)
+        resp = client.post(
+            "/analyze", json={"repo_url": "https://github.com:443/x/y"}, headers=AUTH
+        )
         assert resp.status_code == 400
 
     def test_github_url_with_fragment(self):
         """URL with fragment."""
-        resp = client.post("/analyze", json={"repo_url": "https://github.com/x/y#readme"}, headers=AUTH)
+        resp = client.post(
+            "/analyze", json={"repo_url": "https://github.com/x/y#readme"}, headers=AUTH
+        )
         assert resp.status_code == 400
 
     def test_github_url_with_query(self):
         """URL with query string."""
-        resp = client.post("/analyze", json={"repo_url": "https://github.com/x/y?ref=main"}, headers=AUTH)
+        resp = client.post(
+            "/analyze",
+            json={"repo_url": "https://github.com/x/y?ref=main"},
+            headers=AUTH,
+        )
         assert resp.status_code == 400
 
     def test_github_url_with_subdomain(self):
         """URL with subdomain."""
-        resp = client.post("/analyze", json={"repo_url": "https://www.github.com/x/y"}, headers=AUTH)
+        resp = client.post(
+            "/analyze", json={"repo_url": "https://www.github.com/x/y"}, headers=AUTH
+        )
         assert resp.status_code == 400
 
     def test_github_url_with_trailing_dot(self):
         """URL with trailing dot — passes URL regex, but Redis unavailable → 503."""
-        resp = client.post("/analyze", json={"repo_url": "https://github.com/x/y."}, headers=AUTH)
+        resp = client.post(
+            "/analyze", json={"repo_url": "https://github.com/x/y."}, headers=AUTH
+        )
         assert resp.status_code in (400, 422, 500, 503)
 
     def test_github_url_with_spaces(self):
         """URL with spaces."""
-        resp = client.post("/analyze", json={"repo_url": "https://github.com/x y/z"}, headers=AUTH)
+        resp = client.post(
+            "/analyze", json={"repo_url": "https://github.com/x y/z"}, headers=AUTH
+        )
         assert resp.status_code in (400, 422)
 
     def test_github_url_with_special_chars(self):
         """URL with special characters in owner/repo."""
-        resp = client.post("/analyze", json={"repo_url": "https://github.com/x@y/z"}, headers=AUTH)
+        resp = client.post(
+            "/analyze", json={"repo_url": "https://github.com/x@y/z"}, headers=AUTH
+        )
         assert resp.status_code == 400
 
     def test_valid_github_urls_accepted(self):
@@ -258,7 +291,9 @@ class TestErrorHandling:
 
     def test_analysis_not_found_returns_404(self):
         """Non-existent session_id should return 404 or 500 (DB not initialized)."""
-        resp = client.get("/analysis/00000000-0000-0000-0000-999999999999", headers=AUTH)
+        resp = client.get(
+            "/analysis/00000000-0000-0000-0000-999999999999", headers=AUTH
+        )
         assert resp.status_code in (404, 500)
 
     async def test_summary_without_chroma(self):
@@ -276,13 +311,22 @@ class TestErrorHandling:
             },
         )
 
-        with patch("routes.analysis.invoke_with_retry", return_value=MagicMock(content="Test summary")):
-            resp = client.post("/summary", json={"session_id": session_id}, headers=AUTH)
+        with patch(
+            "routes.analysis.invoke_with_retry",
+            return_value=MagicMock(content="Test summary"),
+        ):
+            resp = client.post(
+                "/summary", json={"session_id": session_id}, headers=AUTH
+            )
             assert resp.status_code == 200
 
     def test_monitor_subscribe_duplicate(self):
         """Duplicate monitor subscription — DB not initialized in test env."""
-        resp = client.post("/monitor/subscribe", json={"repo_url": "https://github.com/x/y"}, headers=AUTH)
+        resp = client.post(
+            "/monitor/subscribe",
+            json={"repo_url": "https://github.com/x/y"},
+            headers=AUTH,
+        )
         # DB not initialized → 500, or 409 if duplicate
         assert resp.status_code in (409, 500)
 
@@ -328,24 +372,33 @@ class TestBoundaryCases:
 
     def test_negative_days_in_history(self):
         """Negative days parameter — DB not initialized in test env."""
-        resp = client.get("/analysis/history?repo_url=https://github.com/x/y&days=-5", headers=AUTH)
+        resp = client.get(
+            "/analysis/history?repo_url=https://github.com/x/y&days=-5", headers=AUTH
+        )
         assert resp.status_code in (200, 400, 422, 500)
 
     def test_zero_days_in_history(self):
         """Zero days parameter — returns all history."""
-        resp = client.get("/analysis/history?repo_url=https://github.com/x/y&days=0", headers=AUTH)
+        resp = client.get(
+            "/analysis/history?repo_url=https://github.com/x/y&days=0", headers=AUTH
+        )
         assert resp.status_code in (200, 404, 500)
 
     def test_huge_days_in_history(self):
         """Huge days parameter."""
-        resp = client.get("/analysis/history?repo_url=https://github.com/x/y&days=999999", headers=AUTH)
+        resp = client.get(
+            "/analysis/history?repo_url=https://github.com/x/y&days=999999",
+            headers=AUTH,
+        )
         assert resp.status_code in (200, 404, 500)
 
     def test_org_audit_max_repos(self):
         """Exactly 20 repos should be accepted."""
         repos = [f"https://github.com/owner/repo{i}" for i in range(20)]
         with patch("routes.org.asyncio.gather", new_callable=AsyncMock) as mock_gather:
-            mock_gather.return_value = [{"repo_url": r, "cve_findings": [], "error": None} for r in repos]
+            mock_gather.return_value = [
+                {"repo_url": r, "cve_findings": [], "error": None} for r in repos
+            ]
             resp = client.post("/org-audit", json={"repos": repos}, headers=AUTH)
             assert resp.status_code == 200
 
@@ -357,5 +410,7 @@ class TestBoundaryCases:
 
     def test_monitor_delete_nonexistent_uuid(self):
         """Delete with valid UUID format but non-existent — DB may not be initialized."""
-        resp = client.delete("/monitor/00000000-0000-0000-0000-000000000000", headers=AUTH)
+        resp = client.delete(
+            "/monitor/00000000-0000-0000-0000-000000000000", headers=AUTH
+        )
         assert resp.status_code in (404, 200, 500)

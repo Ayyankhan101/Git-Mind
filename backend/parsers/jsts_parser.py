@@ -16,7 +16,9 @@ def _humanize_label(name: str) -> str:
 
 
 _IMPORT_PATTERNS = [
-    re.compile(r'import\s+(?:\{[^}]*\}|\*\s+as\s+\w+|\w+(?:,\s*\w+)*)\s+from\s+[\'"]([^\'"]+)[\'"]'),
+    re.compile(
+        r'import\s+(?:\{[^}]*\}|\*\s+as\s+\w+|\w+(?:,\s*\w+)*)\s+from\s+[\'"]([^\'"]+)[\'"]'
+    ),
     re.compile(r'const\s+\w+\s*=\s*require\s*\(\s*[\'"]([^\'"]+)[\'"]\s*\)'),
     re.compile(r'let\s+\w+\s*=\s*require\s*\(\s*[\'"]([^\'"]+)[\'"]\s*\)'),
     re.compile(r'var\s+\w+\s*=\s*require\s*\(\s*[\'"]([^\'"]+)[\'"]\s*\)'),
@@ -31,12 +33,18 @@ _EXPORT_PATTERNS = [
 
 _COMPONENT_PATTERNS = [
     re.compile(r"(?:export\s+)?(?:default\s+)?function\s+(\w+)\s*(?:<\w+>)?\s*\("),
-    re.compile(r"(?:export\s+)?(?:default\s+)?const\s+(\w+)\s*(?:<\w+>)?\s*=\s*(?:\([^)]*\)\s*=>|React\.memo\()"),
-    re.compile(r"(?:export\s+)?(?:default\s+)?class\s+(\w+)\s+extends\s+(?:React\.)?(?:Component|PureComponent)"),
+    re.compile(
+        r"(?:export\s+)?(?:default\s+)?const\s+(\w+)\s*(?:<\w+>)?\s*=\s*(?:\([^)]*\)\s*=>|React\.memo\()"
+    ),
+    re.compile(
+        r"(?:export\s+)?(?:default\s+)?class\s+(\w+)\s+extends\s+(?:React\.)?(?:Component|PureComponent)"
+    ),
 ]
 
 _ROUTE_PATTERNS = [
-    re.compile(r'router\.(get|post|put|patch|delete|options)\s*\(\s*[\'"]([^\'"]+)[\'"]'),
+    re.compile(
+        r'router\.(get|post|put|patch|delete|options)\s*\(\s*[\'"]([^\'"]+)[\'"]'
+    ),
     re.compile(r'app\.(get|post|put|patch|delete|options)\s*\(\s*[\'"]([^\'"]+)[\'"]'),
     re.compile(r'@(?:Get|Post|Put|Patch|Delete|Options)\s*\(\s*[\'"]([^\'"]+)[\'"]'),
 ]
@@ -58,7 +66,19 @@ _NODE_TYPE_KEYWORDS = {
         "container",
         "wrapper",
     ],
-    "ui": ["ui", "button", "input", "select", "dropdown", "icon", "avatar", "badge", "tag", "table", "chart"],
+    "ui": [
+        "ui",
+        "button",
+        "input",
+        "select",
+        "dropdown",
+        "icon",
+        "avatar",
+        "badge",
+        "tag",
+        "table",
+        "chart",
+    ],
     "route": ["route", "router", "page", "screen"],
     "service": ["service", "api", "client", "provider", "store", "hook", "context"],
     "model": ["model", "type", "interface", "schema", "dto"],
@@ -91,9 +111,13 @@ _ICON_MAP = {
 
 
 def _detect_framework(source: str) -> str:
-    if re.search(r'from\s+[\'"]react[\'"]', source) or re.search(r"import.*React", source):
+    if re.search(r'from\s+[\'"]react[\'"]', source) or re.search(
+        r"import.*React", source
+    ):
         return "React"
-    if re.search(r'from\s+[\'"]express[\'"]', source) or re.search(r'require\s*\(\s*[\'"]express[\'"]', source):
+    if re.search(r'from\s+[\'"]express[\'"]', source) or re.search(
+        r'require\s*\(\s*[\'"]express[\'"]', source
+    ):
         return "Express"
     if re.search(r'from\s+[\'"]next[\'"]', source) or re.search(r"next/\w+", source):
         return "Next.js"
@@ -128,7 +152,11 @@ def _build_smart_label_jsts(
     path_parts = file_path.replace("\\", "/").split("/")
     if len(path_parts) >= 2:
         parent = path_parts[-2].lower()
-        if parent and parent != stem.lower() and parent not in ("src", "lib", "app", ".", "components", "pages"):
+        if (
+            parent
+            and parent != stem.lower()
+            and parent not in ("src", "lib", "app", ".", "components", "pages")
+        ):
             parent_label = _humanize_label(parent)
             if parent_label.lower() not in parts[0].lower():
                 parts[0] = f"{parent_label} {parts[0]}"
@@ -172,7 +200,11 @@ def parse_jsts(file_path: str, source: str) -> dict | None:
         for m in pat.finditer(source):
             mod_path = m.group(1)
             # Take the last meaningful module name (skip relative parent dirs)
-            parts = [p for p in mod_path.replace("\\", "/").split("/") if p and p != ".." and p != "."]
+            parts = [
+                p
+                for p in mod_path.replace("\\", "/").split("/")
+                if p and p != ".." and p != "."
+            ]
             mod = parts[-1].split(".")[0] if parts else ""
             if mod and mod not in [i["source"] for i in imports]:
                 imports.append({"source": mod, "name": mod, "kind": "module"})
@@ -200,7 +232,11 @@ def parse_jsts(file_path: str, source: str) -> dict | None:
     framework = _detect_framework(source)
 
     path = file_path.replace("\\", "/")
-    stem = path.rsplit("/", 1)[-1].rsplit(".", 1)[0] if "/" in path else path.rsplit(".", 1)[0]
+    stem = (
+        path.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+        if "/" in path
+        else path.rsplit(".", 1)[0]
+    )
     label = _build_smart_label_jsts(stem, file_path, components, endpoints)
 
     # Determine node type
@@ -235,7 +271,11 @@ def parse_jsts(file_path: str, source: str) -> dict | None:
         "type": node_type,
         "layer": layer,
         "icon": _ICON_MAP.get(node_type, "file"),
-        "language": "JavaScript" if file_path.endswith((".js", ".jsx", ".mjs", ".cjs")) else "TypeScript",
+        "language": (
+            "JavaScript"
+            if file_path.endswith((".js", ".jsx", ".mjs", ".cjs"))
+            else "TypeScript"
+        ),
         "framework": framework,
         "imports": imports,
         "exports": list(set(exports)),

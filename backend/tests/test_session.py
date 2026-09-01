@@ -60,7 +60,11 @@ class TestGetSession:
         assert result == {"from": "memory"}
 
     async def test_returns_none_when_not_found(self):
-        with patch("services.database.get_analysis_db", new_callable=AsyncMock, return_value=None):
+        with patch(
+            "services.database.get_analysis_db",
+            new_callable=AsyncMock,
+            return_value=None,
+        ):
             result = await get_session("00000000-0000-0000-0000-000000009999")
             assert result is None
 
@@ -76,7 +80,11 @@ class TestGetSession:
             "repo_url": "https://github.com/owner/repo",
             "chat_history": [],
         }
-        with patch("services.database.get_analysis_db", new_callable=AsyncMock, return_value=db_snap):
+        with patch(
+            "services.database.get_analysis_db",
+            new_callable=AsyncMock,
+            return_value=db_snap,
+        ):
             result = await get_session(VALID_UUID)
             assert result["repo_name"] == "test-repo"
             assert result["chroma_collection_name"] == "col123"
@@ -103,8 +111,12 @@ class TestPersistAnalysis:
             "health": {"score": 70, "grade": "C"},
         }
         with (
-            patch("services.database.upsert_sha_index", new_callable=AsyncMock) as mock_update,
-            patch("services.database.persist_analysis_db", new_callable=AsyncMock) as mock_persist,
+            patch(
+                "services.database.upsert_sha_index", new_callable=AsyncMock
+            ) as mock_update,
+            patch(
+                "services.database.persist_analysis_db", new_callable=AsyncMock
+            ) as mock_persist,
         ):
             await persist_analysis(VALID_UUID, final, "url", "sha")
             mock_persist.assert_awaited_once()
@@ -133,7 +145,9 @@ class TestSessionToSnapshot:
             "health": {"score": 88, "grade": "B"},
             "chat_history": [],
         }
-        snap = _session_to_snapshot(VALID_UUID, final, "https://github.com/owner/repo", "sha1")
+        snap = _session_to_snapshot(
+            VALID_UUID, final, "https://github.com/owner/repo", "sha1"
+        )
         assert snap["solidity_audit"] == {"contracts": []}
         assert snap["code_audit"] == [{"language": "rust", "findings": []}]
         assert snap["health"]["score"] == 88

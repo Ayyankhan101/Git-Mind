@@ -43,8 +43,12 @@ class CodeAuditSignature(dspy.Signature):
     performance issues, and convention violations, following the language-specific
     audit guidance. If no issues are found, return an empty list."""
 
-    guidance: str = dspy.InputField(desc="Language-specific audit checklist to follow when reviewing")
-    context: str = dspy.InputField(desc="Tool findings (JSON) or source files (JSON) to review")
+    guidance: str = dspy.InputField(
+        desc="Language-specific audit checklist to follow when reviewing"
+    )
+    context: str = dspy.InputField(
+        desc="Tool findings (JSON) or source files (JSON) to review"
+    )
     findings: list[CodeAuditFinding] = dspy.OutputField(
         desc=(
             "Review findings. Each has: id (short unique id), file (relative path), "
@@ -255,7 +259,9 @@ def run_code_audit(file_tree: list[str], file_contents: dict[str, str]) -> list[
     return results
 
 
-def _audit_language(lang: str, cfg: AuditorDef, matching: list[str], file_contents: dict[str, str]) -> dict:
+def _audit_language(
+    lang: str, cfg: AuditorDef, matching: list[str], file_contents: dict[str, str]
+) -> dict:
     file_count = len(matching)
     tool_name: str | None = cfg.tool_name
 
@@ -292,17 +298,36 @@ def _audit_language(lang: str, cfg: AuditorDef, matching: list[str], file_conten
 
 
 _SUPPORT_FILES: dict[str, frozenset[str]] = {
-    "python": frozenset({"pyproject.toml", "setup.cfg", "setup.py", ".pylintrc", "tox.ini"}),
-    "javascript": frozenset({"package.json", ".eslintrc", ".eslintrc.json", ".eslintrc.js", "eslint.config.js"}),
+    "python": frozenset(
+        {"pyproject.toml", "setup.cfg", "setup.py", ".pylintrc", "tox.ini"}
+    ),
+    "javascript": frozenset(
+        {
+            "package.json",
+            ".eslintrc",
+            ".eslintrc.json",
+            ".eslintrc.js",
+            "eslint.config.js",
+        }
+    ),
     "typescript": frozenset(
-        {"package.json", ".eslintrc", ".eslintrc.json", ".eslintrc.js", "eslint.config.js", "tsconfig.json"}
+        {
+            "package.json",
+            ".eslintrc",
+            ".eslintrc.json",
+            ".eslintrc.js",
+            "eslint.config.js",
+            "tsconfig.json",
+        }
     ),
     "go": frozenset({"go.mod", "go.sum"}),
     "rust": frozenset({"Cargo.toml", "Cargo.lock"}),
 }
 
 
-def _materialize_workspace(lang: str, matching: list[str], file_contents: dict[str, str]) -> str:
+def _materialize_workspace(
+    lang: str, matching: list[str], file_contents: dict[str, str]
+) -> str:
     dest = tempfile.mkdtemp(prefix="gitmind_audit_")
     paths_to_write: set[str] = set(matching)
     support_names = _SUPPORT_FILES.get(lang, frozenset())
@@ -328,7 +353,9 @@ def _materialize_workspace(lang: str, matching: list[str], file_contents: dict[s
     return dest
 
 
-def _run_tool(tool: tuple[str, ...], matching: list[str], file_contents: dict[str, str], lang: str) -> list[dict]:
+def _run_tool(
+    tool: tuple[str, ...], matching: list[str], file_contents: dict[str, str], lang: str
+) -> list[dict]:
     dest = _materialize_workspace(lang, matching, file_contents)
     try:
         if lang in ("go", "rust"):
@@ -373,15 +400,22 @@ def _audit_guidance(prompt_template: str) -> str:
     return prompt_template[:idx].rstrip() if idx != -1 else prompt_template
 
 
-def _triage_with_llm(prompt_template: str, tool_results: list[dict], lang: str) -> list[dict]:
+def _triage_with_llm(
+    prompt_template: str, tool_results: list[dict], lang: str
+) -> list[dict]:
     truncated = [
         {
             "file": r.get("path") or r.get("file") or "",
             "line": r.get("line") or (r.get("message", {}) or {}).get("line"),
-            "message": r.get("message", {}).get("message", "")
-            if isinstance(r.get("message"), dict)
-            else (r.get("message") or ""),
-            "rule": r.get("symbol") or r.get("ruleId") or r.get("check_id") or r.get("code"),
+            "message": (
+                r.get("message", {}).get("message", "")
+                if isinstance(r.get("message"), dict)
+                else (r.get("message") or "")
+            ),
+            "rule": r.get("symbol")
+            or r.get("ruleId")
+            or r.get("check_id")
+            or r.get("code"),
         }
         for r in tool_results[:_MAX_FINDINGS]
     ]
@@ -407,7 +441,9 @@ def _triage_with_llm(prompt_template: str, tool_results: list[dict], lang: str) 
 def _run_llm_fallback(
     prompt_template: str, matching: list[str], file_contents: dict[str, str], lang: str
 ) -> list[dict]:
-    sources = {p: file_contents.get(p, "") for p in matching if file_contents.get(p, "")}
+    sources = {
+        p: file_contents.get(p, "") for p in matching if file_contents.get(p, "")
+    }
     if not sources:
         return []
 

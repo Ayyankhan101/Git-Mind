@@ -142,13 +142,23 @@ async def _run_monitoring_checks():
             result = await _run_analysis(repo.repo_url, None, session_id)
 
             if result.get("error"):
-                logger.error("Monitor: analysis failed", repo=repo.repo_url, error=result["error"][:200])
+                logger.error(
+                    "Monitor: analysis failed",
+                    repo=repo.repo_url,
+                    error=result["error"][:200],
+                )
                 session_id = None
             else:
-                if repo.last_session_id and (repo.slack_webhook_url or repo.email_recipients):
-                    prev = await get_previous_analysis_db(repo.repo_url, exclude_session=session_id)
+                if repo.last_session_id and (
+                    repo.slack_webhook_url or repo.email_recipients
+                ):
+                    prev = await get_previous_analysis_db(
+                        repo.repo_url, exclude_session=session_id
+                    )
                     curr_health = (result.get("health") or {}).get("score", 0)
-                    prev_health = (prev.get("health") or {}).get("score", 0) if prev else 0
+                    prev_health = (
+                        (prev.get("health") or {}).get("score", 0) if prev else 0
+                    )
                     score_delta = curr_health - prev_health
 
                     curr_sec = len(result.get("security_findings", []))
@@ -160,7 +170,9 @@ async def _run_monitoring_checks():
                     )
 
                     if significant:
-                        await _send_monitor_alert(repo, score_delta, new_findings, curr_health, session_id)
+                        await _send_monitor_alert(
+                            repo, score_delta, new_findings, curr_health, session_id
+                        )
 
             async with async_session_factory() as session:
                 merged = await session.merge(repo)
@@ -169,10 +181,14 @@ async def _run_monitoring_checks():
                 merged.last_check_at = time.time()
                 await session.commit()
 
-            logger.info("Monitor: analysis complete", repo=repo.repo_url, session=session_id)
+            logger.info(
+                "Monitor: analysis complete", repo=repo.repo_url, session=session_id
+            )
 
         except Exception as exc:
-            logger.error("Monitor check failed", repo=repo.repo_url, error=str(exc)[:200])
+            logger.error(
+                "Monitor check failed", repo=repo.repo_url, error=str(exc)[:200]
+            )
 
 
 async def _send_monitor_alert(repo, score_delta, new_findings, curr_health, session_id):
@@ -190,7 +206,9 @@ async def _send_monitor_alert(repo, score_delta, new_findings, curr_health, sess
                 await client.post(repo.slack_webhook_url, json={"text": msg})
             logger.info("Monitor alert sent (Slack)", repo=repo.repo_url)
         except Exception as exc:
-            logger.warning("Monitor alert failed (Slack)", repo=repo.repo_url, error=str(exc)[:200])
+            logger.warning(
+                "Monitor alert failed (Slack)", repo=repo.repo_url, error=str(exc)[:200]
+            )
 
     if repo.email_recipients:
         from services.email import send_alert_email
@@ -210,7 +228,9 @@ async def _send_monitor_alert(repo, score_delta, new_findings, curr_health, sess
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     if not os.getenv("GROQ_API_KEY"):
-        raise RuntimeError("GROQ_API_KEY is not set.\nCreate backend/.env with:  GROQ_API_KEY=gsk_...")
+        raise RuntimeError(
+            "GROQ_API_KEY is not set.\nCreate backend/.env with:  GROQ_API_KEY=gsk_..."
+        )
     _webhook_secret = os.getenv("GITHUB_APP_WEBHOOK_SECRET")
     if not _webhook_secret:
         logger.warning(
@@ -281,7 +301,9 @@ _CORS_ORIGINS_ENV = os.getenv("CORS_ORIGINS", "")
 _ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
 if _CORS_ORIGINS_ENV == "*":
     _CORS_ORIGINS = ["*"]
-    logger.warning("CORS_ORIGINS=* — allowing all origins. Set CORS_ORIGINS to specific origin for production.")
+    logger.warning(
+        "CORS_ORIGINS=* — allowing all origins. Set CORS_ORIGINS to specific origin for production."
+    )
 elif _CORS_ORIGINS_ENV:
     _CORS_ORIGINS = [o.strip() for o in _CORS_ORIGINS_ENV.split(",") if o.strip()]
 elif _ENVIRONMENT == "production":
@@ -311,7 +333,8 @@ def _cors_origin_ok(origin: str) -> bool:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_CORS_ORIGINS + ["https://gitmind-a4gs396kv-ayyankhan101s-projects.vercel.app"],
+    allow_origins=_CORS_ORIGINS
+    + ["https://gitmind-a4gs396kv-ayyankhan101s-projects.vercel.app"],
     allow_origin_regex=r"^https://gitmind-.*\.vercel\.app$",
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type", "X-GH-Token", "X-Request-ID", "Authorization"],
@@ -350,7 +373,11 @@ app.include_router(proxy_router)
 
 @app.get("/task/{task_id}")
 async def get_task_status(task_id: str, request: Request):
-    from services.auth import get_gh_token, get_service_key, require_gh_token_or_service_key
+    from services.auth import (
+        get_gh_token,
+        get_service_key,
+        require_gh_token_or_service_key,
+    )
     from services.rate_limit_response import rate_limit_response
     from services.rate_limiter import check_rate_limit
     from services.task_queue import get_task
@@ -359,7 +386,9 @@ async def get_task_status(task_id: str, request: Request):
     gh_token = get_gh_token(request)
     svc_key = get_service_key(request)
     identity: str = gh_token or svc_key or ""
-    allowed, remaining, retry_after = await check_rate_limit("task", identity, service_key=svc_key)
+    allowed, remaining, retry_after = await check_rate_limit(
+        "task", identity, service_key=svc_key
+    )
     if not allowed:
         return await rate_limit_response("task", identity)
     task = await get_task(task_id)
@@ -409,7 +438,9 @@ async def health():
     from orchestrator import get_circuit_breaker_state
 
     checks["circuit_breaker"] = get_circuit_breaker_state()
-    mandatory = {k: v for k, v in checks.items() if k not in ("redis", "circuit_breaker")}
+    mandatory = {
+        k: v for k, v in checks.items() if k not in ("redis", "circuit_breaker")
+    }
     all_ok = all(mandatory.values())
     result = {"status": "ok" if all_ok else "degraded"}
     result["checks"] = checks

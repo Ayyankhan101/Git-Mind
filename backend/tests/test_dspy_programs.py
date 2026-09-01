@@ -282,7 +282,9 @@ def test_missing_key_rejected(case):
         _run(case, json.dumps(payload))
 
 
-@pytest.mark.parametrize("case", [c for c in _PROGRAMS if c["wrong_path"]], ids=lambda c: c["name"])
+@pytest.mark.parametrize(
+    "case", [c for c in _PROGRAMS if c["wrong_path"]], ids=lambda c: c["name"]
+)
 def test_wrong_type_rejected(case):
     payload = _set_key(case["valid"], case["wrong_path"], case["wrong_value"])
     with pytest.raises(ValidationError):
@@ -389,7 +391,14 @@ def test_language_audit_falls_back_to_empty_findings():
     with patch.object(language_audit, "_LM", FakeLM(GARBAGE)):
         result = language_audit._triage_with_llm(
             language_audit._PYTHON_PROMPT,
-            [{"file": "src/main.py", "message": "unused import", "rule": "W0611", "line": 1}],
+            [
+                {
+                    "file": "src/main.py",
+                    "message": "unused import",
+                    "rule": "W0611",
+                    "line": 1,
+                }
+            ],
             "python",
         )
     assert result == []

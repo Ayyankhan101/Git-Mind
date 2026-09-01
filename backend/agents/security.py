@@ -43,7 +43,9 @@ class SecurityTriage(dspy.Signature):
     For each raw semgrep finding, produce a concise, actionable summary.
     If there are no findings, return an empty list."""
 
-    raw_findings: str = dspy.InputField(desc="JSON array of raw semgrep findings from a static code scan")
+    raw_findings: str = dspy.InputField(
+        desc="JSON array of raw semgrep findings from a static code scan"
+    )
     findings: list[SecurityFinding] = dspy.OutputField(
         desc=(
             "Triaged findings. Each has: id (short, use the check_id tail e.g. 'sql-injection'), "

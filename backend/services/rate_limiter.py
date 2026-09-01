@@ -170,7 +170,9 @@ def get_client_ip(request: Request) -> str:
 # ── Public API ───────────────────────────────────────────────────────────────
 
 
-async def check_rate_limit(endpoint: str, key: str, service_key: str | None = None) -> tuple[bool, int, int]:
+async def check_rate_limit(
+    endpoint: str, key: str, service_key: str | None = None
+) -> tuple[bool, int, int]:
     """Async rate check. Returns (allowed, remaining, retry_after)."""
     if _is_service_key(service_key):
         window, limit = _RATE_WINDOWS.get(endpoint, (60, 20))

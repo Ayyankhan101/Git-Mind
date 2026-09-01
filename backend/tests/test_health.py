@@ -1,4 +1,8 @@
-from agents.health import _code_quality_score, _flatten_code_audit_findings, compute_health
+from agents.health import (
+    _code_quality_score,
+    _flatten_code_audit_findings,
+    compute_health,
+)
 
 
 class TestComputeHealth:
@@ -27,7 +31,10 @@ class TestComputeHealth:
                 }
             ],
         )
-        assert with_findings["breakdown"]["code_quality"] < without["breakdown"]["code_quality"]
+        assert (
+            with_findings["breakdown"]["code_quality"]
+            < without["breakdown"]["code_quality"]
+        )
         assert with_findings["score"] <= without["score"]
 
     def test_flatten_code_audit_findings(self):
