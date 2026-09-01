@@ -13,7 +13,7 @@ python-dotenv==1.2.2
 diskcache==5.6.3
 dspy==3.3.0
 optuna>=4.9.0  # MIPROv2 compile requires it (dspy[optuna])
-websockets==15.0.1  # transitive: uvicorn/starlette WebSocket support (no direct import); langgraph-sdk 0.4.2 caps <16
+websockets==17.1  # transitive: uvicorn/starlette WebSocket support (no direct import); langgraph-sdk 0.4.2 caps <16
 semgrep==1.173.0  # bump: 1.172.0 hard-pins vulnerable mcp==1.23.3; 1.173.0 pins fixed mcp==1.29.0
 httpx==0.28.1
 sqlalchemy[asyncio]==2.0.52
