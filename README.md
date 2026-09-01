@@ -5,10 +5,10 @@
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-1.1.0-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-1.2.0-blue.svg?cacheSeconds=2592000" />
   <a href="https://github.com/Ayyankhan101/Git-Mind/actions"><img src="https://github.com/Ayyankhan101/Git-Mind/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/Ayyankhan101/Git-Mind/blob/main/backend/tests/"><img src="https://img.shields.io/badge/backend-245%20tests-brightgreen" alt="Backend Tests"></a>
-  <a href="https://github.com/Ayyankhan101/Git-Mind/blob/main/frontend/src/"><img src="https://img.shields.io/badge/frontend-164%20tests-brightgreen" alt="Frontend Tests"></a>
+  <a href="https://github.com/Ayyankhan101/Git-Mind/blob/main/backend/tests/"><img src="https://img.shields.io/badge/backend-405%20tests-brightgreen" alt="Backend Tests"></a>
+  <a href="https://github.com/Ayyankhan101/Git-Mind/blob/main/frontend/src/"><img src="https://img.shields.io/badge/frontend-181%20tests-brightgreen" alt="Frontend Tests"></a>
   <a href="https://github.com/Ayyankhan101/Git-Mind/blob/master/LICENSE" target="_blank">
     <img alt="License: Apache 2.0" src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" />
   </a>
@@ -174,7 +174,7 @@ flowchart TB
 | 📄 **Shareable links**             | Analysis snapshots saved server-side; share via `?share=SESSION_ID` URL                                                                                                                                                                                                              |
 | ⬇️ **Export report**               | Full analysis as PDF with syntax-highlighted code blocks, cached by session for instant re-download                                                                                                                                                                                  |
 | 📊 **Live health score**           | Incremental health grade streams during analysis — see score update in real-time as agents complete                                                                                                                                                                                  |
-| 🎨 **13 themes + 3 density modes** | Theme switcher in the command bar (`⌘K` → token popover) with 13 curated themes (obsidian default, daylight light, matrix, neon, plasma, circuit, …); comfortable/compact/spacious density modes; token-based design system (`design-tokens.css`); respects `prefers-reduced-motion` |
+| 🎨 **4 color themes** | Theme switcher in the command bar (`⌘K` → token popover) — Coral (default), Ocean, Forest, Sunset; 3 density modes (comfortable/compact/spacious); cream/coral token-based design system; respects `prefers-reduced-motion` |
 | 🖥️ **Editorial landing page**      | Split-screen hero with live health-grade preview, "how it works" steps, stats strip, and a themed footer with GitHub link; responsive with mobile hamburger menu                                                                                                                     |
 
 ### 🏢 Enterprise / Ops
@@ -333,7 +333,7 @@ Git-Mind/
 │   ├── models/                     ← SQLAlchemy + Pydantic
 │   ├── services/                   ← Auth, cache, rate limiter, BM25 FTS5, reranker
 │   ├── alembic/                    ← Database migrations
-│   └── tests/                      ← 245 pytest tests
+│   └── tests/                      ← 405 pytest tests
 │
 ├── rust-gitmind/                   ← PyO3 native module (gitmind_core)
 │   └── src/
@@ -587,8 +587,8 @@ Defense-in-depth posture — 20-point checklist status:
 ## Testing
 
 ```
-✅ Backend:  245 tests passing (pytest-asyncio)
-✅ Frontend:  164 tests passing (Jest + React Testing Library)
+✅ Backend:  405 tests passing (pytest-asyncio)
+✅ Frontend:  181 tests passing (Jest + React Testing Library)
 ✅ Rust:      clippy + rustfmt clean
 ```
 
