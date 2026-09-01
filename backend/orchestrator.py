@@ -1,3 +1,5 @@
+from typing import Callable
+
 import time
 
 import structlog
@@ -79,11 +81,11 @@ def _event(agent: str, status: str, detail: str | None = None) -> dict:
 
 def run_agent_node(
     name: str,
-    fn: "callable",
+    fn: Callable[..., dict],
     state: RepoState,
     *,
     default: dict | None = None,
-    fallback: "callable | None" = None,
+    fallback: Callable[..., dict] | None = None,
 ) -> dict:
     """Run an agent function with standard error isolation.
 
