@@ -17,7 +17,7 @@ export default function SummaryScene({ sceneRef, subscribe, prefersReduced }) {
       { type: "sphere", pos: [2, -0.5, -2], color: accent, scale: 0.3 },
       { type: "box", pos: [0, 1, -3], color: fog, scale: 0.35 },
     ],
-    [primary, accent, fog]
+    [primary, accent, fog],
   );
 
   useEffect(() => {

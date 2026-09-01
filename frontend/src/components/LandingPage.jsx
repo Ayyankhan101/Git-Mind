@@ -1,10 +1,4 @@
-import React, {
-  useEffect,
-  useRef,
-  useState,
-  Suspense,
-  lazy,
-} from "react";
+import React, { useEffect, useRef, useState, Suspense, lazy } from "react";
 import {
   Search,
   ArrowRight,
@@ -589,7 +583,10 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
             )}
           </SceneManager>
         </Suspense>
-        <div className="lp-hero-inner" style={{ position: "relative", zIndex: 1 }}>
+        <div
+          className="lp-hero-inner"
+          style={{ position: "relative", zIndex: 1 }}
+        >
           <div className="lp-hero-copy">
             {/* Signature moment: agent radar sweep behind the copy — pure
                 CSS rings + rotating conic sweep echoing the AgentPipeline

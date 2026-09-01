@@ -6,8 +6,7 @@ const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
  */
 export function relativeTime(ts) {
   if (!ts) return "never";
-  const ms =
-    typeof ts === "number" ? ts * 1000 : new Date(ts).getTime();
+  const ms = typeof ts === "number" ? ts * 1000 : new Date(ts).getTime();
   if (Number.isNaN(ms)) return "never";
   const diffMs = ms - Date.now();
   const mins = Math.round(diffMs / 60000);

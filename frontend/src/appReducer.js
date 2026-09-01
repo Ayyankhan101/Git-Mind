@@ -100,7 +100,8 @@ export function appReducer(state, action) {
     }
     case "SET_DENSITY": {
       const root = document.documentElement;
-      if (action.density === "comfortable") root.removeAttribute("data-density");
+      if (action.density === "comfortable")
+        root.removeAttribute("data-density");
       else root.setAttribute("data-density", action.density);
       localStorage.setItem("gm-density", action.density);
       return { ...state, density: action.density };

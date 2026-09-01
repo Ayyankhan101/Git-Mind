@@ -14,11 +14,17 @@ export default function LandingScene({ sceneRef, subscribe, prefersReduced }) {
 
   const shapes = useMemo(
     () => [
-      { type: "icosa", pos: [-3, 1.5, -2], color: primary, speed: 0.3, scale: 0.8 },
+      {
+        type: "icosa",
+        pos: [-3, 1.5, -2],
+        color: primary,
+        speed: 0.3,
+        scale: 0.8,
+      },
       { type: "octa", pos: [3, -1, -3], color: accent, speed: 0.4, scale: 0.6 },
       { type: "torus", pos: [2, 2, -4], color: fog, speed: 0.2, scale: 0.7 },
     ],
-    [primary, accent, fog]
+    [primary, accent, fog],
   );
 
   useEffect(() => {
