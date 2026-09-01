@@ -308,8 +308,7 @@ function HeroForm({ onLoad, onAnalyzeUrl, inputRef }) {
           <Search size={16} className="lp-hero-input-icon" />
           <input
             ref={inputRef}
-            type="url"
-            inputMode="url"
+            type="text"
             className="lp-hero-input"
             name="github-repo"
             placeholder="e.g. facebook/react — username or repo URL…"
