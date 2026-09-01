@@ -1,6 +1,5 @@
-from typing import Callable
-
 import time
+from collections.abc import Callable
 
 import structlog
 from langgraph.graph import END, START, StateGraph
