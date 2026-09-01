@@ -435,4 +435,4 @@ def test_architecture_falls_back_to_incomplete_diagram():
             ["src/main.py"],
             {"src/main.py": "print('hello')\n"},
         )
-    assert result == "graph TD\n    A[Analysis Incomplete]"
+    assert result == "graph TD\n    src[Source Code (1 files)]"

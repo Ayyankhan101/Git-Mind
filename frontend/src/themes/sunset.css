@@ -1,0 +1,66 @@
+/* ============================================================
+   SUNSET THEME — Amber primary, warm cream neutrals
+   ============================================================ */
+[data-theme="sunset"],
+.sunset {
+  color-scheme: light;
+
+  --bg: #fefbf4;
+  --bg-alt: #faf4e8;
+  --surface-0: #faf4e8;
+  --surface-1: #f5eddd;
+  --surface-2: #efe5d2;
+  --surface-3: #ffffff;
+  --surface-4: #fdf8f0;
+
+  --primary: #d97706;
+  --primary-hover: #f59e0b;
+  --primary-strong: #b45309;
+  --primary-muted: rgba(217, 119, 6, 0.12);
+  --primary-subtle: rgba(217, 119, 6, 0.06);
+
+  --accent-2: #c2410c;
+
+  --success: #16a34a;
+  --success-bg: rgba(22, 163, 74, 0.08);
+  --warning: #d97706;
+  --warning-bg: rgba(217, 119, 6, 0.08);
+  --danger: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.08);
+  --info: #d97706;
+  --info-bg: rgba(217, 119, 6, 0.08);
+
+  --text-primary: #1c1408;
+  --text-secondary: #5c4a2e;
+  --text-tertiary: #8a7450;
+  --text-on-primary: #ffffff;
+
+  --border-subtle: rgba(28, 20, 8, 0.06);
+  --border-default: rgba(28, 20, 8, 0.1);
+  --border-strong: rgba(28, 20, 8, 0.16);
+  --border-accent: rgba(217, 119, 6, 0.3);
+
+  --glass-bg: rgba(254, 251, 244, 0.8);
+  --glass-border: rgba(28, 20, 8, 0.08);
+
+  --shadow-sm: 0 1px 2px rgba(28, 20, 8, 0.06);
+  --shadow-md: 0 4px 12px rgba(28, 20, 8, 0.08);
+  --shadow-lg: 0 8px 32px rgba(28, 20, 8, 0.12);
+  --shadow-accent: 0 4px 20px rgba(217, 119, 6, 0.15);
+
+  --scrim-strong: rgba(28, 20, 8, 0.48);
+  --scrim-default: rgba(28, 20, 8, 0.36);
+  --scrim-soft: rgba(28, 20, 8, 0.24);
+
+  --code-keyword: #7c3aed;
+  --code-string: #16a34a;
+  --code-comment: #8a7450;
+  --code-fn: #d97706;
+  --code-number: #c2410c;
+  --code-operator: #d97706;
+  --code-punctuation: #5c4a2e;
+
+  --three-primary: #d97706;
+  --three-accent: #c2410c;
+  --three-fog: #fefbf4;
+}

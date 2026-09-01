@@ -76,7 +76,7 @@ async def chat_endpoint(req: ChatRequest, request: Request):
         return error_response("Knowledge base not ready — RAG setup may have failed.", 503)
 
     # Defensive: check if ChromaDB collection still exists (ephemeral storage)
-    from chroma_utils import _client, search_codebase
+    from chroma_utils import _client
     collection_name = session["chroma_collection_name"]
     try:
         _client.get_collection(collection_name)

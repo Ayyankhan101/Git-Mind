@@ -1,0 +1,66 @@
+/* ============================================================
+   OCEAN THEME — Blue primary, cool slate neutrals
+   ============================================================ */
+[data-theme="ocean"],
+.ocean {
+  color-scheme: light;
+
+  --bg: #f8fafc;
+  --bg-alt: #f1f5f9;
+  --surface-0: #f1f5f9;
+  --surface-1: #e8eef6;
+  --surface-2: #dde5f0;
+  --surface-3: #ffffff;
+  --surface-4: #f0f4fa;
+
+  --primary: #2563eb;
+  --primary-hover: #3b82f6;
+  --primary-strong: #1d4ed8;
+  --primary-muted: rgba(37, 99, 235, 0.12);
+  --primary-subtle: rgba(37, 99, 235, 0.06);
+
+  --accent-2: #6366f1;
+
+  --success: #16a34a;
+  --success-bg: rgba(22, 163, 74, 0.08);
+  --warning: #d97706;
+  --warning-bg: rgba(217, 119, 6, 0.08);
+  --danger: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.08);
+  --info: #2563eb;
+  --info-bg: rgba(37, 99, 235, 0.08);
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #64748b;
+  --text-on-primary: #ffffff;
+
+  --border-subtle: rgba(15, 23, 42, 0.06);
+  --border-default: rgba(15, 23, 42, 0.1);
+  --border-strong: rgba(15, 23, 42, 0.16);
+  --border-accent: rgba(37, 99, 235, 0.3);
+
+  --glass-bg: rgba(248, 250, 252, 0.8);
+  --glass-border: rgba(15, 23, 42, 0.08);
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 8px 32px rgba(15, 23, 42, 0.12);
+  --shadow-accent: 0 4px 20px rgba(37, 99, 235, 0.15);
+
+  --scrim-strong: rgba(15, 23, 42, 0.48);
+  --scrim-default: rgba(15, 23, 42, 0.36);
+  --scrim-soft: rgba(15, 23, 42, 0.24);
+
+  --code-keyword: #7c3aed;
+  --code-string: #16a34a;
+  --code-comment: #94a3b8;
+  --code-fn: #2563eb;
+  --code-number: #d97706;
+  --code-operator: #2563eb;
+  --code-punctuation: #475569;
+
+  --three-primary: #2563eb;
+  --three-accent: #6366f1;
+  --three-fog: #f8fafc;
+}

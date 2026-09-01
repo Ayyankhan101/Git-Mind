@@ -1,6 +1,6 @@
 """Tests for agent_types validation."""
 
-from agent_types import validate_agent_output, ArchitectureOutput, ApiDocOutput, SecurityOutput
+from agent_types import validate_agent_output
 
 
 class TestValidateAgentOutput:
@@ -32,7 +32,7 @@ class TestValidateAgentOutput:
         result = {"architecture_diagram": "graph TD"}  # missing architecture_graph
         try:
             validate_agent_output("architecture", result)
-            assert False, "Should have raised ValueError"
+            raise AssertionError("Should have raised ValueError")
         except ValueError as e:
             assert "missing keys" in str(e)
             assert "architecture_graph" in str(e)
@@ -46,7 +46,7 @@ class TestValidateAgentOutput:
         }
         try:
             validate_agent_output("architecture", result)
-            assert False, "Should have raised ValueError"
+            raise AssertionError("Should have raised ValueError")
         except ValueError as e:
             assert "unexpected keys" in str(e)
             assert "extra_field" in str(e)

@@ -95,9 +95,7 @@ export function appReducer(state, action) {
     // ── UI ──────────────────────────────────────────────────────────────────
     case "SET_THEME": {
       localStorage.setItem("gm-theme", action.theme);
-      document.documentElement.dispatchEvent(
-        new CustomEvent("theme-applied"),
-      );
+      import("./themeLoader").then(({ loadTheme }) => loadTheme(action.theme));
       return { ...state, theme: action.theme };
     }
     case "SET_DENSITY": {

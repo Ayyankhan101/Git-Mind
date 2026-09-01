@@ -69,7 +69,10 @@ _DEFAULTS: dict = {
 }
 
 # Fields stripped before persistence (sensitive or internal)
-_INTERNAL_FIELDS: frozenset[str] = frozenset({"gh_token", "local_path", "file_contents", "chroma_collection_name", "chat_history"})
+_INTERNAL_FIELDS: frozenset[str] = frozenset({
+    "gh_token", "local_path", "file_contents",
+    "chroma_collection_name", "chat_history",
+})
 
 # Derived: all fields minus internal = public (for API exposure)
 PUBLIC_FIELDS: tuple[str, ...] = tuple(

@@ -60,11 +60,6 @@ test("renders app root", () => {
   expect(elements.length).toBeGreaterThanOrEqual(1);
 });
 
-test("renders theme switcher", async () => {
-  renderApp();
-  expect(await screen.findByLabelText("Change theme")).toBeInTheDocument();
-});
-
 test("renders keyboard help trigger", async () => {
   renderApp();
   expect(

@@ -132,7 +132,7 @@ def scanner_node(state: RepoState) -> dict:
         }
 
 
-def _architecture_fallback(state: RepoState, exc: Exception) -> dict:
+def _architecture_fallback(state: RepoState, exc: Exception) -> dict:  # noqa: ARG001
     from agents.architecture import _fallback_mermaid
 
     return {
@@ -141,7 +141,7 @@ def _architecture_fallback(state: RepoState, exc: Exception) -> dict:
     }
 
 
-def _security_fallback(state: RepoState, exc: Exception) -> dict:
+def _security_fallback(state: RepoState, exc: Exception) -> dict:  # noqa: ARG001
     return {"security_findings": _synthetic_finding()}
 
 

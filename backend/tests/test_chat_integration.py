@@ -1,11 +1,10 @@
 """Tests for chat endpoint with real session."""
 
-import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
 
 from main import app
-
 
 client = TestClient(app)
 

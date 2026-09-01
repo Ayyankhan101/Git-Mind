@@ -1,0 +1,66 @@
+/* ============================================================
+   FOREST THEME — Green primary, warm earth neutrals
+   ============================================================ */
+[data-theme="forest"],
+.forest {
+  color-scheme: light;
+
+  --bg: #f9faf6;
+  --bg-alt: #f0f4eb;
+  --surface-0: #f0f4eb;
+  --surface-1: #e6eddf;
+  --surface-2: #dce5d4;
+  --surface-3: #ffffff;
+  --surface-4: #f2f7ec;
+
+  --primary: #3d8b5a;
+  --primary-hover: #4da06a;
+  --primary-strong: #2d6b43;
+  --primary-muted: rgba(61, 139, 90, 0.12);
+  --primary-subtle: rgba(61, 139, 90, 0.06);
+
+  --accent-2: #8b6f2e;
+
+  --success: #2d8a46;
+  --success-bg: rgba(45, 138, 70, 0.08);
+  --warning: #b8860b;
+  --warning-bg: rgba(184, 134, 11, 0.08);
+  --danger: #c94a3a;
+  --danger-bg: rgba(201, 74, 58, 0.08);
+  --info: #3d8b5a;
+  --info-bg: rgba(61, 139, 90, 0.08);
+
+  --text-primary: #1a2418;
+  --text-secondary: #4a5c46;
+  --text-tertiary: #6b7d66;
+  --text-on-primary: #ffffff;
+
+  --border-subtle: rgba(26, 36, 24, 0.06);
+  --border-default: rgba(26, 36, 24, 0.1);
+  --border-strong: rgba(26, 36, 24, 0.16);
+  --border-accent: rgba(61, 139, 90, 0.3);
+
+  --glass-bg: rgba(249, 250, 246, 0.8);
+  --glass-border: rgba(26, 36, 24, 0.08);
+
+  --shadow-sm: 0 1px 2px rgba(26, 36, 24, 0.06);
+  --shadow-md: 0 4px 12px rgba(26, 36, 24, 0.08);
+  --shadow-lg: 0 8px 32px rgba(26, 36, 24, 0.12);
+  --shadow-accent: 0 4px 20px rgba(61, 139, 90, 0.15);
+
+  --scrim-strong: rgba(26, 36, 24, 0.48);
+  --scrim-default: rgba(26, 36, 24, 0.36);
+  --scrim-soft: rgba(26, 36, 24, 0.24);
+
+  --code-keyword: #7c3aed;
+  --code-string: #2d8a46;
+  --code-comment: #6b7d66;
+  --code-fn: #3d8b5a;
+  --code-number: #b8860b;
+  --code-operator: #3d8b5a;
+  --code-punctuation: #4a5c46;
+
+  --three-primary: #3d8b5a;
+  --three-accent: #8b6f2e;
+  --three-fog: #f9faf6;
+}
