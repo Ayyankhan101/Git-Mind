@@ -52,7 +52,6 @@ export default function CommandBar({
       <span className="cb-wordmark">GitMind</span>
 
       <div
-        className="cb-divider"
         style={{
           width: 1,
           height: 20,

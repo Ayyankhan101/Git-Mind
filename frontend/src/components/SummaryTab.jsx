@@ -541,7 +541,7 @@ export default function SummaryTab({
                 .trim();
               return (
                 <div
-                  className="lead summary-text"
+                  className="lead"
                   style={{ display: "flex", flexDirection: "column", gap: 12 }}
                 >
                   {clean
