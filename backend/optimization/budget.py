@@ -32,9 +32,7 @@ def estimate_compile_tokens(
     candidate over the trainset. Both scale with trainset × avg_input_tokens.
     """
     candidates = _CANDIDATES.get(auto or "light", 8)
-    bootstrap = (
-        trainset_size * (max_bootstrapped_demos + max_labeled_demos) * avg_input_tokens
-    )
+    bootstrap = trainset_size * (max_bootstrapped_demos + max_labeled_demos) * avg_input_tokens
     search = candidates * trainset_size * avg_input_tokens
     return bootstrap + search
 

@@ -13,16 +13,10 @@ _MAX_ATTEMPTS = 3
 _RETRY_DELAY = 5  # seconds
 
 
-def run_rag_setup(
-    file_contents: dict[str, str], repo_name: str, repo_url: str = ""
-) -> str:
+def run_rag_setup(file_contents: dict[str, str], repo_name: str, repo_url: str = "") -> str:
     url_hash = hashlib.sha256(repo_url.encode()).hexdigest()[:8]
-    collection_name = ("repo_" + _UNSAFE_CHARS.sub("_", repo_name) + "_" + url_hash)[
-        :63
-    ]
-    logger.info(
-        "RAG setup: embedding %d files into '%s'", len(file_contents), collection_name
-    )
+    collection_name = ("repo_" + _UNSAFE_CHARS.sub("_", repo_name) + "_" + url_hash)[:63]
+    logger.info("RAG setup: embedding %d files into '%s'", len(file_contents), collection_name)
 
     last_exc: Exception | None = None
     for attempt in range(1, _MAX_ATTEMPTS + 1):
@@ -41,8 +35,6 @@ def run_rag_setup(
                 )
                 time.sleep(_RETRY_DELAY)
             else:
-                logger.error(
-                    "RAG embed failed after %d attempts: %s", _MAX_ATTEMPTS, exc
-                )
+                logger.error("RAG embed failed after %d attempts: %s", _MAX_ATTEMPTS, exc)
 
     raise last_exc  # type: ignore[misc]

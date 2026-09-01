@@ -16,9 +16,7 @@ from state import initial_state  # noqa: F401 — re-export for backward compati
 
 logger = structlog.get_logger(__name__)
 
-_UUID_RE = re.compile(
-    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.IGNORECASE
-)
+_UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.IGNORECASE)
 
 _SESSION_TTL = 3600  # 1 hour
 
@@ -35,9 +33,7 @@ async def put_session(session_id: str, data: dict) -> None:
     r = get_redis()
     if r:
         try:
-            await r.set(
-                f"session:{session_id}", json.dumps(safe, default=str), ex=_SESSION_TTL
-            )
+            await r.set(f"session:{session_id}", json.dumps(safe, default=str), ex=_SESSION_TTL)
             return
         except Exception as exc:
             logger.warning("Redis session set failed", error=str(exc)[:80])
@@ -55,9 +51,7 @@ async def put_session(session_id: str, data: dict) -> None:
 def prune_expired_sessions() -> int:
     """Remove in-memory sessions that have exceeded TTL. Returns count removed."""
     now = time.time()
-    expired = [
-        sid for sid, ts in list(_session_timestamps.items()) if now - ts > _SESSION_TTL
-    ]
+    expired = [sid for sid, ts in list(_session_timestamps.items()) if now - ts > _SESSION_TTL]
     for sid in expired:
         _sessions.pop(sid, None)
         _session_timestamps.pop(sid, None)
@@ -75,9 +69,7 @@ async def get_session(session_id: str) -> dict | None:
             if raw:
                 return json.loads(raw)
         except Exception as exc:
-            logger.warning(
-                "Redis session get failed, falling back to memory", error=str(exc)[:80]
-            )
+            logger.warning("Redis session get failed, falling back to memory", error=str(exc)[:80])
 
     # Dev fallback
     session = _sessions.get(session_id)
@@ -142,15 +134,11 @@ async def persist_analysis(
     from services.sha_cache import update_sha_index
 
     if not _UUID_RE.match(session_id):
-        logger.warning(
-            "session_id is not a UUID, skipping persist", session_id=session_id
-        )
+        logger.warning("session_id is not a UUID, skipping persist", session_id=session_id)
         return
 
     try:
-        snapshot = _session_to_snapshot(
-            session_id, final_state, repo_url, sha, owner_hash
-        )
+        snapshot = _session_to_snapshot(session_id, final_state, repo_url, sha, owner_hash)
         await persist_analysis_db(session_id, snapshot)
         if sha:
             await update_sha_index(sha, session_id)

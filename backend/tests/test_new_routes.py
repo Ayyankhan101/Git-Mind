@@ -14,9 +14,7 @@ AUTH_HEADERS = {"Authorization": "Bearer ghp_test_placeholder"}
 class TestAnalyzeEndpoint:
     @patch("routes.analyze.check_rate_limit", return_value=(True, 30, 0))
     def test_analyze_invalid_url(self, _mock_rate):
-        response = client.post(
-            "/analyze", json={"repo_url": "not-a-url"}, headers=AUTH_HEADERS
-        )
+        response = client.post("/analyze", json={"repo_url": "not-a-url"}, headers=AUTH_HEADERS)
         assert response.status_code == 400
         assert "error" in response.json()
 
@@ -62,9 +60,7 @@ class TestWebhookEndpoint:
         assert "error" in response.json()
 
     def test_webhook_missing_fields(self):
-        response = client.post(
-            "/webhook/notify", json={"message": "test"}, headers=AUTH_HEADERS
-        )
+        response = client.post("/webhook/notify", json={"message": "test"}, headers=AUTH_HEADERS)
         assert response.status_code == 422
 
     def test_webhook_rejects_non_slack(self):
@@ -82,9 +78,7 @@ class TestWebhookEndpoint:
 
 class TestMonitorEndpoint:
     def test_monitor_subscribe_invalid_url(self):
-        response = client.post(
-            "/monitor/subscribe", json={"repo_url": "not-a-url"}, headers=AUTH_HEADERS
-        )
+        response = client.post("/monitor/subscribe", json={"repo_url": "not-a-url"}, headers=AUTH_HEADERS)
         assert response.status_code == 400
         assert "error" in response.json()
 

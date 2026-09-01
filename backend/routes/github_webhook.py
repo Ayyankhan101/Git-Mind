@@ -18,10 +18,7 @@ def verify_hmac_signature(payload: bytes, signature_header: str, secret: str) ->
     """Verify the x-hub-signature-256 HMAC header against the webhook secret."""
     if not signature_header or not signature_header.startswith("sha256="):
         return False
-    expected = (
-        "sha256="
-        + hmac.new(secret.encode("utf-8"), payload, hashlib.sha256).hexdigest()
-    )
+    expected = "sha256=" + hmac.new(secret.encode("utf-8"), payload, hashlib.sha256).hexdigest()
     return hmac.compare_digest(expected, signature_header)
 
 
@@ -55,9 +52,7 @@ async def _handle_pr_event(payload: dict):
     asyncio.create_task(_run_pr_review_and_comment(owner, repo, pr_number, pr_url))
 
 
-async def _run_pr_review_and_comment(
-    owner: str, repo: str, pr_number: int, pr_url: str
-):
+async def _run_pr_review_and_comment(owner: str, repo: str, pr_number: int, pr_url: str):
     """Run AI PR review and post results as a PR comment."""
     try:
         from agents.pr_review import run_pr_review
@@ -112,14 +107,10 @@ async def _handle_push_event(payload: dict):
             from services.database import async_session_factory
 
             async with async_session_factory() as session:
-                result = await session.execute(
-                    select(MonitoredRepo).where(MonitoredRepo.repo_url == repo_url)
-                )
+                result = await session.execute(select(MonitoredRepo).where(MonitoredRepo.repo_url == repo_url))
                 monitored = result.scalars().all()
                 if monitored:
-                    logger.info(
-                        "Webhook: triggering monitoring check for", repo=repo_url
-                    )
+                    logger.info("Webhook: triggering monitoring check for", repo=repo_url)
                     # The monitoring loop will pick this up on next interval
                     # But we could trigger it immediately here if needed
         except Exception as exc:
@@ -178,9 +169,7 @@ async def github_webhook(request: Request):
     # Reject webhooks when no secret is configured — prevents unauthenticated abuse
     if not secret:
         logger.error("GitHub webhook: GITHUB_APP_WEBHOOK_SECRET not set — rejecting")
-        return JSONResponse(
-            status_code=503, content={"error": "Webhook secret not configured"}
-        )
+        return JSONResponse(status_code=503, content={"error": "Webhook secret not configured"})
 
     # Read raw body for HMAC verification
     body = await request.body()
@@ -216,9 +205,7 @@ async def github_webhook(request: Request):
         elif github_event == "ping":
             logger.info("GitHub webhook: ping received")
         else:
-            logger.debug(
-                "GitHub webhook: unhandled event type", github_event=github_event
-            )
+            logger.debug("GitHub webhook: unhandled event type", github_event=github_event)
     except Exception as exc:
         logger.error(
             "GitHub webhook handler error",

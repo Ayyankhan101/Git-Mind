@@ -27,9 +27,7 @@ async def test_pr_impact_health_uses_code_audit():
     pr_code_audit = [
         {
             "language": "python",
-            "findings": [
-                {"severity": "critical", "file": "app.py", "line": 1, "title": "Bad"}
-            ],
+            "findings": [{"severity": "critical", "file": "app.py", "line": 1, "title": "Bad"}],
         }
     ]
 

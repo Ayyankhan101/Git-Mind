@@ -33,9 +33,7 @@ class TestWsAnalyze:
     @patch.dict(os.environ, {"ENVIRONMENT": "test"})
     def test_rate_limited(self, _mock_rate):
         with client.websocket_connect("/ws/analyze") as ws:
-            ws.send_json(
-                {"repo_url": "https://github.com/user/repo", "gh_token": "ghp_test"}
-            )
+            ws.send_json({"repo_url": "https://github.com/user/repo", "gh_token": "ghp_test"})
             data = ws.receive_json()
             assert "rate limit" in data.get("error", "").lower()
 
@@ -57,9 +55,7 @@ class TestWsAnalyze:
             "health": None,
         }
         with client.websocket_connect("/ws/analyze") as ws:
-            ws.send_json(
-                {"repo_url": "https://github.com/user/repo", "gh_token": "ghp_test"}
-            )
+            ws.send_json({"repo_url": "https://github.com/user/repo", "gh_token": "ghp_test"})
             data = ws.receive_json()
             assert "agent_status" in data
             data2 = ws.receive_json()
@@ -83,9 +79,7 @@ class TestWsAnalyze:
         mock_graph.astream = _raise
 
         with client.websocket_connect("/ws/analyze") as ws:
-            ws.send_json(
-                {"repo_url": "https://github.com/user/repo", "gh_token": "ghp_test"}
-            )
+            ws.send_json({"repo_url": "https://github.com/user/repo", "gh_token": "ghp_test"})
             data = ws.receive_json()
             assert "agent_status" in data
             data2 = ws.receive_json()

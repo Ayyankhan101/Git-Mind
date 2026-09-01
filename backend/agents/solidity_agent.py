@@ -155,9 +155,7 @@ def solidity_agent(state: dict) -> dict:
                 if not source:
                     continue
                 try:
-                    resp = client.post(
-                        f"{_SIDECAR_BASE}/parse", json={"source": source}
-                    )
+                    resp = client.post(f"{_SIDECAR_BASE}/parse", json={"source": source})
                     if resp.status_code == 200:
                         parsed_contracts.extend(resp.json().get("contracts", []))
                         sidecar_ok = True

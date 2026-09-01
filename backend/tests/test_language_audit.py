@@ -61,9 +61,7 @@ class TestRunCodeAudit:
             }
         ]
 
-        results = run_code_audit(
-            ["src/main.py"], {"src/main.py": "def foo():\n    pass\n"}
-        )
+        results = run_code_audit(["src/main.py"], {"src/main.py": "def foo():\n    pass\n"})
 
         assert len(results) == 1
         assert results[0]["language"] == "python"
@@ -107,9 +105,7 @@ class TestRunCodeAudit:
     @patch("agents.language_audit.shutil.which")
     @patch("agents.language_audit.subprocess.run")
     @patch("agents.language_audit.run_dspy_cached")
-    def test_tool_failure_falls_back_to_llm(
-        self, mock_run_cached, mock_run, mock_which
-    ):
+    def test_tool_failure_falls_back_to_llm(self, mock_run_cached, mock_run, mock_which):
         mock_which.return_value = "/usr/bin/pylint"
         mock_run.side_effect = RuntimeError("pylint crashed")
         mock_run_cached.return_value = [
@@ -189,9 +185,7 @@ class TestMaterializeWorkspace:
     @patch("agents.language_audit.shutil.which")
     @patch("agents.language_audit.subprocess.run")
     @patch("agents.language_audit.run_dspy_cached")
-    def test_go_tool_runs_in_materialized_workspace(
-        self, mock_run_cached, mock_run, mock_which
-    ):
+    def test_go_tool_runs_in_materialized_workspace(self, mock_run_cached, mock_run, mock_which):
         from pathlib import Path
 
         mock_which.return_value = "/usr/bin/go"

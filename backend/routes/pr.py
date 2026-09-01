@@ -217,9 +217,7 @@ async def _compute_pr_impact(
         }
 
         delta = compute_impact(base_snapshot, pr_snapshot)
-        prediction = await asyncio.to_thread(
-            run_merge_prediction, pr_diff, delta, pr_meta
-        )
+        prediction = await asyncio.to_thread(run_merge_prediction, pr_diff, delta, pr_meta)
 
         logger.info(
             "PR impact computed: pr=%s delta=%+d risk=%s",

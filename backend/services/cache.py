@@ -27,9 +27,7 @@ async def init_redis() -> None:
     if not url or aioredis is None:
         msg = "REDIS_URL not set or redis not installed"
         if _ENVIRONMENT == "production":
-            logger.warning(
-                msg + " — production mode without Redis, using memory fallback"
-            )
+            logger.warning(msg + " — production mode without Redis, using memory fallback")
         else:
             logger.warning(msg + " — falling back to memory (dev mode)")
         _fallback = True

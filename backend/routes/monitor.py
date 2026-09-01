@@ -26,9 +26,7 @@ async def subscribe_repo(req: MonitorSubscribeRequest, request: Request):
     # Normalize: remove trailing slash for consistent duplicate detection
     repo_url = repo_url.rstrip("/")
     if not is_valid_gh_url(repo_url):
-        return error_response(
-            "Invalid GitHub URL — must be https://github.com/{owner}/{repo}", 400
-        )
+        return error_response("Invalid GitHub URL — must be https://github.com/{owner}/{repo}", 400)
 
     from sqlalchemy import select
 
@@ -36,9 +34,7 @@ async def subscribe_repo(req: MonitorSubscribeRequest, request: Request):
     from services.database import async_session_factory
 
     async with async_session_factory() as session:
-        existing = await session.execute(
-            select(MonitoredRepo).where(MonitoredRepo.repo_url == repo_url)
-        )
+        existing = await session.execute(select(MonitoredRepo).where(MonitoredRepo.repo_url == repo_url))
         if existing.scalar_one_or_none():
             return error_response("Repo already monitored — unsubscribe first", 409)
 
@@ -82,9 +78,7 @@ async def monitor_status(request: Request):
 
     owner_hash = hash_token(token)
     async with async_session_factory() as session:
-        result = await session.execute(
-            select(MonitoredRepo).where(MonitoredRepo.owner_hash == owner_hash)
-        )
+        result = await session.execute(select(MonitoredRepo).where(MonitoredRepo.owner_hash == owner_hash))
         repos = result.scalars().all()
 
     return {
@@ -170,9 +164,7 @@ async def _trigger_initial_check(repo_url: str, monitor_id: str):
             session_id = ""
 
         async with async_session_factory() as session:
-            repo = await session.execute(
-                select(MonitoredRepo).where(MonitoredRepo.id == monitor_id)
-            )
+            repo = await session.execute(select(MonitoredRepo).where(MonitoredRepo.id == monitor_id))
             repo = repo.scalar_one_or_none()  # type: ignore[assignment]
             if repo:
                 repo.last_sha = current_sha  # type: ignore[attr-defined]
@@ -182,6 +174,4 @@ async def _trigger_initial_check(repo_url: str, monitor_id: str):
 
         logger.info("Monitor initial check complete", repo=repo_url, session=session_id)
     except Exception as exc:
-        logger.error(
-            "Monitor initial check failed", repo=repo_url, error=str(exc)[:200]
-        )
+        logger.error("Monitor initial check failed", repo=repo_url, error=str(exc)[:200])

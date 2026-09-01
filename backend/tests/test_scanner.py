@@ -117,9 +117,7 @@ class TestCloneRetry:
             # If the code stopped cleaning dest between attempts, git would
             # refuse the retry with "already exists" — make that a failure.
             if os.path.isdir(args[1]) and os.listdir(args[1]):
-                raise _clone_error(
-                    "fatal: destination path already exists and is not an empty directory."
-                )
+                raise _clone_error("fatal: destination path already exists and is not an empty directory.")
             return _fake_repo()
 
         with patch("agents.scanner.git.Repo.clone_from", side_effect=fake_clone):
@@ -142,9 +140,7 @@ class TestDeterministicFailures:
         ids=["repo-not-found", "no-username", "auth-failed", "http-404", "http-401"],
     )
     @patch("agents.scanner.time.sleep")
-    def test_deterministic_failure_raises_immediately_without_retry(
-        self, mock_sleep, stderr
-    ):
+    def test_deterministic_failure_raises_immediately_without_retry(self, mock_sleep, stderr):
         calls = []
 
         def fake_clone(*args, **kwargs):
@@ -168,9 +164,7 @@ class TestErrorSurfacing:
         stderr = "fatal: unable to access 'https://github.com/acme/example.git/': Could not resolve host: github.com"
 
         with (
-            patch(
-                "agents.scanner.git.Repo.clone_from", side_effect=_clone_error(stderr)
-            ),
+            patch("agents.scanner.git.Repo.clone_from", side_effect=_clone_error(stderr)),
             pytest.raises(RuntimeError) as excinfo,
         ):
             clone_and_scan(URL)
@@ -219,9 +213,7 @@ class TestErrorSurfacing:
                 raise _clone_error(
                     "fatal: unable to access 'https://github.com/acme/example.git/': Operation timed out"
                 )
-            state["existed_on_retry"] = bool(state["askpass_path"]) and os.path.exists(
-                state["askpass_path"]
-            )
+            state["existed_on_retry"] = bool(state["askpass_path"]) and os.path.exists(state["askpass_path"])
             return _fake_repo()
 
         with patch("agents.scanner.git.Repo.clone_from", side_effect=fake_clone):
@@ -229,10 +221,8 @@ class TestErrorSurfacing:
 
         assert result["head_sha"] == "abc123"
         # The token script must still be on disk for the retried clone...
-        assert state[
-            "existed_on_retry"
-        ], "askpass script must survive into the retry attempt"
+        assert state["existed_on_retry"], "askpass script must survive into the retry attempt"
         # ...and removed once cloning finishes.
-        assert state["askpass_path"] and not os.path.exists(
-            state["askpass_path"]
-        ), "askpass script should be removed once cloning finishes"
+        assert state["askpass_path"] and not os.path.exists(state["askpass_path"]), (
+            "askpass script should be removed once cloning finishes"
+        )

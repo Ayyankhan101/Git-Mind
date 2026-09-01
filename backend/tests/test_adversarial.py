@@ -60,9 +60,7 @@ class TestAuthBypass:
         """Empty Bearer token falls back to GITHUB_TOKEN env var — middleware accepts."""
         old = os.environ.pop("GITHUB_TOKEN", None)
         try:
-            resp = client.post(
-                "/org-audit", json={"repos": []}, headers={"Authorization": "Bearer "}
-            )
+            resp = client.post("/org-audit", json={"repos": []}, headers={"Authorization": "Bearer "})
             assert resp.status_code == 401  # No token anywhere → rejected
         finally:
             if old:
@@ -140,9 +138,7 @@ class TestRateLimiterBypass:
     @patch("routes.analyze.check_rate_limit", return_value=(True, 30, 0))
     def test_analyze_no_rate_limit_when_allowed(self, _mock):
         """When rate limit allows, request proceeds (503 if Redis down)."""
-        resp = client.post(
-            "/analyze", json={"repo_url": "https://github.com/x/y"}, headers=AUTH
-        )
+        resp = client.post("/analyze", json={"repo_url": "https://github.com/x/y"}, headers=AUTH)
         assert resp.status_code in (200, 400, 500, 503)  # Not 429
 
 
@@ -156,9 +152,7 @@ class TestSessionAttacks:
 
     def test_invalid_session_id_format(self):
         """Non-UUID session IDs should be rejected."""
-        resp = client.post(
-            "/chat", json={"session_id": "not-a-uuid", "question": "hi"}, headers=AUTH
-        )
+        resp = client.post("/chat", json={"session_id": "not-a-uuid", "question": "hi"}, headers=AUTH)
         assert resp.status_code == 400
 
     def test_sql_injection_in_session_id(self):
@@ -168,9 +162,7 @@ class TestSessionAttacks:
             "1' OR '1'='1",
         ]
         for payload in payloads:
-            resp = client.post(
-                "/chat", json={"session_id": payload, "question": "hi"}, headers=AUTH
-            )
+            resp = client.post("/chat", json={"session_id": payload, "question": "hi"}, headers=AUTH)
             # Pydantic rejects short invalid UUIDs with 422, route rejects valid-length invalid UUIDs with 400
             assert resp.status_code in (
                 400,
@@ -180,9 +172,7 @@ class TestSessionAttacks:
     def test_very_long_session_id(self):
         """Extremely long session_id — Pydantic rejects with 422."""
         long_id = "a" * 10000
-        resp = client.post(
-            "/chat", json={"session_id": long_id, "question": "hi"}, headers=AUTH
-        )
+        resp = client.post("/chat", json={"session_id": long_id, "question": "hi"}, headers=AUTH)
         # Pydantic max length catches this
         assert resp.status_code == 422
 
@@ -192,9 +182,7 @@ class TestSessionAttacks:
 
         # Fill to capacity
         for i in range(_MAX_SESSIONS + 10):
-            await put_session(
-                f"00000000-0000-0000-0000-{i:012d}", {"data": f"test-{i}"}
-            )
+            await put_session(f"00000000-0000-0000-0000-{i:012d}", {"data": f"test-{i}"})
 
         # Should have evicted oldest
         assert len(_sessions) <= _MAX_SESSIONS
@@ -273,10 +261,7 @@ class TestWebhookHMACBypass:
         payload = json.dumps({"action": "ping"}).encode()
         secret = "correct-secret"
         wrong_secret = "wrong-secret"
-        sig = (
-            "sha256="
-            + hmac.new(wrong_secret.encode(), payload, hashlib.sha256).hexdigest()
-        )
+        sig = "sha256=" + hmac.new(wrong_secret.encode(), payload, hashlib.sha256).hexdigest()
 
         with patch.dict(os.environ, {"GITHUB_APP_WEBHOOK_SECRET": secret}):
             resp = client.post(
@@ -307,9 +292,7 @@ class TestWebhookHMACBypass:
         original = json.dumps({"action": "ping"}).encode()
         tampered = json.dumps({"action": "push"}).encode()
         secret = "my-secret"
-        sig = (
-            "sha256=" + hmac.new(secret.encode(), original, hashlib.sha256).hexdigest()
-        )
+        sig = "sha256=" + hmac.new(secret.encode(), original, hashlib.sha256).hexdigest()
 
         with patch.dict(os.environ, {"GITHUB_APP_WEBHOOK_SECRET": secret}):
             resp = client.post(

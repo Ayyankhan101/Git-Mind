@@ -111,18 +111,14 @@ def run_architecture_agent(file_tree: list[str], file_contents: dict[str, str]) 
             context=prompt,
         )
     except Exception as exc:
-        logger.warning(
-            "Architecture agent: LLM failed — %s; using file-tree fallback", exc
-        )
+        logger.warning("Architecture agent: LLM failed — %s; using file-tree fallback", exc)
         result = _fallback_mermaid(file_tree, primary_lang)
 
     result = _strip_fences(result)
     result = _sanitize_mermaid(result)
 
     if not result.startswith("graph"):
-        logger.warning(
-            "Architecture agent: unexpected LLM output — using file-tree fallback"
-        )
+        logger.warning("Architecture agent: unexpected LLM output — using file-tree fallback")
         result = _fallback_mermaid(file_tree, primary_lang)
 
     return result
@@ -157,12 +153,8 @@ class ArchitectureSignature(dspy.Signature):
     - Maximum 15 nodes — fewer clean nodes beats many messy ones
     - Edge labels syntax: -->|short label|"""
 
-    context: str = dspy.InputField(
-        desc="Primary language, file tree, and key file contents"
-    )
-    diagram: str = dspy.OutputField(
-        desc="Mermaid flowchart diagram whose first line is exactly 'graph TD'"
-    )
+    context: str = dspy.InputField(desc="Primary language, file tree, and key file contents")
+    diagram: str = dspy.OutputField(desc="Mermaid flowchart diagram whose first line is exactly 'graph TD'")
 
 
 _predictor = define_program(
@@ -174,17 +166,13 @@ _predictor = define_program(
 )
 
 
-def _build_prompt(
-    file_tree: list[str], file_contents: dict[str, str], primary_lang: str = "Unknown"
-) -> str:
+def _build_prompt(file_tree: list[str], file_contents: dict[str, str], primary_lang: str = "Unknown") -> str:
     budget = _TOKEN_BUDGET
     tree_str = "\n".join(file_tree[:_MAX_TREE_LINES])
     budget -= len(_ENC.encode(tree_str, allowed_special="all"))
 
     # Priority files: those whose path contains domain keywords
-    priority = [
-        f for f in file_tree if any(kw in f.lower() for kw in _PRIORITY_KEYWORDS)
-    ][:_MAX_KEY_FILES]
+    priority = [f for f in file_tree if any(kw in f.lower() for kw in _PRIORITY_KEYWORDS)][:_MAX_KEY_FILES]
 
     key_content = ""
     for fp in priority:

@@ -26,9 +26,7 @@ class TestGetRemoteSha:
 
 class TestUpdateShaIndex:
     async def test_updates_sha_index(self):
-        with patch(
-            "services.database.upsert_sha_index", new_callable=AsyncMock
-        ) as mock_up:
+        with patch("services.database.upsert_sha_index", new_callable=AsyncMock) as mock_up:
             await sha_cache.update_sha_index("sha1", "session1")
             mock_up.assert_awaited_once_with("sha1", "session1")
 
@@ -52,9 +50,7 @@ class TestFindCachedSnapshot:
             new_callable=AsyncMock,
             return_value=None,
         ):
-            result = await sha_cache.find_cached_snapshot(
-                "https://github.com/owner/repo", "sha1"
-            )
+            result = await sha_cache.find_cached_snapshot("https://github.com/owner/repo", "sha1")
             assert result is None
 
     async def test_returns_none_when_analysis_not_found(self):
@@ -70,9 +66,7 @@ class TestFindCachedSnapshot:
                 return_value=None,
             ),
         ):
-            result = await sha_cache.find_cached_snapshot(
-                "https://github.com/owner/repo", "sha1"
-            )
+            result = await sha_cache.find_cached_snapshot("https://github.com/owner/repo", "sha1")
             assert result is None
 
     async def test_returns_snapshot_when_match(self):
@@ -89,9 +83,7 @@ class TestFindCachedSnapshot:
                 return_value=snap,
             ),
         ):
-            result = await sha_cache.find_cached_snapshot(
-                "https://github.com/owner/repo", "sha1"
-            )
+            result = await sha_cache.find_cached_snapshot("https://github.com/owner/repo", "sha1")
             assert result == snap
 
     async def test_returns_none_on_repo_url_mismatch(self):
@@ -108,7 +100,5 @@ class TestFindCachedSnapshot:
                 return_value=snap,
             ),
         ):
-            result = await sha_cache.find_cached_snapshot(
-                "https://github.com/owner/repo", "sha1"
-            )
+            result = await sha_cache.find_cached_snapshot("https://github.com/owner/repo", "sha1")
             assert result is None

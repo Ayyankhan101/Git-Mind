@@ -56,10 +56,7 @@ class TestStandardHeaders:
         resp = client.get("/ok")
         assert resp.headers["Content-Security-Policy-Report-Only"] == _CSP_REPORT_ONLY
         # Must NOT be enforced CSP (would break React inline styles)
-        assert (
-            "Content-Security-Policy" not in resp.headers
-            or "Report-Only" in resp.headers
-        )
+        assert "Content-Security-Policy" not in resp.headers or "Report-Only" in resp.headers
 
 
 class TestHSTS:

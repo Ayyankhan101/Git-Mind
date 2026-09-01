@@ -69,9 +69,7 @@ class TestCodeAuditNode:
         assert any(ev["status"] == "done" for ev in result.get("events", []))
 
     def test_scanner_failed(self):
-        result = code_audit_node(
-            {"_scanner_failed": True, "file_tree": [], "file_contents": {}}
-        )
+        result = code_audit_node({"_scanner_failed": True, "file_tree": [], "file_contents": {}})
         assert result["code_audit"] is None
         assert any(ev["status"] == "skipped" for ev in result.get("events", []))
 

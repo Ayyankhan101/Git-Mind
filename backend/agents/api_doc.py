@@ -32,9 +32,7 @@ class ApiDocSignature(dspy.Signature):
     only include endpoints that are clearly defined in this file. If no endpoints
     are found, return an empty list."""
 
-    source_code: str = dspy.InputField(
-        desc="File path and source code of one API route file"
-    )
+    source_code: str = dspy.InputField(desc="File path and source code of one API route file")
     endpoints: list[ApiEndpoint] = dspy.OutputField(
         desc=(
             "Extracted endpoints. Each has: method (uppercase HTTP verb: GET, POST, PUT, DELETE, PATCH), "
@@ -55,11 +53,7 @@ _predictor = define_program(
 
 
 def run_api_doc_agent(file_contents: dict[str, str]) -> list[dict]:
-    api_files = {
-        fp: content
-        for fp, content in file_contents.items()
-        if fp in scan_route_files(file_contents)
-    }
+    api_files = {fp: content for fp, content in file_contents.items() if fp in scan_route_files(file_contents)}
 
     if not api_files:
         logger.info("API doc agent: no route patterns detected")

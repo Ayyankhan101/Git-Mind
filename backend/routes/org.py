@@ -57,9 +57,7 @@ async def org_audit_endpoint(req: OrgAuditRequest, request: Request):
                     if r.status_code == 200:
                         data = r.json()
                         if data.get("encoding") == "base64":
-                            contents[dep_file] = base64.b64decode(
-                                data["content"]
-                            ).decode(errors="ignore")
+                            contents[dep_file] = base64.b64decode(data["content"]).decode(errors="ignore")
                 except Exception:
                     pass
         return contents
@@ -112,9 +110,7 @@ async def org_audit_endpoint(req: OrgAuditRequest, request: Request):
     ]
 
     total_cves = sum(r.get("cve_count", 0) for r in results)
-    repos_clean = sum(
-        1 for r in results if r.get("cve_count", 0) == 0 and not r.get("error")
-    )
+    repos_clean = sum(1 for r in results if r.get("cve_count", 0) == 0 and not r.get("error"))
     logger.info(
         "Org audit complete",
         repos=len(req.repos),

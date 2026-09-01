@@ -106,9 +106,7 @@ class TestChatEndpoint:
     @patch("routes.chat.get_session")
     @patch("routes.chat.run_chat_agent")
     @patch("chroma_utils._client")
-    def test_chat_with_lost_collection_with_contents(
-        self, mock_client, mock_chat, mock_get_session
-    ):
+    def test_chat_with_lost_collection_with_contents(self, mock_client, mock_chat, mock_get_session):
         """Chat should re-embed if ChromaDB collection lost but file_contents exists."""
         session_id = "12345678-1234-1234-1234-123456789012"
         mock_get_session.return_value = {

@@ -88,9 +88,7 @@ def _fetch_commits(owner: str, repo: str, token: str | None) -> list:
                 "full_sha": c.get("sha") or "",
                 "message": first,
                 "body": body,
-                "author": author.get("name")
-                or (c.get("author") or {}).get("login")
-                or "unknown",
+                "author": author.get("name") or (c.get("author") or {}).get("login") or "unknown",
                 "date": author.get("date") or "",
                 "msg_quality": _classify(first),
                 "url": c.get("html_url") or "",

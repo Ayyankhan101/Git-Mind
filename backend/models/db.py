@@ -10,18 +10,14 @@ class Analysis(Base):
     __tablename__ = "analyses"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    owner_hash: Mapped[str | None] = mapped_column(
-        String(64), nullable=True, index=True
-    )
+    owner_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     repo_name: Mapped[str] = mapped_column(String(255), default="")
     repo_url: Mapped[str] = mapped_column(String(1024), default="")
     architecture_diagram: Mapped[str | None] = mapped_column(Text, nullable=True)
     api_docs: Mapped[list | None] = mapped_column(JSON, nullable=True)
     security_findings: Mapped[list | None] = mapped_column(JSON, nullable=True)
     cve_findings: Mapped[list | None] = mapped_column(JSON, nullable=True)
-    chroma_collection_name: Mapped[str | None] = mapped_column(
-        String(255), nullable=True
-    )
+    chroma_collection_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     git_audit: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     solidity_audit: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     code_audit: Mapped[list | None] = mapped_column(JSON, nullable=True)

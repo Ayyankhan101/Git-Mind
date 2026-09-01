@@ -32,21 +32,14 @@ async def incident_report_endpoint(req: IncidentReportRequest, request: Request)
     messages = req.crisis_messages
 
     timeline = (
-        "\n".join(
-            f"  [{m.get('role', '?')}]: {m.get('text', '')[:200]}"
-            for m in messages[:20]
-        )
+        "\n".join(f"  [{m.get('role', '?')}]: {m.get('text', '')[:200]}" for m in messages[:20])
         or "  (no crisis messages recorded)"
     )
 
     outcome_str = (
         "CONTAINED — team issued statement before reporter published"
         if outcome == "resolved"
-        else (
-            "LEAKED — reporter published before team responded"
-            if outcome == "leaked"
-            else "UNKNOWN"
-        )
+        else ("LEAKED — reporter published before team responded" if outcome == "leaked" else "UNKNOWN")
     )
 
     prompt = f"""You are a security incident response manager. Generate a complete incident report.
@@ -97,9 +90,7 @@ Be specific and professional. Use the actual vulnerability details."""
 
     try:
         report = await asyncio.to_thread(_generate)
-        logger.info(
-            "Incident report generated", session=req.session_id, outcome=outcome
-        )
+        logger.info("Incident report generated", session=req.session_id, outcome=outcome)
         return {
             "report": report,
             "outcome": outcome,

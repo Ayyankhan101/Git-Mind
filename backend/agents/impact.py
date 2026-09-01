@@ -40,9 +40,7 @@ class MergePredictionSignature(dspy.Signature):
     - confidence: "low" if the diff was truncated or the PR is very large, "high" if the full diff
       was available and the analysis is clear."""
 
-    context: str = dspy.InputField(
-        desc="PR metadata, computed health metrics, and the diff to evaluate"
-    )
+    context: str = dspy.InputField(desc="PR metadata, computed health metrics, and the diff to evaluate")
     prediction: MergePrediction = dspy.OutputField(desc="Merge impact prediction")
 
 
@@ -123,11 +121,7 @@ def run_merge_prediction(
                   additions, deletions, changed_files, diff_truncated
     """
     truncated_diff = diff[:_MAX_DIFF_CHARS]
-    diff_note = (
-        "⚠ Diff truncated to first 10 000 chars.\n"
-        if len(diff) > _MAX_DIFF_CHARS
-        else ""
-    )
+    diff_note = "⚠ Diff truncated to first 10 000 chars.\n" if len(diff) > _MAX_DIFF_CHARS else ""
 
     new_f = delta.get("new_findings", [])
     fix_f = delta.get("fixed_findings", [])

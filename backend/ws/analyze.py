@@ -126,9 +126,7 @@ async def handle_analyze(ws: WebSocket) -> None:
         await ws.close()
         return
 
-    logger.info(
-        "Analysis started", session=session_id, repo=repo_url, auth=bool(gh_token)
-    )
+    logger.info("Analysis started", session=session_id, repo=repo_url, auth=bool(gh_token))
     init = initial_state(repo_url, gh_token)
     final_state = dict(init)
 
@@ -222,17 +220,10 @@ async def handle_analyze(ws: WebSocket) -> None:
                 logger.info("Heartbeat failed, closing connection", session=session_id)
                 break
             for node, update in chunk.items():
-                has_error = any(
-                    ev.get("status") == "error" for ev in update.get("events", [])
-                )
+                has_error = any(ev.get("status") == "error" for ev in update.get("events", []))
                 raw_statuses = _STATUS_MAP.get(node, {})
                 node_statuses = (
-                    {
-                        k: ("error" if v == "done" else v)
-                        for k, v in raw_statuses.items()
-                    }
-                    if has_error
-                    else raw_statuses
+                    {k: ("error" if v == "done" else v) for k, v in raw_statuses.items()} if has_error else raw_statuses
                 )
                 msg: dict = {"agent_status": node_statuses}
 
@@ -268,9 +259,7 @@ async def handle_analyze(ws: WebSocket) -> None:
         return
     except Exception as exc:
         logger.error("Analysis pipeline error", session=session_id, error=str(exc))
-        await ws.send_json(
-            {"error": "Analysis failed — check server logs for details."}
-        )
+        await ws.send_json({"error": "Analysis failed — check server logs for details."})
         await ws.close()
         return
     else:

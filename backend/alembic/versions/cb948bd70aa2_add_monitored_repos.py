@@ -38,9 +38,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("monitored_repos", schema=None) as batch_op:
-        batch_op.create_index(
-            batch_op.f("ix_monitored_repos_repo_url"), ["repo_url"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_monitored_repos_repo_url"), ["repo_url"], unique=False)
 
 
 def downgrade() -> None:

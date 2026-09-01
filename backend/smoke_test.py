@@ -40,10 +40,7 @@ print("════════════════════════�
 print("[ Environment ]")
 
 api_key = os.getenv("GROQ_API_KEY", "")
-_ci_smoke = (
-    os.getenv("CI_SMOKE", "").lower() in ("1", "true", "yes")
-    or os.getenv("GITHUB_ACTIONS") == "true"
-)
+_ci_smoke = os.getenv("CI_SMOKE", "").lower() in ("1", "true", "yes") or os.getenv("GITHUB_ACTIONS") == "true"
 _placeholder_key = api_key in ("", "gsk_test_placeholder")
 _skip_live_checks = _ci_smoke or _placeholder_key
 

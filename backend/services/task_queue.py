@@ -35,9 +35,7 @@ _worker_tasks: list[asyncio.Task] = []
 _prune_task: asyncio.Task | None = None
 
 tasks_submitted = Counter("tasks_submitted_total", "Background tasks submitted")
-tasks_completed = Counter(
-    "tasks_completed_total", "Background tasks completed", ["status"]
-)
+tasks_completed = Counter("tasks_completed_total", "Background tasks completed", ["status"])
 
 
 async def _persist_task(task: dict) -> None:
@@ -108,27 +106,15 @@ async def _worker():
             task["status"] = "cancelled"
             raise
         except (TimeoutError, Exception) as exc:
-            error_msg = (
-                "Task timed out after retries"
-                if isinstance(exc, TimeoutError)
-                else str(exc)[:500]
-            )
-            log_fn = (
-                logger.error
-                if isinstance(exc, TimeoutError) and retries_left <= 0
-                else logger.warning
-            )
-            await _handle_task_failure(
-                task, task_id, retries_left, r, error_msg, log_fn
-            )
+            error_msg = "Task timed out after retries" if isinstance(exc, TimeoutError) else str(exc)[:500]
+            log_fn = logger.error if isinstance(exc, TimeoutError) and retries_left <= 0 else logger.warning
+            await _handle_task_failure(task, task_id, retries_left, r, error_msg, log_fn)
         finally:
             task["completed_at"] = time.time()
             await _persist_task(task)
 
 
-async def _handle_task_failure(
-    task: dict, task_id: str, retries_left: int, r, error_msg: str, log_fn
-) -> None:
+async def _handle_task_failure(task: dict, task_id: str, retries_left: int, r, error_msg: str, log_fn) -> None:
     """Handle task failure with retry logic."""
     if retries_left > 0:
         task["retries"] = retries_left - 1
@@ -165,9 +151,7 @@ async def _run_analysis_task(args: dict) -> dict:
     """Run the full analysis pipeline for a repo."""
     from routes.analyze import _run_analysis
 
-    return await _run_analysis(
-        args["repo_url"], args.get("gh_token"), args["session_id"]
-    )
+    return await _run_analysis(args["repo_url"], args.get("gh_token"), args["session_id"])
 
 
 async def _run_pr_impact_task(args: dict) -> dict:

@@ -50,11 +50,7 @@ def _extra_structural(agent: str, pred) -> bool:
     if agent == "pr_review" and isinstance(pred, dict):
         return str(pred.get("verdict", "")).strip().upper() in VERDICTS
     if agent in ("security", "solidity", "language_audit") and isinstance(pred, list):
-        return all(
-            str(f.get("severity", "")).lower() in SEVERITIES
-            for f in pred
-            if isinstance(f, dict)
-        )
+        return all(str(f.get("severity", "")).lower() in SEVERITIES for f in pred if isinstance(f, dict))
     return True
 
 
@@ -130,44 +126,18 @@ def _score_findings(agent: str, gold, pred) -> float:
 def _score_api_doc(gold, pred) -> float:
     if not gold:
         return 1.0 if not pred else 0.0
-    gold_keys = {
-        (str(e.get("method", "")).upper(), str(e.get("route", "")))
-        for e in gold
-        if isinstance(e, dict)
-    }
+    gold_keys = {(str(e.get("method", "")).upper(), str(e.get("route", ""))) for e in gold if isinstance(e, dict)}
     if not gold_keys:
         return 1.0
-    pred_keys = {
-        (str(e.get("method", "")).upper(), str(e.get("route", "")))
-        for e in pred
-        if isinstance(e, dict)
-    }
+    pred_keys = {(str(e.get("method", "")).upper(), str(e.get("route", ""))) for e in pred if isinstance(e, dict)}
     return len(gold_keys & pred_keys) / len(gold_keys)
 
 
 def _score_impact(gold, pred) -> float:
-    risk = (
-        0.5
-        if str(gold.get("merge_risk", "")).lower()
-        == str(pred.get("merge_risk", "")).lower()
-        else 0.0
-    )
-    conf = (
-        0.25
-        if str(gold.get("confidence", "")).lower()
-        == str(pred.get("confidence", "")).lower()
-        else 0.0
-    )
-    ga = {
-        str(x).strip().casefold()
-        for x in gold.get("affected_areas", [])
-        if isinstance(x, str)
-    }
-    pa = {
-        str(x).strip().casefold()
-        for x in pred.get("affected_areas", [])
-        if isinstance(x, str)
-    }
+    risk = 0.5 if str(gold.get("merge_risk", "")).lower() == str(pred.get("merge_risk", "")).lower() else 0.0
+    conf = 0.25 if str(gold.get("confidence", "")).lower() == str(pred.get("confidence", "")).lower() else 0.0
+    ga = {str(x).strip().casefold() for x in gold.get("affected_areas", []) if isinstance(x, str)}
+    pa = {str(x).strip().casefold() for x in pred.get("affected_areas", []) if isinstance(x, str)}
     overlap = len(ga & pa) / len(ga) if ga else 1.0
     return risk + conf + 0.25 * overlap
 
@@ -176,21 +146,9 @@ def _score_pr_review(gold, pred) -> float:
     gv = str(gold.get("verdict", "")).strip().upper()
     pv = str(pred.get("verdict", "")).strip().upper()
     verdict = 0.7 if gv == pv else 0.0
-    g_lines = {
-        (str(i.get("file", "")), i.get("line"))
-        for i in gold.get("issues", [])
-        if isinstance(i, dict)
-    }
-    p_lines = {
-        (str(i.get("file", "")), i.get("line"))
-        for i in pred.get("issues", [])
-        if isinstance(i, dict)
-    }
-    issue = (
-        (0.3 if not p_lines else 0.0)
-        if not g_lines
-        else 0.3 * len(g_lines & p_lines) / len(g_lines)
-    )
+    g_lines = {(str(i.get("file", "")), i.get("line")) for i in gold.get("issues", []) if isinstance(i, dict)}
+    p_lines = {(str(i.get("file", "")), i.get("line")) for i in pred.get("issues", []) if isinstance(i, dict)}
+    issue = (0.3 if not p_lines else 0.0) if not g_lines else 0.3 * len(g_lines & p_lines) / len(g_lines)
     return verdict + issue
 
 

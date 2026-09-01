@@ -42,9 +42,7 @@ _TARGET_FREE = 35_000  # baseline (~8K) + bootstrap + candidate search
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--agent", required=True)
-    ap.add_argument(
-        "--poll", type=int, default=600, help="seconds between e2e attempts"
-    )
+    ap.add_argument("--poll", type=int, default=600, help="seconds between e2e attempts")
     ap.add_argument(
         "--max-attempts",
         type=int,
@@ -71,27 +69,19 @@ def main() -> int:
         print(line, flush=True)
 
     cmd = [sys.executable, "live_dspy_e2e.py", "--optimize", args.agent]
-    note(
-        f"watcher started: agent={args.agent} poll={args.poll}s target_free={args.target_free}"
-    )
+    note(f"watcher started: agent={args.agent} poll={args.poll}s target_free={args.target_free}")
 
     for attempt in range(1, args.max_attempts + 1):
         note(f"[{attempt}] attempting e2e ($ {' '.join(cmd)})")
         with open(e2e_log, "w", encoding="utf-8") as f:
-            proc = subprocess.run(
-                cmd, cwd=str(Path(__file__).parent), stdout=f, stderr=subprocess.STDOUT
-            )
+            proc = subprocess.run(cmd, cwd=str(Path(__file__).parent), stdout=f, stderr=subprocess.STDOUT)
 
         text = e2e_log.read_text(encoding="utf-8", errors="replace")
-        used_values = sorted(
-            {int(m) for m in re.findall(r"Used (\d+)", text)}, reverse=True
-        )
+        used_values = sorted({int(m) for m in re.findall(r"Used (\d+)", text)}, reverse=True)
         used = used_values[0] if used_values else None
 
         if "promoted" in text or "optimize: live_ok" in text:
-            note(
-                f"[{attempt}] SUCCESS — e2e completed (promoted or gate-rejected); rc={proc.returncode}"
-            )
+            note(f"[{attempt}] SUCCESS — e2e completed (promoted or gate-rejected); rc={proc.returncode}")
             note("--- tail of e2e log ---")
             note("\n".join(text.splitlines()[-15:]))
             return 0
@@ -104,9 +94,7 @@ def main() -> int:
                 f"(retry-in {wait[0] if wait else '?'}m) — waiting {args.poll}s"
             )
             if avail >= args.target_free:
-                note(
-                    f"[{attempt}] NOTE: avail {avail} ≥ target {args.target_free} but e2e failed — inspect {e2e_log}"
-                )
+                note(f"[{attempt}] NOTE: avail {avail} ≥ target {args.target_free} but e2e failed — inspect {e2e_log}")
         else:
             note(
                 f"[{attempt}] e2e failed without a TPD Used figure "

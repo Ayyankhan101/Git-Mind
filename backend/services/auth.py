@@ -121,9 +121,7 @@ def require_gh_token_or_service_key(request) -> str | None:
         return token
     if service_key:
         return None  # service key accepted, no token needed
-    _auth_error(
-        "Authentication required — send Authorization: Bearer <token> or X-Service-Key"
-    )
+    _auth_error("Authentication required — send Authorization: Bearer <token> or X-Service-Key")
 
 
 def hash_token(token: str) -> str:

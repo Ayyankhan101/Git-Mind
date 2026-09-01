@@ -75,17 +75,10 @@ def _build_messages(
 
     # Add graph context if available
     if graph_context:
-        context = (
-            f"Architecture Overview:\n{graph_context}\n\nDetailed Code:\n{context}"
-        )
+        context = f"Architecture Overview:\n{graph_context}\n\nDetailed Code:\n{context}"
 
-    history = (
-        "\n".join(f"{m['role'].upper()}: {m['content']}" for m in chat_history[-10:])
-        or "None."
-    )
-    system = _SYSTEM_TEMPLATE.format(
-        repo_name=repo_name, context=context, history=history
-    )
+    history = "\n".join(f"{m['role'].upper()}: {m['content']}" for m in chat_history[-10:]) or "None."
+    system = _SYSTEM_TEMPLATE.format(repo_name=repo_name, context=context, history=history)
     sources = [
         {
             "filepath": c["filepath"],
@@ -108,9 +101,7 @@ def run_chat_agent(
     graph_context: str = "",
 ) -> tuple[str, list[dict]]:
     """Run chat agent with enhanced retrieval. Returns (answer, sources)."""
-    messages, sources = _build_messages(
-        question, collection_name, chat_history, repo_name, graph_context
-    )
+    messages, sources = _build_messages(question, collection_name, chat_history, repo_name, graph_context)
     answer = invoke_with_retry(_LLM, messages).content
     logger.debug("Chat agent answered question of length %d", len(question))
     return answer, sources
@@ -128,9 +119,7 @@ async def run_chat_agent_stream(
     On the first yield, sources is a list of dicts with 'filepath', 'language', 'layer' keys.
     On subsequent yields, sources is None.
     """
-    messages, sources = _build_messages(
-        question, collection_name, chat_history, repo_name, graph_context
-    )
+    messages, sources = _build_messages(question, collection_name, chat_history, repo_name, graph_context)
     yielded_sources = False
     try:
         async for chunk in _LLM.astream(messages):

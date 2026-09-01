@@ -73,14 +73,10 @@ def validate_agent_output(name: str, result: dict) -> dict:
     extra = set(result) - set(expected.__annotations__) - {"events"}
 
     if missing:
-        raise ValueError(
-            f"Agent '{name}' output missing keys: {missing}. "
-            f"Expected: {list(expected.__annotations__)}"
-        )
+        raise ValueError(f"Agent '{name}' output missing keys: {missing}. Expected: {list(expected.__annotations__)}")
     if extra:
         raise ValueError(
-            f"Agent '{name}' output has unexpected keys: {extra}. "
-            f"Expected: {list(expected.__annotations__)}"
+            f"Agent '{name}' output has unexpected keys: {extra}. Expected: {list(expected.__annotations__)}"
         )
 
     return result

@@ -31,18 +31,11 @@ def make_crisis_agent(name: str, system_prompt: str, leaks: bool = True):
     def node(state: dict) -> dict:
         # Build conversation history (last 12 turns to bound prompt size)
         history_msgs = state.get("crisis_messages", [])[-12:]
-        history = (
-            "\n".join(f"{m['agent']}: {m['content']}" for m in history_msgs)
-            or "No prior messages."
-        )
+        history = "\n".join(f"{m['agent']}: {m['content']}" for m in history_msgs) or "No prior messages."
 
         # Find the active incident
         finding = next(
-            (
-                f
-                for f in state.get("security_findings", [])
-                if f.get("id") == state.get("selected_finding_id")
-            ),
+            (f for f in state.get("security_findings", []) if f.get("id") == state.get("selected_finding_id")),
             None,
         )
         if not finding and state.get("security_findings"):
@@ -69,9 +62,7 @@ def make_crisis_agent(name: str, system_prompt: str, leaks: bool = True):
 
         ts = time.time()
         update: dict = {
-            "crisis_messages": [
-                {"agent": name, "content": text, "turn": state.get("crisis_turn", 0)}
-            ],
+            "crisis_messages": [{"agent": name, "content": text, "turn": state.get("crisis_turn", 0)}],
             "crisis_turn": state.get("crisis_turn", 0) + 1,
             "events": [{"agent": name, "kind": "message", "content": text, "ts": ts}],
         }
@@ -81,9 +72,7 @@ def make_crisis_agent(name: str, system_prompt: str, leaks: bool = True):
         if leaks and any(k in text.lower() for k in _LEAK_TRIGGER_WORDS):
             update["public_signals"] = [text]
 
-        logger.info(
-            "crisis agent %s spoke (turn %d)", name, state.get("crisis_turn", 0)
-        )
+        logger.info("crisis agent %s spoke (turn %d)", name, state.get("crisis_turn", 0))
         return update
 
     return node

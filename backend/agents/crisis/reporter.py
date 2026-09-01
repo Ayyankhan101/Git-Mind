@@ -31,9 +31,7 @@ async def reporter_loop(state_ref: dict, ws_send) -> None:
     something AND the team has not resolved the crisis, drafts and publishes
     a story. Sets reporter_published=True on completion.
     """
-    while not state_ref.get("crisis_resolved") and not state_ref.get(
-        "reporter_published"
-    ):
+    while not state_ref.get("crisis_resolved") and not state_ref.get("reporter_published"):
         await asyncio.sleep(INTERVAL_SEC)
 
         if state_ref.get("crisis_resolved") or state_ref.get("reporter_published"):

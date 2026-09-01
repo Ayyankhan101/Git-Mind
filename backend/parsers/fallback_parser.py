@@ -60,11 +60,7 @@ def parse_fallback(file_path: str, source: str) -> dict | None:
     for pat in _IMPORT_PATTERNS:
         for m in pat.finditer(source):
             mod_path = m.group(1)
-            parts = [
-                p
-                for p in mod_path.replace("\\", "/").split("/")
-                if p and p != ".." and p != "."
-            ]
+            parts = [p for p in mod_path.replace("\\", "/").split("/") if p and p != ".." and p != "."]
             mod = parts[-1].split(".")[0] if parts else ""
             if mod and mod not in [i["source"] for i in imports]:
                 imports.append({"source": mod, "name": mod, "kind": "module"})
@@ -75,20 +71,12 @@ def parse_fallback(file_path: str, source: str) -> dict | None:
     classes = [m.group(1) for m in _CLASS_PATTERN.finditer(source)]
 
     path = file_path.replace("\\", "/")
-    stem = (
-        path.rsplit("/", 1)[-1].rsplit(".", 1)[0]
-        if "/" in path
-        else path.rsplit(".", 1)[0]
-    )
+    stem = path.rsplit("/", 1)[-1].rsplit(".", 1)[0] if "/" in path else path.rsplit(".", 1)[0]
 
     # Build smart label: prefer class name, then filename
     if classes:
         public_classes = [c for c in classes if not c.startswith("_")]
-        label = (
-            _humanize_label(public_classes[0])
-            if public_classes
-            else _humanize_label(stem)
-        )
+        label = _humanize_label(public_classes[0]) if public_classes else _humanize_label(stem)
     else:
         label = _humanize_label(stem)
 
@@ -96,11 +84,7 @@ def parse_fallback(file_path: str, source: str) -> dict | None:
     path_parts = path.split("/")
     if len(path_parts) >= 2:
         parent = path_parts[-2].lower()
-        if (
-            parent
-            and parent != stem.lower()
-            and parent not in ("src", "lib", "app", ".")
-        ):
+        if parent and parent != stem.lower() and parent not in ("src", "lib", "app", "."):
             parent_label = _humanize_label(parent)
             if parent_label.lower() not in label.lower():
                 label = f"{parent_label} {label}"

@@ -19,9 +19,7 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     op.create_index("ix_analyses_repo_url", "analyses", ["repo_url"])
     op.create_index("ix_analyses_saved_at", "analyses", ["saved_at"])
-    op.create_index(
-        "ix_analyses_repo_url_saved_at", "analyses", ["repo_url", "saved_at"]
-    )
+    op.create_index("ix_analyses_repo_url_saved_at", "analyses", ["repo_url", "saved_at"])
     op.create_index("ix_monitored_repos_repo_url", "monitored_repos", ["repo_url"])
 
 

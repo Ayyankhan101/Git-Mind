@@ -73,9 +73,7 @@ async def chat_endpoint(req: ChatRequest, request: Request):
     if not session:
         return error_response("Session not found. Run /ws/analyze first.", 404)
     if not session.get("chroma_collection_name"):
-        return error_response(
-            "Knowledge base not ready — RAG setup may have failed.", 503
-        )
+        return error_response("Knowledge base not ready — RAG setup may have failed.", 503)
 
     # Defensive: check if ChromaDB collection still exists (ephemeral storage)
     from chroma_utils import _client
@@ -104,13 +102,9 @@ async def chat_endpoint(req: ChatRequest, request: Request):
                 )
             except Exception as exc:
                 logger.warning("Re-embed failed: %s", exc)
-                return error_response(
-                    "Knowledge base lost (server restart). Re-run analysis.", 503
-                )
+                return error_response("Knowledge base lost (server restart). Re-run analysis.", 503)
         else:
-            return error_response(
-                "Knowledge base lost (server restart). Re-run analysis.", 503
-            )
+            return error_response("Knowledge base lost (server restart). Re-run analysis.", 503)
 
     graph_context = _build_graph_context(session)
 

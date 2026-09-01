@@ -15,11 +15,7 @@ def compute_health(
     code = _code_quality_score(code_audit)
 
     total = round(sec * 0.35 + docs * 0.15 + api * 0.15 + dep * 0.15 + code * 0.20)
-    grade = (
-        "A"
-        if total >= 90
-        else "B" if total >= 80 else "C" if total >= 70 else "D" if total >= 60 else "F"
-    )
+    grade = "A" if total >= 90 else "B" if total >= 80 else "C" if total >= 70 else "D" if total >= 60 else "F"
 
     return {
         "score": total,
@@ -75,7 +71,5 @@ def _dep_score(cve_findings: list) -> float:
     if not cve_findings:
         return 100.0
     penalties = {"critical": 15, "high": 8, "medium": 3, "low": 1}
-    total = sum(
-        penalties.get(pkg.get("worst_severity", "low"), 1) for pkg in cve_findings
-    )
+    total = sum(penalties.get(pkg.get("worst_severity", "low"), 1) for pkg in cve_findings)
     return max(0.0, 100.0 - total)

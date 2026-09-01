@@ -53,15 +53,8 @@ async def fix_endpoint(req: FixRequest, request: Request):
         )
     )
 
-    chunks = (
-        await asyncio.to_thread(search_codebase, collection, query, 4)
-        if collection
-        else []
-    )
-    context = (
-        "\n\n".join(f"--- {c['filepath']} ---\n{c['content']}" for c in chunks)
-        or "No code context available."
-    )
+    chunks = await asyncio.to_thread(search_codebase, collection, query, 4) if collection else []
+    context = "\n\n".join(f"--- {c['filepath']} ---\n{c['content']}" for c in chunks) or "No code context available."
 
     prompt = (
         f"Repo: {session['repo_name']}\n\n"
@@ -110,9 +103,7 @@ def _apply_and_push_pr(
         # Use GIT_ASKPASS to avoid token in URLs/logs
         _env = {"GIT_TERMINAL_PROMPT": "0"}
         if token:
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".sh", delete=False
-            ) as _askpass_script:
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False) as _askpass_script:
                 _askpass_script.write(f"#!/bin/sh\nexec echo {shlex.quote(token)}\n")
                 _askpass_name = _askpass_script.name
             os.chmod(_askpass_name, stat.S_IRUSR | stat.S_IXUSR)
@@ -166,14 +157,10 @@ def _apply_and_push_pr(
 
         subprocess.run(["git", "add", "-A"], cwd=dest, check=True, capture_output=True)
         # Sanitize commit message: strip control chars and newlines
-        safe_title = re.sub(
-            r"[\x00-\x1f\x7f]", "", finding.get("title", "security fix")
-        )[:72]
+        safe_title = re.sub(r"[\x00-\x1f\x7f]", "", finding.get("title", "security fix"))[:72]
         safe_rule = re.sub(r"[\x00-\x1f\x7f]", "", finding.get("rule", "gitmind"))[:40]
         msg = f"fix: {safe_title} [{safe_rule}]"
-        subprocess.run(
-            ["git", "commit", "-m", msg], cwd=dest, check=True, capture_output=True
-        )
+        subprocess.run(["git", "commit", "-m", msg], cwd=dest, check=True, capture_output=True)
         subprocess.run(
             ["git", "push", "origin", branch],
             cwd=dest,
@@ -274,17 +261,10 @@ async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
         )
     )
     try:
-        chunks = (
-            await asyncio.to_thread(search_codebase, collection, query, 4)
-            if collection
-            else []
-        )
+        chunks = await asyncio.to_thread(search_codebase, collection, query, 4) if collection else []
     except Exception:
         chunks = []
-    context = (
-        "\n\n".join(f"--- {c['filepath']} ---\n{c['content']}" for c in chunks)
-        or "No context."
-    )
+    context = "\n\n".join(f"--- {c['filepath']} ---\n{c['content']}" for c in chunks) or "No context."
 
     prompt = (
         f"Security finding in {session['repo_name']}:\n"
@@ -302,13 +282,9 @@ async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
 
     try:
         raw_patch = await asyncio.to_thread(_gen_patch)
-        result = await asyncio.to_thread(
-            _apply_and_push_pr, repo_url, raw_patch, finding.model_dump(), token
-        )
+        result = await asyncio.to_thread(_apply_and_push_pr, repo_url, raw_patch, finding.model_dump(), token)
         logger.info("Auto-PR created", pr_url=result.get("pr_url"))
         return result
     except Exception as exc:
         logger.error("Auto-PR failed", error=str(exc))
-        return error_response(
-            "Auto-PR failed — check token permissions and repo access", 500
-        )
+        return error_response("Auto-PR failed — check token permissions and repo access", 500)

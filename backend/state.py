@@ -80,9 +80,7 @@ _INTERNAL_FIELDS: frozenset[str] = frozenset(
 )
 
 # Derived: all fields minus internal = public (for API exposure)
-PUBLIC_FIELDS: tuple[str, ...] = tuple(
-    k for k in _DEFAULTS if k not in _INTERNAL_FIELDS
-)
+PUBLIC_FIELDS: tuple[str, ...] = tuple(k for k in _DEFAULTS if k not in _INTERNAL_FIELDS)
 
 
 def initial_state(repo_url: str, gh_token: str | None = None) -> dict:

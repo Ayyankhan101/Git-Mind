@@ -282,9 +282,7 @@ def test_missing_key_rejected(case):
         _run(case, json.dumps(payload))
 
 
-@pytest.mark.parametrize(
-    "case", [c for c in _PROGRAMS if c["wrong_path"]], ids=lambda c: c["name"]
-)
+@pytest.mark.parametrize("case", [c for c in _PROGRAMS if c["wrong_path"]], ids=lambda c: c["name"])
 def test_wrong_type_rejected(case):
     payload = _set_key(case["valid"], case["wrong_path"], case["wrong_value"])
     with pytest.raises(ValidationError):
