@@ -249,7 +249,7 @@ jobs:
           "
 
   deploy-frontend:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     needs: [lint, frontend-tests, frontend-smoke]
     runs-on: ubuntu-latest
     steps:
