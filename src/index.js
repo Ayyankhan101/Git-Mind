@@ -57,30 +57,19 @@ export default {
 
     // Serve static assets
     const response = await env.ASSETS.fetch(request);
+    const newResponse = new Response(response.body, response);
 
-    // Build fresh headers (don't copy from cached response — CF edge may strip worker-set headers)
-    const headers = new Headers();
-    headers.set("Content-Type", response.headers.get("Content-Type") || "text/html");
-    headers.set("X-Frame-Options", "DENY");
-    headers.set("X-Content-Type-Options", "nosniff");
-    headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-    headers.set("X-XSS-Protection", "1; mode=block");
+    // Security headers
+    newResponse.headers.set("X-Frame-Options", "DENY");
+    newResponse.headers.set("X-Content-Type-Options", "nosniff");
+    newResponse.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+    newResponse.headers.set("X-XSS-Protection", "1; mode=block");
 
     // Cache static assets aggressively
     if (url.pathname.includes("/static/")) {
-      headers.set("Cache-Control", "public, max-age=31536000, immutable");
-    } else {
-      headers.set("Cache-Control", "public, max-age=0, must-revalidate");
+      newResponse.headers.set("Cache-Control", "public, max-age=31536000, immutable");
     }
 
-    // Copy ETag if present
-    const etag = response.headers.get("ETag");
-    if (etag) headers.set("ETag", etag);
-
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers,
-    });
+    return newResponse;
   },
 };
