@@ -55,6 +55,13 @@ export default {
       }
     }
 
+    // DEBUG: Test if Worker runs for root
+    if (url.pathname === "/") {
+      return new Response("Worker is running!", {
+        headers: { "X-Worker-Test": "active" },
+      });
+    }
+
     // Serve static assets via ASSETS binding
     const assetResponse = await env.ASSETS.fetch(request);
 
