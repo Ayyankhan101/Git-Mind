@@ -55,13 +55,6 @@ export default {
       }
     }
 
-    // DEBUG: Return immediately to prove Worker runs
-    if (url.pathname === "/") {
-      return new Response("Worker is running!", {
-        headers: { "X-Worker-Ran": "true" },
-      });
-    }
-
     // Serve static assets via ASSETS binding
     const assetResponse = await env.ASSETS.fetch(request);
 
