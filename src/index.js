@@ -67,18 +67,13 @@ export default {
       "X-Worker-Ran": "true",
     };
 
-    // Cache control: immutable for hashed static assets, no-cache for HTML
-    const cacheControl = url.pathname.includes("/static/")
-      ? "public, max-age=31536000, immutable"
-      : "public, max-age=0, must-revalidate";
-
     // Return response with security headers injected
     return new Response(assetResponse.body, {
       status: assetResponse.status,
       statusText: assetResponse.statusText,
       headers: {
         "Content-Type": assetResponse.headers.get("Content-Type") || "text/html",
-        "Cache-Control": cacheControl,
+        "Cache-Control": "no-store, no-cache, must-revalidate",
         ...securityHeaders,
       },
     });
