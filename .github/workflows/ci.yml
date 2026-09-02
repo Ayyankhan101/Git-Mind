@@ -275,4 +275,4 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
           workingDirectory: .
-          wranglerVersion: "4.20.0"
+          wranglerVersion: "4.24.4"
