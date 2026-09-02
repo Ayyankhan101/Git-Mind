@@ -45,7 +45,8 @@ class SolidityTriage(dspy.Signature):
     Analyze the contracts below for: re-entrancy vulnerabilities, unchecked external calls,
     integer overflow / underflow, access control issues (tx.origin, missing onlyOwner),
     uninitialized storage pointers, front-running / race conditions, gas griefing, and
-    logic errors in function visibility. If no issues are found, return an empty list."""
+    logic errors in function visibility. If no issues are found, return an empty list.
+    """
 
     contracts_json: str = dspy.InputField(
         desc="Structured AST dump: contracts, functions, state variables, modifiers, events"

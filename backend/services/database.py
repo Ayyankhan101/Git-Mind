@@ -37,11 +37,19 @@ async def init_db():
     )
     if proc.returncode != 0:
         if is_sqlite:
-            logger.warning("Alembic failed (rc=%d), falling back to create_all: %s", proc.returncode, proc.stderr[:300])
+            logger.warning(
+                "Alembic failed (rc=%d), falling back to create_all: %s",
+                proc.returncode,
+                proc.stderr[:300],
+            )
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
         else:
-            logger.error("Alembic migration failed (rc=%d): %s", proc.returncode, proc.stderr[:500])
+            logger.error(
+                "Alembic migration failed (rc=%d): %s",
+                proc.returncode,
+                proc.stderr[:500],
+            )
             raise RuntimeError(f"Alembic migration failed: {proc.stderr[:500]}")
     if proc.stderr:
         logger.warning("Alembic stderr: %s", proc.stderr[:500])

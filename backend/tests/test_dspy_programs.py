@@ -389,7 +389,14 @@ def test_language_audit_falls_back_to_empty_findings():
     with patch.object(language_audit, "_LM", FakeLM(GARBAGE)):
         result = language_audit._triage_with_llm(
             language_audit._PYTHON_PROMPT,
-            [{"file": "src/main.py", "message": "unused import", "rule": "W0611", "line": 1}],
+            [
+                {
+                    "file": "src/main.py",
+                    "message": "unused import",
+                    "rule": "W0611",
+                    "line": 1,
+                }
+            ],
             "python",
         )
     assert result == []
@@ -435,4 +442,4 @@ def test_architecture_falls_back_to_incomplete_diagram():
             ["src/main.py"],
             {"src/main.py": "print('hello')\n"},
         )
-    assert result == "graph TD\n    A[Analysis Incomplete]"
+    assert result == "graph TD\n    src[Source Code (1 files)]"

@@ -46,7 +46,7 @@ export default function SceneManager({ children, className = "", style = {} }) {
       // re-add meshes to the live scene.
       setSceneVersion((v) => v + 1);
     },
-    [init]
+    [init],
   );
 
   const handleFrame = useCallback(
@@ -55,7 +55,7 @@ export default function SceneManager({ children, className = "", style = {} }) {
       subscribersRef.current.forEach((fn) => fn(time));
       renderFrame();
     },
-    [renderFrame]
+    [renderFrame],
   );
 
   // Reduced motion: render one static frame so the scene is visible

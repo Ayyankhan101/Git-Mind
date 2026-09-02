@@ -161,10 +161,13 @@ export default function DashboardLayout({
         repos={repos}
         tabs={tabs}
         dispatch={dispatch}
+        theme={theme}
       />
 
       <main id="main-content" className="main">
-        <h1 className="sr-only">{repoName ? `${repoName} dashboard` : "GitMind dashboard"}</h1>
+        <h1 className="sr-only">
+          {repoName ? `${repoName} dashboard` : "GitMind dashboard"}
+        </h1>
         {globalError && (
           <div
             className="error-banner-inline error-banner-inline--danger"

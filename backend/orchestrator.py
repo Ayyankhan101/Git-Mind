@@ -1,4 +1,5 @@
 import time
+from collections.abc import Callable
 
 import structlog
 from langgraph.graph import END, START, StateGraph
@@ -79,11 +80,11 @@ def _event(agent: str, status: str, detail: str | None = None) -> dict:
 
 def run_agent_node(
     name: str,
-    fn: "callable",
+    fn: Callable[..., dict],
     state: RepoState,
     *,
     default: dict | None = None,
-    fallback: "callable | None" = None,
+    fallback: Callable[..., dict] | None = None,
 ) -> dict:
     """Run an agent function with standard error isolation.
 
@@ -97,9 +98,15 @@ def run_agent_node(
     from agent_types import validate_agent_output
 
     if state.get("_scanner_failed"):
-        return {**(default or {}), "events": [_event(name, "skipped", "scanner failed")]}
+        return {
+            **(default or {}),
+            "events": [_event(name, "skipped", "scanner failed")],
+        }
     if _is_circuit_open():
-        return {**(default or {}), "events": [_event(name, "skipped", "circuit breaker open")]}
+        return {
+            **(default or {}),
+            "events": [_event(name, "skipped", "circuit breaker open")],
+        }
     try:
         result = fn(state)
         validate_agent_output(name, result)
@@ -109,7 +116,10 @@ def run_agent_node(
         _record_circuit_failure()
         logger.error("%s_node failed: %s", name, exc)
         if fallback:
-            return {**fallback(state, exc), "events": [_event(name, "error", str(exc)[:500])]}
+            return {
+                **fallback(state, exc),
+                "events": [_event(name, "error", str(exc)[:500])],
+            }
         return {**(default or {}), "events": [_event(name, "error", str(exc)[:500])]}
 
 
@@ -132,7 +142,7 @@ def scanner_node(state: RepoState) -> dict:
         }
 
 
-def _architecture_fallback(state: RepoState, exc: Exception) -> dict:
+def _architecture_fallback(state: RepoState, exc: Exception) -> dict:  # noqa: ARG001
     from agents.architecture import _fallback_mermaid
 
     return {
@@ -141,7 +151,7 @@ def _architecture_fallback(state: RepoState, exc: Exception) -> dict:
     }
 
 
-def _security_fallback(state: RepoState, exc: Exception) -> dict:
+def _security_fallback(state: RepoState, exc: Exception) -> dict:  # noqa: ARG001
     return {"security_findings": _synthetic_finding()}
 
 

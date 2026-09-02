@@ -378,7 +378,10 @@ def search_codebase(
     fused: dict[str, dict[str, Any]] = {}
     for candidate in vector_candidates:
         key = _candidate_key(candidate["filepath"], candidate["content"])
-        fused[key] = {**candidate, "hybrid_score": 1.0 / (60 + candidate["vector_rank"])}
+        fused[key] = {
+            **candidate,
+            "hybrid_score": 1.0 / (60 + candidate["vector_rank"]),
+        }
     for candidate in bm25_candidates:
         key = _candidate_key(candidate["filepath"], candidate["content"])
         existing = fused.get(key, candidate)

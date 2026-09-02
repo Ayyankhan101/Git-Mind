@@ -95,14 +95,13 @@ export function appReducer(state, action) {
     // ── UI ──────────────────────────────────────────────────────────────────
     case "SET_THEME": {
       localStorage.setItem("gm-theme", action.theme);
-      document.documentElement.dispatchEvent(
-        new CustomEvent("theme-applied"),
-      );
+      import("./themeLoader").then(({ loadTheme }) => loadTheme(action.theme));
       return { ...state, theme: action.theme };
     }
     case "SET_DENSITY": {
       const root = document.documentElement;
-      if (action.density === "comfortable") root.removeAttribute("data-density");
+      if (action.density === "comfortable")
+        root.removeAttribute("data-density");
       else root.setAttribute("data-density", action.density);
       localStorage.setItem("gm-density", action.density);
       return { ...state, density: action.density };

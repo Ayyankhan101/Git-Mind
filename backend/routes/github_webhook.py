@@ -72,7 +72,12 @@ async def _run_pr_review_and_comment(owner: str, repo: str, pr_number: int, pr_u
         logger.info("PR review comment posted", repo=f"{owner}/{repo}", pr=pr_number)
 
     except Exception as exc:
-        logger.error("Failed to post PR review", error=str(exc)[:300], pr=pr_number, repo=f"{owner}/{repo}")
+        logger.error(
+            "Failed to post PR review",
+            error=str(exc)[:300],
+            pr=pr_number,
+            repo=f"{owner}/{repo}",
+        )
 
 
 async def _handle_push_event(payload: dict):
@@ -202,7 +207,11 @@ async def github_webhook(request: Request):
         else:
             logger.debug("GitHub webhook: unhandled event type", github_event=github_event)
     except Exception as exc:
-        logger.error("GitHub webhook handler error", github_event=github_event, error=str(exc)[:200])
+        logger.error(
+            "GitHub webhook handler error",
+            github_event=github_event,
+            error=str(exc)[:200],
+        )
         return JSONResponse(status_code=500, content={"error": "Handler error"})
 
     return {"ok": True}

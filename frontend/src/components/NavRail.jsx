@@ -1,6 +1,7 @@
 import React from "react";
 import { FolderOpen, Command, Building2 } from "../icons";
 import { fs } from "../typeScale";
+import ThemeSwitcher from "./ThemeSwitcher";
 
 const IS_MAC = /Mac/i.test(
   navigator.userAgentData?.platform ?? navigator.platform,
@@ -15,22 +16,36 @@ export default function NavRail({
   repos,
   tabs,
   dispatch,
+  theme,
 }) {
   const mod = IS_MAC ? "⌘" : "Ctrl";
 
   return (
-    <nav className="nav-rail" role="navigation" aria-label="Main navigation" onKeyDown={(e) => {
-      const items = [...e.currentTarget.querySelectorAll(".nav-item")];
-      const idx = items.indexOf(document.activeElement);
-      if (e.key === "ArrowRight") { e.preventDefault(); items[(idx + 1) % items.length]?.focus(); }
-      if (e.key === "ArrowLeft") { e.preventDefault(); items[(idx - 1 + items.length) % items.length]?.focus(); }
-    }}>
+    <nav
+      className="nav-rail"
+      role="navigation"
+      aria-label="Main navigation"
+      onKeyDown={(e) => {
+        const items = [...e.currentTarget.querySelectorAll(".nav-item")];
+        const idx = items.indexOf(document.activeElement);
+        if (e.key === "ArrowRight") {
+          e.preventDefault();
+          items[(idx + 1) % items.length]?.focus();
+        }
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          items[(idx - 1 + items.length) % items.length]?.focus();
+        }
+      }}
+    >
       <span className="nav-mark">GitMind</span>
 
       <div className="nav-items">
         <button
           className={`nav-item${drawerOpen ? " active" : ""}`}
-          onClick={() => dispatch({ type: "SET_DRAWER_OPEN", open: !drawerOpen })}
+          onClick={() =>
+            dispatch({ type: "SET_DRAWER_OPEN", open: !drawerOpen })
+          }
           data-tip="Repositories"
           aria-label="Repositories"
         >
@@ -88,6 +103,8 @@ export default function NavRail({
       )}
 
       <div className="nav-actions">
+        <ThemeSwitcher theme={theme} dispatch={dispatch} />
+
         {repos.length > 0 && (
           <button
             className="nav-item"

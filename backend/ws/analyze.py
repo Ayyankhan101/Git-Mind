@@ -117,7 +117,12 @@ async def handle_analyze(ws: WebSocket) -> None:
         await ws.close()
         return
     if not (await check_rate_limit("analyze_chat_burst", client_ip))[0]:
-        await ws.send_json({"error": "Rate limit exceeded — too many analyze/chat requests", "retry_after": 60})
+        await ws.send_json(
+            {
+                "error": "Rate limit exceeded — too many analyze/chat requests",
+                "retry_after": 60,
+            }
+        )
         await ws.close()
         return
 
@@ -168,7 +173,12 @@ async def handle_analyze(ws: WebSocket) -> None:
             await asyncio.sleep(0.1)
             await ws.send_json(
                 {
-                    "agent_status": {"chat": "done", "git_audit": "done", "solidity": "done", "code_audit": "done"},
+                    "agent_status": {
+                        "chat": "done",
+                        "git_audit": "done",
+                        "solidity": "done",
+                        "code_audit": "done",
+                    },
                     "health": cached.get("health"),
                     "git_audit": cached.get("git_audit"),
                     "solidity_audit": cached.get("solidity_audit"),
@@ -276,7 +286,12 @@ async def handle_analyze(ws: WebSocket) -> None:
         )
         final_state["health"] = health_score
         await ws.send_json({"health": health_score})
-        logger.info("Health score", session=session_id, grade=health_score["grade"], score=health_score["score"])
+        logger.info(
+            "Health score",
+            session=session_id,
+            grade=health_score["grade"],
+            score=health_score["score"],
+        )
     finally:
         if _heartbeat_task and not _heartbeat_task.done():
             _heartbeat_task.cancel()

@@ -20,8 +20,6 @@ import { reviewPR, prImpact, fetchOpenPRs } from "../api";
 import * as tokenManager from "../tokenManager";
 import OpenPRsList from "./OpenPRsList";
 
-
-
 const VERDICT_CLASS = {
   APPROVE: "approve",
   "REQUEST CHANGES": "changes",

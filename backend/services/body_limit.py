@@ -23,7 +23,10 @@ class BodyLimitMiddleware(BaseHTTPMiddleware):
             # Reject requests without Content-Length to prevent chunked encoding bypass
             transfer_encoding = request.headers.get("transfer-encoding", "")
             if "chunked" in transfer_encoding:
-                logger.warning("Request missing Content-Length with chunked encoding", path=request.url.path)
+                logger.warning(
+                    "Request missing Content-Length with chunked encoding",
+                    path=request.url.path,
+                )
                 return JSONResponse(
                     status_code=413,
                     content={"error": "Chunked encoding without Content-Length not allowed"},

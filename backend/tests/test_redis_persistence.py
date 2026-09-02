@@ -132,5 +132,10 @@ async def test_redis_write_paths_are_awaitable(fake_redis):
     Guards the actual defect class: a plain `def` calling the async client
     creates a coroutine that is discarded, so the write silently no-ops.
     """
-    for fn in (session_svc.put_session, task_queue.submit, task_queue.get_task, task_queue._persist_task):
+    for fn in (
+        session_svc.put_session,
+        task_queue.submit,
+        task_queue.get_task,
+        task_queue._persist_task,
+    ):
         assert asyncio.iscoroutinefunction(fn), f"{fn.__name__} must be async to await the Redis client"

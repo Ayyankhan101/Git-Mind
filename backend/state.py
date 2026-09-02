@@ -69,12 +69,18 @@ _DEFAULTS: dict = {
 }
 
 # Fields stripped before persistence (sensitive or internal)
-_INTERNAL_FIELDS: frozenset[str] = frozenset({"gh_token", "local_path", "file_contents", "chroma_collection_name", "chat_history"})
+_INTERNAL_FIELDS: frozenset[str] = frozenset(
+    {
+        "gh_token",
+        "local_path",
+        "file_contents",
+        "chroma_collection_name",
+        "chat_history",
+    }
+)
 
 # Derived: all fields minus internal = public (for API exposure)
-PUBLIC_FIELDS: tuple[str, ...] = tuple(
-    k for k in _DEFAULTS if k not in _INTERNAL_FIELDS
-)
+PUBLIC_FIELDS: tuple[str, ...] = tuple(k for k in _DEFAULTS if k not in _INTERNAL_FIELDS)
 
 
 def initial_state(repo_url: str, gh_token: str | None = None) -> dict:

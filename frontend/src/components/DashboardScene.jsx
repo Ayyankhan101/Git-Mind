@@ -11,7 +11,11 @@ const SPACE = { xy: 20, z: 10, zOffset: -5 };
  * Vanilla Three.js: 120 points + LineSegments connecting every pair
  * within CONNECT_DISTANCE units. Theme-aware colors.
  */
-export default function DashboardScene({ sceneRef, subscribe, prefersReduced }) {
+export default function DashboardScene({
+  sceneRef,
+  subscribe,
+  prefersReduced,
+}) {
   const primary = useThemeColor("--three-primary", "#cc785c");
 
   const particles = useMemo(() => {
@@ -32,7 +36,7 @@ export default function DashboardScene({ sceneRef, subscribe, prefersReduced }) 
     const pointsGeometry = new THREE.BufferGeometry();
     pointsGeometry.setAttribute(
       "position",
-      new THREE.BufferAttribute(particles.slice(), 3)
+      new THREE.BufferAttribute(particles.slice(), 3),
     );
     const pointsMaterial = new THREE.PointsMaterial({
       color: new THREE.Color(primary),
@@ -53,8 +57,12 @@ export default function DashboardScene({ sceneRef, subscribe, prefersReduced }) 
         const dz = particles[i * 3 + 2] - particles[j * 3 + 2];
         if (dx * dx + dy * dy + dz * dz < CONNECT_DISTANCE * CONNECT_DISTANCE) {
           linePositions.push(
-            particles[i * 3], particles[i * 3 + 1], particles[i * 3 + 2],
-            particles[j * 3], particles[j * 3 + 1], particles[j * 3 + 2]
+            particles[i * 3],
+            particles[i * 3 + 1],
+            particles[i * 3 + 2],
+            particles[j * 3],
+            particles[j * 3 + 1],
+            particles[j * 3 + 2],
           );
         }
       }
@@ -62,7 +70,7 @@ export default function DashboardScene({ sceneRef, subscribe, prefersReduced }) 
     const linesGeometry = new THREE.BufferGeometry();
     linesGeometry.setAttribute(
       "position",
-      new THREE.Float32BufferAttribute(linePositions, 3)
+      new THREE.Float32BufferAttribute(linePositions, 3),
     );
     const linesMaterial = new THREE.LineBasicMaterial({
       color: new THREE.Color(primary),

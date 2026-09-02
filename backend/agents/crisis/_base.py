@@ -7,7 +7,13 @@ from settings import get_llm
 
 logger = structlog.get_logger(__name__)
 
-_LEAK_TRIGGER_WORDS = ["breach", "leaked", "exposed", "customers affected", "data exposed"]
+_LEAK_TRIGGER_WORDS = [
+    "breach",
+    "leaked",
+    "exposed",
+    "customers affected",
+    "data exposed",
+]
 _llm = get_llm(temperature_key="crisis")
 
 

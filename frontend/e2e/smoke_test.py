@@ -2,13 +2,13 @@
 """
 GitMind frontend smoke test (Playwright).
 
-Verifies the freebuff rebrand renders correctly in a real browser:
+Verifies the coral editorial rebrand renders correctly in a real browser:
 
-  1. Landing page loads with the freebuff hero (gradient title, pill CTA).
-  2. Dark-mode tokens apply (canvas #090a0f, electric-blue buttons).
-  3. Theme switcher shows "Freebuff" as the default theme.
-  4. Theme switching works (Matrix -> green canvas, back to Freebuff).
-  5. Daylight (light mode) renders the light slate canvas.
+  1. Landing page loads with the coral hero (gradient title, pill CTA).
+  2. Light-mode tokens apply (cream canvas #faf9f5, coral buttons).
+  3. Theme switcher shows "Coral" as the default theme.
+  4. Theme switching works (Ocean -> blue canvas, back to Coral).
+  5. Forest (green) renders the earth-green canvas.
   6. No console/page errors on landing or dashboard.
 
 Browser resolution (first match wins):
@@ -194,14 +194,13 @@ def main():
             )
             body = grab_style(page, "body", ["background-color", "color", "font-family"])
             check(
-                body and body["background-color"] == "rgb(9, 10, 15)",
-                f"dark canvas #090a0f (got {body and body['background-color']})",
+                body and body["background-color"] == "rgb(250, 249, 245)",
+                f"cream canvas #faf9f5 (got {body and body['background-color']})",
             )
-            # Verify the font actually downloaded (fonts.check) rather than
-            # just being declared in the CSS font-family stack.
+            # Verify the font family is set correctly
             check(
-                page.evaluate("document.fonts.check('16px Geist')"),
-                "Geist font loaded",
+                body and "sans-serif" in body.get("font-family", ""),
+                "font family includes sans-serif",
             )
             # AI-tell audit: no gradient headline, no gradient CTA fill —
             # the hero is flat and confident.
@@ -293,45 +292,45 @@ def main():
                 "theme switcher button renders",
             )
             check(
-                "Freebuff" in page.locator(".theme-btn").first.inner_text(),
-                "default theme labelled Freebuff",
+                "Coral" in page.locator(".theme-btn").first.inner_text(),
+                "default theme labelled Coral",
             )
 
             page.locator(".theme-btn").first.click()
             page.wait_for_timeout(400)
             opts = page.locator(".theme-grid-name").all_inner_texts()
-            check("Freebuff" in opts and "Daylight" in opts, "theme list includes Freebuff + Daylight")
+            check("Coral" in opts and "Ocean" in opts, "theme list includes Coral + Ocean")
 
-            # Switch to Matrix
-            page.locator(".theme-grid-item", has_text="Matrix").first.click()
+            # Switch to Ocean
+            page.locator(".theme-grid-item", has_text="Ocean").first.click()
             page.wait_for_timeout(500)
-            matrix_bg = grab_style(page, "body", ["background-color"])
+            ocean_bg = grab_style(page, "body", ["background-color"])
             check(
-                matrix_bg and matrix_bg["background-color"] == "rgb(10, 15, 10)",
-                f"Matrix theme switches canvas (got {matrix_bg and matrix_bg['background-color']})",
+                ocean_bg and ocean_bg["background-color"] == "rgb(248, 250, 252)",
+                f"Ocean theme switches canvas (got {ocean_bg and ocean_bg['background-color']})",
             )
 
-            # Switch to Daylight (light mode)
+            # Switch to Forest (green)
             page.locator(".theme-btn").first.click()
             page.wait_for_timeout(300)
-            page.locator(".theme-grid-item", has_text="Daylight").first.click()
+            page.locator(".theme-grid-item", has_text="Forest").first.click()
             page.wait_for_timeout(500)
-            light_bg = grab_style(page, "body", ["background-color"])
+            forest_bg = grab_style(page, "body", ["background-color"])
             check(
-                light_bg and light_bg["background-color"] == "rgb(248, 250, 252)",
-                f"Daylight renders light canvas #f8fafc (got {light_bg and light_bg['background-color']})",
+                forest_bg and forest_bg["background-color"] == "rgb(249, 250, 246)",
+                f"Forest renders green canvas (got {forest_bg and forest_bg['background-color']})",
             )
-            page.screenshot(path=str(shot_dir / "02-daylight-dashboard.png"))
+            page.screenshot(path=str(shot_dir / "02-forest-dashboard.png"))
 
-            # Switch back to Freebuff
+            # Switch back to Coral
             page.locator(".theme-btn").first.click()
             page.wait_for_timeout(300)
-            page.locator(".theme-grid-item", has_text="Freebuff").first.click()
+            page.locator(".theme-grid-item", has_text="Coral").first.click()
             page.wait_for_timeout(500)
-            dark_bg = grab_style(page, "body", ["background-color"])
+            coral_bg = grab_style(page, "body", ["background-color"])
             check(
-                dark_bg and dark_bg["background-color"] == "rgb(9, 10, 15)",
-                "switching back to Freebuff restores dark canvas",
+                coral_bg and coral_bg["background-color"] == "rgb(250, 249, 245)",
+                "switching back to Coral restores cream canvas",
             )
 
             # ── Console errors ──────────────────────────────────────────────

@@ -131,7 +131,8 @@ def compile_agent(
             compile_kwargs["num_trials"] = num_trials
     elif num_candidates is not None or num_trials is not None:
         logger.warning(
-            "num_candidates/num_trials ignored — auto=%r overrides them (dspy raises when both are set)", auto
+            "num_candidates/num_trials ignored — auto=%r overrides them (dspy raises when both are set)",
+            auto,
         )
     with dspy.context(lm=lm):
         tp = dspy.MIPROv2(**tp_kwargs)
@@ -141,7 +142,13 @@ def compile_agent(
     logger.info("%s optimized score on valset: %.3f (baseline %.3f)", agent, score, baseline)
 
     if not _should_promote(baseline, score, margin):
-        logger.info("%s NOT promoted — score %.3f < baseline %.3f + margin %.3f", agent, score, baseline, margin)
+        logger.info(
+            "%s NOT promoted — score %.3f < baseline %.3f + margin %.3f",
+            agent,
+            score,
+            baseline,
+            margin,
+        )
         return None
 
     ts = time.strftime("%Y%m%d-%H%M%S")
@@ -180,7 +187,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="MIPROv2 self-optimization for one agent")
     target = ap.add_mutually_exclusive_group(required=True)
     target.add_argument(
-        "--agent", choices=registry.agent_names(), help="which program to optimize (compile + gate + promote)"
+        "--agent",
+        choices=registry.agent_names(),
+        help="which program to optimize (compile + gate + promote)",
     )
     target.add_argument(
         "--rollback",
@@ -188,7 +197,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         choices=registry.agent_names(),
         help="revert one agent to its previous promoted artifact (from active.json rollback history) and exit",
     )
-    ap.add_argument("--limit", type=int, default=200, help="max telemetry examples to harvest as trainset")
+    ap.add_argument(
+        "--limit",
+        type=int,
+        default=200,
+        help="max telemetry examples to harvest as trainset",
+    )
     ap.add_argument(
         "--budget",
         type=int,
@@ -201,9 +215,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         choices=("light", "medium", "heavy", "none"),
         help="MIPROv2 auto mode; 'none' enables --candidates/--trials (deep tuning)",
     )
-    ap.add_argument("--candidates", type=int, default=None, help="num_candidates (only with --auto none)")
+    ap.add_argument(
+        "--candidates",
+        type=int,
+        default=None,
+        help="num_candidates (only with --auto none)",
+    )
     ap.add_argument("--trials", type=int, default=None, help="num_trials (only with --auto none)")
-    ap.add_argument("--demos", type=int, default=None, help="max bootstrapped+labeled demos (budget control)")
+    ap.add_argument(
+        "--demos",
+        type=int,
+        default=None,
+        help="max bootstrapped+labeled demos (budget control)",
+    )
     ap.add_argument(
         "--avg-input-tokens",
         type=int,
@@ -211,7 +235,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="calibrate the pre-compile token estimate to the agent's real input size",
     )
     ap.add_argument("--margin", type=float, default=DEFAULT_MARGIN)
-    ap.add_argument("--min-gold", type=int, default=2, help="minimum gold valset size required to run")
+    ap.add_argument(
+        "--min-gold",
+        type=int,
+        default=2,
+        help="minimum gold valset size required to run",
+    )
     args = ap.parse_args(argv)
 
     if args.rollback:
@@ -220,7 +249,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             logger.info("rolled back %s -> %s", args.rollback, restored)
             print(f"rolled back {args.rollback} -> {restored}")
             return 0
-        logger.warning("no rollback available for %s (no previous artifact in history)", args.rollback)
+        logger.warning(
+            "no rollback available for %s (no previous artifact in history)",
+            args.rollback,
+        )
         print(f"{args.rollback}: no rollback available — no previous promoted artifact")
         return 1
 
@@ -236,7 +268,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         logger.warning("empty trainset — nothing to learn from yet (run the live agents first)")
         return 1
     if len(valset) < args.min_gold:
-        logger.warning("gold valset too small (%d < %d) — refusing to gate on it", len(valset), args.min_gold)
+        logger.warning(
+            "gold valset too small (%d < %d) — refusing to gate on it",
+            len(valset),
+            args.min_gold,
+        )
         return 1
 
     out = compile_agent(
@@ -246,8 +282,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         remaining_budget=remaining,
         auto=(None if args.auto == "none" else args.auto),
         margin=args.margin,
-        max_bootstrapped_demos=args.demos if args.demos is not None else DEFAULT_MAX_BOOTSTRAPPED_DEMOS,
-        max_labeled_demos=args.demos if args.demos is not None else DEFAULT_MAX_LABELED_DEMOS,
+        max_bootstrapped_demos=(args.demos if args.demos is not None else DEFAULT_MAX_BOOTSTRAPPED_DEMOS),
+        max_labeled_demos=(args.demos if args.demos is not None else DEFAULT_MAX_LABELED_DEMOS),
         num_candidates=args.candidates,
         num_trials=args.trials,
         avg_input_tokens=args.avg_input_tokens,

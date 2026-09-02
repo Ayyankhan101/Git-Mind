@@ -1,0 +1,16 @@
+{
+  "extends": [
+    "react-app",
+    "react-app/jest"
+  ],
+  "overrides": [
+    {
+      "files": ["**/*.test.*"],
+      "rules": {
+        "testing-library/no-node-access": "off",
+        "testing-library/no-container": "off",
+        "import/first": "off"
+      }
+    }
+  ]
+}

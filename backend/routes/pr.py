@@ -79,7 +79,10 @@ async def list_open_prs(owner: str, repo: str, request: Request):
 async def pr_impact_endpoint(req: PRImpactRequest, request: Request):
     m = match_gh_pr_url(req.pr_url.strip())
     if not m:
-        return error_response("Invalid GitHub PR URL (expected https://github.com/owner/repo/pull/123)", 400)
+        return error_response(
+            "Invalid GitHub PR URL (expected https://github.com/owner/repo/pull/123)",
+            400,
+        )
 
     owner, repo_name, pr_num = m.group(1), m.group(2), m.group(3)
     repo_url = f"https://github.com/{owner}/{repo_name}"

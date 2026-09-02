@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """PDF export layout audit (Playwright + pymupdf).
 
-Generates the three GitMind PDF exports through the real built app
+Generates the two GitMind PDF exports through the real built app
 (mock backend, same share-link flow as smoke_pdf_share.py), then
 inspects the rendered PDFs with pymupdf and verifies the layout
 against the web aesthetic:
@@ -51,12 +51,6 @@ RIGHT_EDGE = 595.28 - 40
 TOL = 0.6  # border strokes land at half-width offsets
 
 ACCENT = "#3b82f6"  # web --primary (electric blue)
-SEV_FILLS = {  # severity chip fills that must paint
-    "critical": "#dc2626",
-    "high": "#ea580c",
-    "medium": "#ca8a04",
-    "low": "#3b82f6",  # web --sev-low = accent
-}
 
 
 def hex_of(c):
@@ -131,28 +125,19 @@ def page_text(doc):
 
 
 def grab_downloads(page, out_dir):
-    """Export the three PDFs via the UI, return [(label, path)]."""
-    print("[1/3] analysis report export")
+    """Export the two PDFs via the UI, return [(label, path)]."""
+    print("[1/2] summary export")
     page.goto("http://localhost:3000/?share=demo123")
     page.wait_for_load_state("networkidle")
     page.wait_for_selector("text=gitmind/sample-app", timeout=20_000)
-    btn = page.get_by_role("button", name="Export report")
-    btn.wait_for(state="visible", timeout=15_000)
-    with page.expect_download(timeout=30_000) as dl:
-        btn.click()
-    path = out_dir / "01-analysis.pdf"
-    dl.value.save_as(path)
-
-    print("[2/3] summary export")
-    page.wait_for_load_state("networkidle")
     btn = page.get_by_role("button", name="Export summary PDF")
     btn.wait_for(state="visible", timeout=15_000)
     with page.expect_download(timeout=30_000) as dl:
         btn.click()
-    path = out_dir / "02-summary.pdf"
+    path = out_dir / "01-summary.pdf"
     dl.value.save_as(path)
 
-    print("[3/3] incident report export")
+    print("[2/2] incident report export")
     page.get_by_role("button", name="Security").first.click(timeout=10_000)
     row = page.get_by_role("button", name=re.compile(r"G401", re.I)).first
     row.wait_for(state="visible", timeout=10_000)
@@ -165,31 +150,12 @@ def grab_downloads(page, out_dir):
     export.wait_for(state="visible", timeout=15_000)
     with page.expect_download(timeout=30_000) as dl:
         export.click()
-    path = out_dir / "03-incident.pdf"
+    path = out_dir / "02-incident.pdf"
     dl.value.save_as(path)
 
-    return [("analysis", out_dir / "01-analysis.pdf"),
-            ("summary", out_dir / "02-summary.pdf"),
-            ("incident", out_dir / "03-incident.pdf")]
+    return [("summary", out_dir / "01-summary.pdf"),
+            ("incident", out_dir / "02-incident.pdf")]
 
-
-def audit_analysis(doc):
-    issues = []
-    text = page_text(doc)
-    if doc.page_count < 2:
-        issues.append(f"analysis: expected ≥2 pages, got {doc.page_count}")
-    if "Repository Analysis Report" not in text:
-        issues.append("analysis: cover title missing")
-    if "HEALTH SCORE" not in text and "SECURITY FINDINGS" not in text:
-        issues.append("analysis: no section content found")
-    fills = fill_colors(doc)
-    if ACCENT not in fills:
-        issues.append("analysis: electric-blue accent fill missing (cover bar)")
-    for sev, col in SEV_FILLS.items():
-        if col not in fills:
-            issues.append(f"analysis: {sev} chip fill missing")
-    issues += overflow_issues(doc)
-    return issues
 
 
 def audit_summary(doc):
@@ -240,8 +206,7 @@ def main():
         fonts = fonts_used(doc)
         f_ok = {"Geist-Regular", "Geist-Bold"}.issubset(fonts) and \
             {"GeistMono-Regular", "GeistMono-Bold"}.issubset(fonts)
-        audit = {"analysis": audit_analysis, "summary": audit_summary,
-                 "incident": audit_incident}[label]
+        audit = {"summary": audit_summary, "incident": audit_incident}[label]
         issues = audit(doc)
         if not f_ok:
             issues.append(f"{label}: Geist fonts not embedded/used ({sorted(fonts)})")

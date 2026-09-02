@@ -30,7 +30,7 @@ async def proxy_github(path: str, request: Request):
         return error_response("Path not allowed", 403)
 
     client_ip = get_client_ip(request)
-    allowed, remaining = await check_rate_limit("proxy", client_ip)
+    allowed, remaining, _ = await check_rate_limit("proxy", client_ip)
     if not allowed:
         return Response(
             content='{"error":"Rate limit exceeded"}',

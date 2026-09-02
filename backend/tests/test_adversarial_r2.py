@@ -135,9 +135,18 @@ class TestDataCorruption:
             },
         )
 
-        with patch("routes.chat.run_chat_agent", return_value=("👍 Done", [])):
+        with (
+            patch("routes.chat.run_chat_agent", return_value=("👍 Done", [])),
+            patch("chroma_utils._client") as mock_chroma,
+        ):
+            mock_chroma.get_collection.return_value = MagicMock()
             resp = client.post(
-                "/chat", json={"session_id": session_id, "question": "🔥 What's the security status? 🛡️"}, headers=AUTH
+                "/chat",
+                json={
+                    "session_id": session_id,
+                    "question": "🔥 What's the security status? 🛡️",
+                },
+                headers=AUTH,
             )
             assert resp.status_code == 200
 
@@ -154,7 +163,10 @@ class TestDataCorruption:
         """Extremely long field value."""
         resp = client.post(
             "/chat",
-            json={"session_id": "00000000-0000-0000-0000-000000000001", "question": "x" * 100000},
+            json={
+                "session_id": "00000000-0000-0000-0000-000000000001",
+                "question": "x" * 100000,
+            },
             headers=AUTH,
         )
         assert resp.status_code in (400, 404, 413, 422)
@@ -208,7 +220,11 @@ class TestURLEdgeCases:
 
     def test_github_url_with_query(self):
         """URL with query string."""
-        resp = client.post("/analyze", json={"repo_url": "https://github.com/x/y?ref=main"}, headers=AUTH)
+        resp = client.post(
+            "/analyze",
+            json={"repo_url": "https://github.com/x/y?ref=main"},
+            headers=AUTH,
+        )
         assert resp.status_code == 400
 
     def test_github_url_with_subdomain(self):
@@ -274,13 +290,20 @@ class TestErrorHandling:
             },
         )
 
-        with patch("routes.analysis.invoke_with_retry", return_value=MagicMock(content="Test summary")):
+        with patch(
+            "routes.analysis.invoke_with_retry",
+            return_value=MagicMock(content="Test summary"),
+        ):
             resp = client.post("/summary", json={"session_id": session_id}, headers=AUTH)
             assert resp.status_code == 200
 
     def test_monitor_subscribe_duplicate(self):
         """Duplicate monitor subscription — DB not initialized in test env."""
-        resp = client.post("/monitor/subscribe", json={"repo_url": "https://github.com/x/y"}, headers=AUTH)
+        resp = client.post(
+            "/monitor/subscribe",
+            json={"repo_url": "https://github.com/x/y"},
+            headers=AUTH,
+        )
         # DB not initialized → 500, or 409 if duplicate
         assert resp.status_code in (409, 500)
 
@@ -336,7 +359,10 @@ class TestBoundaryCases:
 
     def test_huge_days_in_history(self):
         """Huge days parameter."""
-        resp = client.get("/analysis/history?repo_url=https://github.com/x/y&days=999999", headers=AUTH)
+        resp = client.get(
+            "/analysis/history?repo_url=https://github.com/x/y&days=999999",
+            headers=AUTH,
+        )
         assert resp.status_code in (200, 404, 500)
 
     def test_org_audit_max_repos(self):

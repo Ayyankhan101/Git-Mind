@@ -54,9 +54,17 @@ if _skip_live_checks:
     skip("GROQ_API_KEY format (gsk_...)", "CI smoke mode")
 else:
     check("GROQ_API_KEY is set", bool(api_key), "Add to backend/.env")
-    check("GROQ_API_KEY format (gsk_...)", api_key.startswith("gsk_"), f"Got prefix: {api_key[:6]!r}")
+    check(
+        "GROQ_API_KEY format (gsk_...)",
+        api_key.startswith("gsk_"),
+        f"Got prefix: {api_key[:6]!r}",
+    )
 _venv_semgrep = Path(__file__).parent / "venv" / "bin" / "semgrep"
-check("semgrep available", shutil.which("semgrep") is not None or _venv_semgrep.exists(), "pip install semgrep")
+check(
+    "semgrep available",
+    shutil.which("semgrep") is not None or _venv_semgrep.exists(),
+    "pip install semgrep",
+)
 
 # ── 2. ChromaDB ────────────────────────────────────────────────────────────────
 print("\n[ ChromaDB ]")
@@ -142,7 +150,11 @@ try:
         "code_audit",
     }
     missing = expected - node_names
-    check("LangGraph: all 9 agent nodes present", not missing, f"Missing: {missing}" if missing else "")
+    check(
+        "LangGraph: all 9 agent nodes present",
+        not missing,
+        f"Missing: {missing}" if missing else "",
+    )
 except Exception as exc:
     check("LangGraph analysis graph compiles", False, str(exc))
 

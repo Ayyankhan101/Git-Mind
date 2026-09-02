@@ -117,7 +117,9 @@ def setup_tracing(_app: FastAPI) -> None:
     provider = TracerProvider()
     if endpoint:
         try:
-            from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+            from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+                OTLPSpanExporter,
+            )
 
             provider.add_span_processor(SimpleSpanProcessor(OTLPSpanExporter(endpoint=endpoint)))
         except ImportError:

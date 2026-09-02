@@ -185,7 +185,9 @@ export default function SummaryTab({
       }
     }
     tryFetch(0);
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [enabled, sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Check if repo is already being watched
@@ -205,10 +207,7 @@ export default function SummaryTab({
     if (!statsRef.current) return;
     // CSS kill-switches can't stop JS tweens — skip the entrance entirely
     // for reduced-motion users (cards stay visible at full opacity).
-    if (
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    )
-      return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const cards = statsRef.current.querySelectorAll(".stat");
     gsap.fromTo(
       cards,
@@ -341,7 +340,12 @@ export default function SummaryTab({
   return (
     <div className="summary">
       <SceneManager
-        style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
       >
         {({ sceneRef, subscribe, prefersReduced }) => (
           <SummaryScene
@@ -529,19 +533,28 @@ export default function SummaryTab({
 
         {/* Right Card — Repository Description (summary text) */}
         <div className="summary-card">
-          {data?.summary && (() => {
-            // Strip <think>...</think> thinking tags that some LLMs emit
-            const clean = data.summary.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-            return (
-              <div className="lead summary-text" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {clean.split(/(?<=[.!?])\s+/).filter(Boolean).map((sentence, i) => (
-                  <p key={i} style={{ margin: 0, lineHeight: 1.65 }}>
-                    {sentence.trim()}
-                  </p>
-                ))}
-              </div>
-            );
-          })()}
+          {data?.summary &&
+            (() => {
+              // Strip <think>...</think> thinking tags that some LLMs emit
+              const clean = data.summary
+                .replace(/<think>[\s\S]*?<\/think>/g, "")
+                .trim();
+              return (
+                <div
+                  className="lead"
+                  style={{ display: "flex", flexDirection: "column", gap: 12 }}
+                >
+                  {clean
+                    .split(/(?<=[.!?])\s+/)
+                    .filter(Boolean)
+                    .map((sentence, i) => (
+                      <p key={i} style={{ margin: 0, lineHeight: 1.65 }}>
+                        {sentence.trim()}
+                      </p>
+                    ))}
+                </div>
+              );
+            })()}
           {!loading && !data && !error && (
             <p className="lead" style={{ color: "var(--text-3)" }}>
               Analysis of{" "}

@@ -65,7 +65,12 @@ async def org_audit_endpoint(req: OrgAuditRequest, request: Request):
     async def _scan_repo(repo_url: str) -> dict:
         m = match_gh_repo_url(repo_url.strip())
         if not m:
-            return {"repo_url": repo_url, "error": "Invalid GitHub URL", "cve_findings": [], "repo_name": repo_url}
+            return {
+                "repo_url": repo_url,
+                "error": "Invalid GitHub URL",
+                "cve_findings": [],
+                "repo_name": repo_url,
+            }
         owner, repo = m.group(1), m.group(2)
         try:
             file_contents = await _fetch_dep_files(owner, repo)
@@ -106,7 +111,12 @@ async def org_audit_endpoint(req: OrgAuditRequest, request: Request):
 
     total_cves = sum(r.get("cve_count", 0) for r in results)
     repos_clean = sum(1 for r in results if r.get("cve_count", 0) == 0 and not r.get("error"))
-    logger.info("Org audit complete", repos=len(req.repos), total_cves=total_cves, shared=len(shared_cves))
+    logger.info(
+        "Org audit complete",
+        repos=len(req.repos),
+        total_cves=total_cves,
+        shared=len(shared_cves),
+    )
 
     return {
         "repos": list(results),

@@ -43,7 +43,10 @@ async def test_pr_impact_health_uses_code_audit():
         patch("agents.security.run_security_agent", return_value=[]),
         patch("agents.cve_scanner.run_cve_scanner", return_value=[]),
         patch("agents.language_audit.run_code_audit", return_value=pr_code_audit),
-        patch("agents.impact.run_merge_prediction", return_value={"merge_risk": "medium", "narrative": "ok"}),
+        patch(
+            "agents.impact.run_merge_prediction",
+            return_value={"merge_risk": "medium", "narrative": "ok"},
+        ),
         patch("routes.pr.shutil.rmtree"),
     ):
         result = await _compute_pr_impact(

@@ -39,9 +39,7 @@ async def incident_report_endpoint(req: IncidentReportRequest, request: Request)
     outcome_str = (
         "CONTAINED — team issued statement before reporter published"
         if outcome == "resolved"
-        else "LEAKED — reporter published before team responded"
-        if outcome == "leaked"
-        else "UNKNOWN"
+        else ("LEAKED — reporter published before team responded" if outcome == "leaked" else "UNKNOWN")
     )
 
     prompt = f"""You are a security incident response manager. Generate a complete incident report.

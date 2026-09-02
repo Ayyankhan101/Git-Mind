@@ -236,10 +236,22 @@ def test_run_dspy_cached_version_bump_changes_key():
         patch("llm_cache._record_harvest"),
     ):
         prog = registry.build_program("security")
-        run_dspy_cached(prog, "ns", lm=FakeLM('{"findings": []}'), output_field="findings", raw_findings="[]")
+        run_dspy_cached(
+            prog,
+            "ns",
+            lm=FakeLM('{"findings": []}'),
+            output_field="findings",
+            raw_findings="[]",
+        )
         prog2 = registry.build_program("security")
         prog2._opt_version = "v2"
-        run_dspy_cached(prog2, "ns", lm=FakeLM('{"findings": []}'), output_field="findings", raw_findings="[]")
+        run_dspy_cached(
+            prog2,
+            "ns",
+            lm=FakeLM('{"findings": []}'),
+            output_field="findings",
+            raw_findings="[]",
+        )
     assert len(seen) == 2
     assert seen[0] != seen[1]
 
@@ -376,7 +388,11 @@ def test_promoted_program_passes_typed_contract(tmp_path):
             patch("llm_cache._record_harvest"),
         ):
             payload = run_dspy_cached(
-                prog, "optimize-e2e:security", lm=FakePromoLM(), output_field=field, **dict(gold.inputs())
+                prog,
+                "optimize-e2e:security",
+                lm=FakePromoLM(),
+                output_field=field,
+                **dict(gold.inputs()),
             )
         assert metrics.validate_output("security", payload), "promoted output failed the typed contract"
 
@@ -459,7 +475,11 @@ def test_compile_agent_rejects_below_baseline(tmp_path):
             patch("optimization.run.dspy.Evaluate", lambda **_: evaluator),
             patch("optimization.run.dspy.MIPROv2", FakeMIPROv2),
         ):
-            out = run.compile_agent("security", trainset=_security_trainset(), valset=trainsets.load_gold("security"))
+            out = run.compile_agent(
+                "security",
+                trainset=_security_trainset(),
+                valset=trainsets.load_gold("security"),
+            )
     assert out is None
     assert not (opt / "active.json").exists()  # active program untouched
 
@@ -475,7 +495,11 @@ def test_compile_agent_promotes_above_baseline(tmp_path):
             patch("optimization.run.dspy.Evaluate", lambda **_: evaluator),
             patch("optimization.run.dspy.MIPROv2", FakeMIPROv2),
         ):
-            out = run.compile_agent("security", trainset=_security_trainset(), valset=trainsets.load_gold("security"))
+            out = run.compile_agent(
+                "security",
+                trainset=_security_trainset(),
+                valset=trainsets.load_gold("security"),
+            )
         assert out is not None and out.is_dir()
         assert (out / "program.pkl").exists()
         active = json.loads((opt / "active.json").read_text())

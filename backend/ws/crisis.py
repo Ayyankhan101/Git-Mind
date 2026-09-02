@@ -119,7 +119,12 @@ async def handle_crisis(ws: WebSocket) -> None:
 
         if not state_ref.get("reporter_published"):
             state_ref["crisis_resolved"] = True
-            await ws_send({"kind": "resolved", "content": "Crisis contained — Legal-approved statement issued."})
+            await ws_send(
+                {
+                    "kind": "resolved",
+                    "content": "Crisis contained — Legal-approved statement issued.",
+                }
+            )
 
     except WebSocketDisconnect:
         logger.info("Crisis client disconnected", session=session_id)

@@ -92,7 +92,12 @@ export default function HealthCard({ health, variant, static: isStatic }) {
               context boot for decorative preview content. */}
           {!isStatic && (
             <SceneManager
-              style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none" }}
+              style={{
+                position: "absolute",
+                inset: 0,
+                zIndex: 1,
+                pointerEvents: "none",
+              }}
             >
               {({ sceneRef, subscribe, prefersReduced }) => (
                 <HealthGauge3D

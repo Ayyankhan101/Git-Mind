@@ -1,4 +1,8 @@
-from agents.health import _code_quality_score, _flatten_code_audit_findings, compute_health
+from agents.health import (
+    _code_quality_score,
+    _flatten_code_audit_findings,
+    compute_health,
+)
 
 
 class TestComputeHealth:

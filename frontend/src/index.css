@@ -228,7 +228,7 @@ h3,
 /* ── Layout Shell ─────────────────────────────────────────────── */
 .app {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: 56px 1fr;
   width: 100vw;
   height: 100vh;
@@ -541,8 +541,10 @@ h3,
   display: flex;
   flex-direction: column;
   min-width: 0;
+  max-width: 100%;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 20px;
   /* Keyboard focus scrolled to this offset clears the sticky
      .tab-header/.sec-toolbar instead of hiding beneath them. */
@@ -1386,6 +1388,8 @@ h3,
 .tab-content {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -3855,7 +3859,9 @@ h3,
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
   min-height: 0;
+  overflow: hidden;
   animation: tabFadeIn var(--duration-normal) var(--ease-out);
 }
 .diagram-tab > .diagram-wrap {
@@ -3869,6 +3875,7 @@ h3,
   position: relative;
   width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 .diagram-canvas {
   position: relative;

@@ -90,7 +90,10 @@ def verify_solidity():
                     {
                         "name": "transfer",
                         "visibility": "public",
-                        "parameters": [{"name": "to", "type": "address"}, {"name": "amount", "type": "uint256"}],
+                        "parameters": [
+                            {"name": "to", "type": "address"},
+                            {"name": "amount", "type": "uint256"},
+                        ],
                         "body": "balances[msg.sender] -= amount; balances[to] += amount;",
                         "modifiers": [],
                     }
@@ -108,7 +111,15 @@ def verify_solidity():
     findings = _patient_call(_run)
     assert isinstance(findings, list)
     for f in findings:
-        for k in ("id", "contract", "function", "severity", "title", "description", "remediation"):
+        for k in (
+            "id",
+            "contract",
+            "function",
+            "severity",
+            "title",
+            "description",
+            "remediation",
+        ):
             assert isinstance(f.get(k), str) and f[k], f"solidity finding missing {k}: {f}"
         assert f.get("swc") is None or isinstance(f.get("swc"), str)
     if not findings:
@@ -208,7 +219,11 @@ def verify_pr_review():
     if "could not be generated" in review:
         record("pr_review", "fallback", "rate-limited — degraded review returned")
     else:
-        record("pr_review", "live_ok", f"verdict={verdict}, {parsed} frontend-parseable issues")
+        record(
+            "pr_review",
+            "live_ok",
+            f"verdict={verdict}, {parsed} frontend-parseable issues",
+        )
 
 
 def verify_impact():
@@ -260,7 +275,11 @@ def verify_impact():
     if pred.get("narrative", "").startswith("Impact prediction could not be generated"):
         record("impact", "fallback", "rate-limited — typed fallback dict returned")
     else:
-        record("impact", "live_ok", f"risk={pred['merge_risk']} confidence={pred['confidence']}")
+        record(
+            "impact",
+            "live_ok",
+            f"risk={pred['merge_risk']} confidence={pred['confidence']}",
+        )
 
 
 async def verify_graph():
@@ -297,7 +316,14 @@ async def verify_graph():
         sec = final.get("security_findings") or []
         for f in sec:
             assert isinstance(f["line_start"], int), f"line_start: {f.get('line_start')!r}"
-            for k in ("id", "file", "severity", "title", "exploit_story", "remediation"):
+            for k in (
+                "id",
+                "file",
+                "severity",
+                "title",
+                "exploit_story",
+                "remediation",
+            ):
                 assert isinstance(f.get(k), str) and f[k], f"finding missing {k}: {f}"
         ca = final.get("code_audit")
         for r in ca or []:
@@ -324,9 +350,17 @@ async def verify_graph():
                 f"{len(sec)} security findings, code_audit langs={langs}, health={health['grade']}{health['score']})",
             )
         else:
-            record("architecture", "fallback", "graph ran but LLM calls were rate-limited (fallback diagram)")
+            record(
+                "architecture",
+                "fallback",
+                "graph ran but LLM calls were rate-limited (fallback diagram)",
+            )
         if not live_sec:
-            record("security", "fallback", "rate-limited — no/demo findings (semgrep triage)")
+            record(
+                "security",
+                "fallback",
+                "rate-limited — no/demo findings (semgrep triage)",
+            )
     finally:
         lp = final.get("local_path")
         if lp:
@@ -344,7 +378,11 @@ async def main() -> None:
         try:
             fn()
         except Exception as exc:
-            record(fn.__name__.removeprefix("verify_"), "fallback", f"{type(exc).__name__}: {str(exc)[:120]}")
+            record(
+                fn.__name__.removeprefix("verify_"),
+                "fallback",
+                f"{type(exc).__name__}: {str(exc)[:120]}",
+            )
 
     if _budget_left() > 180:
         try:
@@ -396,11 +434,19 @@ def verify_optimize(agent: str, min_gold: int | None = None) -> None:
         record("optimize", "error", f"no gold valset for {agent}")
         return
     if not trainset:
-        record("optimize", "error", f"no telemetry trainset for {agent} (run the live agents first)")
+        record(
+            "optimize",
+            "error",
+            f"no telemetry trainset for {agent} (run the live agents first)",
+        )
         return
     if min_gold is not None:
         if len(valset) < min_gold:
-            record("optimize", "error", f"gold valset too small ({len(valset)} < {min_gold}) — refusing to gate on it")
+            record(
+                "optimize",
+                "error",
+                f"gold valset too small ({len(valset)} < {min_gold}) — refusing to gate on it",
+            )
             return
         valset = valset[:min_gold]
         print(f"   ℹ {agent}: gating on a {min_gold}-example gold valset (window-saving)")
@@ -450,7 +496,11 @@ def verify_optimize(agent: str, min_gold: int | None = None) -> None:
             patch("llm_cache._record_harvest"),
         ):
             payload = _run_cached(
-                prog, f"optimize-e2e:{agent}", lm=_FakeLM(), output_field=field, **dict(telemetry.inputs())
+                prog,
+                f"optimize-e2e:{agent}",
+                lm=_FakeLM(),
+                output_field=field,
+                **dict(telemetry.inputs()),
             )
         assert _validate_output(agent, payload), f"promoted {agent} output failed the typed contract"
         record("optimize", "live_ok", f"{agent} promoted -> {out} (typed output verified)")
@@ -460,7 +510,11 @@ if __name__ == "__main__":
     import argparse
 
     ap = argparse.ArgumentParser(description="Live DSPy E2E + opt-in MIPROv2 compile")
-    ap.add_argument("--optimize", metavar="AGENT", help="live MIPROv2 compile for one agent (off-peak only)")
+    ap.add_argument(
+        "--optimize",
+        metavar="AGENT",
+        help="live MIPROv2 compile for one agent (off-peak only)",
+    )
     ap.add_argument(
         "--min-gold",
         type=int,

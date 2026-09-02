@@ -357,7 +357,7 @@ Git-Mind/
         ├── pdfBuilder.js           ← PDF generation + caching + syntax highlighting
         ├── tokenManager.js         ← Encrypted PAT storage (AES-GCM)
         ├── components/             ← Tab components + CommandPalette
-        └── ...                     ← 164 Jest tests
+        └── ...                     ← 181 Jest tests
 ```
 
 </details>

@@ -293,9 +293,24 @@ def _audit_language(lang: str, cfg: AuditorDef, matching: list[str], file_conten
 
 _SUPPORT_FILES: dict[str, frozenset[str]] = {
     "python": frozenset({"pyproject.toml", "setup.cfg", "setup.py", ".pylintrc", "tox.ini"}),
-    "javascript": frozenset({"package.json", ".eslintrc", ".eslintrc.json", ".eslintrc.js", "eslint.config.js"}),
+    "javascript": frozenset(
+        {
+            "package.json",
+            ".eslintrc",
+            ".eslintrc.json",
+            ".eslintrc.js",
+            "eslint.config.js",
+        }
+    ),
     "typescript": frozenset(
-        {"package.json", ".eslintrc", ".eslintrc.json", ".eslintrc.js", "eslint.config.js", "tsconfig.json"}
+        {
+            "package.json",
+            ".eslintrc",
+            ".eslintrc.json",
+            ".eslintrc.js",
+            "eslint.config.js",
+            "tsconfig.json",
+        }
     ),
     "go": frozenset({"go.mod", "go.sum"}),
     "rust": frozenset({"Cargo.toml", "Cargo.lock"}),
@@ -378,9 +393,11 @@ def _triage_with_llm(prompt_template: str, tool_results: list[dict], lang: str) 
         {
             "file": r.get("path") or r.get("file") or "",
             "line": r.get("line") or (r.get("message", {}) or {}).get("line"),
-            "message": r.get("message", {}).get("message", "")
-            if isinstance(r.get("message"), dict)
-            else (r.get("message") or ""),
+            "message": (
+                r.get("message", {}).get("message", "")
+                if isinstance(r.get("message"), dict)
+                else (r.get("message") or "")
+            ),
             "rule": r.get("symbol") or r.get("ruleId") or r.get("check_id") or r.get("code"),
         }
         for r in tool_results[:_MAX_FINDINGS]

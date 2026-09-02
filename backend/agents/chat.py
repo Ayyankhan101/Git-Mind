@@ -87,7 +87,10 @@ def _build_messages(
         }
         for c in chunks
     ]
-    return [{"role": "system", "content": system}, {"role": "user", "content": question}], sources
+    return [
+        {"role": "system", "content": system},
+        {"role": "user", "content": question},
+    ], sources
 
 
 def run_chat_agent(

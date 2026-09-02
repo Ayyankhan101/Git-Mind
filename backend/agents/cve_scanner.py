@@ -52,7 +52,13 @@ def run_cve_scanner(file_contents: dict[str, str]) -> list[dict]:
         logger.info("CVE scanner: no lockfiles found")
         return []
 
-    queries = [{"version": d["version"], "package": {"name": d["name"], "ecosystem": d["ecosystem"]}} for d in deps]
+    queries = [
+        {
+            "version": d["version"],
+            "package": {"name": d["name"], "ecosystem": d["ecosystem"]},
+        }
+        for d in deps
+    ]
 
     try:
         resp = httpx.post(_OSV_BATCH_URL, json={"queries": queries}, timeout=20.0)
@@ -64,7 +70,9 @@ def run_cve_scanner(file_contents: dict[str, str]) -> list[dict]:
 
     if len(deps) != len(batch):
         logger.warning(
-            "OSV response length mismatch: %d deps vs %d results — results may be truncated", len(deps), len(batch)
+            "OSV response length mismatch: %d deps vs %d results — results may be truncated",
+            len(deps),
+            len(batch),
         )
     results = []
     for dep, result in zip(deps, batch, strict=False):
@@ -96,5 +104,9 @@ def run_cve_scanner(file_contents: dict[str, str]) -> list[dict]:
         )
 
     results.sort(key=lambda r: _SEV_ORDER.get(r["worst_severity"], 4))
-    logger.info("CVE scanner: %d vulnerable packages found (scanned %d)", len(results), len(deps))
+    logger.info(
+        "CVE scanner: %d vulnerable packages found (scanned %d)",
+        len(results),
+        len(deps),
+    )
     return results

@@ -25,7 +25,13 @@ class TestWsCrisis:
     @patch.dict(os.environ, {"ENVIRONMENT": "test"})
     def test_session_not_found(self, mock_session, _mock_rate):
         with client.websocket_connect("/ws/crisis") as ws:
-            ws.send_json({"session_id": "nonexistent", "finding_id": "f1", "gh_token": "ghp_test"})
+            ws.send_json(
+                {
+                    "session_id": "nonexistent",
+                    "finding_id": "f1",
+                    "gh_token": "ghp_test",
+                }
+            )
             data = ws.receive_json()
             assert "error" in data
             assert "Session not found" in data["error"]

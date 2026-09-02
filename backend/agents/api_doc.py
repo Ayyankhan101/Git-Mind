@@ -81,5 +81,9 @@ def run_api_doc_agent(file_contents: dict[str, str]) -> list[dict]:
                 seen.add(key)
                 results.append(item)
 
-    logger.info("API doc agent: found %d unique endpoints across %d files", len(results), len(api_files))
+    logger.info(
+        "API doc agent: found %d unique endpoints across %d files",
+        len(results),
+        len(api_files),
+    )
     return results

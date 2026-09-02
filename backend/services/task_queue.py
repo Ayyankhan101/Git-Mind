@@ -203,7 +203,12 @@ async def submit(task_type: str, args: dict | None = None) -> str:
         "retries": _MAX_RETRIES,
     }
     await _persist_task(task)
-    entry = {"task_id": task_id, "type": task_type, "args": args or {}, "retries": _MAX_RETRIES}
+    entry = {
+        "task_id": task_id,
+        "type": task_type,
+        "args": args or {},
+        "retries": _MAX_RETRIES,
+    }
     await r.lpush(_QUEUE_KEY, orjson.dumps(entry).decode())
     tasks_submitted.inc()
     logger.debug("Task submitted", task_id=task_id, type=task_type)

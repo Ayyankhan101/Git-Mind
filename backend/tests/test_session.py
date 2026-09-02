@@ -60,7 +60,11 @@ class TestGetSession:
         assert result == {"from": "memory"}
 
     async def test_returns_none_when_not_found(self):
-        with patch("services.database.get_analysis_db", new_callable=AsyncMock, return_value=None):
+        with patch(
+            "services.database.get_analysis_db",
+            new_callable=AsyncMock,
+            return_value=None,
+        ):
             result = await get_session("00000000-0000-0000-0000-000000009999")
             assert result is None
 
@@ -76,7 +80,11 @@ class TestGetSession:
             "repo_url": "https://github.com/owner/repo",
             "chat_history": [],
         }
-        with patch("services.database.get_analysis_db", new_callable=AsyncMock, return_value=db_snap):
+        with patch(
+            "services.database.get_analysis_db",
+            new_callable=AsyncMock,
+            return_value=db_snap,
+        ):
             result = await get_session(VALID_UUID)
             assert result["repo_name"] == "test-repo"
             assert result["chroma_collection_name"] == "col123"

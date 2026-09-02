@@ -156,7 +156,11 @@ async def _trigger_initial_check(repo_url: str, monitor_id: str):
         result = await _run_analysis(repo_url, None, session_id)
 
         if result.get("error"):
-            logger.error("Monitor initial check: analysis failed", repo=repo_url, error=result["error"][:200])
+            logger.error(
+                "Monitor initial check: analysis failed",
+                repo=repo_url,
+                error=result["error"][:200],
+            )
             session_id = ""
 
         async with async_session_factory() as session:

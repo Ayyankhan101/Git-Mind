@@ -142,7 +142,11 @@ async def _run_monitoring_checks():
             result = await _run_analysis(repo.repo_url, None, session_id)
 
             if result.get("error"):
-                logger.error("Monitor: analysis failed", repo=repo.repo_url, error=result["error"][:200])
+                logger.error(
+                    "Monitor: analysis failed",
+                    repo=repo.repo_url,
+                    error=result["error"][:200],
+                )
                 session_id = None
             else:
                 if repo.last_session_id and (repo.slack_webhook_url or repo.email_recipients):
@@ -350,7 +354,11 @@ app.include_router(proxy_router)
 
 @app.get("/task/{task_id}")
 async def get_task_status(task_id: str, request: Request):
-    from services.auth import get_gh_token, get_service_key, require_gh_token_or_service_key
+    from services.auth import (
+        get_gh_token,
+        get_service_key,
+        require_gh_token_or_service_key,
+    )
     from services.rate_limit_response import rate_limit_response
     from services.rate_limiter import check_rate_limit
     from services.task_queue import get_task

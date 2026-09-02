@@ -6,45 +6,44 @@ const dispatch = jest.fn();
 
 beforeEach(() => jest.clearAllMocks());
 
-test("shows Freebuff as the default theme", () => {
-  render(<ThemeSwitcher theme="obsidian" dispatch={dispatch} />);
+test("shows Coral as the default theme", () => {
+  render(<ThemeSwitcher theme="default" dispatch={dispatch} />);
   const button = screen.getByRole("button", { name: /Change theme/ });
-  expect(button).toHaveTextContent("Freebuff");
+  expect(button).toHaveTextContent("Coral");
 });
 
 test("opens listbox with all themes on click", () => {
-  render(<ThemeSwitcher theme="obsidian" dispatch={dispatch} />);
+  render(<ThemeSwitcher theme="default" dispatch={dispatch} />);
   fireEvent.click(screen.getByRole("button", { name: /Change theme/ }));
   const listbox = screen.getByRole("listbox", { name: "Theme picker" });
   expect(listbox).toBeInTheDocument();
-  const freebuffOpt = screen.getByRole("option", {
-    name: /Freebuff/,
+  const coralOpt = screen.getByRole("option", {
+    name: /Coral/,
   });
-  expect(freebuffOpt).toHaveAttribute("aria-selected", "true");
-  expect(freebuffOpt).toHaveTextContent("Electric Blue + Violet");
-  // at least a representative set renders; exact count couples to the theme list
-  expect(screen.getAllByRole("option").length).toBeGreaterThanOrEqual(13);
-  // exact names (avoid /Amber/ also matching "Circuit · Amber Tech")
-  expect(screen.getByText("Amber")).toBeInTheDocument();
-  expect(screen.getByText("Daylight")).toBeInTheDocument();
+  expect(coralOpt).toHaveAttribute("aria-selected", "true");
+  expect(coralOpt).toHaveTextContent("Warm editorial");
+  expect(screen.getAllByRole("option").length).toBeGreaterThanOrEqual(4);
+  expect(screen.getByText("Ocean")).toBeInTheDocument();
+  expect(screen.getByText("Forest")).toBeInTheDocument();
+  expect(screen.getByText("Sunset")).toBeInTheDocument();
 });
 
 test("selecting a theme dispatches SET_THEME", () => {
-  render(<ThemeSwitcher theme="obsidian" dispatch={dispatch} />);
+  render(<ThemeSwitcher theme="default" dispatch={dispatch} />);
   fireEvent.click(screen.getByRole("button", { name: /Change theme/ }));
-  fireEvent.click(screen.getByRole("option", { name: /Matrix/ }));
-  expect(dispatch).toHaveBeenCalledWith({ type: "SET_THEME", theme: "matrix" });
+  fireEvent.click(screen.getByRole("option", { name: /Ocean/ }));
+  expect(dispatch).toHaveBeenCalledWith({ type: "SET_THEME", theme: "ocean" });
 });
 
 test("closes popup after selecting", () => {
-  render(<ThemeSwitcher theme="obsidian" dispatch={dispatch} />);
+  render(<ThemeSwitcher theme="default" dispatch={dispatch} />);
   fireEvent.click(screen.getByRole("button", { name: /Change theme/ }));
-  fireEvent.click(screen.getByRole("option", { name: /Neon/ }));
+  fireEvent.click(screen.getByRole("option", { name: /Forest/ }));
   expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
 });
 
 test("closes popup on outside click", () => {
-  render(<ThemeSwitcher theme="obsidian" dispatch={dispatch} />);
+  render(<ThemeSwitcher theme="default" dispatch={dispatch} />);
   fireEvent.click(screen.getByRole("button", { name: /Change theme/ }));
   expect(screen.getByRole("listbox")).toBeInTheDocument();
   fireEvent.mouseDown(document.body);

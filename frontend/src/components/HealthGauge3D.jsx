@@ -17,7 +17,11 @@ export default function HealthGauge3D({ sceneRef, subscribe, score = 75 }) {
     tp.getHSL(hsl);
     const isLightTheme = hsl.l > 0.6;
     const hue = (score / 100) * 0.3; // 0 = red, 0.3 = green
-    const color = new THREE.Color().setHSL(hue, 0.8, isLightTheme ? 0.38 : 0.55);
+    const color = new THREE.Color().setHSL(
+      hue,
+      0.8,
+      isLightTheme ? 0.38 : 0.55,
+    );
     return new THREE.MeshBasicMaterial({
       color,
       transparent: true,

@@ -242,7 +242,10 @@ async def auto_pr_endpoint(req: AutoPRRequest, request: Request):
 
     repo_url = session.get("repo_url", "")
     if not _GITHUB_URL_RE.match(repo_url):
-        return error_response("Auto-PR requires a valid GitHub repo URL (https://github.com/owner/repo)", 400)
+        return error_response(
+            "Auto-PR requires a valid GitHub repo URL (https://github.com/owner/repo)",
+            400,
+        )
 
     finding = req.finding
     collection = session.get("chroma_collection_name")

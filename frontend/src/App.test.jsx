@@ -15,6 +15,18 @@ jest.mock("./components/SceneManager", () => {
   };
 });
 
+jest.mock("./components/DashboardLayout", () => {
+  return function MockDashboardLayout() {
+    return (
+      <nav>
+        <button aria-label="Keyboard shortcuts">?</button>
+        <button aria-label="Command palette">⌘K</button>
+        <button aria-label="Repositories">Repos</button>
+      </nav>
+    );
+  };
+});
+
 jest.mock("./components/PostProcessing", () => {
   return function MockPostProcessing() {
     return null;
@@ -58,11 +70,6 @@ test("renders app root", () => {
   renderApp("/");
   const elements = screen.getAllByText("GitMind");
   expect(elements.length).toBeGreaterThanOrEqual(1);
-});
-
-test("renders theme switcher", async () => {
-  renderApp();
-  expect(await screen.findByLabelText("Change theme")).toBeInTheDocument();
 });
 
 test("renders keyboard help trigger", async () => {

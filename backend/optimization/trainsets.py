@@ -92,7 +92,12 @@ def load_gold(agent: str) -> list:
     for i, entry in enumerate(raw, 1):
         ex = _entry_to_example(spec, entry)
         if ex is None:
-            logger.warning("gold %s entry %d rejected — fails %s validation", agent, i, spec.output_field)
+            logger.warning(
+                "gold %s entry %d rejected — fails %s validation",
+                agent,
+                i,
+                spec.output_field,
+            )
             continue
         examples.append(ex)
     return examples

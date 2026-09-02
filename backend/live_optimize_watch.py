@@ -43,8 +43,18 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--agent", required=True)
     ap.add_argument("--poll", type=int, default=600, help="seconds between e2e attempts")
-    ap.add_argument("--max-attempts", type=int, default=120, help="max e2e attempts before giving up")
-    ap.add_argument("--target-free", type=int, default=_TARGET_FREE, help="min free tokens before expecting success")
+    ap.add_argument(
+        "--max-attempts",
+        type=int,
+        default=120,
+        help="max e2e attempts before giving up",
+    )
+    ap.add_argument(
+        "--target-free",
+        type=int,
+        default=_TARGET_FREE,
+        help="min free tokens before expecting success",
+    )
     ap.add_argument("--log", default=Path(__file__).parent / ".optimize_watch.log")
     args = ap.parse_args()
 

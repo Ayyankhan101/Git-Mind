@@ -37,7 +37,11 @@ class TestAnalyzeEndpoint:
 
     @patch("routes.analyze.check_rate_limit", return_value=(True, 30, 0))
     def test_analyze_github_only(self, _mock_rate):
-        response = client.post("/analyze", json={"repo_url": "https://gitlab.com/user/repo"}, headers=AUTH_HEADERS)
+        response = client.post(
+            "/analyze",
+            json={"repo_url": "https://gitlab.com/user/repo"},
+            headers=AUTH_HEADERS,
+        )
         assert response.status_code == 400
         assert "error" in response.json()
 

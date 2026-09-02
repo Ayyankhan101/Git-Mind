@@ -86,7 +86,13 @@ def compute_impact(base: dict, pr: dict) -> dict:
 
     base_bd = base_h.get("breakdown") or {}
     pr_bd = pr_h.get("breakdown") or {}
-    keys = ("security", "documentation", "api_coverage", "dependency_freshness", "code_quality")
+    keys = (
+        "security",
+        "documentation",
+        "api_coverage",
+        "dependency_freshness",
+        "code_quality",
+    )
 
     return {
         "base_score": base_score,

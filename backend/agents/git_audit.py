@@ -112,5 +112,11 @@ def _empty() -> dict:
         "commits": [],
         "sensitive_files": [],
         "secret_findings": [],
-        "stats": {"total": 0, "bad_messages": 0, "warn_messages": 0, "secrets_found": 0, "sensitive_files": 0},
+        "stats": {
+            "total": 0,
+            "bad_messages": 0,
+            "warn_messages": 0,
+            "secrets_found": 0,
+            "sensitive_files": 0,
+        },
     }

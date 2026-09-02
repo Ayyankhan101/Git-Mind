@@ -41,7 +41,7 @@ export function useThreeScene() {
       fov,
       canvas.clientWidth / canvas.clientHeight,
       near,
-      far
+      far,
     );
     s.camera.position.set(...cameraPosition);
 

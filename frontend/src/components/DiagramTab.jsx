@@ -120,7 +120,8 @@ export default function DiagramTab({
   // (gate says render, effect clears nodes → blank canvas).
   // Prefer Mermaid when the JSON graph is too sparse (< 3 nodes) — the LLM
   // diagram is usually richer than the static AST parser output.
-  const hasGraphInput = !!archGraph?.nodes?.length && archGraph.nodes.length >= 3;
+  const hasGraphInput =
+    !!archGraph?.nodes?.length && archGraph.nodes.length >= 3;
   const hasMermaidInput =
     !!diagram && typeof diagram === "string" && diagram.startsWith("graph");
 

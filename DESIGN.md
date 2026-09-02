@@ -364,6 +364,18 @@ The dark surfaces are where Claude shows its product chrome — code blocks, ter
 - **Warning** (`{colors.warning}` — #d4a017): Warning callouts (rare on marketing surfaces).
 - **Error** (`{colors.error}` — #c64545): Validation errors.
 
+### Theme Variants
+The design system supports 4 color themes. All share the same layout, typography, and component structure — only accent colors and surface tints change. Default is Coral.
+
+| Theme | Primary | Canvas | Surface Tint | Mood |
+|-------|---------|--------|-------------|------|
+| **Coral** (default) | `#cc785c` | `#faf9f5` | warm cream | Editorial, warm, humanist |
+| **Ocean** | `#2563eb` | `#f8fafc` | cool slate | Technical, professional, trustworthy |
+| **Forest** | `#3d8b5a` | `#f9faf6` | earth green | Natural, calming, unique for dev tools |
+| **Sunset** | `#d97706` | `#fefbf4` | warm amber | Energetic, bold, distinctive |
+
+Theme CSS files live in `src/themes/{id}.css` and override CSS custom properties on `[data-theme="{id}"]`. The themeLoader (`src/themeLoader.js`) lazy-loads theme CSS and applies it via the `data-theme` attribute on `<html>`.
+
 ## Typography
 
 ### Font Family

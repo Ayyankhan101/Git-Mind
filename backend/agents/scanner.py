@@ -94,7 +94,13 @@ def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None =
 
     dest = tempfile.mkdtemp(prefix="gitmind_")
     _active_temp_dirs[dest] = time.time()
-    logger.info("Cloning %s → %s (auth=%s, branch=%s)", repo_url, dest, bool(token), branch or "default")
+    logger.info(
+        "Cloning %s → %s (auth=%s, branch=%s)",
+        repo_url,
+        dest,
+        bool(token),
+        branch or "default",
+    )
 
     head_sha = None
     clone_kwargs: dict = {"depth": 1}

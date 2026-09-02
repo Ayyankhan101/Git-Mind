@@ -27,7 +27,11 @@ def run_rag_setup(file_contents: dict[str, str], repo_name: str, repo_url: str =
             last_exc = exc
             if attempt < _MAX_ATTEMPTS:
                 logger.warning(
-                    "RAG embed attempt %d/%d failed (%s) — retrying in %ds", attempt, _MAX_ATTEMPTS, exc, _RETRY_DELAY
+                    "RAG embed attempt %d/%d failed (%s) — retrying in %ds",
+                    attempt,
+                    _MAX_ATTEMPTS,
+                    exc,
+                    _RETRY_DELAY,
                 )
                 time.sleep(_RETRY_DELAY)
             else:

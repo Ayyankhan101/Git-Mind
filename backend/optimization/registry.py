@@ -143,7 +143,11 @@ def load_program(name: str) -> object:
             logger.info("loaded promoted program %s from %s", name, artifact.name)
             return program
         except Exception as exc:
-            logger.warning("promoted program %s unloadable (%s) — falling back to student", name, exc)
+            logger.warning(
+                "promoted program %s unloadable (%s) — falling back to student",
+                name,
+                exc,
+            )
     program = build_program(name)
     setattr(program, AGENT_ATTR, name)
     return program

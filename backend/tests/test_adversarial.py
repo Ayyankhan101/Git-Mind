@@ -70,7 +70,11 @@ class TestAuthBypass:
         """Malformed Authorization header falls back to GITHUB_TOKEN env var."""
         old = os.environ.pop("GITHUB_TOKEN", None)
         try:
-            resp = client.post("/org-audit", json={"repos": []}, headers={"Authorization": "not-bearer"})
+            resp = client.post(
+                "/org-audit",
+                json={"repos": []},
+                headers={"Authorization": "not-bearer"},
+            )
             assert resp.status_code == 401  # No token anywhere → rejected
         finally:
             if old:
@@ -160,7 +164,10 @@ class TestSessionAttacks:
         for payload in payloads:
             resp = client.post("/chat", json={"session_id": payload, "question": "hi"}, headers=AUTH)
             # Pydantic rejects short invalid UUIDs with 422, route rejects valid-length invalid UUIDs with 400
-            assert resp.status_code in (400, 422), f"Payload '{payload}' should be rejected"
+            assert resp.status_code in (
+                400,
+                422,
+            ), f"Payload '{payload}' should be rejected"
 
     def test_very_long_session_id(self):
         """Extremely long session_id — Pydantic rejects with 422."""

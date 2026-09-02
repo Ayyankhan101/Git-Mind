@@ -14,7 +14,17 @@ _GH_TOKEN_RE = re.compile(r"^(gh[pousr]_|github_pat_)[A-Za-z0-9_]+$")
 # /analysis/* are public because they only read session data (no GitHub access).
 # WebSocket auth is enforced inside the ws handlers (see ws/analyze.py, ws/crisis.py).
 _PUBLIC_PATHS = frozenset(
-    {"/health", "/docs", "/openapi.json", "/metrics", "/summary", "/fix", "/chat", "/chat/stream", "/incident-report"}
+    {
+        "/health",
+        "/docs",
+        "/openapi.json",
+        "/metrics",
+        "/summary",
+        "/fix",
+        "/chat",
+        "/chat/stream",
+        "/incident-report",
+    }
 )
 _PUBLIC_PATH_PREFIXES = ("/repos", "/analysis/")
 
@@ -24,9 +34,22 @@ _WEBHOOK_PATH_PREFIXES = ("/github/webhook",)
 # Known route prefixes — paths NOT matching these are unknown and should get
 # a proper 404 from FastAPI rather than a 401 from this middleware.
 _KNOWN_ROUTE_PREFIXES = (
-    "/health", "/docs", "/openapi.json", "/metrics", "/summary", "/fix",
-    "/chat", "/incident-report", "/repos", "/analysis", "/pr", "/org",
-    "/github", "/webhook", "/monitor", "/proxy",
+    "/health",
+    "/docs",
+    "/openapi.json",
+    "/metrics",
+    "/summary",
+    "/fix",
+    "/chat",
+    "/incident-report",
+    "/repos",
+    "/analysis",
+    "/pr",
+    "/org",
+    "/github",
+    "/webhook",
+    "/monitor",
+    "/proxy",
 )
 
 
