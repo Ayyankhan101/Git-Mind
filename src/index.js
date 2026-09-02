@@ -27,6 +27,12 @@ export default {
       const proxyRequest = new Request(backendUrl.toString(), request);
       proxyRequest.headers.set("Origin", BACKEND_ORIGIN);
 
+      // Explicitly forward auth headers (CF Workers strips them on cross-origin new Request)
+      const authHeader = request.headers.get("Authorization");
+      if (authHeader) proxyRequest.headers.set("Authorization", authHeader);
+      const ghToken = request.headers.get("X-GH-Token");
+      if (ghToken) proxyRequest.headers.set("X-GH-Token", ghToken);
+
       try {
         const response = await fetch(proxyRequest);
         const newResponse = new Response(response.body, response);
