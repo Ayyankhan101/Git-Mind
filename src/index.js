@@ -64,6 +64,7 @@ export default {
       "X-Content-Type-Options": "nosniff",
       "Referrer-Policy": "strict-origin-when-cross-origin",
       "X-XSS-Protection": "1; mode=block",
+      "X-Worker-Ran": "true",
     };
 
     // Cache control: immutable for hashed static assets, no-cache for HTML
