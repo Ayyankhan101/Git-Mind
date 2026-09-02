@@ -16,5 +16,8 @@
   },
   "scripts": {
     "test": "echo 'run backend and frontend tests separately'"
+  },
+  "devDependencies": {
+    "wrangler": "^4.86.0"
   }
 }

@@ -25,8 +25,12 @@ function deriveHttpBase() {
       const url = `${protocol}//${host.replace(/^\d+-/, "8002-")}`;
       return url;
     }
-    // 4. Production deployment (Vercel/Netlify/etc)
+    // 4. Cloudflare Workers proxy (use relative /api path)
     if (hostname !== "localhost" && hostname !== "127.0.0.1") {
+      // Check if we're on Cloudflare (workers.dev domain)
+      if (hostname.endsWith(".workers.dev")) {
+        return "/api";
+      }
       return PROD_BACKEND;
     }
   }
