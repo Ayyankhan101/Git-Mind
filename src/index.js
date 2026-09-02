@@ -55,21 +55,31 @@ export default {
       }
     }
 
-    // Serve static assets
-    const response = await env.ASSETS.fetch(request);
-    const newResponse = new Response(response.body, response);
+    // Serve static assets via ASSETS binding
+    const assetResponse = await env.ASSETS.fetch(request);
 
-    // Security headers
-    newResponse.headers.set("X-Frame-Options", "DENY");
-    newResponse.headers.set("X-Content-Type-Options", "nosniff");
-    newResponse.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-    newResponse.headers.set("X-XSS-Protection", "1; mode=block");
+    // Security headers (always applied)
+    const securityHeaders = {
+      "X-Frame-Options": "DENY",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "X-XSS-Protection": "1; mode=block",
+    };
 
-    // Cache static assets aggressively
-    if (url.pathname.includes("/static/")) {
-      newResponse.headers.set("Cache-Control", "public, max-age=31536000, immutable");
-    }
+    // Cache control: immutable for hashed static assets, no-cache for HTML
+    const cacheControl = url.pathname.includes("/static/")
+      ? "public, max-age=31536000, immutable"
+      : "public, max-age=0, must-revalidate";
 
-    return newResponse;
+    // Return response with security headers injected
+    return new Response(assetResponse.body, {
+      status: assetResponse.status,
+      statusText: assetResponse.statusText,
+      headers: {
+        "Content-Type": assetResponse.headers.get("Content-Type") || "text/html",
+        "Cache-Control": cacheControl,
+        ...securityHeaders,
+      },
+    });
   },
 };
