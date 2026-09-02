@@ -13,7 +13,7 @@
     <img alt="License: Apache 2.0" src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" />
   </a>
   <a href="https://huggingface.co/spaces/Ak001z/gitmind-backend"><img src="https://img.shields.io/badge/Backend-Hugging%20Face-orange" alt="HF Spaces"></a>
-  <a href="https://gitmind-frontend.ayyan9466.workers.dev"><img src="https://img.shields.io/badge/Frontend-Cloudflare%20Workers-blue" alt="Cloudflare Workers"></a>
+  <a href="https://gitmind-peach.vercel.app"><img src="https://img.shields.io/badge/Frontend-Vercel-blue" alt="Vercel"></a>
 </p>
 
 ---
@@ -22,7 +22,7 @@
 
 |     | Link                                                                           | Notes                                             |
 | --- | ------------------------------------------------------------------------------ | ------------------------------------------------- |
-| 🖥️  | **[gitmind-frontend.ayyan9466.workers.dev](https://gitmind-frontend.ayyan9466.workers.dev)** | React frontend — enter a GitHub username to start |
+| 🖥️  | **[gitmind-peach.vercel.app](https://gitmind-peach.vercel.app)**               | React frontend — enter a GitHub username to start |
 | ⚙️  | **[ak001z-gitmind-backend.hf.space](https://ak001z-gitmind-backend.hf.space)** | FastAPI backend — Hugging Face Spaces (Docker)    |
 
 > **Tip:** Enter a GitHub PAT in the command bar (`⌘K`) to access private repos and enable auto-fix PRs.
