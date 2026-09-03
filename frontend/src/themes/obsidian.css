@@ -1,0 +1,66 @@
+/* ============================================================
+   OBSIDIAN THEME — Dark studio, indigo accent
+   ============================================================ */
+[data-theme="obsidian"],
+.obsidian {
+  color-scheme: dark;
+
+  --bg: #08090e;
+  --bg-alt: #06070c;
+  --surface-0: #0d0e16;
+  --surface-1: #11121c;
+  --surface-2: #161824;
+  --surface-3: #1c1e2e;
+  --surface-4: #232538;
+
+  --primary: #7c6fe0;
+  --primary-hover: #8b7fe8;
+  --primary-strong: #6b5fd4;
+  --primary-muted: rgba(124, 111, 224, 0.15);
+  --primary-subtle: rgba(124, 111, 224, 0.08);
+
+  --accent-2: #a78bfa;
+
+  --success: #34d399;
+  --success-bg: rgba(52, 211, 153, 0.08);
+  --warning: #fbbf24;
+  --warning-bg: rgba(251, 191, 36, 0.08);
+  --danger: #f87171;
+  --danger-bg: rgba(248, 113, 113, 0.08);
+  --info: #60a5fa;
+  --info-bg: rgba(96, 165, 250, 0.08);
+
+  --text-primary: #f0eff4;
+  --text-secondary: #a8a7b3;
+  --text-tertiary: #6d6c7a;
+  --text-on-primary: #08090e;
+
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-default: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.10);
+  --border-accent: rgba(124, 111, 224, 0.25);
+
+  --glass-bg: rgba(13, 14, 22, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.06);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-accent: 0 4px 20px rgba(124, 111, 224, 0.2);
+
+  --scrim-strong: rgba(0, 0, 0, 0.6);
+  --scrim-default: rgba(0, 0, 0, 0.45);
+  --scrim-soft: rgba(0, 0, 0, 0.3);
+
+  --code-keyword: #c4b5fd;
+  --code-string: #a5d6a7;
+  --code-comment: #6d6c7a;
+  --code-fn: #93c5fd;
+  --code-number: #fbbf24;
+  --code-operator: #93c5fd;
+  --code-punctuation: #a8a7b3;
+
+  --three-primary: #7c6fe0;
+  --three-accent: #a78bfa;
+  --three-fog: #08090e;
+}
