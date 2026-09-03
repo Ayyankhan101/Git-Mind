@@ -118,7 +118,13 @@ function SkeletonRows() {
   );
 }
 
-export default function DocsTab({ docs, isAnalyzing, analyzed, onPickFile }) {
+export default function DocsTab({
+  docs,
+  isAnalyzing,
+  analyzed,
+  agentStatus,
+  onPickFile,
+}) {
   const [filter, setFilter] = useState("ALL");
 
   const filtered = useMemo(() => {
@@ -132,6 +138,11 @@ export default function DocsTab({ docs, isAnalyzing, analyzed, onPickFile }) {
       ? docs?.length || 0
       : docs?.filter((d) => (d.method || "").toUpperCase() === m).length || 0;
 
+  const apiDocsDone =
+    !agentStatus ||
+    agentStatus.api_docs === "done" ||
+    agentStatus.api_docs === "error";
+
   if (!analyzed && !isAnalyzing) {
     return (
       <div className="empty">
@@ -142,9 +153,9 @@ export default function DocsTab({ docs, isAnalyzing, analyzed, onPickFile }) {
     );
   }
 
-  if (isAnalyzing && !docs?.length) return <SkeletonRows />;
+  if (isAnalyzing && !docs?.length && !apiDocsDone) return <SkeletonRows />;
 
-  if (analyzed && !isAnalyzing && !docs?.length) {
+  if (!docs?.length && apiDocsDone) {
     return (
       <div className="empty">
         <FileCode2 size={20} className="empty-icon" />

@@ -278,6 +278,7 @@ export default function DashboardLayout({
                   healthPartial={state.healthPartial}
                   repoUrl={selectedRepoUrl}
                   ghToken={ghToken}
+                  agentStatus={agentStatus}
                 />
               )}
               {activeTab === "diagram" && (
@@ -297,6 +298,7 @@ export default function DashboardLayout({
                   docs={apiDocs}
                   isAnalyzing={isAnalyzing}
                   analyzed={analyzed}
+                  agentStatus={agentStatus}
                   onPickFile={(p) =>
                     dispatch({ type: "SET_FILE_PREVIEW", preview: p })
                   }
