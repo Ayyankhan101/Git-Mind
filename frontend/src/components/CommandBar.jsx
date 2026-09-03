@@ -1,5 +1,13 @@
 import React, { useRef, useCallback, useState, useEffect } from "react";
-import { Search, FolderOpen, Share2, Download, Check, Lock, RefreshCw } from "../icons";
+import {
+  Search,
+  FolderOpen,
+  Share2,
+  Download,
+  Check,
+  Lock,
+  RefreshCw,
+} from "../icons";
 import ThemeSwitcher from "./ThemeSwitcher";
 import { isValidGhToken } from "../api";
 import * as tokenManager from "../tokenManager";
