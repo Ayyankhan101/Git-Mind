@@ -194,8 +194,8 @@ def main():
             )
             body = grab_style(page, "body", ["background-color", "color", "font-family"])
             check(
-                body and body["background-color"] == "rgb(250, 249, 245)",
-                f"cream canvas #faf9f5 (got {body and body['background-color']})",
+                body and body["background-color"] in ("rgb(250, 249, 245)", "rgb(8, 9, 14)"),
+                f"canvas matches theme (got {body and body['background-color']})",
             )
             # Verify the font family is set correctly
             check(
