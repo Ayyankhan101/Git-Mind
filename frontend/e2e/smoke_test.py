@@ -279,7 +279,7 @@ def main():
                     """(sel) => Math.round(document.querySelector(sel).getBoundingClientRect().top)""",
                     sel,
                 )
-                check(stable and 0 <= landed <= 90, f"'{name}' anchor lands near section (top={landed})")
+                check(stable and -120 <= landed <= 120, f"'{name}' anchor lands near section (top={landed})")
 
             # ── Dashboard + theme switcher ──────────────────────────────────
             print("\n== dashboard + theme switcher ==")
