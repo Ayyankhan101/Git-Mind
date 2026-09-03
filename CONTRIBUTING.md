@@ -27,10 +27,10 @@ npm start  # runs on port 3000
 ## Running Tests
 
 ```bash
-# Backend (245 tests)
+# Backend (106 tests)
 cd backend && pytest -v
 
-# Frontend (164 tests)
+# Frontend (70 tests)
 cd frontend && npm test
 ```
 

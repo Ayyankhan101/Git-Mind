@@ -10,7 +10,7 @@ permissions:
   issues: write
 
 env:
-  DASHBOARD_BASE: https://gitmind-peach.vercel.app
+  DASHBOARD_BASE: https://gitmind-frontend.pages.dev
 
 jobs:
   monitor:

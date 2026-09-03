@@ -22,7 +22,7 @@
   </a>
 <% } -%>
   <a href="https://huggingface.co/spaces/Ak001z/gitmind-backend"><img src="https://img.shields.io/badge/Backend-Hugging%20Face-orange" alt="HF Spaces"></a>
-  <a href="https://gitmind-peach.vercel.app"><img src="https://img.shields.io/badge/Frontend-Vercel-blue" alt="Vercel"></a>
+  <a href="https://gitmind-frontend.pages.dev"><img src="https://img.shields.io/badge/Frontend-Cloudflare%20Pages-blue" alt="Cloudflare Pages"></a>
 </p>
 
 ---
@@ -31,7 +31,7 @@
 
 |     | Link                                                                           | Notes                                             |
 | --- | ------------------------------------------------------------------------------ | ------------------------------------------------- |
-| 🖥️  | **[gitmind-peach.vercel.app](https://gitmind-peach.vercel.app)**               | React frontend — enter a GitHub username to start |
+| 🖥️  | **[gitmind-frontend.pages.dev](https://gitmind-frontend.pages.dev)**             | React frontend — enter a GitHub username to start |
 | ⚙️  | **[ak001z-gitmind-backend.hf.space](https://ak001z-gitmind-backend.hf.space)** | FastAPI backend — Hugging Face Spaces (Docker)    |
 
 > **Tip:** Enter a GitHub PAT in the command bar (`⌘K`) to access private repos and enable auto-fix PRs.
@@ -258,7 +258,7 @@ Logs are written to `logs/backend.log` and `logs/frontend.log`.
 | Variable       | Description                                                               |
 | -------------- | ------------------------------------------------------------------------- |
 | `GROQ_API_KEY` | Groq API key — free at [console.groq.com](https://console.groq.com)       |
-| `CORS_ORIGINS` | Comma-separated allowed origins (e.g. `https://gitmind-peach.vercel.app`) |
+| `CORS_ORIGINS` | Comma-separated allowed origins (e.g. `https://gitmind-frontend.pages.dev`) |
 
 **Database & Storage**
 
@@ -554,7 +554,7 @@ cd frontend && npx vitest run
 | Platform                   | What                   | URL                                                                                     |
 | -------------------------- | ---------------------- | --------------------------------------------------------------------------------------- |
 | **Hugging Face Spaces**    | Backend (Docker)       | [ak001z-gitmind-backend.hf.space](https://huggingface.co/spaces/Ak001z/gitmind-backend) |
-| **Vercel**                 | Frontend (auto-deploy) | [gitmind-peach.vercel.app](https://gitmind-peach.vercel.app)                            |
+| **Cloudflare Pages**       | Frontend (auto-deploy) | [gitmind-frontend.pages.dev](https://gitmind-frontend.pages.dev)                        |
 | **Docker Compose**         | Full stack (self-host) | `docker compose up -d --build`                                                          |
 | **Any Python host**        | Backend                | Render, Fly.io, EC2, etc.                                                               |
 
@@ -567,7 +567,7 @@ docker compose up -d --build
 # Deploy to HF (manual)
 ./scripts/deploy-hf.sh
 
-# Frontend — push to main → Vercel auto-deploys
+# Frontend — push to main → Cloudflare Pages auto-deploys
 ```
 
 ---

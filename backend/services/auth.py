@@ -26,7 +26,7 @@ _PUBLIC_PATHS = frozenset(
         "/incident-report",
     }
 )
-_PUBLIC_PATH_PREFIXES = ("/repos", "/analysis/")
+_PUBLIC_PATH_PREFIXES = ("/repos", "/analysis/", "/proxy")
 
 # Webhook paths — HMAC-verified inside the route handler, not by this middleware.
 _WEBHOOK_PATH_PREFIXES = ("/github/webhook",)

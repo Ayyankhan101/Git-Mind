@@ -1,6 +1,6 @@
 {
   "name": "GitMind PR Guardian",
-  "url": "https://gitmind-peach.vercel.app",
+  "url": "https://gitmind-frontend.pages.dev",
   "description": "AI-powered PR reviews, security monitoring, and health tracking for your repositories.",
   "public": true,
   "default_permissions": {
@@ -10,9 +10,9 @@
     "metadata": "read"
   },
   "default_events": ["pull_request", "push", "installation"],
-  "redirect_url": "https://gitmind-peach.vercel.app",
+  "redirect_url": "https://gitmind-frontend.pages.dev",
   "request_oauth_on_install": false,
-  "setup_url": "https://gitmind-peach.vercel.app",
+  "setup_url": "https://gitmind-frontend.pages.dev",
   "hook_attributes": {
     "url": "https://ak001z-gitmind-backend.hf.space/github/webhook",
     "active": true

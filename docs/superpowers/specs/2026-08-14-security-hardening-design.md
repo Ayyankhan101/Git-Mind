@@ -18,7 +18,7 @@ Scope: 20-point security checklist audit + 5-phase hardening
   - Strict-Transport-Security: max-age=31536000; includeSubDomains (only when request is https or X-Forwarded-Proto=https)
   - CSP: report-only start — `Content-Security-Policy-Report-Only` default-src 'self'; connect-src 'self' https:; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' (React inline styles need it); font-src 'self' https://fonts.gstatic.com; script-src 'self'
   - Register in main.py before MetricsMiddleware (headers must run on all responses incl. /metrics, /health)
-- `frontend/vercel.json`: `headers` key, apply same set to all routes (frontend HTML served by Vercel)
+- Cloudflare Pages `_headers` file: apply same set to all routes (frontend HTML served by Cloudflare Pages)
 - `.github/workflows/ci.yml`: new job `security` (ubuntu): pip-audit on backend/requirements.txt; npm audit --audit-level=high on frontend (NODE_OPTIONS=""); gitleaks detect --source . (latest release)
 - `.github/dependabot.yml`: package-ecosystem pip (backend/) + npm (frontend/), monthly, minor+patch only
 - `.pre-commit-config.yaml`: add gitleaks hook (pre-commit/gitleaks) — entry gitleaks protect --staged
@@ -45,4 +45,4 @@ Scope: 20-point security checklist audit + 5-phase hardening
 - README: security matrix table (20 items → status/rationale) in SECURITY section
 
 ## Target files
-backend/main.py, backend/services/security_headers.py (new), backend/services/rate_limiter.py, backend/routes/analysis.py, backend/routes/_errors.py, backend/ws/analyze.py, backend/routes/chat.py, frontend/vercel.json, .github/workflows/ci.yml, .github/dependabot.yml (new), .pre-commit-config.yaml, README.md
+backend/main.py, backend/services/security_headers.py (new), backend/services/rate_limiter.py, backend/routes/analysis.py, backend/routes/_errors.py, backend/ws/analyze.py, backend/routes/chat.py, .github/workflows/ci.yml, .github/dependabot.yml (new), .pre-commit-config.yaml, README.md

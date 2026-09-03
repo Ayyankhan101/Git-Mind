@@ -182,7 +182,7 @@ async def _run_monitoring_checks():
 async def _send_monitor_alert(repo, score_delta, new_findings, curr_health, session_id):
     import httpx
 
-    dashboard_url = f"https://gitmind-peach.vercel.app/?share={session_id}"
+    dashboard_url = f"https://gitmind-frontend.pages.dev/?share={session_id}"
     msg = f"⚠️ *GitMind Alert: {repo.repo_name}*\nHealth score changed by {score_delta:+d} → now {curr_health}/100\n"
     if new_findings > 0:
         msg += f"New security findings: +{new_findings}\n"
@@ -290,7 +290,7 @@ elif _CORS_ORIGINS_ENV:
     _CORS_ORIGINS = [o.strip() for o in _CORS_ORIGINS_ENV.split(",") if o.strip()]
 elif _ENVIRONMENT == "production":
     _CORS_ORIGINS = [
-        "https://gitmind-peach.vercel.app",
+        "https://gitmind-frontend.pages.dev",
     ]
 else:
     _CORS_ORIGINS = [
@@ -299,24 +299,23 @@ else:
         "http://localhost:3001",
         "http://localhost:3002",
         "http://localhost:8002",
-        "https://gitmind-peach.vercel.app",
-        "https://gitmind.vercel.app",
+        "https://gitmind-frontend.pages.dev",
     ]
-    # Allow all Vercel preview deployments
+    # Allow all Cloudflare Pages preview deployments
     import re as _re
 
-    _VERCEL_RE = _re.compile(r"^https://gitmind-.*\.vercel\.app$")
+    _CF_RE = _re.compile(r"^https://gitmind-.*\.pages\.dev$")
 
 
 def _cors_origin_ok(origin: str) -> bool:
-    """Check if origin is allowed — static list + Vercel preview pattern."""
-    return origin in _CORS_ORIGINS or bool(_VERCEL_RE.match(origin))
+    """Check if origin is allowed — static list + Cloudflare Pages preview pattern."""
+    return origin in _CORS_ORIGINS or bool(_CF_RE.match(origin))
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_CORS_ORIGINS + ["https://gitmind-a4gs396kv-ayyankhan101s-projects.vercel.app"],
-    allow_origin_regex=r"^https://gitmind-.*\.vercel\.app$",
+    allow_origins=_CORS_ORIGINS,
+    allow_origin_regex=r"^https://gitmind-.*\.pages\.dev$",
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type", "X-GH-Token", "X-Request-ID", "Authorization"],
 )

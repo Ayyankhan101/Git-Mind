@@ -14,7 +14,7 @@ FastAPI + LangGraph backend for [GitMind](https://github.com/Ayyankhan101/Git-Mi
 GitHub repo analysis (architecture diagrams, security/CVE scanning, Solidity audit, RAG chat,
 multi-agent crisis simulation).
 
-This Space runs the backend only. The React frontend is deployed on Vercel
+This Space runs the backend only. The React frontend is deployed on Cloudflare Pages
 and points at this Space via `REACT_APP_API_BASE`.
 
 ## Ports
@@ -141,7 +141,7 @@ Set these in **Settings → Variables and secrets**:
 | Name           | Required | Notes                                                                                     |
 | -------------- | -------- | ----------------------------------------------------------------------------------------- |
 | `GROQ_API_KEY` | ✅       | Groq API key (`gsk_...`) — the app won't start without it.                                |
-| `CORS_ORIGINS` | ✅       | Comma-separated allowed origins, e.g. your Vercel URL `https://gitmind-peach.vercel.app`. |
+| `CORS_ORIGINS` | ✅       | Comma-separated allowed origins, e.g. your Cloudflare Pages URL `https://gitmind-frontend.pages.dev`. |
 | `HF_TOKEN`     | ✅       | Hugging Face token with write access — used by CI to upload the Space.                    |
 
 ## Optional environment variables

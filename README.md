@@ -545,7 +545,7 @@ Defense-in-depth posture — 20-point checklist status:
 | Restrict file uploads  | N/A — no upload endpoints                                                                      |
 | Trim API responses     | ✅ `_trim_analysis` whitelist; history/org/pr/repos return fixed shapes                        |
 | Security headers       | ✅ X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy, CSP (report-only), HSTS |
-| Force HTTPS            | ✅ Platform-terminated (Vercel / HF Spaces)                                                    |
+| Force HTTPS            | ✅ Platform-terminated (Cloudflare Pages / HF Spaces)                                   |
 | Scan dependencies      | ✅ `pip-audit` + `npm audit` in CI `security` job; Dependabot monthly                          |
 
 ---
