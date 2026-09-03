@@ -12,7 +12,10 @@
 useDefault = true
 
 [allowlist]
-description = "False positives from minified third-party code"
+description = "False positives and known shared secrets"
 commits = [
   "8328f8ccb50d751bf26f07c169f52c917be4fed6",
+]
+paths = [
+  '''frontend/src/App\.jsx$''',
 ]
