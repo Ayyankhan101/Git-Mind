@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   BarChart3,
   FileCode2,
@@ -148,6 +148,7 @@ export default function SummaryTab({
   health,
   repoUrl,
   ghToken,
+  agentStatus,
 }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -157,6 +158,36 @@ export default function SummaryTab({
   const [watchError, setWatchError] = useState(null);
   const statsRef = useRef(null);
 
+  const fetchSummaryData = useCallback(
+    (attempt = 0) => {
+      if (!enabled || data) return;
+      setLoading(true);
+      setError(null);
+      let cancelled = false;
+      const MAX_RETRIES = 3;
+      const RETRY_DELAY = 5000;
+      async function tryFetch(a) {
+        try {
+          const d = await fetchSummary(sessionId);
+          if (!cancelled) setData(d);
+        } catch (err) {
+          if (!cancelled && a < MAX_RETRIES) {
+            setTimeout(() => tryFetch(a + 1), RETRY_DELAY);
+            return;
+          }
+          if (!cancelled) setError(err.message);
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      }
+      tryFetch(attempt);
+      return () => {
+        cancelled = true;
+      };
+    },
+    [enabled, sessionId, data],
+  );
+
   useEffect(() => {
     setData(null);
     setError(null);
@@ -164,30 +195,7 @@ export default function SummaryTab({
 
   useEffect(() => {
     if (!enabled || data || loading) return;
-    setLoading(true);
-    setError(null);
-    let cancelled = false;
-    const MAX_RETRIES = 3;
-    const RETRY_DELAY = 5000;
-    async function tryFetch(attempt) {
-      try {
-        const d = await fetchSummary(sessionId);
-        if (!cancelled) setData(d);
-      } catch (err) {
-        if (!cancelled && attempt < MAX_RETRIES) {
-          // Retry after delay — session may still be processing
-          setTimeout(() => tryFetch(attempt + 1), RETRY_DELAY);
-          return;
-        }
-        if (!cancelled) setError(err.message);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    tryFetch(0);
-    return () => {
-      cancelled = true;
-    };
+    return fetchSummaryData(0);
   }, [enabled, sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Check if repo is already being watched
@@ -405,6 +413,21 @@ export default function SummaryTab({
           )}
         </div>
       )}
+      {!enabled && isAnalyzing && (
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+            color: "var(--text-3)",
+            fontSize: fs.base,
+            marginBottom: 24,
+          }}
+        >
+          <span className="spinner" />
+          Waiting for analysis to complete…
+        </div>
+      )}
       {loading && (
         <div
           style={{
@@ -421,9 +444,31 @@ export default function SummaryTab({
         </div>
       )}
       {error && (
-        <p className="lead" style={{ color: "var(--danger)" }}>
-          Failed to load summary: {error}
-        </p>
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+            color: "var(--danger)",
+            fontSize: fs.base,
+            marginBottom: 24,
+          }}
+        >
+          <p className="lead" style={{ margin: 0 }}>
+            Failed to load summary: {error}
+          </p>
+          <button
+            className="btn btn-ghost"
+            onClick={() => {
+              setData(null);
+              setError(null);
+              fetchSummaryData(0);
+            }}
+            style={{ flexShrink: 0 }}
+          >
+            Retry
+          </button>
+        </div>
       )}
       {/* Two-column grid: graph/bar (left) + summary (right) */}
       <div className="summary-grid">
@@ -555,7 +600,7 @@ export default function SummaryTab({
                 </div>
               );
             })()}
-          {!loading && !data && !error && (
+          {!loading && !data && !error && !isAnalyzing && (
             <p className="lead" style={{ color: "var(--text-3)" }}>
               Analysis of{" "}
               <strong style={{ color: "var(--text-1)" }}>{repoName}</strong>{" "}
