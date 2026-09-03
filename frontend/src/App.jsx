@@ -349,6 +349,8 @@ export default function App() {
           JSON.stringify({
             repo_url: url,
             session_id: SESSION_ID,
+            ws_auth_secret: "gitmind-ws-2026",
+            ws_auth_ts: Math.floor(Date.now() / 1000),
             ...(gh ? { gh_token: gh } : {}),
           }),
         );
