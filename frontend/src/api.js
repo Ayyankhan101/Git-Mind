@@ -2,7 +2,7 @@
 const PROD_BACKEND = "https://ak001z-gitmind-backend.hf.space";
 
 function deriveHttpBase() {
-  // 1. CRA build-time env var (set REACT_APP_API_BASE in Vercel dashboard)
+  // 1. CRA build-time env var (set REACT_APP_API_BASE in Cloudflare Pages dashboard)
   if (process.env.REACT_APP_API_BASE) {
     const envUrl = process.env.REACT_APP_API_BASE;
     // Validate: must not be the HuggingFace website URL (hf.co/spaces/...)
