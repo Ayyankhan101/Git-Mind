@@ -21,7 +21,7 @@ _REFERRER_POLICY = "strict-origin-when-cross-origin"
 _PERMISSIONS_POLICY = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=()"
 _CSP_REPORT_ONLY = (
     "default-src 'self'; "
-    "connect-src 'self' https: ws: wss:; "
+    "connect-src 'self' https://ak001z-gitmind-backend.hf.space wss://ak001z-gitmind-backend.hf.space; "
     "img-src 'self' data: https:; "
     "style-src 'self' 'unsafe-inline'; "
     "font-src 'self' https://fonts.gstatic.com; "

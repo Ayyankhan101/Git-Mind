@@ -25,7 +25,7 @@ function deriveHttpBase() {
       const url = `${protocol}//${host.replace(/^\d+-/, "8002-")}`;
       return url;
     }
-    // 4. Cloudflare Workers proxy (use relative /api path)
+    // 4. Cloudflare Pages (use direct backend URL)
     if (hostname !== "localhost" && hostname !== "127.0.0.1") {
       // Check if we're on Cloudflare (workers.dev domain)
       if (hostname.endsWith(".workers.dev")) {

@@ -31,8 +31,9 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip API and WebSocket requests
+  // Skip cross-origin requests, API, and WebSocket requests
   if (
+    url.origin !== location.origin ||
     url.pathname.startsWith("/api") ||
     url.pathname.startsWith("/ws") ||
     request.method !== "GET"
