@@ -2,14 +2,13 @@
 """
 GitMind frontend smoke test (Playwright).
 
-Verifies the coral editorial rebrand renders correctly in a real browser:
+Verifies the editorial design system renders correctly in a real browser:
 
-  1. Landing page loads with the coral hero (gradient title, pill CTA).
-  2. Light-mode tokens apply (cream canvas #faf9f5, coral buttons).
-  3. Theme switcher shows "Coral" as the default theme.
-  4. Theme switching works (Ocean -> blue canvas, back to Coral).
-  5. Forest (green) renders the earth-green canvas.
-  6. No console/page errors on landing or dashboard.
+  1. Landing page loads with hero (gradient title, pill CTA).
+  2. Default theme is Obsidian (dark canvas #08090e).
+  3. Theme switcher shows "Obsidian" as the default theme.
+  4. Theme switching works (Ocean -> blue, Forest -> green, Coral -> cream, back to Obsidian).
+  5. No console/page errors on landing or dashboard.
 
 Browser resolution (first match wins):
   --browser brave     -> Brave executable only (fail if not found)
@@ -292,14 +291,14 @@ def main():
                 "theme switcher button renders",
             )
             check(
-                "Coral" in page.locator(".theme-btn").first.inner_text(),
-                "default theme labelled Coral",
+                "Obsidian" in page.locator(".theme-btn").first.inner_text(),
+                "default theme labelled Obsidian",
             )
 
             page.locator(".theme-btn").first.click()
             page.wait_for_timeout(400)
             opts = page.locator(".theme-grid-name").all_inner_texts()
-            check("Coral" in opts and "Ocean" in opts, "theme list includes Coral + Ocean")
+            check("Obsidian" in opts and "Ocean" in opts, "theme list includes Obsidian + Ocean")
 
             # Switch to Ocean
             page.locator(".theme-grid-item", has_text="Ocean").first.click()
@@ -322,7 +321,18 @@ def main():
             )
             page.screenshot(path=str(shot_dir / "02-forest-dashboard.png"))
 
-            # Switch back to Coral
+            # Switch back to Obsidian (default dark theme)
+            page.locator(".theme-btn").first.click()
+            page.wait_for_timeout(300)
+            page.locator(".theme-grid-item", has_text="Obsidian").first.click()
+            page.wait_for_timeout(500)
+            obsidian_bg = grab_style(page, "body", ["background-color"])
+            check(
+                obsidian_bg and obsidian_bg["background-color"] == "rgb(8, 9, 14)",
+                "switching to Obsidian restores dark canvas",
+            )
+
+            # Also verify Coral (cream) still works
             page.locator(".theme-btn").first.click()
             page.wait_for_timeout(300)
             page.locator(".theme-grid-item", has_text="Coral").first.click()
@@ -330,7 +340,7 @@ def main():
             coral_bg = grab_style(page, "body", ["background-color"])
             check(
                 coral_bg and coral_bg["background-color"] == "rgb(250, 249, 245)",
-                "switching back to Coral restores cream canvas",
+                "Coral theme switches to cream canvas",
             )
 
             # ── Console errors ──────────────────────────────────────────────
