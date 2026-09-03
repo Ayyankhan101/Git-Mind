@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useState, useEffect } from "react";
-import { Search, FolderOpen, Share2, Download, Check, Lock } from "../icons";
+import { Search, FolderOpen, Share2, Download, Check, Lock, RefreshCw } from "../icons";
 import ThemeSwitcher from "./ThemeSwitcher";
 import { isValidGhToken } from "../api";
 import * as tokenManager from "../tokenManager";
@@ -78,7 +78,6 @@ export default function CommandBar({
             if (e.key === "Enter" && !reposLoading && !isAnalyzing)
               handleLoadRepos();
           }}
-          disabled={isAnalyzing}
         />
       </div>
 
@@ -151,6 +150,21 @@ export default function CommandBar({
         <span className={`cb-status ${statusClass}`} role="status">
           {statusText}
         </span>
+      )}
+
+      {analyzed && (
+        <button
+          className="btn btn-ghost"
+          onClick={() => {
+            dispatch({ type: "RESET_ANALYSIS" });
+            window.location.href = "/";
+          }}
+          title="Start new analysis"
+          aria-label="New analysis"
+        >
+          <RefreshCw size={13} />
+          New
+        </button>
       )}
 
       <button

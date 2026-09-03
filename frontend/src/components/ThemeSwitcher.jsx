@@ -26,6 +26,12 @@ const THEMES = [
     sub: "Warm amber",
     swatches: ["#fefbf4", "#d97706"],
   },
+  {
+    id: "obsidian",
+    name: "Obsidian",
+    sub: "Dark studio",
+    swatches: ["#08090e", "#7c6fe0"],
+  },
 ];
 
 export default function ThemeSwitcher({ theme, dispatch }) {

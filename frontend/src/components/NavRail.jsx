@@ -1,5 +1,5 @@
 import React from "react";
-import { FolderOpen, Command, Building2 } from "../icons";
+import { FolderOpen, Command, Building2, RefreshCw } from "../icons";
 import { fs } from "../typeScale";
 import ThemeSwitcher from "./ThemeSwitcher";
 
@@ -103,6 +103,21 @@ export default function NavRail({
       )}
 
       <div className="nav-actions">
+        {(isAnalyzing || analyzed) && (
+          <button
+            className="nav-item"
+            onClick={() => {
+              dispatch({ type: "RESET_ANALYSIS" });
+              window.location.href = "/";
+            }}
+            data-tip="New Analysis"
+            aria-label="New analysis"
+          >
+            <RefreshCw size={18} />
+            <span className="nav-label">New</span>
+          </button>
+        )}
+
         <ThemeSwitcher theme={theme} dispatch={dispatch} />
 
         {repos.length > 0 && (

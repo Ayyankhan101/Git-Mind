@@ -119,8 +119,7 @@ export default function App() {
     const savedTheme = localStorage.getItem("gm-theme");
     const savedDensity = localStorage.getItem("gm-density") || "comfortable";
     const root = document.documentElement;
-    if (savedTheme && savedTheme !== "obsidian")
-      root.setAttribute("data-theme", savedTheme);
+    if (savedTheme) root.setAttribute("data-theme", savedTheme);
     else root.removeAttribute("data-theme");
     if (savedDensity === "comfortable") root.removeAttribute("data-density");
     else root.setAttribute("data-density", savedDensity);

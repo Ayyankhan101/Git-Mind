@@ -7,7 +7,7 @@
  * "default" = no theme attribute (uses :root tokens from design-tokens.css).
  */
 
-const THEME_IDS = new Set(["ocean", "forest", "sunset", "daylight"]);
+const THEME_IDS = new Set(["ocean", "forest", "sunset", "daylight", "obsidian"]);
 
 let loadedThemes = new Set();
 
