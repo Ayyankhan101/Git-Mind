@@ -91,9 +91,8 @@ def test_github_credential_prefers_caller_token():
 
 
 def test_protected_route_rejects_unauthenticated_request(client):
-    """/monitor/status partitions rows by hash_token(caller). Anonymous access
-    would expose and allow deletion of every other caller's monitored repos."""
-    assert client.get("/monitor/status").status_code == 401
+    """/org-audit is protected — anonymous access should get 401."""
+    assert client.post("/org-audit").status_code == 401
 
 
 def test_protected_route_accepts_caller_token(client):
