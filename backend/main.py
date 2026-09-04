@@ -32,6 +32,7 @@ from routes.fix import router as fix_router  # noqa: E402
 from routes.github_webhook import router as github_webhook_router  # noqa: E402
 from routes.incident import router as incident_router  # noqa: E402
 from routes.monitor import router as monitor_router  # noqa: E402
+from routes.oauth import router as oauth_router  # noqa: E402
 from routes.org import router as org_router  # noqa: E402
 from routes.pr import router as pr_router  # noqa: E402
 from routes.proxy import router as proxy_router  # noqa: E402
@@ -354,6 +355,7 @@ app.include_router(webhook_router)
 app.include_router(github_webhook_router)
 app.include_router(monitor_router)
 app.include_router(proxy_router)
+app.include_router(oauth_router)
 
 
 # ── Task polling ────────────────────────────────────────────────────────────

@@ -1,6 +1,15 @@
-import React from "react";
-import { FolderOpen, Command, Building2, RefreshCw } from "../icons";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  FolderOpen,
+  Command,
+  Building2,
+  RefreshCw,
+  Lock,
+  Github,
+} from "../icons";
 import { fs } from "../typeScale";
+import { BASE, isValidGhToken } from "../api";
+import * as tokenManager from "../tokenManager";
 import ThemeSwitcher from "./ThemeSwitcher";
 
 const IS_MAC = /Mac/i.test(
@@ -17,8 +26,35 @@ export default function NavRail({
   tabs,
   dispatch,
   theme,
+  ghToken,
 }) {
   const mod = IS_MAC ? "⌘" : "Ctrl";
+
+  const [tokenOpen, setTokenOpen] = useState(false);
+  const tokenPopRef = useRef(null);
+  const tokenSaveTimer = useRef(null);
+  const debouncedTokenSave = useCallback((value) => {
+    clearTimeout(tokenSaveTimer.current);
+    tokenSaveTimer.current = setTimeout(() => tokenManager.set(value), 500);
+  }, []);
+
+  useEffect(() => {
+    if (!tokenOpen) return;
+    const onMouseDown = (e) => {
+      if (tokenPopRef.current && !tokenPopRef.current.contains(e.target)) {
+        setTokenOpen(false);
+      }
+    };
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setTokenOpen(false);
+    };
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [tokenOpen]);
 
   return (
     <nav
@@ -103,6 +139,64 @@ export default function NavRail({
       )}
 
       <div className="nav-actions">
+        <div className="token-popover-wrap" ref={tokenPopRef}>
+          <button
+            className="nav-item"
+            onClick={() => setTokenOpen((o) => !o)}
+            data-tip="GitHub token"
+            aria-label="GitHub token"
+            aria-expanded={tokenOpen}
+          >
+            <Lock
+              size={18}
+              style={{
+                color: ghToken
+                  ? isValidGhToken(ghToken)
+                    ? "var(--primary)"
+                    : "var(--danger)"
+                  : undefined,
+              }}
+            />
+          </button>
+          {tokenOpen && (
+            <div className="token-popover">
+              <a className="lp-token-toggle" href={`${BASE}/auth/github/login`}>
+                <Github size={12} />
+                Sign in with GitHub
+              </a>
+              <label className="token-popover-label">
+                GitHub Token (optional)
+              </label>
+              <div className="cb-input">
+                <Lock
+                  size={14}
+                  style={{ color: "var(--text-3)", flexShrink: 0 }}
+                />
+                <input
+                  type="password"
+                  placeholder={
+                    ghToken && !isValidGhToken(ghToken)
+                      ? "unrecognized format"
+                      : "Personal access token — ghp_…"
+                  }
+                  name="github-token"
+                  aria-label="GitHub personal access token"
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={ghToken || ""}
+                  onChange={(e) => {
+                    dispatch({ type: "SET_GH_TOKEN", value: e.target.value });
+                    debouncedTokenSave(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") setTokenOpen(false);
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
         {(isAnalyzing || analyzed) && (
           <button
             className="nav-item"

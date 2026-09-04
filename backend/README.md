@@ -158,6 +158,10 @@ Set these in **Settings → Variables and secrets**:
 | `GITHUB_APP_PRIVATE_KEY`      | —                                  | GitHub App private key (webhook flows)                                        |
 | `GITHUB_APP_INSTALLATION_ID`  | —                                  | GitHub App installation ID (webhook flows)                                    |
 | `GITHUB_APP_WEBHOOK_SECRET`   | —                                  | GitHub App webhook HMAC secret                                                |
+| `GITHUB_OAUTH_CLIENT_ID`      | —                                  | GitHub OAuth App client ID ("Sign in with GitHub" — distinct from the GitHub App above) |
+| `GITHUB_OAUTH_CLIENT_SECRET`  | —                                  | GitHub OAuth App client secret                                                |
+| `OAUTH_REDIRECT_BASE_URL`     | `https://ak001z-gitmind-backend.hf.space` | Backend's own public URL, used to build the redirect_uri sent to GitHub |
+| `OAUTH_FRONTEND_URL`          | `https://gitmind-frontend.pages.dev` | Frontend origin the browser lands back on after sign-in                    |
 | `GROQ_DAILY_REMAINING`        | —                                  | Remaining daily Groq token window for the MIPROv2 budget guard (`optimization.run` aborts before a compile exceeds it; unset/0 disables the guard) |
 | `WS_AUTH_SECRET`              | —                                  | WebSocket auth — when set, clients must send matching `ws_auth_secret` + `ws_auth_ts` |
 | `SIDECAR_URL`                 | `http://127.0.0.1:8003`            | Solidity parser sidecar endpoint                                              |

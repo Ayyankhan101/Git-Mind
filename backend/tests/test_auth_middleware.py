@@ -43,6 +43,12 @@ class TestIsPublic:
         """Webhooks HMAC-verified in handler, exempt from middleware."""
         assert _is_public("/github/webhook") is True
 
+    def test_oauth_github_prefix_is_public(self):
+        """Pre-authentication by definition — this is how a token gets obtained."""
+        assert _is_public("/auth/github/login") is True
+        assert _is_public("/auth/github/callback") is True
+        assert _is_public("/auth/github/exchange") is True
+
     def test_protected_paths_require_auth(self):
         assert _is_public("/fix/pr") is False
         assert _is_public("/pr-review") is False

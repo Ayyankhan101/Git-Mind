@@ -1,4 +1,10 @@
-import { fetchRepos, fetchSummary, loadSharedAnalysis, orgAudit } from "./api";
+import {
+  fetchRepos,
+  fetchSummary,
+  loadSharedAnalysis,
+  orgAudit,
+  exchangeGithubOAuthCode,
+} from "./api";
 
 function mockFetchOnce(status, body) {
   global.fetch = jest.fn().mockResolvedValue({
@@ -111,6 +117,31 @@ describe("loadSharedAnalysis", () => {
     mockFetchOnce(401, { detail: "Authentication required" });
     await expect(loadSharedAnalysis("locked")).rejects.toMatchObject({
       status: 401,
+    });
+  });
+});
+
+describe("exchangeGithubOAuthCode", () => {
+  test("sends code in body and returns the token", async () => {
+    mockFetchOnce(200, { access_token: "gho_x", login: "octocat" });
+    await expect(exchangeGithubOAuthCode("handoff-abc")).resolves.toEqual({
+      access_token: "gho_x",
+      login: "octocat",
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/auth/github/exchange"),
+      expect.objectContaining({
+        method: "POST",
+        body: expect.stringContaining("handoff-abc"),
+      }),
+    );
+  });
+
+  test("exposes HTTP status on an invalid/expired code", async () => {
+    mockFetchOnce(400, { error: "Invalid or expired sign-in code" });
+    await expect(exchangeGithubOAuthCode("bad-code")).rejects.toMatchObject({
+      status: 400,
+      message: expect.stringContaining("Invalid or expired"),
     });
   });
 });

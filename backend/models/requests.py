@@ -65,6 +65,10 @@ class WebhookNotifyRequest(BaseModel):
     blocks: list[dict] | None = Field(None, max_length=50)
 
 
+class GithubOAuthExchangeRequest(BaseModel):
+    code: str = Field(..., min_length=1, max_length=128)
+
+
 class MonitorSubscribeRequest(BaseModel):
     repo_url: str = Field(..., max_length=500)
     gh_token: str | None = Field(None, max_length=200)

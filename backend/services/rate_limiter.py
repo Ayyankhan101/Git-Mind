@@ -46,6 +46,9 @@ _RATE_WINDOWS: dict[str, tuple[int, int]] = {
     "monitor": (60, 10),
     "analysis_history": (60, 20),
     "task": (60, 30),
+    "oauth_login": (60, 20),
+    "oauth_callback": (60, 10),
+    "oauth_exchange": (60, 20),
 }
 
 _SERVICE_KEY = os.getenv("GITMIND_SERVICE_KEY", "")

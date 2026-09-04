@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import CommandBar from "./CommandBar";
+import NavRail from "./NavRail";
 
 jest.mock("../tokenManager", () => ({
   get: jest.fn(() => ""),
@@ -8,26 +8,31 @@ jest.mock("../tokenManager", () => ({
   restore: jest.fn(),
 }));
 
+jest.mock("../api", () => ({
+  BASE: "https://backend.example.com",
+  isValidGhToken: jest.fn(() => true),
+}));
+
 const baseProps = {
-  githubUser: "octocat",
-  ghToken: "",
-  reposLoading: false,
+  activeTab: "summary",
+  drawerOpen: false,
   isAnalyzing: false,
   analyzed: false,
-  shareCopied: false,
-  statusClass: "",
-  statusText: "",
-  usernameRef: { current: null },
+  agentStatus: {},
+  repos: [],
+  tabs: [],
   dispatch: jest.fn(),
-  handleLoadRepos: jest.fn(),
-  handleShare: jest.fn(),
-  handleExport: jest.fn(),
   theme: "obsidian",
+  ghToken: "",
 };
 
-describe("CommandBar token popover", () => {
-  it("opens and closes on toggle button click", () => {
-    render(<CommandBar {...baseProps} />);
+describe("NavRail token popover", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("opens and closes on the lock icon", () => {
+    render(<NavRail {...baseProps} />);
     expect(screen.queryByLabelText("GitHub personal access token")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "GitHub token" }));
@@ -40,7 +45,7 @@ describe("CommandBar token popover", () => {
   });
 
   it("closes on Escape", () => {
-    render(<CommandBar {...baseProps} />);
+    render(<NavRail {...baseProps} />);
     fireEvent.click(screen.getByRole("button", { name: "GitHub token" }));
     expect(
       screen.getByLabelText("GitHub personal access token"),
@@ -51,7 +56,7 @@ describe("CommandBar token popover", () => {
   });
 
   it("closes on outside click (mousedown)", () => {
-    render(<CommandBar {...baseProps} />);
+    render(<NavRail {...baseProps} />);
     fireEvent.click(screen.getByRole("button", { name: "GitHub token" }));
     expect(
       screen.getByLabelText("GitHub personal access token"),
@@ -61,12 +66,25 @@ describe("CommandBar token popover", () => {
     expect(screen.queryByLabelText("GitHub personal access token")).toBeNull();
   });
 
-  it("stays open when interacting inside the popover", () => {
-    render(<CommandBar {...baseProps} />);
+  it("links Sign in with GitHub to the backend's OAuth login route", () => {
+    render(<NavRail {...baseProps} />);
     fireEvent.click(screen.getByRole("button", { name: "GitHub token" }));
-    const input = screen.getByLabelText("GitHub personal access token");
+    const link = screen.getByText("Sign in with GitHub").closest("a");
+    expect(link).toHaveAttribute(
+      "href",
+      "https://backend.example.com/auth/github/login",
+    );
+  });
 
-    fireEvent.mouseDown(input);
-    expect(input).toBeInTheDocument();
+  it("updates ghToken via dispatch when typing in the token field", () => {
+    render(<NavRail {...baseProps} />);
+    fireEvent.click(screen.getByRole("button", { name: "GitHub token" }));
+    fireEvent.change(screen.getByLabelText("GitHub personal access token"), {
+      target: { value: "ghp_test123" },
+    });
+    expect(baseProps.dispatch).toHaveBeenCalledWith({
+      type: "SET_GH_TOKEN",
+      value: "ghp_test123",
+    });
   });
 });

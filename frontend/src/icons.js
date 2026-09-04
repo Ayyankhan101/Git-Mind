@@ -65,6 +65,7 @@ export const FolderOpen = withWeight(Ph.FolderOpen);
 export const Gauge = withWeight(Ph.Gauge);
 export const GitBranch = withWeight(Ph.GitBranch);
 export const GitCommit = withWeight(Ph.GitCommit);
+export const Github = withWeight(Ph.GithubLogo);
 export const GitMerge = withWeight(Ph.GitMerge);
 export const GitPullRequest = withWeight(Ph.GitPullRequest);
 export const Globe = withWeight(Ph.Globe);
