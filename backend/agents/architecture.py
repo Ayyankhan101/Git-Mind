@@ -54,14 +54,21 @@ STRICT RULES — any violation breaks the frontend renderer:
 - Node labels: only letters, numbers, and spaces inside square brackets [Like This]
 - NO parentheses inside labels — they crash the parser
 - NO quotes inside labels
-- Maximum 15 nodes — fewer clean nodes beats many messy ones
+- Maximum 20 nodes — show module structure, not every file
+- Group related files into modules (e.g. routes, agents, services)
 - Edge labels syntax: -->|short label|
 
 CORRECT EXAMPLE:
 graph TD
     frontend[React Frontend] -->|HTTP| backend[FastAPI Backend]
     backend -->|query| database[ChromaDB]
-    backend -->|LLM| llm[OpenAI]\
+    backend -->|LLM| llm[Groq API]
+    backend --> sub1[Routes Layer]
+    backend --> sub2[Agents Layer]
+    sub1 --> auth[Auth]
+    sub1 --> fix[Fix]
+    sub2 --> security[Security Agent]
+    sub2 --> architecture[Architecture Agent]\
 """
 
 
@@ -150,7 +157,8 @@ class ArchitectureSignature(dspy.Signature):
     - Node labels: only letters, numbers, and spaces inside square brackets [Like This]
     - NO parentheses inside labels — they crash the parser
     - NO quotes inside labels
-    - Maximum 15 nodes — fewer clean nodes beats many messy ones
+    - Maximum 20 nodes — show module structure, not every file
+    - Group related files into modules (e.g. routes, agents, services)
     - Edge labels syntax: -->|short label|"""
 
     context: str = dspy.InputField(desc="Primary language, file tree, and key file contents")
@@ -190,73 +198,98 @@ def _build_prompt(file_tree: list[str], file_contents: dict[str, str], primary_l
 
 
 def _fallback_mermaid(file_tree: list[str], primary_lang: str = "Unknown") -> str:
-    """Generate a basic Mermaid diagram from the file tree when the LLM fails.
+    """Generate a Mermaid diagram from the file tree when the LLM fails.
 
-    Groups files by top-level directory and creates nodes + edges.
-    No LLM call needed — purely deterministic.
+    Groups files up to 3 levels deep (top-dir/sub-dir/file) and creates nodes + edges.
+    Caps total nodes at ~30 to keep diagrams readable.
     """
     from collections import defaultdict
 
-    # Group by top-level directory
-    dirs: dict[str, list[str]] = defaultdict(list)
+    # Build 3-level tree: top -> sub -> files
+    tree: dict[str, dict[str, list[str]]] = defaultdict(lambda: defaultdict(list))
     for f in file_tree:
         parts = f.strip("/").split("/")
-        if len(parts) >= 2:
-            dirs[parts[0]].append(f)
+        if len(parts) >= 3:
+            top, sub = parts[0], parts[1]
+            tree[top][sub].append(f)
+        elif len(parts) == 2:
+            tree[parts[0]]["_files"].append(f)
         else:
-            dirs["root"].append(f)
+            tree["root"]["_files"].append(f)
 
-    if not dirs:
+    if not tree:
         return "graph TD\n    A[Repository]"
 
-    # Build diagram
+    # Flatten to nodes: top-level dirs, sub-dirs with >= 2 files, merge tiny subs
     lines = ["graph TD"]
     node_ids = []
+    MAX_NODES = 30
 
-    # Create nodes for each directory
     dir_labels = {
-        "src": "Source Code",
-        "lib": "Library",
-        "app": "Application",
-        "server": "Server",
-        "client": "Client",
-        "api": "API",
-        "routes": "Routes",
-        "models": "Models",
-        "views": "Views",
-        "templates": "Templates",
-        "static": "Static Assets",
-        "tests": "Tests",
-        "test": "Tests",
-        "config": "Configuration",
-        "scripts": "Scripts",
-        "docs": "Documentation",
-        "root": primary_lang + " Files",
+        "src": "Source", "lib": "Library", "app": "Application",
+        "server": "Server", "client": "Client", "api": "API",
+        "routes": "Routes", "models": "Models", "views": "Views",
+        "templates": "Templates", "static": "Static", "tests": "Tests",
+        "test": "Tests", "config": "Config", "scripts": "Scripts",
+        "docs": "Docs", "root": primary_lang,
+        "agents": "Agents", "services": "Services", "parsers": "Parsers",
+        "components": "Components", "utils": "Utils", "hooks": "Hooks",
     }
 
-    for dir_name in sorted(dirs.keys()):
-        node_id = dir_name.lower().replace(" ", "_").replace("-", "_")
-        label = dir_labels.get(dir_name, dir_name.title())
-        count = len(dirs[dir_name])
-        lines.append(f"    {node_id}[{label} ({count} files)]")
-        node_ids.append((node_id, dir_name))
+    def _sanitize_id(name: str) -> str:
+        return name.lower().replace(" ", "_").replace("-", "_").replace(".", "_")
 
-    # Add edges: root connects to non-root dirs
+    for top in sorted(tree.keys()):
+        subs = tree[top]
+        top_id = _sanitize_id(top)
+        top_label = dir_labels.get(top, top.title())
+
+        # If few subs, just show top-level node with file count
+        total_files = sum(len(fs) for fs in subs.values())
+        if len(subs) <= 1 or total_files <= 3:
+            lines.append(f"    {top_id}[{top_label} ({total_files} files)]")
+            node_ids.append(top_id)
+            continue
+
+        # Multiple subs: create top node + sub nodes
+        lines.append(f"    {top_id}[{top_label}]")
+        node_ids.append(top_id)
+
+        for sub in sorted(subs.keys()):
+            if len(node_ids) >= MAX_NODES:
+                break
+            files = subs[sub]
+            sub_id = f"{top_id}_{_sanitize_id(sub)}"
+            if sub == "_files":
+                # Files directly in top dir
+                sub_label = f"{len(files)} files"
+            else:
+                sub_label = sub.replace("_", " ").title()
+            lines.append(f"    {sub_id}[{sub_label} ({len(files)} files)]")
+            lines.append(f"    {top_id} --> {sub_id}")
+            node_ids.append(sub_id)
+
+        if len(node_ids) >= MAX_NODES:
+            break
+
+    # Add edges between top-level dirs (root -> others)
     root_id = None
     other_ids = []
-    for nid, dname in node_ids:
-        if dname == "root":
-            root_id = nid
-        else:
-            other_ids.append((nid, dname))
+    for nid in node_ids:
+        # Only connect top-level nodes (no underscores = top level)
+        if "_" not in nid:
+            if nid == "root":
+                root_id = nid
+            else:
+                other_ids.append(nid)
 
     if root_id and other_ids:
-        for nid, _ in other_ids[:8]:  # limit edges
+        for nid in other_ids[:8]:
             lines.append(f"    {root_id} --> {nid}")
-    elif len(node_ids) >= 2:
-        # Chain them
-        for i in range(len(node_ids) - 1):
-            lines.append(f"    {node_ids[i][0]} --> {node_ids[i + 1][0]}")
+    elif len([n for n in node_ids if "_" not in n]) >= 2:
+        tops = [n for n in node_ids if "_" not in n]
+        for i in range(len(tops) - 1):
+            lines.append(f"    {tops[i]} --> {tops[i + 1]}")
 
     return "\n".join(lines)
 
