@@ -226,14 +226,29 @@ def _fallback_mermaid(file_tree: list[str], primary_lang: str = "Unknown") -> st
     max_nodes = 30
 
     dir_labels = {
-        "src": "Source", "lib": "Library", "app": "Application",
-        "server": "Server", "client": "Client", "api": "API",
-        "routes": "Routes", "models": "Models", "views": "Views",
-        "templates": "Templates", "static": "Static", "tests": "Tests",
-        "test": "Tests", "config": "Config", "scripts": "Scripts",
-        "docs": "Docs", "root": primary_lang,
-        "agents": "Agents", "services": "Services", "parsers": "Parsers",
-        "components": "Components", "utils": "Utils", "hooks": "Hooks",
+        "src": "Source",
+        "lib": "Library",
+        "app": "Application",
+        "server": "Server",
+        "client": "Client",
+        "api": "API",
+        "routes": "Routes",
+        "models": "Models",
+        "views": "Views",
+        "templates": "Templates",
+        "static": "Static",
+        "tests": "Tests",
+        "test": "Tests",
+        "config": "Config",
+        "scripts": "Scripts",
+        "docs": "Docs",
+        "root": primary_lang,
+        "agents": "Agents",
+        "services": "Services",
+        "parsers": "Parsers",
+        "components": "Components",
+        "utils": "Utils",
+        "hooks": "Hooks",
     }
 
     def _sanitize_id(name: str) -> str:
