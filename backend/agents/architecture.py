@@ -223,7 +223,7 @@ def _fallback_mermaid(file_tree: list[str], primary_lang: str = "Unknown") -> st
     # Flatten to nodes: top-level dirs, sub-dirs with >= 2 files, merge tiny subs
     lines = ["graph TD"]
     node_ids = []
-    MAX_NODES = 30
+    max_nodes = 30
 
     dir_labels = {
         "src": "Source", "lib": "Library", "app": "Application",
@@ -256,20 +256,16 @@ def _fallback_mermaid(file_tree: list[str], primary_lang: str = "Unknown") -> st
         node_ids.append(top_id)
 
         for sub in sorted(subs.keys()):
-            if len(node_ids) >= MAX_NODES:
+            if len(node_ids) >= max_nodes:
                 break
             files = subs[sub]
             sub_id = f"{top_id}_{_sanitize_id(sub)}"
-            if sub == "_files":
-                # Files directly in top dir
-                sub_label = f"{len(files)} files"
-            else:
-                sub_label = sub.replace("_", " ").title()
+            sub_label = f"{len(files)} files" if sub == "_files" else sub.replace("_", " ").title()
             lines.append(f"    {sub_id}[{sub_label} ({len(files)} files)]")
             lines.append(f"    {top_id} --> {sub_id}")
             node_ids.append(sub_id)
 
-        if len(node_ids) >= MAX_NODES:
+        if len(node_ids) >= max_nodes:
             break
 
     # Add edges between top-level dirs (root -> others)
