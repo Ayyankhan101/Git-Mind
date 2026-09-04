@@ -128,7 +128,7 @@ def run_agent_node(
 
 def scanner_node(state: RepoState) -> dict:
     try:
-        result = clone_and_scan(state["repo_url"], state.get("gh_token"))
+        result = clone_and_scan(state["repo_url"], state.get("gh_token"), sha_hint=state.get("sha_hint"))
         return {**result, "events": [_event("scanner", "done")]}
     except Exception as exc:
         logger.error("scanner_node failed: %s", exc)

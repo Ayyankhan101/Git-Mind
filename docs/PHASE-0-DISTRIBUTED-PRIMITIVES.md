@@ -341,6 +341,23 @@ Narrowed to one now that the code exists behind a gate:
 After Phase 0, the system can handle multiple workers. Remaining phases:
 
 - **Phase 1:** Worker tier (Celery), PostgreSQL read replicas, object storage for cloned repos
+  - **2026-09 update — re-scoped, partially done:** the Redis-list task
+    queue (`services/task_queue.py`, hardened further with a crash-recovery
+    reaper) already does what a Celery tier was meant to provide here — a
+    real Celery migration would replace working, tested code for no
+    functional gain and isn't planned. Read replicas remain pure
+    infrastructure (an actual second Postgres instance to provision — no
+    code to write until you have one). Object storage for cloned repos
+    turned out to have no real use case as originally scoped either —
+    nothing in this codebase runs agents as independently-distributed
+    workers that would need to share a clone (a single task queue entry is
+    the *entire* clone-through-9-agents pipeline, run by one worker,
+    in-process). It's implemented instead as a narrower, real optimization:
+    `services/clone_cache.py` caches shallow-clone bundles in S3-compatible
+    storage keyed by repo+SHA, avoiding a redundant GitHub clone when the
+    same commit is fetched twice (PR impact re-triggered, an org-audit
+    overlapping an already-analyzed repo). Gated on `CLONE_CACHE_BUCKET` —
+    unset, `agents/scanner.py` behaves exactly as before.
 - **Phase 2:** Auth system (OAuth2), DB normalization, frontend state management
 - **Phase 3:** Autoscaling, read replicas, CQRS, regional deployment
 - **Phase 4:** Cost optimization (LLM caching, pre-computation, tiered models)

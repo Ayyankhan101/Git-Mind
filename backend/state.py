@@ -6,6 +6,7 @@ class RepoState(TypedDict):
     # ── Input ─────────────────────────────────────────────────────────────────
     repo_url: str
     gh_token: str | None
+    sha_hint: str | None  # caller-resolved target commit, if known — see agents/scanner.py
 
     # ── Scanner output ────────────────────────────────────────────────────────
     local_path: str | None
@@ -45,6 +46,7 @@ class RepoState(TypedDict):
 _DEFAULTS: dict = {
     "repo_url": "",
     "gh_token": None,
+    "sha_hint": None,
     "local_path": None,
     "file_tree": [],
     "file_contents": {},
@@ -72,6 +74,7 @@ _DEFAULTS: dict = {
 _INTERNAL_FIELDS: frozenset[str] = frozenset(
     {
         "gh_token",
+        "sha_hint",
         "local_path",
         "file_contents",
         "chroma_collection_name",

@@ -71,7 +71,7 @@ flowchart LR
   end
 
   subgraph EXT["External APIs"]
-    GROQ["Groq LLM\nllama-3.3-70b"]
+    GROQ["Groq LLM\nqwen3.6-27b"]
     OSV["OSV.dev"]
     GH["GitHub API\n+ git clone"]
   end
@@ -154,7 +154,7 @@ flowchart TB
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 🏛️ **Architecture diagram**   | Mermaid graph of component relationships using 24K-token context; pan/zoom/fullscreen with keyboard shortcuts                                                  |
 | 📡 **API doc agent**          | Extracts every HTTP endpoint (method, route, description, parameters, auth) across FastAPI, Flask, Express, Django, Rails, Spring, NestJS, Gin, Echo, and more |
-| 🔒 **Security auditor**       | semgrep SAST scan triaged by llama-3.3-70b; findings ranked Critical → Low with exploit scenario + remediation                                                 |
+| 🔒 **Security auditor**       | semgrep SAST scan triaged by Groq (qwen3.6-27b); findings ranked Critical → Low with exploit scenario + remediation                                                 |
 | 🛡️ **CVE scanner**            | Checks dependency lockfiles against [OSV.dev](https://osv.dev) — PyPI, npm, Cargo, Go, Ruby, PHP. Parsers accelerated by Rust native module                    |
 | 📋 **Git audit**              | Commit log analysis (100 commits): message quality, secret detection, sensitive file tracking                                                                  |
 | ⛓️ **Solidity/Web3 audit**    | Parses `.sol` files via Rust sidecar (solang-parser), then LLM-triage for reentrancy, access control, oracle manipulation, etc.                                |
@@ -261,6 +261,8 @@ Logs are written to `logs/backend.log` and `logs/frontend.log`.
 | `REDIS_URL`    | —                                     | Enables shared rate limiter, session cache, task queue |
 | `QDRANT_URL`   | —                                     | Switch RAG vector search from embedded ChromaDB to a Qdrant sidecar (needed once you run >1 backend worker/replica — see `docs/PHASE-0-DISTRIBUTED-PRIMITIVES.md`) |
 | `REQUIRE_REDIS`| `false`                               | When `true`, rate limiter/session store/Redis client fail closed instead of falling back to per-process memory when Redis is down |
+| `CLONE_CACHE_BUCKET` | —                                | S3-compatible bucket for caching shallow-clone bundles by repo+SHA — avoids re-cloning the same commit for a repeat PR-impact run or an org-audit that overlaps an already-analyzed repo. Configure a lifecycle rule (~7 days) on the bucket; not tracked in-app |
+| `CLONE_CACHE_ENDPOINT_URL` | —                          | Override for non-AWS S3-compatible storage (Cloudflare R2, MinIO, etc.) |
 
 **Authentication & Security**
 
@@ -298,7 +300,8 @@ Logs are written to `logs/backend.log` and `logs/frontend.log`.
 
 | Variable                   | Default                                | Description                                            |
 | -------------------------- | -------------------------------------- | ------------------------------------------------------ |
-| `LLM_MODEL`                | `llama-3.3-70b-versatile`              | Override Groq model for all agents                     |
+| `LLM_MODEL`                | `qwen/qwen3.6-27b`                     | Override Groq model for all agents                     |
+| `LLM_MODEL_FALLBACK`       | `llama-3.1-8b-instant`                 | Same-provider fallback — tried automatically if `LLM_MODEL` fails (deprecation, rate-limit); set to `""` to disable |
 | `RERANKER_MODEL`           | `cross-encoder/ms-marco-MiniLM-L-6-v2` | Cross-encoder reranker model                           |
 | `SIDECAR_URL`              | `http://127.0.0.1:8003`                | Solidity parser sidecar endpoint                       |
 | `TASK_WORKERS`             | `3`                                    | Background task queue worker count                     |
@@ -455,7 +458,7 @@ Cross-encoder reranker (configurable model)      ← re-scores by relevance
     ↓
 Context dedup (filepath + content prefix)        ← multiple chunks per file
     ↓
-Llama 3.3 70B via Groq                           ← generates answer with citations
+Qwen3.6-27B via Groq                             ← generates answer with citations
 ```
 
 ### What each layer does

@@ -185,7 +185,7 @@ async def _compute_pr_impact(
 
     local_path = None
     try:
-        scan = await asyncio.to_thread(clone_and_scan, repo_url, token, head_ref)
+        scan = await asyncio.to_thread(clone_and_scan, repo_url, token, head_ref, pr_meta.get("head_sha") or None)
         local_path = scan["local_path"]
 
         sec_findings = await asyncio.to_thread(run_security_agent, local_path)

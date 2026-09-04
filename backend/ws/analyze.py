@@ -220,6 +220,7 @@ async def handle_analyze(ws: WebSocket) -> None:
 
     sha = await asyncio.to_thread(get_remote_sha, repo_url)
     if sha:
+        init["sha_hint"] = sha  # lets the scanner check the clone cache (services/clone_cache.py)
         cached = await find_cached_snapshot(repo_url, sha)
         if cached:
             await _replay_cached(cached)

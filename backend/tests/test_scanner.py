@@ -226,3 +226,50 @@ class TestErrorSurfacing:
         assert state["askpass_path"] and not os.path.exists(state["askpass_path"]), (
             "askpass script should be removed once cloning finishes"
         )
+
+
+class TestCloneCacheIntegration:
+    """sha_hint wiring to services.clone_cache — the cache module's own
+    behavior (store/restore roundtrip, key format, safe extraction) is
+    covered in test_clone_cache.py; this just checks scanner.py calls it
+    correctly and stays backward compatible when it's not used."""
+
+    def test_no_sha_hint_skips_cache_lookup_entirely(self):
+        with (
+            patch("services.clone_cache.try_restore") as mock_restore,
+            patch("agents.scanner.git.Repo.clone_from", return_value=_fake_repo()),
+        ):
+            clone_and_scan(URL)
+        mock_restore.assert_not_called()
+
+    def test_sha_hint_triggers_cache_lookup(self):
+        with (
+            patch("services.clone_cache.try_restore", return_value=False) as mock_restore,
+            patch("agents.scanner.git.Repo.clone_from", return_value=_fake_repo()),
+        ):
+            clone_and_scan(URL, sha_hint="deadbeef")
+        mock_restore.assert_called_once()
+        args = mock_restore.call_args[0]
+        assert args[0] == URL
+        assert args[1] == "deadbeef"
+
+    def test_cache_hit_skips_git_clone_entirely(self):
+        with (
+            patch("services.clone_cache.try_restore", return_value=True),
+            patch("agents.scanner.git.Repo.clone_from") as mock_clone,
+        ):
+            result = clone_and_scan(URL, sha_hint="deadbeef")
+        mock_clone.assert_not_called()
+        assert result["head_sha"] == "deadbeef"
+
+    def test_fresh_clone_stores_result_under_resolved_head_sha(self):
+        with (
+            patch("services.clone_cache.try_restore", return_value=False),
+            patch("services.clone_cache.store") as mock_store,
+            patch("agents.scanner.git.Repo.clone_from", return_value=_fake_repo(hexsha="resolved123")),
+        ):
+            clone_and_scan(URL, sha_hint="stale-hint")
+        mock_store.assert_called_once()
+        args = mock_store.call_args[0]
+        assert args[0] == URL
+        assert args[1] == "resolved123"  # stores under the real head, not the (possibly stale) hint

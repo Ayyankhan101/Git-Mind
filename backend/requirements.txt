@@ -9,6 +9,7 @@ langchain-text-splitters==1.1.2
 chromadb==1.5.9
 qdrant-client==1.19.0  # optional Qdrant vector store, active when QDRANT_URL is set (see vector_store.py)
 fastembed==0.8.0  # local embedding for the Qdrant backend (Qdrant itself does not embed)
+boto3>=1.34,<2.0  # optional S3-compatible clone cache, active when CLONE_CACHE_BUCKET is set (see services/clone_cache.py)
 gitpython==3.1.59  # bump: 10 GHSA advisories fixed in 3.1.51-3.1.58
 tiktoken==0.13.0
 python-dotenv==1.2.2

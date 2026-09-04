@@ -6,10 +6,19 @@ All agents/routes import from here instead of hardcoding ChatGroq(model=...).
 
 import os
 
+from langchain_core.runnables import Runnable
 from langchain_groq import ChatGroq
 
 # ── Model configuration ───────────────────────────────────────────────────────
 LLM_MODEL = os.environ.get("LLM_MODEL", "qwen/qwen3.6-27b")
+
+# Same-provider fallback — Groq only, no second vendor/SDK/API key needed.
+# Doesn't cover a full Groq-platform outage, but does cover the more common
+# case (this app has hit twice already, per git history): a specific model
+# getting deprecated or rate-limited out from under LLM_MODEL. Set to ""
+# to disable. Different model family from the default on purpose, so a
+# qwen-specific issue doesn't also take out the fallback.
+LLM_MODEL_FALLBACK = os.environ.get("LLM_MODEL_FALLBACK", "llama-3.1-8b-instant")
 
 # Per-use-case temperature defaults
 TEMPERATURES = {
@@ -26,13 +35,20 @@ TEMPERATURES = {
 }
 
 
+def _build_groq(model: str, temp: float, json_mode: bool) -> Runnable:
+    llm = ChatGroq(model=model, temperature=temp)
+    if json_mode:
+        llm = llm.bind(response_format={"type": "json_object"})
+    return llm
+
+
 def get_llm(
     *,
     temperature_key: str = "analysis",
     json_mode: bool = False,
     temperature: float | None = None,
-) -> ChatGroq:
-    """Return a configured ChatGroq instance.
+) -> Runnable:
+    """Return a configured ChatGroq instance (as a Runnable — see LLM_MODEL_FALLBACK).
 
     Parameters
     ----------
@@ -44,9 +60,10 @@ def get_llm(
         Override temperature (ignores temperature_key).
     """
     temp = temperature if temperature is not None else TEMPERATURES.get(temperature_key, 0.1)
-    llm = ChatGroq(model=LLM_MODEL, temperature=temp)
-    if json_mode:
-        llm = llm.bind(response_format={"type": "json_object"})  # type: ignore[assignment]
+    llm = _build_groq(LLM_MODEL, temp, json_mode)
+    if LLM_MODEL_FALLBACK and LLM_MODEL_FALLBACK != LLM_MODEL:
+        fallback = _build_groq(LLM_MODEL_FALLBACK, temp, json_mode)
+        llm = llm.with_fallbacks([fallback])
     return llm
 
 
