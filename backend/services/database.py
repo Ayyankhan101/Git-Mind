@@ -24,6 +24,41 @@ if DATABASE_URL.startswith("postgresql"):
 engine = create_async_engine(DATABASE_URL, echo=False, **_pool_kwargs)
 async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
+# Optional read replica — Phase 3 (docs/PHASE-0-DISTRIBUTED-PRIMITIVES.md).
+# Unset (default): read_engine IS engine, zero behavior change. Set it once
+# you actually have a replica; the read-only query functions below
+# (get_analysis_db, get_sha_index_entry, get_previous_analysis_db,
+# get_analysis_history_db) then read from it instead of the primary. Every
+# write in this module always goes through `engine` / `async_session_factory`.
+_READ_REPLICA_URL = os.getenv("DATABASE_READ_REPLICA_URL", "")
+
+_read_session_maker = None
+if _READ_REPLICA_URL:
+    _read_pool_kwargs: dict = {}
+    if _READ_REPLICA_URL.startswith("postgresql"):
+        _read_pool_kwargs = {
+            "pool_size": 5,
+            "max_overflow": 10,
+            "pool_recycle": 300,
+            "pool_pre_ping": True,
+        }
+    read_engine = create_async_engine(_READ_REPLICA_URL, echo=False, **_read_pool_kwargs)
+    _read_session_maker = async_sessionmaker(read_engine, expire_on_commit=False)
+    logger.info("Read replica configured — read-only queries route to a separate engine")
+else:
+    read_engine = engine
+
+
+def async_read_session_factory():
+    """Session factory for the 4 read-only query functions below.
+
+    Not a plain alias — `_read_session_maker or async_session_factory` is
+    resolved fresh on every call rather than snapshotted at import time, so
+    with no replica configured (the default), this always reflects whatever
+    `async_session_factory` currently is, including in tests that patch it.
+    """
+    return (_read_session_maker or async_session_factory)()
+
 
 async def init_db():
     import subprocess
@@ -78,7 +113,7 @@ def _analysis_row_to_dict(row) -> dict:
 async def get_analysis_db(session_id: str) -> dict | None:
     from models.db import Analysis
 
-    async with async_session_factory() as session:
+    async with async_read_session_factory() as session:
         row = await session.get(Analysis, session_id)
         if row is None:
             return None
@@ -117,7 +152,7 @@ async def delete_expired_analyses(cutoff: float) -> int:
 async def get_sha_index_entry(sha: str) -> str | None:
     from models.db import ShaIndex
 
-    async with async_session_factory() as session:
+    async with async_read_session_factory() as session:
         row = await session.get(ShaIndex, sha)
         if row is None:
             return None
@@ -129,7 +164,7 @@ async def get_previous_analysis_db(repo_url: str, exclude_session: str | None = 
 
     from models.db import Analysis
 
-    async with async_session_factory() as session:
+    async with async_read_session_factory() as session:
         query = select(Analysis).where(Analysis.repo_url == repo_url)
         if exclude_session:
             query = query.where(Analysis.id != exclude_session)
@@ -154,7 +189,7 @@ async def get_analysis_history_db(repo_url: str, since: float | None = None, lim
 
     from models.db import Analysis
 
-    async with async_session_factory() as session:
+    async with async_read_session_factory() as session:
         query = select(Analysis).where(Analysis.repo_url == repo_url, Analysis.health.isnot(None))
         if since:
             query = query.where(Analysis.saved_at >= since)

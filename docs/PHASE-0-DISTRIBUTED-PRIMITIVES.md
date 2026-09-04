@@ -360,6 +360,18 @@ After Phase 0, the system can handle multiple workers. Remaining phases:
     unset, `agents/scanner.py` behaves exactly as before.
 - **Phase 2:** Auth system (OAuth2), DB normalization, frontend state management
 - **Phase 3:** Autoscaling, read replicas, CQRS, regional deployment
+  - **2026-09 update — re-scoped:** read replicas done —
+    `services/database.py`'s `DATABASE_READ_REPLICA_URL` routes the 4
+    read-only query functions (`get_analysis_db`, `get_sha_index_entry`,
+    `get_previous_analysis_db`, `get_analysis_history_db`) to a replica
+    engine when set; every write stays on `DATABASE_URL` unconditionally.
+    Unset (default) = no behavior change. Autoscaling, CQRS, and regional
+    deployment are not implemented — no concrete pain point was identified
+    behind them, and none has a code deliverable without an actual
+    infrastructure decision (a target platform for autoscaling, a real
+    multi-region hosting setup, a specific read/write bottleneck to justify
+    CQRS) that's this project's call to make, not something to build
+    speculatively.
 - **Phase 4:** Cost optimization (LLM caching, pre-computation, tiered models)
   - **2026-09 update:** LLM caching was already done (Redis + diskcache,
     `llm_cache.py`). Tiered models done too — `settings.LLM_MODEL_CHEAP`

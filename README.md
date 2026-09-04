@@ -258,6 +258,7 @@ Logs are written to `logs/backend.log` and `logs/frontend.log`.
 | Variable       | Default                               | Description                                            |
 | -------------- | ------------------------------------- | ------------------------------------------------------ |
 | `DATABASE_URL` | `sqlite+aiosqlite:////tmp/gitmind.db` | SQLite for dev; `postgresql+asyncpg://...` for prod    |
+| `DATABASE_READ_REPLICA_URL` | —                        | Optional read replica — the 4 read-only history/lookup queries route here instead of `DATABASE_URL`; writes always target `DATABASE_URL` |
 | `REDIS_URL`    | —                                     | Enables shared rate limiter, session cache, task queue |
 | `QDRANT_URL`   | —                                     | Switch RAG vector search from embedded ChromaDB to a Qdrant sidecar (needed once you run >1 backend worker/replica — see `docs/PHASE-0-DISTRIBUTED-PRIMITIVES.md`) |
 | `REQUIRE_REDIS`| `false`                               | When `true`, rate limiter/session store/Redis client fail closed instead of falling back to per-process memory when Redis is down |

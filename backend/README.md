@@ -150,6 +150,7 @@ Set these in **Settings → Variables and secrets**:
 | ----------------------------- | ---------------------------------- | ----------------------------------------------------------------------------- |
 | `GITHUB_TOKEN`                | —                                  | GitHub PAT — raises API rate limits for repo cloning (60 → 5 000 req/hr)      |
 | `DATABASE_URL`                | `sqlite+aiosqlite:////tmp/gitmind.db` | Production: `postgresql+asyncpg://user:pass@host:5432/gitmind`            |
+| `DATABASE_READ_REPLICA_URL`   | —                                  | Optional read replica for the 4 read-only queries; writes always use `DATABASE_URL` |
 | `REDIS_URL`                   | —                                  | Redis connection — enables persistent rate-limiter, session cache, task queue |
 | `SENTRY_DSN`                  | —                                  | Sentry DSN for error tracking                                                 |
 | `ENVIRONMENT`                 | —                                  | Environment tag for Sentry (`production`, `staging`)                          |
