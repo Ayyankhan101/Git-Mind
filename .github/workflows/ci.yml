@@ -247,6 +247,26 @@ jobs:
           )
           print('Deployed to HF Spaces')
           "
+      - name: Wait for HF Space to report healthy
+        run: |
+          set -u
+          URL="https://ak001z-gitmind-backend.hf.space/health"
+          # HF Space rebuild (Docker) can take several minutes — poll rather
+          # than assume the upload alone means the new revision is live.
+          for i in $(seq 1 40); do
+            HTTP_CODE=$(curl -s -o /tmp/health.json -w '%{http_code}' --max-time 10 "$URL" || echo "000")
+            STATUS_FIELD=$(jq -r '.status // ""' /tmp/health.json 2>/dev/null || echo "")
+            if [ "$HTTP_CODE" = "200" ] && [ "$STATUS_FIELD" = "ok" ]; then
+              echo "Backend healthy after $((i * 15))s"
+              cat /tmp/health.json
+              exit 0
+            fi
+            echo "Attempt $i/40: HTTP $HTTP_CODE, status=$STATUS_FIELD — retrying in 15s"
+            sleep 15
+          done
+          echo "Backend did not report healthy within 10 minutes post-deploy"
+          cat /tmp/health.json 2>/dev/null || true
+          exit 1
 
   deploy-frontend:
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')

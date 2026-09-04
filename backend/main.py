@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import os
+import re
 from contextlib import asynccontextmanager
 
 import structlog
@@ -281,35 +282,42 @@ async def unhandled_exception_handler(request, exc):
     )
 
 
+_CF_PAGES_RE = re.compile(r"^https://gitmind-.*\.pages\.dev$")
+_DEV_CORS_ORIGINS = [
+    "http://localhost",
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
+    "http://localhost:8002",
+    "https://gitmind-frontend.pages.dev",
+]
+_PROD_CORS_ORIGINS = ["https://gitmind-frontend.pages.dev"]
+
+
+def _resolve_cors_origins(cors_env: str, environment: str) -> list[str]:
+    """Pure function so the production hard-fail below is unit-testable
+    without reimporting this module (which has app-startup side effects)."""
+    if cors_env == "*":
+        if environment == "production":
+            raise RuntimeError(
+                "CORS_ORIGINS=* is not allowed when ENVIRONMENT=production — "
+                "set CORS_ORIGINS to your actual frontend origin(s), comma-separated."
+            )
+        logger.warning("CORS_ORIGINS=* — allowing all origins (non-production only).")
+        return ["*"]
+    if cors_env:
+        return [o.strip() for o in cors_env.split(",") if o.strip()]
+    return _PROD_CORS_ORIGINS if environment == "production" else _DEV_CORS_ORIGINS
+
+
 _CORS_ORIGINS_ENV = os.getenv("CORS_ORIGINS", "")
 _ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
-if _CORS_ORIGINS_ENV == "*":
-    _CORS_ORIGINS = ["*"]
-    logger.warning("CORS_ORIGINS=* — allowing all origins. Set CORS_ORIGINS to specific origin for production.")
-elif _CORS_ORIGINS_ENV:
-    _CORS_ORIGINS = [o.strip() for o in _CORS_ORIGINS_ENV.split(",") if o.strip()]
-elif _ENVIRONMENT == "production":
-    _CORS_ORIGINS = [
-        "https://gitmind-frontend.pages.dev",
-    ]
-else:
-    _CORS_ORIGINS = [
-        "http://localhost",
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:3002",
-        "http://localhost:8002",
-        "https://gitmind-frontend.pages.dev",
-    ]
-    # Allow all Cloudflare Pages preview deployments
-    import re as _re
-
-    _CF_RE = _re.compile(r"^https://gitmind-.*\.pages\.dev$")
+_CORS_ORIGINS = _resolve_cors_origins(_CORS_ORIGINS_ENV, _ENVIRONMENT)
 
 
 def _cors_origin_ok(origin: str) -> bool:
     """Check if origin is allowed — static list + Cloudflare Pages preview pattern."""
-    return origin in _CORS_ORIGINS or bool(_CF_RE.match(origin))
+    return origin in _CORS_ORIGINS or bool(_CF_PAGES_RE.match(origin))
 
 
 app.add_middleware(
