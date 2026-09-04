@@ -54,6 +54,6 @@ self.addEventListener("fetch", (event) => {
         .catch(() => cached || caches.match("/index.html"));
 
       return cached || fetchPromise;
-    })
+    }).catch(() => new Response("Offline", { status: 503, headers: { "Content-Type": "text/plain" } }))
   );
 });
