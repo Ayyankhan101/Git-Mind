@@ -13,12 +13,14 @@ from pydantic import BaseModel
 from dspy_setup import dspy
 from llm_cache import run_dspy_cached
 from optimization.registry import define_program
-from settings import LLM_MODEL, get_dspy_lm
+from settings import LLM_MODEL_CHEAP, get_dspy_lm
 
 logger = structlog.get_logger(__name__)
 
-_LM = get_dspy_lm(temperature_key="code_audit")
-_CACHE_NS = f"{LLM_MODEL}:lang_audit:json"
+# Cheap tier — triaging lint/static-analysis output that's already computed
+# is summarization, not judgment; see settings.py's LLM_MODEL_CHEAP comment.
+_LM = get_dspy_lm(temperature_key="code_audit", cheap=True)
+_CACHE_NS = f"{LLM_MODEL_CHEAP}:lang_audit:json"
 _MAX_FINDINGS = 40
 
 

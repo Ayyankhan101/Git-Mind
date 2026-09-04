@@ -20,6 +20,14 @@ LLM_MODEL = os.environ.get("LLM_MODEL", "qwen/qwen3.6-27b")
 # qwen-specific issue doesn't also take out the fallback.
 LLM_MODEL_FALLBACK = os.environ.get("LLM_MODEL_FALLBACK", "llama-3.1-8b-instant")
 
+# Cheap tier — for high-volume, low-judgment tasks (structured extraction from
+# already-deterministic input, not open-ended reasoning): agents/api_doc.py
+# and agents/language_audit.py. Deliberately NOT used for anything
+# security-critical or user-facing-quality-critical (chat, fix, PR review,
+# security/Solidity triage, incident reports) — those stay on LLM_MODEL.
+# Defaults to the same model as the fallback tier; independently overridable.
+LLM_MODEL_CHEAP = os.environ.get("LLM_MODEL_CHEAP", LLM_MODEL_FALLBACK)
+
 # Per-use-case temperature defaults
 TEMPERATURES = {
     "analysis": 0.1,  # summary, architecture, api_doc
@@ -71,15 +79,21 @@ def get_dspy_lm(
     *,
     temperature_key: str = "analysis",
     temperature: float | None = None,
+    cheap: bool = False,
 ):
     """Return a configured DSPy LM (Groq via LiteLLM), mirroring get_llm.
 
-    Uses the same LLM_MODEL and per-use-case temperature defaults as get_llm,
-    exposed as a dspy.LM for use inside DSPy programs. DSPy's internal response
-    cache is disabled — the Redis/diskcache LLM cache (llm_cache.py) wraps
-    program calls instead.
+    Uses the same per-use-case temperature defaults as get_llm, exposed as a
+    dspy.LM for use inside DSPy programs. DSPy's internal response cache is
+    disabled — the Redis/diskcache LLM cache (llm_cache.py) wraps program
+    calls instead.
+
+    cheap:
+        Use LLM_MODEL_CHEAP instead of LLM_MODEL — see its module comment
+        for which tasks that's appropriate for.
     """
     from dspy_setup import dspy
 
     temp = temperature if temperature is not None else TEMPERATURES.get(temperature_key, 0.1)
-    return dspy.LM(model=f"groq/{LLM_MODEL}", temperature=temp, cache=False)
+    model = LLM_MODEL_CHEAP if cheap else LLM_MODEL
+    return dspy.LM(model=f"groq/{model}", temperature=temp, cache=False)

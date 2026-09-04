@@ -49,3 +49,65 @@ def test_default_fallback_env_var_reads_module_default():
     importlib.reload(settings)
     assert settings.LLM_MODEL_FALLBACK == "llama-3.1-8b-instant"
     assert settings.LLM_MODEL_FALLBACK != settings.LLM_MODEL
+
+
+class TestCheapTier:
+    """get_dspy_lm(cheap=True) — high-volume, low-judgment agents (api_doc,
+    language_audit) route to LLM_MODEL_CHEAP instead of the flagship model."""
+
+    def test_cheap_defaults_to_fallback_model(self):
+        assert settings.LLM_MODEL_CHEAP == settings.LLM_MODEL_FALLBACK
+
+    def test_cheap_true_uses_cheap_model(self, monkeypatch):
+        monkeypatch.setattr(settings, "LLM_MODEL", "flagship-model")
+        monkeypatch.setattr(settings, "LLM_MODEL_CHEAP", "cheap-model")
+        lm = settings.get_dspy_lm(temperature=0, cheap=True)
+        assert lm.model == "groq/cheap-model"
+
+    def test_cheap_false_uses_flagship_model(self, monkeypatch):
+        monkeypatch.setattr(settings, "LLM_MODEL", "flagship-model")
+        monkeypatch.setattr(settings, "LLM_MODEL_CHEAP", "cheap-model")
+        lm = settings.get_dspy_lm(temperature=0, cheap=False)
+        assert lm.model == "groq/flagship-model"
+
+    def test_cheap_defaults_to_false(self, monkeypatch):
+        """Callers that don't pass cheap= must not silently downgrade."""
+        monkeypatch.setattr(settings, "LLM_MODEL", "flagship-model")
+        monkeypatch.setattr(settings, "LLM_MODEL_CHEAP", "cheap-model")
+        lm = settings.get_dspy_lm(temperature=0)
+        assert lm.model == "groq/flagship-model"
+
+
+class TestCheapTierAssignment:
+    """Only the two agents this was scoped for actually use the cheap tier —
+    everything security-critical or user-facing-quality-critical must not."""
+
+    def test_api_doc_uses_cheap_tier(self):
+        import agents.api_doc as api_doc
+
+        assert api_doc._LM.model == f"groq/{settings.LLM_MODEL_CHEAP}"
+
+    def test_language_audit_uses_cheap_tier(self):
+        import agents.language_audit as language_audit
+
+        assert language_audit._LM.model == f"groq/{settings.LLM_MODEL_CHEAP}"
+
+    def test_security_stays_on_flagship_model(self):
+        import agents.security as security
+
+        assert security._LM.model == f"groq/{settings.LLM_MODEL}"
+
+    def test_pr_review_stays_on_flagship_model(self):
+        import agents.pr_review as pr_review
+
+        assert pr_review._LM.model == f"groq/{settings.LLM_MODEL}"
+
+    def test_solidity_agent_stays_on_flagship_model(self):
+        import agents.solidity_agent as solidity_agent
+
+        assert solidity_agent._LM.model == f"groq/{settings.LLM_MODEL}"
+
+    def test_architecture_stays_on_flagship_model(self):
+        import agents.architecture as architecture
+
+        assert architecture._LM.model == f"groq/{settings.LLM_MODEL}"

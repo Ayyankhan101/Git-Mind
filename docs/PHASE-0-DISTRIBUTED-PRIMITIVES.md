@@ -361,3 +361,11 @@ After Phase 0, the system can handle multiple workers. Remaining phases:
 - **Phase 2:** Auth system (OAuth2), DB normalization, frontend state management
 - **Phase 3:** Autoscaling, read replicas, CQRS, regional deployment
 - **Phase 4:** Cost optimization (LLM caching, pre-computation, tiered models)
+  - **2026-09 update:** LLM caching was already done (Redis + diskcache,
+    `llm_cache.py`). Tiered models done too — `settings.LLM_MODEL_CHEAP`
+    routes `agents/api_doc.py` and `agents/language_audit.py` (high-volume,
+    low-judgment extraction/triage of already-deterministic input) to a
+    cheaper model; everything security-critical or user-facing-quality-critical
+    (chat, fix, PR review, security/Solidity triage, incident reports, the
+    executive summary) stays on `LLM_MODEL`. Pre-computation has no concrete
+    target identified yet — still open.

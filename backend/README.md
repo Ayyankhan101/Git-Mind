@@ -172,6 +172,7 @@ Set these in **Settings → Variables and secrets**:
 | `RERANKER_MODEL`              | `cross-encoder/ms-marco-MiniLM-L-6-v2` | Cross-encoder reranker model                                             |
 | `LLM_MODEL`                   | `qwen/qwen3.6-27b`                 | Override Groq model for all agents                                            |
 | `LLM_MODEL_FALLBACK`          | `llama-3.1-8b-instant`             | Same-provider fallback model — tried automatically if LLM_MODEL fails         |
+| `LLM_MODEL_CHEAP`             | `llama-3.1-8b-instant`             | Cheap tier — API doc extraction + lint triage only; everything else stays on LLM_MODEL |
 | `SMTP_HOST` / `SMTP_PORT`     | `587`                              | SMTP server for monitoring email alerts                                       |
 | `SMTP_USER` / `SMTP_PASSWORD` | —                                  | SMTP credentials                                                              |
 | `SMTP_FROM`                   | —                                  | SMTP sender address                                                           |
