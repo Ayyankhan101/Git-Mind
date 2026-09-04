@@ -1,18 +1,6 @@
-const CACHE_NAME = "gitmind-v1";
-const STATIC_ASSETS = [
-  "/",
-  "/index.html",
-  "/static/js/main.af186b9e.js",
-  "/static/css/main.5c88b50d.css",
-  "/favicon.ico",
-  "/logo192.png",
-  "/manifest.json",
-];
+const CACHE_NAME = "gitmind-v2";
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
-  );
   self.skipWaiting();
 });
 
@@ -31,7 +19,7 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip cross-origin requests, API, and WebSocket requests
+  // Skip cross-origin, API, WebSocket, non-GET
   if (
     url.origin !== location.origin ||
     url.pathname.startsWith("/api") ||
@@ -43,7 +31,9 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     caches.match(request).then((cached) => {
-      const fetchPromise = fetch(request)
+      if (cached) return cached;
+
+      return fetch(request)
         .then((response) => {
           if (response.ok) {
             const clone = response.clone();
@@ -51,9 +41,7 @@ self.addEventListener("fetch", (event) => {
           }
           return response;
         })
-        .catch(() => cached || caches.match("/index.html"));
-
-      return cached || fetchPromise;
+        .catch(() => caches.match("/index.html"));
     }).catch(() => new Response("Offline", { status: 503, headers: { "Content-Type": "text/plain" } }))
   );
 });
