@@ -259,6 +259,8 @@ Logs are written to `logs/backend.log` and `logs/frontend.log`.
 | -------------- | ------------------------------------- | ------------------------------------------------------ |
 | `DATABASE_URL` | `sqlite+aiosqlite:////tmp/gitmind.db` | SQLite for dev; `postgresql+asyncpg://...` for prod    |
 | `REDIS_URL`    | —                                     | Enables shared rate limiter, session cache, task queue |
+| `QDRANT_URL`   | —                                     | Switch RAG vector search from embedded ChromaDB to a Qdrant sidecar (needed once you run >1 backend worker/replica — see `docs/PHASE-0-DISTRIBUTED-PRIMITIVES.md`) |
+| `REQUIRE_REDIS`| `false`                               | When `true`, rate limiter/session store/Redis client fail closed instead of falling back to per-process memory when Redis is down |
 
 **Authentication & Security**
 
@@ -489,7 +491,8 @@ Llama 3.3 70B via Groq                           ← generates answer with citat
 | SQLite (default)   | `aiosqlite`        | Zero-config local dev                          |
 | PostgreSQL (prod)  | `asyncpg`          | Production — one env var selects backend       |
 | Redis (optional)   | `redis-py`         | Shared rate limiter, session cache, task queue |
-| ChromaDB           | embedded           | Vector store for RAG chat                      |
+| ChromaDB           | embedded           | Vector store for RAG chat (default)            |
+| Qdrant (optional)  | sidecar            | Vector store for RAG chat — set `QDRANT_URL` to switch, needed for >1 backend worker |
 | LLM cache          | `diskcache`        | Caches Groq API responses                      |
 
 ---

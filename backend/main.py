@@ -65,7 +65,7 @@ async def _periodic_prune_loop():
         except Exception as exc:
             logger.warning("Could not prune in-memory sessions", error=str(exc))
         try:
-            from chroma_utils import prune_old_collections
+            from vector_store import prune_old_collections
 
             removed = await asyncio.to_thread(prune_old_collections)
             if removed:
@@ -234,7 +234,7 @@ async def lifespan(_app: FastAPI):
     logger.info("Background task worker started")
     await _prune_old_analyses()
     try:
-        from chroma_utils import prune_old_collections
+        from vector_store import prune_old_collections
 
         removed = await asyncio.to_thread(prune_old_collections)
         if removed:
@@ -416,7 +416,10 @@ async def health():
     from orchestrator import get_circuit_breaker_state
 
     checks["circuit_breaker"] = get_circuit_breaker_state()
-    mandatory = {k: v for k, v in checks.items() if k not in ("redis", "circuit_breaker")}
+    from services.cache import redis_required
+
+    _excluded = {"circuit_breaker"} if redis_required() else {"redis", "circuit_breaker"}
+    mandatory = {k: v for k, v in checks.items() if k not in _excluded}
     all_ok = all(mandatory.values())
     result = {"status": "ok" if all_ok else "degraded"}
     result["checks"] = checks
@@ -439,11 +442,18 @@ async def health():
 
         checks["groq_key"] = bool(os.getenv("GROQ_API_KEY"))
         checks["semgrep"] = bool(shutil.which("semgrep"))
-        try:
-            from chroma_utils import _client
+        from vector_store import BACKEND
 
-            _client.list_collections()
-            checks["chromadb"] = True
+        try:
+            if BACKEND == "qdrant":
+                from qdrant_utils import get_client
+
+                get_client().get_collections()
+            else:
+                from chroma_utils import _client
+
+                _client.list_collections()
+            checks[f"vector_store_{BACKEND}"] = True
         except Exception:
-            checks["chromadb"] = False
+            checks[f"vector_store_{BACKEND}"] = False
     return result

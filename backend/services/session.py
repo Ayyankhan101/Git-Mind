@@ -11,7 +11,7 @@ from collections import OrderedDict
 
 import structlog
 
-from services.cache import get_redis
+from services.cache import get_redis, redis_required
 from state import initial_state  # noqa: F401 — re-export for backward compatibility
 
 logger = structlog.get_logger(__name__)
@@ -37,6 +37,10 @@ async def put_session(session_id: str, data: dict) -> None:
             return
         except Exception as exc:
             logger.warning("Redis session set failed", error=str(exc)[:80])
+            if redis_required():
+                raise RuntimeError("Redis session write failed — REQUIRE_REDIS=true, refusing memory fallback") from exc
+    elif redis_required():
+        raise RuntimeError("Redis unavailable — REQUIRE_REDIS=true, refusing memory fallback for session storage")
 
     # Dev fallback
     _sessions[session_id] = safe

@@ -6,6 +6,8 @@ backend/venv/
 backend/__pycache__/
 backend/.chroma/
 backend/.chroma_registry.json
+backend/.qdrant_registry.json
+backend/.fastembed_cache/
 backend/.llm_cache/
 backend/.dspy_harvest/
 backend/optimized/

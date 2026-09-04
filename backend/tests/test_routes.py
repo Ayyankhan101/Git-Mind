@@ -16,7 +16,7 @@ class TestHealthEndpoint:
         resp = client.get("/health")
         checks = resp.json()["checks"]
         assert "groq_key" in checks
-        assert "chromadb" in checks
+        assert "vector_store_chroma" in checks
         assert "git" in checks
 
     def test_groq_key_detected(self, client):

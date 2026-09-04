@@ -14,7 +14,6 @@ import structlog
 from fastapi import APIRouter, Request
 
 from agents.scanner import _GITHUB_URL_RE
-from chroma_utils import search_codebase
 from llm_cache import invoke_with_retry
 from models.requests import AutoPRRequest, FixRequest
 from routes._errors import error_response
@@ -22,6 +21,7 @@ from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
 from services.session import _UUID_RE, get_session
 from settings import get_llm
+from vector_store import search_codebase
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()

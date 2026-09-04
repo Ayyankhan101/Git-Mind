@@ -31,6 +31,18 @@ print('ChromaDB ONNX model cached.') \
 "
 
 COPY backend/ .
+
+# Pre-download fastembed's ONNX model too (same all-MiniLM-L6-v2 weights,
+# via a different loader) for the optional Qdrant vector-store backend
+# (QDRANT_URL) — same zero-first-request-latency goal as the block above.
+# cache_dir must match qdrant_utils.py's default: Path(__file__).parent /
+# ".fastembed_cache", which resolves to /app/.fastembed_cache here since
+# backend/ was just copied into WORKDIR /app.
+RUN python3 -c "\
+from fastembed import TextEmbedding; \
+TextEmbedding(model_name='sentence-transformers/all-MiniLM-L6-v2', cache_dir='/app/.fastembed_cache'); \
+print('fastembed model cached.') \
+"
 COPY --from=rust-builder /app/target/wheels/gitmind_core*.whl /tmp/
 RUN pip install --no-cache-dir /tmp/gitmind_core*.whl
 
@@ -59,6 +71,14 @@ WORKDIR /app
 COPY --from=backend-builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=backend-builder /usr/local/bin /usr/local/bin
 COPY backend/ .
+
+# Pre-downloaded embedding model caches from backend-builder (see above) —
+# without these, both land back on a first-request download at runtime.
+# ChromaDB's default embedding function reads from $HOME/.cache/chroma, and
+# appuser's $HOME differs from the builder stage's root ($HOME=/root), so
+# this must be re-homed explicitly rather than copied path-for-path.
+COPY --chown=appuser:appuser --from=backend-builder /root/.cache/chroma /home/appuser/.cache/chroma
+COPY --chown=appuser:appuser --from=backend-builder /app/.fastembed_cache /app/.fastembed_cache
 
 # Frontend static files
 COPY --from=frontend-builder /app/build /var/www/html

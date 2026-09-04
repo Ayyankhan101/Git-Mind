@@ -16,7 +16,7 @@ from collections import defaultdict
 import structlog
 from fastapi import Request
 
-from services.cache import get_redis
+from services.cache import get_redis, redis_required
 
 logger = structlog.get_logger(__name__)
 
@@ -56,6 +56,17 @@ _mem_data: dict[str, list[float]] = defaultdict(list)
 
 def _is_service_key(service_key: str | None) -> bool:
     return bool(_SERVICE_KEY) and service_key == _SERVICE_KEY
+
+
+def _deny_all(endpoint: str) -> tuple[bool, int, int]:
+    """Safe-fail response when REQUIRE_REDIS=true and Redis is unavailable.
+
+    Denying (rather than falling back to a per-process memory limiter) avoids
+    every backend worker/replica silently enforcing its own separate limit —
+    see docs/PHASE-0-DISTRIBUTED-PRIMITIVES.md, blocker 4.
+    """
+    window, _limit = _RATE_WINDOWS.get(endpoint, (60, 20))
+    return False, 0, window
 
 
 # ── Redis sorted-set sliding window ──────────────────────────────────────────
@@ -119,6 +130,8 @@ async def _redis_rate_check(endpoint: str, key: str) -> tuple[bool, int, int]:
         return allowed, remaining, retry_after
     except Exception as exc:
         logger.warning("Redis rate check failed", error=str(exc)[:80])
+        if redis_required():
+            return _deny_all(endpoint)
         # Dev fallback
         return _mem_rate_check(endpoint, key)
 
@@ -178,6 +191,8 @@ async def check_rate_limit(endpoint: str, key: str, service_key: str | None = No
     r = get_redis()
     if r:
         return await _redis_rate_check(endpoint, key)
+    if redis_required():
+        return _deny_all(endpoint)
     return _mem_rate_check(endpoint, key)
 
 
