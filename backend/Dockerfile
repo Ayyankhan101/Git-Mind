@@ -38,6 +38,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY --from=rust-builder /app/target/wheels/gitmind_core*.whl /tmp/
 RUN pip install --no-cache-dir /tmp/gitmind_core*.whl
 
+# /app was created by WORKDIR while still root, so it's root:root — a
+# plain `USER user` switch does not retroactively make it writable.
+# fastembed's pre-download below needs to mkdir a subdirectory in it
+# before the app code (and its --chown=user COPY) ever arrives.
+RUN chown -R user:user /app
+
 # Run everything below as the runtime user so the ONNX cache and the
 # app directory end up owned by UID 1000.
 USER user
