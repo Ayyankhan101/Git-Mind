@@ -276,7 +276,7 @@ Logs are written to `logs/backend.log` and `logs/frontend.log`.
 | `GITHUB_APP_PRIVATE_KEY`     | GitHub App private key (webhook flows)                                                |
 | `GITHUB_APP_INSTALLATION_ID` | GitHub App installation ID (webhook flows)                                            |
 | `GITHUB_APP_WEBHOOK_SECRET`  | GitHub App webhook HMAC secret                                                        |
-| `GITHUB_OAUTH_CLIENT_ID`     | GitHub OAuth App client ID — powers the "Sign in with GitHub" button (distinct from the GitHub App above) |
+| `GITHUB_OAUTH_CLIENT_ID`     | GitHub OAuth App client ID — powers the "Sign in with GitHub" button (distinct from the GitHub App above). Setup: [docs/github-oauth](docs/github-oauth/how-to.md) |
 | `GITHUB_OAUTH_CLIENT_SECRET` | GitHub OAuth App client secret                                                        |
 | `OAUTH_REDIRECT_BASE_URL`    | Backend's own public URL, for the redirect_uri sent to GitHub (default: `https://ak001z-gitmind-backend.hf.space`) |
 | `OAUTH_FRONTEND_URL`         | Frontend origin the browser returns to after sign-in (default: `https://gitmind-frontend.pages.dev`) |
@@ -576,9 +576,13 @@ Defense-in-depth posture — 20-point checklist status:
 
 ## GitHub Authentication
 
+Setting up "Sign in with GitHub" for your own deployment? See
+[docs/github-oauth](docs/github-oauth/tutorial.md) — tutorial, how-to,
+reference, and design rationale.
+
 | Method                      | Scope                            | How                                                                     |
 | --------------------------- | -------------------------------- | ----------------------------------------------------------------------- |
-| **Sign in with GitHub**     | Private repos, auto-fix PRs      | OAuth button on the landing page / dashboard lock icon — same token storage as In-UI PAT below, just no manual PAT generation |
+| **Sign in with GitHub**     | Private repos, auto-fix PRs      | OAuth button on the landing page / dashboard lock icon — same token storage as In-UI PAT below, just no manual PAT generation. [Setup guide](docs/github-oauth/how-to.md) |
 | **In-UI PAT**                | Private repos, auto-fix PRs      | Paste one via the landing page or the dashboard's lock icon — encrypted `localStorage` (AES-GCM, 1h TTL) |
 | **Server `GITHUB_TOKEN`**   | Rate limit boost (60 → 5,000/hr) | Set in `backend/.env`                                                   |
 | **Service key**             | CI/CD — bypasses rate limits     | `GITMIND_SERVICE_KEY` → `X-Service-Key` header                          |
