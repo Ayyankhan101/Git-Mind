@@ -7,7 +7,7 @@ from pathlib import Path
 import structlog
 from pydantic import BaseModel
 
-_SEMGREP = shutil.which("semgrep") or "semgrep"  # fallback for type narrowing
+_SEMGREP = shutil.which("semgrep")
 
 from dspy_setup import dspy  # noqa: E402
 from llm_cache import run_dspy_cached  # noqa: E402
@@ -65,14 +65,21 @@ _predictor = define_program(
 
 def run_security_agent(local_path: str) -> list[dict]:
     if not _SEMGREP:
-        logger.warning("semgrep not found in PATH — returning synthetic finding")
-        return _synthetic_finding()
+        logger.error("semgrep not found in PATH — security scan unavailable")
+        return _degraded_finding("semgrep is not installed on the server — no scan was run.")
 
     if not local_path:
         logger.warning("security agent called with empty local_path")
-        return _synthetic_finding()
+        return _degraded_finding("No local checkout was available to scan.")
 
     raw_results = _run_semgrep(local_path)
+    if raw_results is None:
+        # Distinguish "scan failed" from "scan ran, found nothing" — see
+        # _run_semgrep. Silently reporting a failed scan as a clean repo is
+        # actively misleading for a security tool.
+        return _degraded_finding(
+            "The static analysis scan timed out or failed to complete — results may be incomplete."
+        )
     if not raw_results:
         logger.info("semgrep returned zero findings — repo is clean")
         return []
@@ -83,7 +90,11 @@ def run_security_agent(local_path: str) -> list[dict]:
 # ── Private helpers ────────────────────────────────────────────────────────────
 
 
-def _run_semgrep(local_path: str) -> list[dict]:
+def _run_semgrep(local_path: str) -> list[dict] | None:
+    """Returns raw semgrep findings, `[]` for a genuinely clean scan, or
+    `None` if the scan itself failed/timed out — callers must not treat
+    `None` the same as a clean repo."""
+    assert _SEMGREP is not None  # run_security_agent already checked this
     posix_path = Path(local_path).as_posix()
     try:
         proc = subprocess.run(
@@ -102,7 +113,7 @@ def _run_semgrep(local_path: str) -> list[dict]:
             ],
             capture_output=True,
             text=True,
-            timeout=90,  # reduced from 120 s — parallel agents reclaim time
+            timeout=150,  # --config=auto needs real headroom; 90s was silently truncating real scans
             shell=False,  # never shell=True with external paths
         )
         # semgrep exit 0 = no findings, exit 1 = findings found — both are success
@@ -112,17 +123,17 @@ def _run_semgrep(local_path: str) -> list[dict]:
                 proc.returncode,
                 proc.stderr[:300],
             )
-            return []
+            return None
         data = json.loads(proc.stdout or '{"results":[]}')
         results = data.get("results", [])
         logger.info("semgrep returned %d raw findings", len(results))
         return results
     except subprocess.TimeoutExpired:
-        logger.warning("semgrep timed out after 90 s")
-        return []
+        logger.warning("semgrep timed out after 150 s")
+        return None
     except (json.JSONDecodeError, OSError) as exc:
         logger.error("semgrep execution error: %s", exc)
-        return []
+        return None
 
 
 def _triage_with_llm(raw_results: list[dict]) -> list[dict]:
@@ -148,11 +159,14 @@ def _triage_with_llm(raw_results: list[dict]) -> list[dict]:
         )
     except Exception as exc:
         logger.error(
-            "Security triage LLM failed: %s — dropping %d semgrep findings, using demo fallback",
+            "Security triage LLM failed: %s — %d raw semgrep findings could not be summarized",
             exc,
             len(raw_results),
         )
-        return _synthetic_finding()
+        return _degraded_finding(
+            f"Semgrep found {len(raw_results)} raw finding(s), but the AI triage step failed "
+            "to summarize them — results are incomplete."
+        )
 
     # Guarantee every finding has a valid id and normalized severity
     for f in findings:
@@ -160,28 +174,27 @@ def _triage_with_llm(raw_results: list[dict]) -> list[dict]:
         if f.get("severity") not in _VALID_SEVERITIES:
             f["severity"] = "medium"
 
-    if not findings:
-        return _synthetic_finding()
-
     logger.info("Security agent: %d triaged findings", len(findings))
     return findings
 
 
-def _synthetic_finding() -> list[dict]:
-    """Guaranteed fallback so Crisis Mode always has something to dramatize."""
+def _degraded_finding(reason: str) -> list[dict]:
+    """Honest placeholder for when the scan couldn't run or complete.
+
+    Never a fabricated vulnerability — id/severity/file make it obvious this
+    isn't a real finding, unlike a made-up "app.js has hardcoded creds" entry
+    that used to appear here regardless of what the repo actually contains.
+    """
     return [
         {
-            "id": "demo01",
-            "file": "app.js",
-            "line_start": 42,
-            "line_end": 42,
-            "severity": "high",
-            "title": "Hardcoded credentials detected",
-            "exploit_story": (
-                "An attacker with read access to the repository history "
-                "gains immediate database credentials without brute-forcing any password."
-            ),
-            "remediation": "Move credentials to environment variables and rotate them immediately.",
-            "cwe": "CWE-798",
+            "id": "scan-incomplete",
+            "file": "",
+            "line_start": 0,
+            "line_end": 0,
+            "severity": "low",
+            "title": "Security scan incomplete",
+            "exploit_story": reason,
+            "remediation": "Re-run the analysis. If this persists, the repo may exceed the scanner's time budget.",
+            "cwe": None,
         }
     ]

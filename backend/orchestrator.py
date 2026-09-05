@@ -11,7 +11,7 @@ from agents.git_audit import run_git_audit
 from agents.language_audit import run_code_audit
 from agents.rag_setup import run_rag_setup
 from agents.scanner import clone_and_scan
-from agents.security import _synthetic_finding, run_security_agent
+from agents.security import _degraded_finding, run_security_agent
 from agents.solidity_agent import solidity_agent
 from state import RepoState
 
@@ -152,7 +152,7 @@ def _architecture_fallback(state: RepoState, exc: Exception) -> dict:  # noqa: A
 
 
 def _security_fallback(state: RepoState, exc: Exception) -> dict:  # noqa: ARG001
-    return {"security_findings": _synthetic_finding()}
+    return {"security_findings": _degraded_finding(f"Security agent crashed: {str(exc)[:200]}")}
 
 
 def _architecture_fn(state: RepoState) -> dict:
