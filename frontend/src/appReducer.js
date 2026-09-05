@@ -205,10 +205,33 @@ export function appReducer(state, action) {
       return { ...state, healthPartial: action.health };
     case "SET_AGENT_WARNINGS":
       return { ...state, agentWarnings: action.warnings };
+    case "ADD_AGENT_WARNING":
+      return {
+        ...state,
+        agentWarnings: [...state.agentWarnings, action.warning],
+      };
+    case "DISMISS_AGENT_WARNING":
+      return {
+        ...state,
+        agentWarnings: state.agentWarnings.filter((_, i) => i !== action.index),
+      };
     case "SET_AGENT_TIMING":
       return { ...state, agentTiming: action.timing };
     case "SET_ANALYZED":
       return { ...state, analyzed: action.analyzed };
+    case "ANALYSIS_DONE":
+      return {
+        ...state,
+        isAnalyzing: false,
+        analyzed: true,
+      };
+    case "ANALYSIS_ERROR":
+      return {
+        ...state,
+        globalError: action.error,
+        retryUrl: action.retryUrl || state.selectedRepoUrl,
+        isAnalyzing: false,
+      };
     case "RESET_ANALYSIS":
       return {
         ...state,
