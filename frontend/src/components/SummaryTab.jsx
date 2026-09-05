@@ -12,6 +12,7 @@ import gsap from "gsap";
 import { fs } from "../typeScale";
 import { fetchSummary, subscribeMonitor, fetchMonitorStatus } from "../api";
 import * as tokenManager from "../tokenManager";
+import ErrorBoundary from "./ErrorBoundary";
 import HealthCard from "./HealthCard";
 import SceneManager from "./SceneManager";
 import SummaryScene from "./SummaryScene";
@@ -347,22 +348,27 @@ export default function SummaryTab({
 
   return (
     <div className="summary">
-      <SceneManager
-        style={{
-          position: "absolute",
-          inset: 0,
-          zIndex: 0,
-          pointerEvents: "none",
-        }}
-      >
-        {({ sceneRef, subscribe, prefersReduced }) => (
-          <SummaryScene
-            sceneRef={sceneRef}
-            subscribe={subscribe}
-            prefersReduced={prefersReduced}
-          />
-        )}
-      </SceneManager>
+      {/* fallback={null}: a WebGL failure here must stay contained to this
+          decorative background, not cascade up and take the whole tab
+          (DashboardLayout's own ErrorBoundary) down with it. */}
+      <ErrorBoundary fallback={null}>
+        <SceneManager
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 0,
+            pointerEvents: "none",
+          }}
+        >
+          {({ sceneRef, subscribe, prefersReduced }) => (
+            <SummaryScene
+              sceneRef={sceneRef}
+              subscribe={subscribe}
+              prefersReduced={prefersReduced}
+            />
+          )}
+        </SceneManager>
+      </ErrorBoundary>
 
       <div className="tab-header">
         <div className="tab-header-main">
