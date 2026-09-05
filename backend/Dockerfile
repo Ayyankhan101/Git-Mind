@@ -54,6 +54,19 @@ urllib.request.urlretrieve(URL, arc); \
 tf=tarfile.open(arc); tf.extractall(DEST); tf.close(); \
 arc.unlink(); print('ChromaDB ONNX model cached.')"
 
+# Pre-download fastembed's ONNX model into the exact cache_dir
+# qdrant_utils.py resolves at runtime (backend/.fastembed_cache — see
+# _PREFERRED_FASTEMBED_CACHE there). This is the model the Qdrant backend
+# actually uses for the Knowledge/RAG step (vector_store.py switches to it
+# whenever QDRANT_URL is set); the ChromaDB pre-download above never covered
+# it, so every fresh/redeployed container paid a cold model download inside
+# the first analysis's RAG step instead of at build time — the Knowledge
+# agent looking "stuck" while every other agent had long finished.
+RUN python3 -c "\
+from fastembed import TextEmbedding; \
+TextEmbedding(model_name='sentence-transformers/all-MiniLM-L6-v2', cache_dir='/app/.fastembed_cache'); \
+print('fastembed ONNX model cached.')"
+
 # App code (owned by the runtime user).
 COPY --chown=user . .
 
