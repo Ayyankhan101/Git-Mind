@@ -7,19 +7,50 @@ On hit: backfill Redis from diskcache.
 import contextlib
 import hashlib
 import json
+import os
 import re
 import time
 from pathlib import Path
+from typing import cast
 
 import diskcache
+import redis as _redis_sync
 import structlog
 from pydantic import BaseModel
-
-from services.cache import get_redis
 
 logger = structlog.get_logger(__name__)
 
 _REDIS_TTL = 86_400  # 24 hours
+
+# This module is entirely sync (DSPy programs run synchronously, called from
+# agent code via thread pools) — services.cache.get_redis() hands out an
+# async redis.asyncio client, which a sync caller can't await. Calling its
+# .get()/.set() from here doesn't raise: it returns an unawaited coroutine
+# object, which is truthy and not None, so it looked like a cache hit and
+# blew up downstream trying to json.loads() a coroutine ("the JSON object
+# must be str, bytes or bytearray, not coroutine"). A dedicated sync client
+# avoids the mismatch entirely, same fix as qdrant_utils.py's registry.
+_sync_redis: "_redis_sync.Redis | None" = None
+_sync_redis_checked = False
+
+
+def _get_sync_redis() -> "_redis_sync.Redis | None":
+    global _sync_redis, _sync_redis_checked
+    if _sync_redis_checked:
+        return _sync_redis
+    _sync_redis_checked = True
+    url = os.environ.get("REDIS_URL")
+    if not url:
+        return None
+    try:
+        client = _redis_sync.from_url(url, decode_responses=True, socket_connect_timeout=5, socket_timeout=5)
+        client.ping()
+        _sync_redis = client
+    except Exception as exc:
+        logger.debug("LLM cache Redis unavailable, diskcache-only: %s", str(exc)[:120])
+        _sync_redis = None
+    return _sync_redis
+
 
 # ── Harvest telemetry (JSONL, gitignored) ────────────────────────────────────
 # `run_dspy_cached` appends one record per LLM call (cache miss only):
@@ -101,13 +132,13 @@ def get_cached(model: str, prompt: str) -> str | None:
     k = _key(model, prompt)
 
     # Redis check
-    r = get_redis()
+    r = _get_sync_redis()
     if r:
         try:
             val = r.get(_redis_key(k))
             if val is not None:
                 logger.debug("LLM cache hit (Redis) model=%s", model)
-                return val
+                return cast(str, val)
         except Exception as exc:
             logger.debug("Redis LLM cache read failed: %s", exc)
 
@@ -132,7 +163,7 @@ def set_cached(model: str, prompt: str, response: str, ttl: int = 86_400) -> Non
     _cache.set(k, response, expire=ttl)
 
     # Write to Redis
-    r = get_redis()
+    r = _get_sync_redis()
     if r:
         try:
             r.set(_redis_key(k), response, ex=min(ttl, _REDIS_TTL))
