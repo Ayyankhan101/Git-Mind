@@ -1,8 +1,8 @@
 import structlog
 
-from chroma_utils import search_codebase
 from llm_cache import invoke_with_retry
 from settings import get_llm
+from vector_store import search_codebase
 
 logger = structlog.get_logger(__name__)
 

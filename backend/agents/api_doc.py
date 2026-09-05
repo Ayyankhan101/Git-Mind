@@ -5,14 +5,16 @@ from pydantic import BaseModel
 from dspy_setup import dspy
 from llm_cache import run_dspy_cached
 from optimization.registry import define_program
-from settings import LLM_MODEL, get_dspy_lm
+from settings import LLM_MODEL_CHEAP, get_dspy_lm
 
 logger = structlog.get_logger(__name__)
 
 _MAX_FILES = 10
 _MAX_FILE_CHARS = 6_000
-_CACHE_NAMESPACE = f"{LLM_MODEL}:api_doc:json"
-_LM = get_dspy_lm(temperature=0)
+# Cheap tier — extracting endpoints from source is pattern-matching, not
+# judgment; see settings.py's LLM_MODEL_CHEAP comment.
+_CACHE_NAMESPACE = f"{LLM_MODEL_CHEAP}:api_doc:json"
+_LM = get_dspy_lm(temperature=0, cheap=True)
 
 
 class ApiEndpoint(BaseModel):

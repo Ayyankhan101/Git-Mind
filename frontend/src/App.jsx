@@ -12,7 +12,13 @@ import LandingPage from "./components/LandingPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ToastSystem from "./components/ToastSystem";
 import PostProcessing from "./components/PostProcessing";
-import { WS_BASE, fetchRepos, loadSharedAnalysis, generateFix } from "./api";
+import {
+  WS_BASE,
+  fetchRepos,
+  loadSharedAnalysis,
+  generateFix,
+  exchangeGithubOAuthCode,
+} from "./api";
 import { appReducer, initialState } from "./appReducer";
 import * as tokenManager from "./tokenManager";
 import { loadTheme } from "./themeLoader";
@@ -23,8 +29,8 @@ import { useEscClose } from "./hooks/useEscClose";
 const SceneManager = lazy(() => import("./components/SceneManager"));
 const DashboardScene = lazy(() => import("./components/DashboardScene"));
 
-// Dashboard shell (CommandBar/NavRail/Sidebar + all tabs) is lazy-loaded so
-// the landing page doesn't ship the full 400KB+ dashboard bundle.
+// Dashboard shell (NavRail/Sidebar + all tabs) is lazy-loaded so the landing
+// page doesn't ship the full 400KB+ dashboard bundle.
 const DashboardLayout = lazy(() => import("./components/DashboardLayout"));
 const CrisisChat = lazy(() => import("./components/CrisisChat"));
 const KeyboardHelp = lazy(() => import("./components/KeyboardHelp"));
@@ -230,6 +236,47 @@ export default function App() {
     if (!shareId) return;
     runSharedLoad(shareId);
   }, [location.search, runSharedLoad]);
+
+  // ── GitHub OAuth sign-in handoff ───────────────────────────
+  // /auth/github/login redirects back here with ?gh_handoff=<code> on
+  // success or ?gh_oauth_error=<reason> on failure. This only authenticates
+  // — unlike the ?share= handler above, there's no analysis to load, so it
+  // strips the param in place rather than forcing a /dashboard navigation.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const oauthError = params.get("gh_oauth_error");
+    const handoff = params.get("gh_handoff");
+    if (oauthError) {
+      addToast({
+        kind: "danger",
+        title: "GitHub sign-in failed",
+        sub: oauthError,
+      });
+      navigate(location.pathname, { replace: true });
+      return;
+    }
+    if (!handoff) return;
+    exchangeGithubOAuthCode(handoff)
+      .then(({ access_token, login }) => {
+        dispatch({ type: "SET_GH_TOKEN", value: access_token });
+        tokenManager.set(access_token);
+        addToast({
+          kind: "success",
+          title: "Signed in with GitHub",
+          sub: login ? `as ${login}` : undefined,
+        });
+      })
+      .catch((err) => {
+        addToast({
+          kind: "danger",
+          title: "GitHub sign-in failed",
+          sub: err.message,
+        });
+      })
+      .finally(() => {
+        navigate(location.pathname, { replace: true });
+      });
+  }, [location.search, location.pathname, navigate, addToast]);
 
   const handleShareRetry = useCallback(() => {
     dispatch({ type: "CLEAR_SHARE_ERROR" });
@@ -580,8 +627,8 @@ export default function App() {
   );
 
   // ── Apply a token from the landing page ───────────────────
-  // Mirrors the dashboard CommandBar flow: update app state so the
-  // analysis WS payload carries it, and persist for the session.
+  // Mirrors NavRail's token popover: update app state so the analysis WS
+  // payload carries it, and persist for the session.
   const applyLandingToken = useCallback((token) => {
     const t = (token || "").trim();
     if (!t) return;

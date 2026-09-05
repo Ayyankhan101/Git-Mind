@@ -116,7 +116,7 @@
   margin-left: auto;
 }
 
-/* The global .theme-switcher carries margin-left:auto for the CommandBar;
+/* The global .theme-switcher carries margin-left:auto for NavRail;
    inside the nav cluster the group handles spacing. */
 .lp-nav .theme-switcher {
   margin-left: 0;

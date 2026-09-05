@@ -6,6 +6,7 @@ backend/venv/
 backend/__pycache__/
 backend/.chroma/
 backend/.chroma_registry.json
+backend/.fastembed_cache/
 backend/.llm_cache/
 backend/.dspy_harvest/
 backend/optimized/
@@ -52,3 +53,13 @@ agent/
 
 # Skills lock file
 skills-lock.json
+
+# CI's `cp -r rust-gitmind backend/` deploy step output — never source, only
+# ever produced at build time (see .github/workflows/ci.yml)
+backend/rust-gitmind/
+
+# Claude Code session-lock state (churns every session, not project state)
+.claude/scheduled_tasks.lock
+
+# Freebuff desktop app's local project marker (unrelated tool, not ours)
+.freebuff/

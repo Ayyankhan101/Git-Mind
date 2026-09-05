@@ -103,10 +103,19 @@ describe("LandingPage", () => {
     );
   });
 
+  it("links Sign in with GitHub to the backend's OAuth login route", () => {
+    render(<LandingPage onLoad={jest.fn()} onAnalyzeUrl={jest.fn()} />);
+    const link = screen.getByText("Sign in with GitHub").closest("a");
+    expect(link).toHaveAttribute(
+      "href",
+      expect.stringContaining("/auth/github/login"),
+    );
+  });
+
   it("passes a GitHub token through when provided", () => {
     const onLoad = jest.fn();
     render(<LandingPage onLoad={onLoad} onAnalyzeUrl={jest.fn()} />);
-    fireEvent.click(screen.getByText("Use GitHub token"));
+    fireEvent.click(screen.getByText("Or paste a token"));
     fireEvent.change(screen.getByLabelText("GitHub personal access token"), {
       target: { value: "ghp_test123" },
     });

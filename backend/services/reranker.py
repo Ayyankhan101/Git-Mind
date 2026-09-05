@@ -14,7 +14,6 @@ Environment variables:
 from __future__ import annotations
 
 import os
-from hashlib import sha256
 
 import structlog
 
@@ -74,9 +73,3 @@ def rerank(
     ranked.sort(key=lambda x: x["rerank_score"], reverse=True)
 
     return ranked[:top_k]
-
-
-def rerank_cache_key(query: str, candidate_fps: list[str]) -> str:
-    """Generate a cache key for a reranking result."""
-    payload = f"{query}::{'|'.join(candidate_fps)}"
-    return sha256(payload.encode()).hexdigest()

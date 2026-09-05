@@ -10,7 +10,8 @@ export async function onRequest(context) {
       headers: {
         "Access-Control-Allow-Origin": url.origin,
         "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, X-GH-Token, X-Request-ID, Authorization",
+        "Access-Control-Allow-Headers":
+          "Content-Type, X-GH-Token, X-Request-ID, Authorization",
         "Access-Control-Max-Age": "86400",
       },
     });
@@ -32,13 +33,22 @@ export async function onRequest(context) {
   if (ghToken) proxyRequest.headers.set("X-GH-Token", ghToken);
 
   try {
-    const response = await fetch(proxyRequest);
+    // "manual" — a proxy should hand a redirect (e.g. GET /auth/github/login's
+    // 302 to GitHub) back to the browser, not silently follow it itself and
+    // return GitHub's login page as if it were this API's response.
+    const response = await fetch(proxyRequest, { redirect: "manual" });
     const newResponse = new Response(response.body, response);
 
     // CORS headers
     newResponse.headers.set("Access-Control-Allow-Origin", url.origin);
-    newResponse.headers.set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
-    newResponse.headers.set("Access-Control-Allow-Headers", "Content-Type, X-GH-Token, X-Request-ID, Authorization");
+    newResponse.headers.set(
+      "Access-Control-Allow-Methods",
+      "GET, POST, DELETE, OPTIONS",
+    );
+    newResponse.headers.set(
+      "Access-Control-Allow-Headers",
+      "Content-Type, X-GH-Token, X-Request-ID, Authorization",
+    );
 
     // Security headers
     newResponse.headers.set("X-Frame-Options", "DENY");

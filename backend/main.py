@@ -31,6 +31,7 @@ from routes.fix import router as fix_router  # noqa: E402
 from routes.github_webhook import router as github_webhook_router  # noqa: E402
 from routes.incident import router as incident_router  # noqa: E402
 from routes.monitor import router as monitor_router  # noqa: E402
+from routes.oauth import router as oauth_router  # noqa: E402
 from routes.org import router as org_router  # noqa: E402
 from routes.pr import router as pr_router  # noqa: E402
 from routes.proxy import router as proxy_router  # noqa: E402
@@ -65,7 +66,7 @@ async def _periodic_prune_loop():
         except Exception as exc:
             logger.warning("Could not prune in-memory sessions", error=str(exc))
         try:
-            from chroma_utils import prune_old_collections
+            from vector_store import prune_old_collections
 
             removed = await asyncio.to_thread(prune_old_collections)
             if removed:
@@ -234,7 +235,7 @@ async def lifespan(_app: FastAPI):
     logger.info("Background task worker started")
     await _prune_old_analyses()
     try:
-        from chroma_utils import prune_old_collections
+        from vector_store import prune_old_collections
 
         removed = await asyncio.to_thread(prune_old_collections)
         if removed:
@@ -281,35 +282,36 @@ async def unhandled_exception_handler(request, exc):
     )
 
 
+_DEV_CORS_ORIGINS = [
+    "http://localhost",
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
+    "http://localhost:8002",
+    "https://gitmind-frontend.pages.dev",
+]
+_PROD_CORS_ORIGINS = ["https://gitmind-frontend.pages.dev"]
+
+
+def _resolve_cors_origins(cors_env: str, environment: str) -> list[str]:
+    """Pure function so the production hard-fail below is unit-testable
+    without reimporting this module (which has app-startup side effects)."""
+    if cors_env == "*":
+        if environment == "production":
+            raise RuntimeError(
+                "CORS_ORIGINS=* is not allowed when ENVIRONMENT=production — "
+                "set CORS_ORIGINS to your actual frontend origin(s), comma-separated."
+            )
+        logger.warning("CORS_ORIGINS=* — allowing all origins (non-production only).")
+        return ["*"]
+    if cors_env:
+        return [o.strip() for o in cors_env.split(",") if o.strip()]
+    return _PROD_CORS_ORIGINS if environment == "production" else _DEV_CORS_ORIGINS
+
+
 _CORS_ORIGINS_ENV = os.getenv("CORS_ORIGINS", "")
 _ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
-if _CORS_ORIGINS_ENV == "*":
-    _CORS_ORIGINS = ["*"]
-    logger.warning("CORS_ORIGINS=* — allowing all origins. Set CORS_ORIGINS to specific origin for production.")
-elif _CORS_ORIGINS_ENV:
-    _CORS_ORIGINS = [o.strip() for o in _CORS_ORIGINS_ENV.split(",") if o.strip()]
-elif _ENVIRONMENT == "production":
-    _CORS_ORIGINS = [
-        "https://gitmind-frontend.pages.dev",
-    ]
-else:
-    _CORS_ORIGINS = [
-        "http://localhost",
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:3002",
-        "http://localhost:8002",
-        "https://gitmind-frontend.pages.dev",
-    ]
-    # Allow all Cloudflare Pages preview deployments
-    import re as _re
-
-    _CF_RE = _re.compile(r"^https://gitmind-.*\.pages\.dev$")
-
-
-def _cors_origin_ok(origin: str) -> bool:
-    """Check if origin is allowed — static list + Cloudflare Pages preview pattern."""
-    return origin in _CORS_ORIGINS or bool(_CF_RE.match(origin))
+_CORS_ORIGINS = _resolve_cors_origins(_CORS_ORIGINS_ENV, _ENVIRONMENT)
 
 
 app.add_middleware(
@@ -346,6 +348,7 @@ app.include_router(webhook_router)
 app.include_router(github_webhook_router)
 app.include_router(monitor_router)
 app.include_router(proxy_router)
+app.include_router(oauth_router)
 
 
 # ── Task polling ────────────────────────────────────────────────────────────
@@ -416,7 +419,10 @@ async def health():
     from orchestrator import get_circuit_breaker_state
 
     checks["circuit_breaker"] = get_circuit_breaker_state()
-    mandatory = {k: v for k, v in checks.items() if k not in ("redis", "circuit_breaker")}
+    from services.cache import redis_required
+
+    _excluded = {"circuit_breaker"} if redis_required() else {"redis", "circuit_breaker"}
+    mandatory = {k: v for k, v in checks.items() if k not in _excluded}
     all_ok = all(mandatory.values())
     result = {"status": "ok" if all_ok else "degraded"}
     result["checks"] = checks
@@ -439,11 +445,18 @@ async def health():
 
         checks["groq_key"] = bool(os.getenv("GROQ_API_KEY"))
         checks["semgrep"] = bool(shutil.which("semgrep"))
-        try:
-            from chroma_utils import _client
+        from vector_store import BACKEND
 
-            _client.list_collections()
-            checks["chromadb"] = True
+        try:
+            if BACKEND == "qdrant":
+                from qdrant_utils import get_client
+
+                get_client().get_collections()
+            else:
+                from chroma_utils import _client
+
+                _client.list_collections()
+            checks[f"vector_store_{BACKEND}"] = True
         except Exception:
-            checks["chromadb"] = False
+            checks[f"vector_store_{BACKEND}"] = False
     return result

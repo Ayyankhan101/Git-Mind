@@ -68,86 +68,105 @@ _MAX_FILE_BYTES = 100 * 1024  # 100 KB — skips minified / generated files
 _MAX_FILES = 150
 
 
-def clone_and_scan(repo_url: str, token: str | None = None, branch: str | None = None) -> dict:
+def clone_and_scan(
+    repo_url: str,
+    token: str | None = None,
+    branch: str | None = None,
+    sha_hint: str | None = None,
+) -> dict:
     """
     Shallow-clone a GitHub repo and return the file inventory.
     Pass `token` (PAT) to clone private repos via x-access-token auth.
     Pass `branch` to clone a specific branch (e.g. a PR head branch).
+    Pass `sha_hint` when the caller already resolved the target commit (e.g.
+    via `git ls-remote`, or a PR's `head.sha`) — enables the clone cache
+    (services/clone_cache.py) to skip the network clone entirely on a hit.
+    Inert when CLONE_CACHE_BUCKET is unset.
 
     Returns a dict with keys: local_path, file_tree, file_contents, repo_name.
     Raises ValueError for bad URLs, RuntimeError for clone failures.
     """
     _validate_url(repo_url)
 
-    # Build authenticated clone URL for private repos
-    # Use GIT_ASKPASS to avoid token appearing in URLs, process listings, or logs
-    clone_url = repo_url
-    _askpass_script = None
-    _env = {"GIT_TERMINAL_PROMPT": "0"}
-    if token:
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False) as _askpass_script:
-            _askpass_script.write(f'#!/bin/sh\necho "{token}"\n')
-            _askpass_name = _askpass_script.name
-        os.chmod(_askpass_name, stat.S_IRUSR | stat.S_IXUSR)
-        _env["GIT_ASKPASS"] = _askpass_name
-        _env["GIT_TERMINAL_PROMPT"] = "0"
-
     dest = tempfile.mkdtemp(prefix="gitmind_")
     _active_temp_dirs[dest] = time.time()
-    logger.info(
-        "Cloning %s → %s (auth=%s, branch=%s)",
-        repo_url,
-        dest,
-        bool(token),
-        branch or "default",
-    )
 
     head_sha = None
-    clone_kwargs: dict = {"depth": 1}
-    if branch:
-        clone_kwargs["branch"] = branch
-    else:
-        clone_kwargs["no_single_branch"] = True
+    from services.clone_cache import store, try_restore
 
-    # Clone with one retry: shallow clones fail on transient network/DNS
-    # hiccups that usually clear within a couple of seconds. Deterministic
-    # failures (repo not found, auth, HTTP 4xx) are raised immediately — no
-    # retry. Each attempt gets a fresh dest so a partially-written clone can't
-    # poison the retry with the "destination path already exists" error.
-    max_attempts = 2
-    try:
-        for attempt in range(1, max_attempts + 1):
-            try:
-                repo = git.Repo.clone_from(
-                    clone_url,
-                    dest,
-                    env=_env,
-                    **clone_kwargs,
-                )
-                head_sha = repo.head.commit.hexsha
-                repo.close()  # prevents resource leak on Windows
-                break
-            except git.exc.GitCommandError as exc:
-                if attempt < max_attempts and _is_transient_clone_failure(exc):
-                    logger.warning(
-                        "Clone attempt %d/%d failed — retrying",
-                        attempt,
-                        max_attempts,
-                        repo=repo_url,
-                        stderr=(exc.stderr or "")[:200],
+    if sha_hint and try_restore(repo_url, sha_hint, dest):
+        head_sha = sha_hint
+        logger.info("Scanner: restored %s@%s from clone cache — skipped git clone", repo_url, sha_hint[:8])
+    else:
+        # Build authenticated clone URL for private repos
+        # Use GIT_ASKPASS to avoid token appearing in URLs, process listings, or logs
+        clone_url = repo_url
+        _askpass_script = None
+        _env = {"GIT_TERMINAL_PROMPT": "0"}
+        if token:
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False) as _askpass_script:
+                _askpass_script.write(f'#!/bin/sh\necho "{token}"\n')
+                _askpass_name = _askpass_script.name
+            os.chmod(_askpass_name, stat.S_IRUSR | stat.S_IXUSR)
+            _env["GIT_ASKPASS"] = _askpass_name
+            _env["GIT_TERMINAL_PROMPT"] = "0"
+
+        logger.info(
+            "Cloning %s → %s (auth=%s, branch=%s)",
+            repo_url,
+            dest,
+            bool(token),
+            branch or "default",
+        )
+
+        clone_kwargs: dict = {"depth": 1}
+        if branch:
+            clone_kwargs["branch"] = branch
+        else:
+            clone_kwargs["no_single_branch"] = True
+
+        # Clone with one retry: shallow clones fail on transient network/DNS
+        # hiccups that usually clear within a couple of seconds. Deterministic
+        # failures (repo not found, auth, HTTP 4xx) are raised immediately — no
+        # retry. Each attempt gets a fresh dest so a partially-written clone can't
+        # poison the retry with the "destination path already exists" error.
+        max_attempts = 2
+        try:
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    repo = git.Repo.clone_from(
+                        clone_url,
+                        dest,
+                        env=_env,
+                        **clone_kwargs,
                     )
-                    time.sleep(2)
-                    shutil.rmtree(dest, ignore_errors=True)
-                    os.makedirs(dest, exist_ok=True)
-                else:
-                    _cleanup_temp_dir(dest)
-                    raise RuntimeError(_clone_failure_message(repo_url, exc)) from exc
-    finally:
-        # The askpass script must outlive every retry attempt — deleting it
-        # after attempt 1 would make a retried private-repo clone fail auth.
-        if _askpass_script:
-            with contextlib.suppress(OSError):
-                os.unlink(_askpass_name)
+                    head_sha = repo.head.commit.hexsha
+                    repo.close()  # prevents resource leak on Windows
+                    break
+                except git.exc.GitCommandError as exc:
+                    if attempt < max_attempts and _is_transient_clone_failure(exc):
+                        logger.warning(
+                            "Clone attempt %d/%d failed — retrying",
+                            attempt,
+                            max_attempts,
+                            repo=repo_url,
+                            stderr=(exc.stderr or "")[:200],
+                        )
+                        time.sleep(2)
+                        shutil.rmtree(dest, ignore_errors=True)
+                        os.makedirs(dest, exist_ok=True)
+                    else:
+                        _cleanup_temp_dir(dest)
+                        raise RuntimeError(_clone_failure_message(repo_url, exc)) from exc
+        finally:
+            # The askpass script must outlive every retry attempt — deleting it
+            # after attempt 1 would make a retried private-repo clone fail auth.
+            if _askpass_script:
+                with contextlib.suppress(OSError):
+                    os.unlink(_askpass_name)
+
+        if head_sha:
+            store(repo_url, head_sha, dest)
 
     file_tree: list[str] = []
     file_contents: dict[str, str] = {}

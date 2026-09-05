@@ -162,6 +162,7 @@ export default function DashboardLayout({
         tabs={tabs}
         dispatch={dispatch}
         theme={theme}
+        ghToken={ghToken}
       />
 
       <main id="main-content" className="main">

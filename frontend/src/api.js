@@ -287,6 +287,20 @@ export function loadSharedAnalysis(sessionId) {
 }
 
 /**
+ * Exchanges a one-time GitHub OAuth handoff code (from the ?gh_handoff=
+ * redirect after /auth/github/login) for the actual access token. Returns
+ * { access_token, login }.
+ */
+export function exchangeGithubOAuthCode(code) {
+  return _post(
+    `${BASE}/auth/github/exchange`,
+    { code },
+    15_000,
+    "GitHub sign-in timed out — try again, or paste a token instead.",
+  );
+}
+
+/**
  * POST /chat/stream — streaming chat via SSE. Calls onToken(token) for each chunk.
  * Calls onSources(sources) when source metadata arrives.
  */

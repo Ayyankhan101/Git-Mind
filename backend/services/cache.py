@@ -20,12 +20,29 @@ _ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
 _MAX_RETRIES = 3
 _RETRY_DELAY = 1.0
 
+# Phase 0 (docs/PHASE-0-DISTRIBUTED-PRIMITIVES.md): opt-in hard requirement for
+# Redis. Off by default so existing single-process deployments (e.g. the HF
+# Spaces backend, which runs without Redis today) keep working unchanged.
+# Flip on once Redis is actually reachable in your environment — it makes the
+# rate limiter, session store, and this client fail fast instead of silently
+# degrading to per-process memory, which breaks the moment there's more than
+# one worker/replica.
+_REQUIRE_REDIS = os.getenv("REQUIRE_REDIS", "false").strip().lower() == "true"
+
+
+def redis_required() -> bool:
+    """Whether REQUIRE_REDIS is set — callers should fail closed instead of
+    falling back to per-process memory when Redis is unavailable."""
+    return _REQUIRE_REDIS
+
 
 async def init_redis() -> None:
     global _redis, _fallback
     url = os.getenv("REDIS_URL")
     if not url or aioredis is None:
         msg = "REDIS_URL not set or redis not installed"
+        if _REQUIRE_REDIS:
+            raise RuntimeError(msg + " — REQUIRE_REDIS=true, refusing to start in memory-fallback mode")
         if _ENVIRONMENT == "production":
             logger.warning(msg + " — production mode without Redis, using memory fallback")
         else:
@@ -58,6 +75,8 @@ async def init_redis() -> None:
                 await asyncio.sleep(_RETRY_DELAY * attempt)
 
     # All retries exhausted
+    if _REQUIRE_REDIS:
+        raise RuntimeError(f"Redis unreachable after {_MAX_RETRIES} retries — REQUIRE_REDIS=true, refusing to start")
     if _ENVIRONMENT == "production":
         logger.warning(
             "Redis unreachable after %d retries — production mode using memory fallback",

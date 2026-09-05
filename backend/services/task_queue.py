@@ -1,7 +1,11 @@
 """Background task queue — Redis List backend.
 
 Enqueue: LPUSH to 'queue:tasks'.
-Dequeue: BRPOP (blocking pop) from 'queue:tasks'.
+Dequeue: RPOP, polled on a short interval — not BRPOP. Upstash's serverless
+Redis (HTTP-backed, no long-lived blocking connections) rejects blocking
+commands outright regardless of ACL permissions, so BRPOP can never work
+there; polling is the portable choice that works on both Upstash and a
+real Redis server.
 State:   Redis hash 'task:{id}' with TTL.
 """
 
@@ -31,8 +35,18 @@ _MAX_RETRIES = 3
 _WORKER_COUNT = int(os.getenv("TASK_WORKERS", "3"))
 _QUEUE_KEY = "queue:tasks"
 _TASK_PREFIX = "task:"
+_POLL_INTERVAL = 0.5  # seconds between empty-queue RPOP retries
+_ERROR_RETRY_DELAY = 1.0  # seconds to back off after an RPOP error
 _worker_tasks: list[asyncio.Task] = []
 _prune_task: asyncio.Task | None = None
+_reap_task: asyncio.Task | None = None
+
+# The dequeue removes a task from the queue before it runs, so if the worker
+# process dies mid-task (OOM, deploy, crash) — as opposed to the task itself
+# raising, which _handle_task_failure already covers — nothing re-queues it;
+# it just sits at status "running" forever. _periodic_reap sweeps for that.
+_REAP_INTERVAL = 60
+_REAP_GRACE = 30  # on top of _TASK_TIMEOUT, for clock skew / scan latency
 
 tasks_submitted = Counter("tasks_submitted_total", "Background tasks submitted")
 tasks_completed = Counter("tasks_completed_total", "Background tasks completed", ["status"])
@@ -50,7 +64,7 @@ async def _persist_task(task: dict) -> None:
 
 
 async def _worker():
-    """Worker: BRPOP from queue, execute task, update state."""
+    """Worker: poll RPOP from queue, execute task, update state."""
     r = get_redis()
     if not r:
         logger.error("No Redis — worker cannot start")
@@ -58,15 +72,15 @@ async def _worker():
 
     while True:
         try:
-            result = await r.brpop(_QUEUE_KEY, timeout=5)
-            if result is None:
+            payload = await r.rpop(_QUEUE_KEY)
+            if payload is None:
+                await asyncio.sleep(_POLL_INTERVAL)
                 continue
-            _queue_key, payload = result
         except asyncio.CancelledError:
             raise
         except Exception as exc:
-            logger.warning("BRPOP failed", error=str(exc)[:100])
-            await asyncio.sleep(1)
+            logger.warning("RPOP failed", error=str(exc)[:100])
+            await asyncio.sleep(_ERROR_RETRY_DELAY)
             continue
 
         try:
@@ -83,6 +97,7 @@ async def _worker():
             continue
         task = orjson.loads(raw)
         task["status"] = "running"
+        task["running_since"] = time.time()
         await _persist_task(task)
 
         # Deserialize coroutine factory
@@ -174,15 +189,10 @@ _TASK_REGISTRY: dict[str, Callable[..., Awaitable[dict]]] = {
 }
 
 
-def register_task_type(name: str, factory):
-    """Register a task type. ``factory(args_dict)`` must return a coroutine."""
-    _TASK_REGISTRY[name] = factory
-
-
 async def submit(task_type: str, args: dict | None = None) -> str:
     """Submit a background task to Redis queue.
 
-    ``task_type`` must be registered via ``register_task_type``.
+    ``task_type`` must be a key in ``_TASK_REGISTRY``.
     ``args`` is a JSON-serializable dict passed to the factory.
     Returns task_id.
     """
@@ -247,15 +257,80 @@ async def _periodic_prune():
             logger.warning("Prune scan failed", error=str(exc)[:100])
 
 
+async def _reap_stale_task(task: dict, r) -> None:
+    """Requeue (or fail) a task whose worker crashed mid-run.
+
+    Mirrors _handle_task_failure's retry bookkeeping, minus the exponential
+    backoff sleep — the task has already been stuck far longer than any
+    backoff window, so there's nothing to gain by waiting further.
+    """
+    task_id = task["id"]
+    retries_left = task.get("retries", 0)
+    if retries_left > 0:
+        task["retries"] = retries_left - 1
+        task["status"] = "pending"
+        task.pop("running_since", None)
+        await _persist_task(task)
+        await r.lpush(
+            _QUEUE_KEY,
+            orjson.dumps(
+                {
+                    "task_id": task_id,
+                    "type": task.get("type"),
+                    "args": task.get("args", {}),
+                    "retries": retries_left - 1,
+                }
+            ).decode(),
+        )
+        logger.warning("Reaped orphaned task, requeued", task_id=task_id, retries_left=retries_left - 1)
+    else:
+        task["status"] = "failed"
+        task["error"] = "Worker crashed while running this task (reaped) — retries exhausted"
+        task["completed_at"] = time.time()
+        await _persist_task(task)
+        tasks_completed.labels(status="failed").inc()
+        logger.error("Reaped orphaned task, retries exhausted", task_id=task_id)
+
+
+async def _periodic_reap():
+    """Detect tasks stuck at status='running' — the worker that owned them
+    died before it could update their state — and requeue or fail them."""
+    while True:
+        await asyncio.sleep(_REAP_INTERVAL)
+        r = get_redis()
+        if not r:
+            continue
+        try:
+            cursor = 0
+            now = time.time()
+            while True:
+                cursor, keys = await r.scan(cursor, match=f"{_TASK_PREFIX}*", count=100)
+                for key in keys:
+                    raw = await r.get(key)
+                    if not raw:
+                        continue
+                    task = orjson.loads(raw)
+                    if task.get("status") != "running":
+                        continue
+                    running_since = task.get("running_since", 0)
+                    if now - running_since > _TASK_TIMEOUT + _REAP_GRACE:
+                        await _reap_stale_task(task, r)
+                if cursor == 0:
+                    break
+        except Exception as exc:
+            logger.warning("Reap scan failed", error=str(exc)[:100])
+
+
 async def start():
     """Start worker tasks."""
-    global _worker_tasks, _prune_task
+    global _worker_tasks, _prune_task, _reap_task
     r = get_redis()
     if not r:
         logger.error("No Redis — task queue not started")
         return
     _worker_tasks = [asyncio.create_task(_worker()) for _ in range(_WORKER_COUNT)]
     _prune_task = asyncio.create_task(_periodic_prune())
+    _reap_task = asyncio.create_task(_periodic_reap())
     logger.info("Background task workers started", count=_WORKER_COUNT)
 
 
@@ -265,7 +340,9 @@ async def stop():
         t.cancel()
     if _prune_task:
         _prune_task.cancel()
-    for t in _worker_tasks + [_prune_task]:
+    if _reap_task:
+        _reap_task.cancel()
+    for t in _worker_tasks + [_prune_task, _reap_task]:
         if t:
             with contextlib.suppress(asyncio.CancelledError):
                 await t

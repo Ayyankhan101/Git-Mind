@@ -11,7 +11,7 @@ from collections import OrderedDict
 
 import structlog
 
-from services.cache import get_redis
+from services.cache import get_redis, redis_required
 from state import initial_state  # noqa: F401 — re-export for backward compatibility
 
 logger = structlog.get_logger(__name__)
@@ -37,6 +37,10 @@ async def put_session(session_id: str, data: dict) -> None:
             return
         except Exception as exc:
             logger.warning("Redis session set failed", error=str(exc)[:80])
+            if redis_required():
+                raise RuntimeError("Redis session write failed — REQUIRE_REDIS=true, refusing memory fallback") from exc
+    elif redis_required():
+        raise RuntimeError("Redis unavailable — REQUIRE_REDIS=true, refusing memory fallback for session storage")
 
     # Dev fallback
     _sessions[session_id] = safe
@@ -63,6 +67,7 @@ def prune_expired_sessions() -> int:
 async def get_session(session_id: str) -> dict | None:
     """Load session from Redis (or memory in dev mode)."""
     r = get_redis()
+    redis_down = False
     if r:
         try:
             raw = await r.get(f"session:{session_id}")
@@ -70,19 +75,29 @@ async def get_session(session_id: str) -> dict | None:
                 return json.loads(raw)
         except Exception as exc:
             logger.warning("Redis session get failed, falling back to memory", error=str(exc)[:80])
+            redis_down = True
+    elif redis_required():
+        redis_down = True
 
-    # Dev fallback
-    session = _sessions.get(session_id)
-    if session:
-        ts = _session_timestamps.get(session_id, 0)
-        if time.time() - ts > _SESSION_TTL:
-            _sessions.pop(session_id, None)
-            _session_timestamps.pop(session_id, None)
-            logger.debug("Session expired (in-memory)", session_id=session_id)
-            return None
-        return session
+    # REQUIRE_REDIS=true + Redis down: skip the per-process memory fallback
+    # (other workers' memory is inaccessible, so checking our own would
+    # report a false "not found" rather than a real miss) but still try the
+    # DB fallback below — it's genuinely safe for already-persisted sessions.
+    fail_closed = redis_down and redis_required()
+
+    if not fail_closed:
+        session = _sessions.get(session_id)
+        if session:
+            ts = _session_timestamps.get(session_id, 0)
+            if time.time() - ts > _SESSION_TTL:
+                _sessions.pop(session_id, None)
+                _session_timestamps.pop(session_id, None)
+                logger.debug("Session expired (in-memory)", session_id=session_id)
+                return None
+            return session
 
     # DB fallback
+    restored = None
     try:
         from services.database import get_analysis_db
 
@@ -90,10 +105,12 @@ async def get_session(session_id: str) -> dict | None:
         if restored:
             await put_session(session_id, restored)
             logger.info("Session restored from database", session_id=session_id)
-        return restored
     except Exception as exc:
         logger.warning("DB session lookup failed", error=str(exc)[:120])
-        return None
+
+    if restored is None and fail_closed:
+        raise RuntimeError("Redis unavailable — REQUIRE_REDIS=true, refusing to report session as not-found")
+    return restored
 
 
 def _session_to_snapshot(

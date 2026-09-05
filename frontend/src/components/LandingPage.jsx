@@ -14,10 +14,12 @@ import {
   BarChart3,
   ShieldCheck,
   ShieldAlert,
+  Github,
 } from "../icons";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import { BASE } from "../api";
 import "./LandingPage.css";
 
 // HealthCard pulls three.js via HealthGauge3D — keep it out of the
@@ -338,6 +340,10 @@ function HeroForm({ onLoad, onAnalyzeUrl, inputRef }) {
          Collapsed by default so the hero stays clean; submits alongside
          the username/URL above. */}
       <div className="lp-token-row">
+        <a className="lp-token-toggle" href={`${BASE}/auth/github/login`}>
+          <Github size={12} />
+          Sign in with GitHub
+        </a>
         <button
           type="button"
           className={`lp-token-toggle${tokenOpen ? " open" : ""}`}
@@ -346,7 +352,7 @@ function HeroForm({ onLoad, onAnalyzeUrl, inputRef }) {
           aria-controls="lp-token-field"
         >
           <Lock size={12} />
-          {tokenOpen ? "Hide token" : "Use GitHub token"}
+          {tokenOpen ? "Hide token" : "Or paste a token"}
         </button>
         {tokenOpen && (
           <div className="lp-token-field" id="lp-token-field">

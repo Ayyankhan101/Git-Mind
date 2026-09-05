@@ -150,6 +150,7 @@ Set these in **Settings → Variables and secrets**:
 | ----------------------------- | ---------------------------------- | ----------------------------------------------------------------------------- |
 | `GITHUB_TOKEN`                | —                                  | GitHub PAT — raises API rate limits for repo cloning (60 → 5 000 req/hr)      |
 | `DATABASE_URL`                | `sqlite+aiosqlite:////tmp/gitmind.db` | Production: `postgresql+asyncpg://user:pass@host:5432/gitmind`            |
+| `DATABASE_READ_REPLICA_URL`   | —                                  | Optional read replica for the 4 read-only queries; writes always use `DATABASE_URL` |
 | `REDIS_URL`                   | —                                  | Redis connection — enables persistent rate-limiter, session cache, task queue |
 | `SENTRY_DSN`                  | —                                  | Sentry DSN for error tracking                                                 |
 | `ENVIRONMENT`                 | —                                  | Environment tag for Sentry (`production`, `staging`)                          |
@@ -158,6 +159,10 @@ Set these in **Settings → Variables and secrets**:
 | `GITHUB_APP_PRIVATE_KEY`      | —                                  | GitHub App private key (webhook flows)                                        |
 | `GITHUB_APP_INSTALLATION_ID`  | —                                  | GitHub App installation ID (webhook flows)                                    |
 | `GITHUB_APP_WEBHOOK_SECRET`   | —                                  | GitHub App webhook HMAC secret                                                |
+| `GITHUB_OAUTH_CLIENT_ID`      | —                                  | GitHub OAuth App client ID ("Sign in with GitHub" — distinct from the GitHub App above) |
+| `GITHUB_OAUTH_CLIENT_SECRET`  | —                                  | GitHub OAuth App client secret                                                |
+| `OAUTH_REDIRECT_BASE_URL`     | `https://ak001z-gitmind-backend.hf.space` | Backend's own public URL, used to build the redirect_uri sent to GitHub |
+| `OAUTH_FRONTEND_URL`          | `https://gitmind-frontend.pages.dev` | Frontend origin the browser lands back on after sign-in                    |
 | `GROQ_DAILY_REMAINING`        | —                                  | Remaining daily Groq token window for the MIPROv2 budget guard (`optimization.run` aborts before a compile exceeds it; unset/0 disables the guard) |
 | `WS_AUTH_SECRET`              | —                                  | WebSocket auth — when set, clients must send matching `ws_auth_secret` + `ws_auth_ts` |
 | `SIDECAR_URL`                 | `http://127.0.0.1:8003`            | Solidity parser sidecar endpoint                                              |
@@ -166,7 +171,9 @@ Set these in **Settings → Variables and secrets**:
 | `REPORTER_INTERVAL_SEC`       | `45`                               | Crisis Mode reporter check interval                                           |
 | `MAX_REQUEST_BODY_BYTES`      | `5242880` (5 MB)                   | Max request body size                                                         |
 | `RERANKER_MODEL`              | `cross-encoder/ms-marco-MiniLM-L-6-v2` | Cross-encoder reranker model                                             |
-| `LLM_MODEL`                   | `llama-3.3-70b-versatile`          | Override Groq model for all agents                                            |
+| `LLM_MODEL`                   | `qwen/qwen3.6-27b`                 | Override Groq model for all agents                                            |
+| `LLM_MODEL_FALLBACK`          | `llama-3.1-8b-instant`             | Same-provider fallback model — tried automatically if LLM_MODEL fails         |
+| `LLM_MODEL_CHEAP`             | `llama-3.1-8b-instant`             | Cheap tier — API doc extraction + lint triage only; everything else stays on LLM_MODEL |
 | `SMTP_HOST` / `SMTP_PORT`     | `587`                              | SMTP server for monitoring email alerts                                       |
 | `SMTP_USER` / `SMTP_PASSWORD` | —                                  | SMTP credentials                                                              |
 | `SMTP_FROM`                   | —                                  | SMTP sender address                                                           |

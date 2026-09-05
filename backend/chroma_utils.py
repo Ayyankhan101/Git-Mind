@@ -429,6 +429,17 @@ def search_codebase(
     return results[:n_results]
 
 
+def collection_exists(name: str) -> bool:
+    """Whether a collection is still present in the store — cheap existence
+    check for callers that just need to know if it survived (e.g. after a
+    server restart), without paying for a full search."""
+    try:
+        _client.get_collection(name)
+        return True
+    except Exception:
+        return False
+
+
 def delete_collection(name: str) -> None:
     """Remove a collection from memory and ChromaDB storage."""
     with _lock:
