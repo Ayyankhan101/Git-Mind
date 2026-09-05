@@ -76,9 +76,7 @@ async def init_redis() -> None:
 
     # All retries exhausted
     if _REQUIRE_REDIS:
-        raise RuntimeError(
-            f"Redis unreachable after {_MAX_RETRIES} retries — REQUIRE_REDIS=true, refusing to start"
-        )
+        raise RuntimeError(f"Redis unreachable after {_MAX_RETRIES} retries — REQUIRE_REDIS=true, refusing to start")
     if _ENVIRONMENT == "production":
         logger.warning(
             "Redis unreachable after %d retries — production mode using memory fallback",

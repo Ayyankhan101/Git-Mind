@@ -38,6 +38,7 @@ def _analyze_lock_key(repo_url: str, sha: str) -> str:
     digest = hashlib.sha256(f"{repo_url}@{sha}".encode()).hexdigest()[:16]
     return f"lock:analyze:{digest}"
 
+
 _STATUS_MAP: dict[str, dict[str, str]] = {
     "scanner": {
         "scanner": "done",
