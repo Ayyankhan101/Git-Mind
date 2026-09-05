@@ -20,6 +20,7 @@ export default class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
+      if (this.props.fallback !== undefined) return this.props.fallback;
       return (
         <div className="empty" style={{ padding: "48px 32px" }}>
           <AlertTriangle

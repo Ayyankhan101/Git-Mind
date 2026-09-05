@@ -20,6 +20,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { BASE } from "../api";
+import ErrorBoundary from "./ErrorBoundary";
 import "./LandingPage.css";
 
 // HealthCard pulls three.js via HealthGauge3D — keep it out of the
@@ -568,26 +569,36 @@ export default function LandingPage({ onLoad, onAnalyzeUrl }) {
 
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="lp-hero" ref={heroRef}>
-        <Suspense fallback={null}>
-          <SceneManager
-            style={{
-              position: "absolute",
-              inset: 0,
-              zIndex: 0,
-              pointerEvents: "none",
-            }}
-          >
-            {({ sceneRef, subscribe, prefersReduced }) => (
-              <Suspense fallback={null}>
-                <LandingScene
-                  sceneRef={sceneRef}
-                  subscribe={subscribe}
-                  prefersReduced={prefersReduced}
-                />
-              </Suspense>
-            )}
-          </SceneManager>
-        </Suspense>
+        {/* WebGL context creation can fail (hardware accel disabled,
+            restrictive sandboxes, some corporate/privacy policies) — without
+            this boundary that throw propagates uncaught through React's
+            render pass and unmounts the ENTIRE landing page (nav, headline,
+            CTA, everything), not just this decorative background. The
+            dashboard route's equivalent scene already has this; this one
+            didn't. `fallback={null}` since a missing decorative background
+            should be invisible, not an error card floating in the hero. */}
+        <ErrorBoundary fallback={null}>
+          <Suspense fallback={null}>
+            <SceneManager
+              style={{
+                position: "absolute",
+                inset: 0,
+                zIndex: 0,
+                pointerEvents: "none",
+              }}
+            >
+              {({ sceneRef, subscribe, prefersReduced }) => (
+                <Suspense fallback={null}>
+                  <LandingScene
+                    sceneRef={sceneRef}
+                    subscribe={subscribe}
+                    prefersReduced={prefersReduced}
+                  />
+                </Suspense>
+              )}
+            </SceneManager>
+          </Suspense>
+        </ErrorBoundary>
         <div
           className="lp-hero-inner"
           style={{ position: "relative", zIndex: 1 }}
