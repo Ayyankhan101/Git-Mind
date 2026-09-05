@@ -53,7 +53,7 @@ The current architecture is a single-process monolith with in-memory singletons 
 
 | #   | Blocker                  | Current (gate off)                                            | Fix (gate on)                       | Status                                            |
 | --- | ------------------------ | --------------------------------------------------------------- | ------------------------------------- | -------------------------------------------------- |
-| 1   | **Task Queue**           | —                                                                | Redis List (`LPUSH`/`BRPOP`)          | Done — no gate, always Redis-backed               |
+| 1   | **Task Queue**           | —                                                                | Redis List (`LPUSH`/polled `RPOP`)    | Done — no gate, always Redis-backed               |
 | 2   | **Vector DB (ChromaDB)** | `PersistentClient` — file-locked, crashes with >1 worker         | Qdrant sidecar (HTTP API)             | Done — gated on `QDRANT_URL`                      |
 | 3   | **LLM Cache**            | —                                                                | Redis primary + diskcache fallback    | Done — no gate, Redis tried first unconditionally |
 | 4   | **Rate Limiter**         | In-memory `defaultdict` per-process                              | Redis-only (deny-all if Redis down)   | Done — gated on `REQUIRE_REDIS=true`              |
@@ -83,6 +83,14 @@ today's default behavior working":
 - **`docker-compose.yml`'s `qdrant` service has no `ports:` mapping** — it
   only needs to be reachable from the `app` service over the compose
   network, not from the host.
+- **`_worker()` polls `RPOP` instead of blocking on `BRPOP`.** Upstash's
+  serverless Redis (HTTP-backed, no long-lived blocking connections) rejects
+  blocking commands outright — `this user has no permissions to run the
+  'brpop' command`, regardless of ACL settings — so `BRPOP` can never work
+  there. Polling `RPOP` every `_POLL_INTERVAL` (0.5s) works identically on
+  Upstash and on a real Redis server, at the cost of up to ~0.5s added
+  pickup latency, which doesn't matter for this queue's background jobs
+  (org-audits, PR-impact scans).
 - **`get_session()` keeps its DB fallback even under `REQUIRE_REDIS=true`**,
   rather than raising immediately like `put_session()` does. Redis being down
   doesn't invalidate an already-persisted analysis sitting in Postgres, so it

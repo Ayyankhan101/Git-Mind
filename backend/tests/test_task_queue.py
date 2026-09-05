@@ -37,6 +37,12 @@ class FakeRedis:
             bucket.insert(0, v)
         return len(bucket)
 
+    async def rpop(self, key):
+        bucket = self.lists.get(key)
+        if not bucket:
+            return None
+        return bucket.pop()
+
     async def scan(self, _cursor, match=None, count=100):
         keys = [k for k in self.kv if not match or fnmatch.fnmatch(k, match)]
         return 0, keys
@@ -65,6 +71,66 @@ async def _seed_task(fake_redis, task_id, status, running_since=None, retries=3)
         task["running_since"] = running_since
     await fake_redis.set(f"{tq._TASK_PREFIX}{task_id}", orjson.dumps(task, default=str).decode())
     return task
+
+
+class TestWorker:
+    """Dequeue polls RPOP instead of blocking on BRPOP — Upstash's serverless
+    Redis rejects blocking commands outright regardless of ACL permissions,
+    so polling is what actually works there (and on a real Redis server)."""
+
+    async def test_dequeues_and_executes_queued_task(self, fake_redis, monkeypatch):
+        monkeypatch.setattr(tq, "_POLL_INTERVAL", 0.01)
+        await _seed_task(fake_redis, "poll1", "pending")
+        await fake_redis.lpush(tq._QUEUE_KEY, orjson.dumps({"task_id": "poll1", "retries": 3}).decode())
+
+        ran = asyncio.Event()
+
+        async def _factory(_args):
+            ran.set()
+            return {"ok": True}
+
+        monkeypatch.setitem(tq._TASK_REGISTRY, "run_analysis", _factory)
+
+        worker = asyncio.create_task(tq._worker())
+        await asyncio.wait_for(ran.wait(), timeout=2)
+        worker.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await worker
+
+        stored = orjson.loads(await fake_redis.get(f"{tq._TASK_PREFIX}poll1"))
+        assert stored["status"] == "completed"
+
+    async def test_empty_queue_polls_without_raising(self, fake_redis, monkeypatch):
+        monkeypatch.setattr(tq, "_POLL_INTERVAL", 0.01)
+        worker = asyncio.create_task(tq._worker())
+        await asyncio.sleep(0.05)
+        assert not worker.done()
+        worker.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await worker
+
+    async def test_survives_rpop_errors_and_keeps_polling(self, fake_redis, monkeypatch):
+        monkeypatch.setattr(tq, "_POLL_INTERVAL", 0.01)
+        monkeypatch.setattr(tq, "_ERROR_RETRY_DELAY", 0.01)
+
+        calls = {"n": 0}
+        real_rpop = fake_redis.rpop
+
+        async def _flaky_rpop(key):
+            calls["n"] += 1
+            if calls["n"] <= 2:
+                raise ConnectionError("this user has no permissions to run the 'brpop' command")
+            return await real_rpop(key)
+
+        monkeypatch.setattr(fake_redis, "rpop", _flaky_rpop)
+
+        worker = asyncio.create_task(tq._worker())
+        await asyncio.sleep(0.05)
+        assert not worker.done(), "a transient RPOP error must not crash the worker loop"
+        assert calls["n"] >= 2
+        worker.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await worker
 
 
 class TestReapStaleTask:

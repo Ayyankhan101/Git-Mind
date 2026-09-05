@@ -1,7 +1,11 @@
 """Background task queue — Redis List backend.
 
 Enqueue: LPUSH to 'queue:tasks'.
-Dequeue: BRPOP (blocking pop) from 'queue:tasks'.
+Dequeue: RPOP, polled on a short interval — not BRPOP. Upstash's serverless
+Redis (HTTP-backed, no long-lived blocking connections) rejects blocking
+commands outright regardless of ACL permissions, so BRPOP can never work
+there; polling is the portable choice that works on both Upstash and a
+real Redis server.
 State:   Redis hash 'task:{id}' with TTL.
 """
 
@@ -31,11 +35,13 @@ _MAX_RETRIES = 3
 _WORKER_COUNT = int(os.getenv("TASK_WORKERS", "3"))
 _QUEUE_KEY = "queue:tasks"
 _TASK_PREFIX = "task:"
+_POLL_INTERVAL = 0.5  # seconds between empty-queue RPOP retries
+_ERROR_RETRY_DELAY = 1.0  # seconds to back off after an RPOP error
 _worker_tasks: list[asyncio.Task] = []
 _prune_task: asyncio.Task | None = None
 _reap_task: asyncio.Task | None = None
 
-# BRPOP removes a task from the queue before it runs, so if the worker
+# The dequeue removes a task from the queue before it runs, so if the worker
 # process dies mid-task (OOM, deploy, crash) — as opposed to the task itself
 # raising, which _handle_task_failure already covers — nothing re-queues it;
 # it just sits at status "running" forever. _periodic_reap sweeps for that.
@@ -58,7 +64,7 @@ async def _persist_task(task: dict) -> None:
 
 
 async def _worker():
-    """Worker: BRPOP from queue, execute task, update state."""
+    """Worker: poll RPOP from queue, execute task, update state."""
     r = get_redis()
     if not r:
         logger.error("No Redis — worker cannot start")
@@ -66,15 +72,15 @@ async def _worker():
 
     while True:
         try:
-            result = await r.brpop(_QUEUE_KEY, timeout=5)
-            if result is None:
+            payload = await r.rpop(_QUEUE_KEY)
+            if payload is None:
+                await asyncio.sleep(_POLL_INTERVAL)
                 continue
-            _queue_key, payload = result
         except asyncio.CancelledError:
             raise
         except Exception as exc:
-            logger.warning("BRPOP failed", error=str(exc)[:100])
-            await asyncio.sleep(1)
+            logger.warning("RPOP failed", error=str(exc)[:100])
+            await asyncio.sleep(_ERROR_RETRY_DELAY)
             continue
 
         try:
