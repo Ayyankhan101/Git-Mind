@@ -94,6 +94,35 @@ class TestAuthMiddleware:
         assert resp.status_code == 200
         del os.environ["GITMIND_SERVICE_KEY"]
 
+    def test_wrong_service_key_returns_401(self):
+        """Any non-empty X-Service-Key used to pass the gate unchecked.
+
+        Regression for a real auth bypass: the middleware and
+        require_gh_token_or_service_key() never compared the header against
+        GITMIND_SERVICE_KEY, so any string in X-Service-Key defeated the
+        default-deny gate on every route relying on it.
+        """
+        os.environ["GITMIND_SERVICE_KEY"] = "the-real-secret"
+        try:
+            _app = FastAPI()
+            _app.add_middleware(AuthMiddleware)
+
+            @_app.get("/protected")
+            async def protected():
+                return {"ok": True}
+
+            client = TestClient(_app)
+            resp = client.get("/protected", headers={"X-Service-Key": "not-the-real-secret"})
+            assert resp.status_code == 401
+        finally:
+            del os.environ["GITMIND_SERVICE_KEY"]
+
+    def test_service_key_header_without_configured_secret_returns_401(self, client):
+        """No GITMIND_SERVICE_KEY configured → no header value should validate."""
+        os.environ.pop("GITMIND_SERVICE_KEY", None)
+        resp = client.get("/protected", headers={"X-Service-Key": "anything"})
+        assert resp.status_code == 401
+
     def test_any_bearer_token_passes_middleware(self, client):
         """Middleware accepts any Bearer token (format validated at route level)."""
         resp = client.get("/protected", headers={"Authorization": "Bearer any-token"})

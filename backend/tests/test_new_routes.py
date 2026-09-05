@@ -82,6 +82,21 @@ class TestMonitorEndpoint:
         assert response.status_code == 400
         assert "error" in response.json()
 
+    def test_monitor_subscribe_rejects_non_slack_webhook(self):
+        """Regression: slack_webhook_url had no host allowlist, unlike
+        /webhook/notify — a blind SSRF vector (internal services, cloud
+        metadata endpoints) via the monitoring alert delivery path."""
+        response = client.post(
+            "/monitor/subscribe",
+            json={
+                "repo_url": "https://github.com/vercel/next.js",
+                "slack_webhook_url": "http://169.254.169.254/latest/meta-data/",
+            },
+            headers=AUTH_HEADERS,
+        )
+        assert response.status_code == 400
+        assert "error" in response.json()
+
     def test_monitor_subscribe_missing_fields(self):
         response = client.post("/monitor/subscribe", json={}, headers=AUTH_HEADERS)
         assert response.status_code == 422

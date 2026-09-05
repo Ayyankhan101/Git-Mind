@@ -16,3 +16,12 @@ Key routing rules:
 - Save progress → invoke /context-save
 - Resume context → invoke /context-restore
 - Author a backlog-ready spec/issue → invoke /spec
+
+## Health Stack
+
+- typecheck: mypy backend (needs a Python 3.11 venv — local interpreter is 3.13, mypy's numpy stubs need 3.11)
+- lint: ruff check . (backend/)
+- test: pytest (backend/), react-scripts test --coverage --watchAll=false (frontend/)
+- deadcode: skipped — knip not installed
+- shell: shellcheck gitmind.sh start.sh stop.sh scripts/*.sh
+- gbrain: skipped — not installed
