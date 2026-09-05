@@ -820,14 +820,17 @@ export default function App() {
           }}
         />
       ) : (
-        <ErrorBoundary>
-          <Suspense
-            fallback={
-              <div className="app-loading">
-                <span className="spinner" />
-              </div>
-            }
-          >
+        <>
+          {/* Scoped separately from DashboardLayout below: a WebGL failure
+              in this decorative background must not take the functional
+              dashboard (tabs, results, nav) down with it. Previously both
+              lived under one ErrorBoundary, so any WebGL context-creation
+              failure (hardware accel disabled, some sandboxes/corporate
+              policies) unmounted the entire dashboard — nav, tabs,
+              everything — the instant a user landed here, not just the
+              background. fallback={null}: a missing decorative canvas
+              should be invisible, same reasoning as the landing page. */}
+          <ErrorBoundary fallback={null}>
             <Suspense fallback={null}>
               <SceneManager
                 style={{ position: "absolute", inset: 0, zIndex: 0 }}
@@ -843,35 +846,45 @@ export default function App() {
                 )}
               </SceneManager>
             </Suspense>
-            {/* Layer order: canvas (z0, above) → vignette (z0, later DOM)
-                → content wrapper (z1). The vignette must sit between them:
-                the wrapper is a stacking context, so anything rendered
-                after it paints over the entire dashboard UI. */}
-            <PostProcessing enabled={!isLanding} />
-            <div
-              style={{
-                position: "relative",
-                zIndex: 1,
-                // The .app grid defines 4 cells for the dashboard shell,
-                // NavRail lives inside DashboardLayout —
-                // this single wrapper must span the entire grid.
-                gridColumn: "1 / -1",
-                gridRow: "1 / -1",
-                minHeight: 0,
-              }}
-            >
-              <DashboardLayout
-                state={state}
-                dispatch={dispatch}
-                sessionId={SESSION_ID}
-                handleLoadRepos={handleLoadRepos}
-                handleSelectRepo={handleSelectRepo}
-                handleAnalyze={handleAnalyze}
-                handleFix={handleFix}
-              />
-            </div>
-          </Suspense>
-        </ErrorBoundary>
+          </ErrorBoundary>
+          {/* Layer order: canvas (z0, above) → vignette (z0, later DOM)
+              → content wrapper (z1). The vignette must sit between them:
+              the wrapper is a stacking context, so anything rendered
+              after it paints over the entire dashboard UI. */}
+          <PostProcessing enabled={!isLanding} />
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+              // The .app grid defines 4 cells for the dashboard shell,
+              // NavRail lives inside DashboardLayout —
+              // this single wrapper must span the entire grid.
+              gridColumn: "1 / -1",
+              gridRow: "1 / -1",
+              minHeight: 0,
+            }}
+          >
+            <ErrorBoundary>
+              <Suspense
+                fallback={
+                  <div className="app-loading">
+                    <span className="spinner" />
+                  </div>
+                }
+              >
+                <DashboardLayout
+                  state={state}
+                  dispatch={dispatch}
+                  sessionId={SESSION_ID}
+                  handleLoadRepos={handleLoadRepos}
+                  handleSelectRepo={handleSelectRepo}
+                  handleAnalyze={handleAnalyze}
+                  handleFix={handleFix}
+                />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        </>
       )}
 
       {/* ── Global overlays (shared across routes) ─────────────── */}
