@@ -20,7 +20,7 @@ Key routing rules:
 ## Health Stack
 
 - typecheck: mypy backend (needs a Python 3.11 venv — local interpreter is 3.13, mypy's numpy stubs need 3.11)
-- lint: ruff check . (backend/)
+- lint: ruff check . && ruff format --check . && mypy . --ignore-missing-imports (backend/); npx prettier --check "src/**/*.{js,jsx,ts,tsx,css,json}" (frontend/) — CI's `lint` job runs both; forgetting the frontend prettier check has broken CI at least once
 - test: pytest (backend/), react-scripts test --coverage --watchAll=false (frontend/)
 - deadcode: skipped — knip not installed
 - shell: shellcheck gitmind.sh start.sh stop.sh scripts/*.sh
