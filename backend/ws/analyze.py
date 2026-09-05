@@ -273,11 +273,15 @@ async def handle_analyze(ws: WebSocket) -> None:
         async for chunk in astream:
             if time.time() > _stream_deadline:
                 logger.warning("Analysis stream timed out", session=session_id)
-                await ws.send_json({"error": "Analysis timed out after 10 minutes"})
-                break
+                with contextlib.suppress(Exception):
+                    await ws.send_json({"error": "Analysis timed out after 10 minutes"})
+                    await ws.close()
+                return
             if _dead.is_set():
                 logger.info("Heartbeat failed, closing connection", session=session_id)
-                break
+                with contextlib.suppress(Exception):
+                    await ws.close()
+                return
             for node, update in chunk.items():
                 has_error = any(ev.get("status") == "error" for ev in update.get("events", []))
                 raw_statuses = _STATUS_MAP.get(node, {})
@@ -318,8 +322,9 @@ async def handle_analyze(ws: WebSocket) -> None:
         return
     except Exception as exc:
         logger.error("Analysis pipeline error", session=session_id, error=str(exc))
-        await ws.send_json({"error": "Analysis failed — check server logs for details."})
-        await ws.close()
+        with contextlib.suppress(Exception):
+            await ws.send_json({"error": "Analysis failed — check server logs for details."})
+            await ws.close()
         return
     else:
         local_path_for_blame = final_state.get("local_path")
@@ -344,7 +349,8 @@ async def handle_analyze(ws: WebSocket) -> None:
             code_audit=final_state.get("code_audit"),
         )
         final_state["health"] = health_score
-        await ws.send_json({"health": health_score})
+        with contextlib.suppress(Exception):
+            await ws.send_json({"health": health_score})
         logger.info(
             "Health score",
             session=session_id,
@@ -385,5 +391,6 @@ async def handle_analyze(ws: WebSocket) -> None:
     )
 
     await persist_analysis(session_id, final_state, repo_url, sha, owner_hash)
-    await ws.send_json({"done": True, "session_id": session_id})
+    with contextlib.suppress(Exception):
+        await ws.send_json({"done": True, "session_id": session_id})
     logger.info("Analysis complete", session=session_id, repo=final_state["repo_name"])

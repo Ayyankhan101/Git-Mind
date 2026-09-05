@@ -111,6 +111,56 @@ class TestWsAnalyze:
             assert "error" in data2
 
 
+class TestWsAnalyzeAbortPaths:
+    """A stream timeout used to `break` out of the astream loop, which —
+    since break isn't an exception — still fell into the try/else clause:
+    computing and sending a health score (and, further down, persisting +
+    sending "done") on a connection already known to be gone. That raised
+    RuntimeError: Cannot call "send" once a close message has been sent,
+    uncaught, deep in an aborted analysis. The abort path must return
+    before reaching any of that follow-up work (the dead-heartbeat path
+    shares the identical fix but isn't covered here — it needs a genuinely
+    severed connection to trigger, which this in-process test client can't
+    simulate)."""
+
+    @patch("ws.analyze.check_rate_limit", return_value=(True, 30, 0))
+    @patch("ws.analyze.get_remote_sha", return_value=None)
+    @patch("ws.analyze.graph")
+    @patch.dict(os.environ, {"ENVIRONMENT": "test"})
+    def test_stream_timeout_does_not_send_health_or_done(self, mock_graph, _mock_sha, _mock_rate, monkeypatch):
+        async def _slow_stream(*args, **kwargs):
+            yield {"scanner": {"events": []}}
+            # Never reached if the timeout check returns early, as it must.
+            yield {"architecture": {"events": []}}
+
+        mock_graph.astream = _slow_stream
+
+        # ws.analyze does `import time` (the real shared module, not a local
+        # `from time import time` binding) — patching ws_analyze.time.time
+        # directly would patch time.time() for the whole process, including
+        # structlog's own log timestamps. Swap the module *reference* instead,
+        # scoped to this module only. First call computes the deadline; every
+        # call after that reports it already exceeded, however many there are.
+        class _FakeTime:
+            def __init__(self):
+                self.calls = 0
+
+            def time(self):
+                self.calls += 1
+                return 0 if self.calls == 1 else 1_000_000
+
+        monkeypatch.setattr(ws_analyze, "time", _FakeTime())
+
+        with client.websocket_connect("/ws/analyze") as ws:
+            ws.send_json({"repo_url": "https://github.com/user/repo", "gh_token": "ghp_test"})
+            data = ws.receive_json()
+            assert data == {"agent_status": {"scanner": "running"}}
+            data2 = ws.receive_json()
+            assert "timed out" in data2.get("error", "").lower()
+            with pytest.raises(Exception):
+                ws.receive_json()  # connection closed — no health/done ever sent
+
+
 def test_analyze_lock_key_is_deterministic_and_distinct():
     a = ws_analyze._analyze_lock_key("https://github.com/user/repo", "sha1")
     b = ws_analyze._analyze_lock_key("https://github.com/user/repo", "sha1")
