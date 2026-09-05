@@ -6,7 +6,7 @@ import structlog
 from fastapi import APIRouter, Request
 
 from routes._errors import error_response
-from services.auth import get_github_credential
+from services.auth import get_gh_token, get_github_credential
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
 
@@ -55,6 +55,11 @@ async def list_repos(username: str, request: Request):
     if resp.is_error:
         return error_response(f"GitHub API error {resp.status_code}", 502)
 
+    # Private repos may only be shown when the CALLER supplied their own
+    # token — get_github_credential() falls back to the server's own
+    # GITHUB_TOKEN for anonymous rate-limit relief, which would otherwise
+    # leak the operator's private repos to anyone who requests their username.
+    caller_token = get_gh_token(request)
     repos = [
         {
             "name": r["name"],
@@ -69,7 +74,7 @@ async def list_repos(username: str, request: Request):
             "updated_at": r["updated_at"],
         }
         for r in resp.json()
-        if token or not r["private"]
+        if caller_token or not r["private"]
     ]
     logger.info("Listed repos", count=len(repos), user=username, auth=bool(token))
     return {"repos": repos, "username": username}

@@ -126,6 +126,71 @@ class TestRepos:
         resp = client.get("/repos/test-user")
         assert resp.status_code == 200
 
+    @patch("httpx.AsyncClient.get", new_callable=AsyncMock)
+    def test_anonymous_caller_does_not_see_private_repos(self, mock_get, client, monkeypatch):
+        """Regression: get_github_credential() falls back to the server's own
+        GITHUB_TOKEN for rate-limit relief. The private-repo filter used to key
+        off that fallback too, so an anonymous caller who requested the
+        operator's own username saw the operator's private repos."""
+        monkeypatch.setenv("GITHUB_TOKEN", "ghp_server_pat_placeholder")
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.is_error = False
+        mock_resp.json.return_value = [
+            {
+                "name": "public-repo",
+                "full_name": "operator/public-repo",
+                "description": "",
+                "language": "Python",
+                "stargazers_count": 1,
+                "html_url": "https://github.com/operator/public-repo",
+                "fork": False,
+                "private": False,
+                "updated_at": "2026-01-01T00:00:00Z",
+            },
+            {
+                "name": "secret-repo",
+                "full_name": "operator/secret-repo",
+                "description": "",
+                "language": "Python",
+                "stargazers_count": 0,
+                "html_url": "https://github.com/operator/secret-repo",
+                "fork": False,
+                "private": True,
+                "updated_at": "2026-01-01T00:00:00Z",
+            },
+        ]
+        mock_get.return_value = mock_resp
+
+        resp = client.get("/repos/operator")  # no Authorization header at all
+        assert resp.status_code == 200
+        names = [r["name"] for r in resp.json()["repos"]]
+        assert names == ["public-repo"]
+
+    @patch("httpx.AsyncClient.get", new_callable=AsyncMock)
+    def test_caller_with_own_token_sees_private_repos(self, mock_get, client):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.is_error = False
+        mock_resp.json.return_value = [
+            {
+                "name": "secret-repo",
+                "full_name": "me/secret-repo",
+                "description": "",
+                "language": "Python",
+                "stargazers_count": 0,
+                "html_url": "https://github.com/me/secret-repo",
+                "fork": False,
+                "private": True,
+                "updated_at": "2026-01-01T00:00:00Z",
+            },
+        ]
+        mock_get.return_value = mock_resp
+
+        resp = client.get("/repos/me", headers=_AUTH)
+        assert resp.status_code == 200
+        assert [r["name"] for r in resp.json()["repos"]] == ["secret-repo"]
+
 
 class TestPRList:
     @patch("httpx.AsyncClient.get", new_callable=AsyncMock)

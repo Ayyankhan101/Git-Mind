@@ -120,3 +120,41 @@ def test_protected_route_accepts_caller_token(client):
 
 def test_public_route_still_open(client):
     assert client.get("/health").status_code == 200
+
+
+# ── WS ticket — replaces a static secret hardcoded in the frontend bundle ───
+
+
+def test_mint_ws_ticket_returns_none_without_secret(monkeypatch):
+    monkeypatch.delenv("WS_AUTH_SECRET", raising=False)
+    assert auth.mint_ws_ticket() is None
+
+
+def test_mint_and_verify_ws_ticket_round_trips(monkeypatch):
+    monkeypatch.setenv("WS_AUTH_SECRET", "ws-secret-placeholder")
+    ticket = auth.mint_ws_ticket()
+    assert ticket is not None
+    assert auth.verify_ws_ticket(ticket) is True
+
+
+def test_verify_ws_ticket_rejects_wrong_secret(monkeypatch):
+    monkeypatch.setenv("WS_AUTH_SECRET", "ws-secret-placeholder")
+    ticket = auth.mint_ws_ticket()
+    monkeypatch.setenv("WS_AUTH_SECRET", "a-different-secret")
+    assert auth.verify_ws_ticket(ticket) is False
+
+
+def test_verify_ws_ticket_rejects_expired_ticket(monkeypatch):
+    import hashlib
+    import hmac as hmac_mod
+
+    monkeypatch.setenv("WS_AUTH_SECRET", "ws-secret-placeholder")
+    stale_ts = str(int(auth.time.time()) - 301)
+    stale_sig = hmac_mod.new(b"ws-secret-placeholder", stale_ts.encode(), hashlib.sha256).hexdigest()
+    assert auth.verify_ws_ticket(f"{stale_ts}.{stale_sig}") is False
+
+
+def test_verify_ws_ticket_rejects_malformed_ticket(monkeypatch):
+    monkeypatch.setenv("WS_AUTH_SECRET", "ws-secret-placeholder")
+    assert auth.verify_ws_ticket("") is False
+    assert auth.verify_ws_ticket("not-a-valid-ticket") is False

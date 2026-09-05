@@ -11,7 +11,7 @@ from agents.health import compute_health
 from models.requests import AnalyzeRequest
 from orchestrator import graph
 from routes._errors import error_response, is_valid_gh_url
-from services.auth import get_service_key, hash_token
+from services.auth import get_service_key, hash_token, mint_ws_ticket
 from services.rate_limit_response import rate_limit_response
 from services.rate_limiter import check_rate_limit, get_client_ip
 from services.session import initial_state, persist_analysis, put_session
@@ -19,6 +19,16 @@ from services.sha_cache import find_cached_snapshot, get_remote_sha
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
+
+
+@router.get("/ws-ticket")
+async def get_ws_ticket():
+    """Mint a short-lived signed ticket for the /ws/analyze handshake.
+
+    Public — it isn't a credential, just a 5-minute anti-abuse token, so the
+    frontend never needs to bundle the real WS_AUTH_SECRET.
+    """
+    return {"ticket": mint_ws_ticket()}
 
 
 async def _run_analysis(repo_url: str, gh_token: str | None, session_id: str) -> dict:

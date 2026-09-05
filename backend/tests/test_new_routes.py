@@ -11,6 +11,25 @@ client = TestClient(app)
 AUTH_HEADERS = {"Authorization": "Bearer ghp_test_placeholder"}
 
 
+class TestWsTicketEndpoint:
+    def test_returns_ticket_when_secret_configured(self, monkeypatch):
+        monkeypatch.setenv("WS_AUTH_SECRET", "ws-secret-placeholder")
+        resp = client.get("/ws-ticket")
+        assert resp.status_code == 200
+        assert "." in resp.json()["ticket"]
+
+    def test_returns_none_when_secret_unconfigured(self, monkeypatch):
+        monkeypatch.delenv("WS_AUTH_SECRET", raising=False)
+        resp = client.get("/ws-ticket")
+        assert resp.status_code == 200
+        assert resp.json()["ticket"] is None
+
+    def test_is_public_no_auth_required(self, monkeypatch):
+        monkeypatch.setenv("WS_AUTH_SECRET", "ws-secret-placeholder")
+        resp = client.get("/ws-ticket")  # no Authorization header
+        assert resp.status_code == 200
+
+
 class TestAnalyzeEndpoint:
     @patch("routes.analyze.check_rate_limit", return_value=(True, 30, 0))
     def test_analyze_invalid_url(self, _mock_rate):
