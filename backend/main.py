@@ -1,7 +1,6 @@
 import asyncio
 import contextlib
 import os
-import re
 from contextlib import asynccontextmanager
 
 import structlog
@@ -283,7 +282,6 @@ async def unhandled_exception_handler(request, exc):
     )
 
 
-_CF_PAGES_RE = re.compile(r"^https://gitmind-.*\.pages\.dev$")
 _DEV_CORS_ORIGINS = [
     "http://localhost",
     "http://localhost:3000",
@@ -314,11 +312,6 @@ def _resolve_cors_origins(cors_env: str, environment: str) -> list[str]:
 _CORS_ORIGINS_ENV = os.getenv("CORS_ORIGINS", "")
 _ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
 _CORS_ORIGINS = _resolve_cors_origins(_CORS_ORIGINS_ENV, _ENVIRONMENT)
-
-
-def _cors_origin_ok(origin: str) -> bool:
-    """Check if origin is allowed — static list + Cloudflare Pages preview pattern."""
-    return origin in _CORS_ORIGINS or bool(_CF_PAGES_RE.match(origin))
 
 
 app.add_middleware(

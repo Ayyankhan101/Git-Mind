@@ -189,15 +189,10 @@ _TASK_REGISTRY: dict[str, Callable[..., Awaitable[dict]]] = {
 }
 
 
-def register_task_type(name: str, factory):
-    """Register a task type. ``factory(args_dict)`` must return a coroutine."""
-    _TASK_REGISTRY[name] = factory
-
-
 async def submit(task_type: str, args: dict | None = None) -> str:
     """Submit a background task to Redis queue.
 
-    ``task_type`` must be registered via ``register_task_type``.
+    ``task_type`` must be a key in ``_TASK_REGISTRY``.
     ``args`` is a JSON-serializable dict passed to the factory.
     Returns task_id.
     """
