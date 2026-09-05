@@ -6,6 +6,8 @@ These tests cover the opt-in gate: when explicitly turned on, the same
 Redis-unavailable conditions must fail closed instead of degrading silently.
 """
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
 
 from services import cache, rate_limiter, session
@@ -77,3 +79,30 @@ class TestSessionRaisesWithoutRedis:
         monkeypatch.setattr(session, "get_redis", lambda: None)
         await session.put_session("00000000-0000-0000-0000-000000000004", {"a": 1})
         assert session._sessions.get("00000000-0000-0000-0000-000000000004") == {"a": 1}
+
+    async def test_get_session_raises_when_redis_missing_and_db_misses(self, require_redis, monkeypatch):
+        monkeypatch.setattr(session, "get_redis", lambda: None)
+        with (
+            patch("services.database.get_analysis_db", new_callable=AsyncMock, return_value=None),
+            pytest.raises(RuntimeError, match="REQUIRE_REDIS"),
+        ):
+            await session.get_session("00000000-0000-0000-0000-000000000005")
+
+    async def test_get_session_raises_on_redis_error_when_db_misses(self, require_redis, monkeypatch):
+        class BoomRedis:
+            async def get(self, *a, **kw):
+                raise ConnectionError("redis down")
+
+        monkeypatch.setattr(session, "get_redis", lambda: BoomRedis())
+        with (
+            patch("services.database.get_analysis_db", new_callable=AsyncMock, return_value=None),
+            pytest.raises(RuntimeError, match="REQUIRE_REDIS"),
+        ):
+            await session.get_session("00000000-0000-0000-0000-000000000006")
+
+    async def test_get_session_recovers_from_db_despite_redis_down(self, require_redis, monkeypatch):
+        monkeypatch.setattr(session, "get_redis", lambda: None)
+        db_snap = {"repo_name": "recovered", "chat_history": []}
+        with patch("services.database.get_analysis_db", new_callable=AsyncMock, return_value=db_snap):
+            result = await session.get_session("00000000-0000-0000-0000-000000000007")
+        assert result["repo_name"] == "recovered"

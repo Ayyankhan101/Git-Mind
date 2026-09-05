@@ -138,6 +138,32 @@ class TestGithubCallback:
         stored = json.loads(fake_redis.kv[f"oauth:handoff:{handoff_code}"])
         assert stored == {"access_token": "gho_realtoken", "login": "octocat"}
 
+    def test_handoff_store_failure_redirects_gracefully(self, fake_redis, monkeypatch):
+        """r.set() for the handoff code failing must not surface a raw 500 —
+        every other failure in this function redirects with ?gh_oauth_error=."""
+
+        async def _raising_set(*_args, **_kwargs):
+            raise ConnectionError("redis dropped")
+
+        monkeypatch.setattr(fake_redis, "set", _raising_set)
+        state = oauth._sign_state()
+        with (
+            patch(
+                "httpx.AsyncClient.post",
+                new_callable=AsyncMock,
+                return_value=FakeHTTPResponse({"access_token": "gho_realtoken"}),
+            ),
+            patch(
+                "httpx.AsyncClient.get",
+                new_callable=AsyncMock,
+                return_value=FakeHTTPResponse({"login": "octocat"}),
+            ),
+        ):
+            resp = client.get(f"/auth/github/callback?code=goodcode&state={state}", follow_redirects=False)
+
+        assert resp.status_code == 302
+        assert "gh_oauth_error=unavailable" in resp.headers["location"]
+
     def test_success_survives_user_lookup_failure(self, fake_redis):
         """Fetching /user is best-effort — the flow must still succeed without it."""
         state = oauth._sign_state()

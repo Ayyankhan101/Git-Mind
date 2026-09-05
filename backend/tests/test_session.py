@@ -13,6 +13,13 @@ from services.session import (
 )
 
 
+class _BrokenRedis:
+    """Stand-in whose .get always raises, simulating a Redis outage."""
+
+    async def get(self, key):
+        raise ConnectionError("redis unreachable")
+
+
 @pytest.fixture(autouse=True)
 def clear_sessions():
     _sessions.clear()
@@ -89,6 +96,46 @@ class TestGetSession:
             assert result["repo_name"] == "test-repo"
             assert result["chroma_collection_name"] == "col123"
             assert result["chat_history"] == []
+
+
+class TestGetSessionFailClosed:
+    """REQUIRE_REDIS=true + Redis down must raise once DB fallback also
+    misses, instead of silently returning None (Issue 6)."""
+
+    async def test_raises_when_redis_down_and_db_misses(self):
+        with (
+            patch("services.session.get_redis", return_value=_BrokenRedis()),
+            patch("services.session.redis_required", return_value=True),
+            patch("services.database.get_analysis_db", new_callable=AsyncMock, return_value=None),
+            pytest.raises(RuntimeError, match="REQUIRE_REDIS"),
+        ):
+            await get_session(VALID_UUID)
+
+    async def test_skips_memory_and_still_restores_from_db(self):
+        # Stale per-process memory must not be trusted when Redis is
+        # required-but-down (other workers can't see it) — the DB restore
+        # is the only fallback allowed to answer.
+        _sessions[VALID_UUID] = {"from": "stale memory"}
+        _session_timestamps[VALID_UUID] = 0.0
+        db_snap = {"repo_name": "restored-repo", "chat_history": []}
+        with (
+            patch("services.session.get_redis", return_value=_BrokenRedis()),
+            patch("services.session.redis_required", return_value=True),
+            patch("services.database.get_analysis_db", new_callable=AsyncMock, return_value=db_snap),
+        ):
+            result = await get_session(VALID_UUID)
+        assert result["repo_name"] == "restored-repo"
+
+    async def test_no_raise_when_redis_optional(self):
+        # Baseline: REQUIRE_REDIS=false (default) keeps today's behavior —
+        # a Redis outage degrades to memory/DB fallback, never raises.
+        with (
+            patch("services.session.get_redis", return_value=_BrokenRedis()),
+            patch("services.session.redis_required", return_value=False),
+            patch("services.database.get_analysis_db", new_callable=AsyncMock, return_value=None),
+        ):
+            result = await get_session("00000000-0000-0000-0000-000000009998")
+        assert result is None
 
 
 class TestPersistAnalysis:

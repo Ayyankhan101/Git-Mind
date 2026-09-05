@@ -83,6 +83,12 @@ today's default behavior working":
 - **`docker-compose.yml`'s `qdrant` service has no `ports:` mapping** — it
   only needs to be reachable from the `app` service over the compose
   network, not from the host.
+- **`get_session()` keeps its DB fallback even under `REQUIRE_REDIS=true`**,
+  rather than raising immediately like `put_session()` does. Redis being down
+  doesn't invalidate an already-persisted analysis sitting in Postgres, so it
+  only raises once the DB fallback also comes back empty — the in-memory
+  fallback is the one skipped when required-and-down (it can't see other
+  workers' sessions and would just misreport a real outage as "not found").
 
 ### 1. Qdrant Vector DB Migration (replaces ChromaDB)
 
@@ -104,7 +110,7 @@ prune_old_collections(max_age_seconds: int = 604800) -> int
 - Collection: `VectorParams(size=384, distance=Distance.COSINE)` — identical to ChromaDB
 - Batch upsert: 100 points per batch (same as current)
 - Point IDs: deterministic hash for safe re-embedding
-- Registry file (`.qdrant_registry.json`) tracks creation times for TTL pruning
+- Registry: a Redis hash (`qdrant:collection_registry`) tracks creation times for TTL pruning — not a local file, since app containers have no shared/persistent volume (a local-file registry would be silently reset on every container recreation, orphaning every previously-created collection from pruning). Uses a plain sync `redis` client (this module is intentionally sync); absent `REDIS_URL`, registration/pruning tracking is a no-op — embed/search/delete still work, TTL pruning just can't find anything to prune
 - Connection: `QdrantClient(url=os.getenv("QDRANT_URL", "http://localhost:6333"))`
 
 **Docker:** Qdrant sidecar service in `docker-compose.yml`:

@@ -75,13 +75,11 @@ async def chat_endpoint(req: ChatRequest, request: Request):
     if not session.get("chroma_collection_name"):
         return error_response("Knowledge base not ready — RAG setup may have failed.", 503)
 
-    # Defensive: check if ChromaDB collection still exists (ephemeral storage)
-    from chroma_utils import _client
+    # Defensive: check the vector store collection still exists (ephemeral storage)
+    from vector_store import collection_exists
 
     collection_name = session["chroma_collection_name"]
-    try:
-        _client.get_collection(collection_name)
-    except Exception:
+    if not collection_exists(collection_name):
         # Collection lost (ephemeral storage). Re-embed if file_contents available.
         file_contents = session.get("file_contents")
         if file_contents:
@@ -153,13 +151,11 @@ async def chat_stream_endpoint(req: ChatRequest, request: Request):
             yield f"data: {json.dumps({'error': 'Knowledge base not ready — RAG setup may have failed.'})}\n\n"
             return
 
-        # Defensive: check if ChromaDB collection still exists (ephemeral storage)
-        from chroma_utils import _client
+        # Defensive: check the vector store collection still exists (ephemeral storage)
+        from vector_store import collection_exists
 
         collection_name = session["chroma_collection_name"]
-        try:
-            _client.get_collection(collection_name)
-        except Exception:
+        if not collection_exists(collection_name):
             file_contents = session.get("file_contents")
             if file_contents:
                 from agents.rag_setup import run_rag_setup

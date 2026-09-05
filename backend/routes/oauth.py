@@ -182,11 +182,15 @@ async def github_callback(request: Request, code: str = "", state: str = ""):
         return _error_redirect("unavailable")
 
     handoff_code = secrets.token_urlsafe(32)
-    await r.set(
-        f"{_HANDOFF_PREFIX}{handoff_code}",
-        json.dumps({"access_token": token, "login": login}),
-        ex=_HANDOFF_TTL,
-    )
+    try:
+        await r.set(
+            f"{_HANDOFF_PREFIX}{handoff_code}",
+            json.dumps({"access_token": token, "login": login}),
+            ex=_HANDOFF_TTL,
+        )
+    except Exception as exc:
+        logger.warning("oauth_handoff_store_failed", error=str(exc)[:120])
+        return _error_redirect("unavailable")
     return RedirectResponse(f"{_frontend_url()}/?gh_handoff={handoff_code}", status_code=302)
 
 

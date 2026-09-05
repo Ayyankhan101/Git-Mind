@@ -133,3 +133,54 @@ class TestChatEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert "answer" in data
+
+
+class TestChatVectorStoreDispatch:
+    """Regression test: routes/chat.py's defensive existence check must go
+    through vector_store's facade, not chroma_utils directly. An earlier
+    version imported `from chroma_utils import _client` here, which silently
+    broke /chat every time QDRANT_URL was set — the check would always fail
+    (nothing is ever written to the local Chroma client on that backend),
+    tripping the "lost collection" path on every single message."""
+
+    @patch("routes.chat.get_session")
+    @patch("routes.chat.run_chat_agent")
+    @patch("vector_store.collection_exists", return_value=True)
+    def test_existence_check_calls_the_facade_not_chroma_directly(self, mock_exists, mock_chat, mock_get_session):
+        session_id = "12345678-1234-1234-1234-123456789012"
+        mock_get_session.return_value = {
+            "session_id": session_id,
+            "chroma_collection_name": "test-collection",
+            "chat_history": [],
+            "repo_name": "test-repo",
+            "architecture_graph": {"nodes": [], "edges": []},
+        }
+        mock_chat.return_value = ("Hello", [])
+
+        response = client.post(
+            "/chat",
+            json={"session_id": session_id, "question": "What does this codebase do?"},
+        )
+
+        assert response.status_code == 200
+        mock_exists.assert_called_once_with("test-collection")
+
+    @patch("routes.chat.get_session")
+    @patch("vector_store.collection_exists", return_value=False)
+    def test_facade_reports_missing_collection_and_no_contents_to_reembed(self, mock_exists, mock_get_session):
+        session_id = "12345678-1234-1234-1234-123456789012"
+        mock_get_session.return_value = {
+            "session_id": session_id,
+            "chroma_collection_name": "old-collection",
+            "chat_history": [],
+            "repo_name": "test-repo",
+        }
+
+        response = client.post(
+            "/chat",
+            json={"session_id": session_id, "question": "What does this codebase do?"},
+        )
+
+        assert response.status_code == 503
+        assert "Knowledge base lost" in response.json()["error"]
+        mock_exists.assert_called_once_with("old-collection")

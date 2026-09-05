@@ -13,7 +13,6 @@ Embeddings are computed locally via fastembed (same all-MiniLM-L6-v2 model,
 384 dims, as ChromaDB's built-in default) since Qdrant itself does not embed.
 """
 
-import json
 import os
 import tempfile
 import threading
@@ -23,6 +22,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, TypedDict, cast
 
+import redis
 import structlog
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from qdrant_client import QdrantClient
@@ -69,14 +69,6 @@ def _writable(path: Path) -> bool:
         return False
 
 
-_PREFERRED_REGISTRY = Path(__file__).parent / ".qdrant_registry.json"
-if _writable(_PREFERRED_REGISTRY.parent):
-    _REGISTRY_PATH = _PREFERRED_REGISTRY
-else:
-    _TMP_BASE = Path(tempfile.gettempdir()) / "gitmind_qdrant"
-    _TMP_BASE.mkdir(exist_ok=True)
-    _REGISTRY_PATH = _TMP_BASE / "registry.json"
-
 _client: QdrantClient | None = None
 _embedder: Any = None
 
@@ -120,27 +112,85 @@ def _embed_many(texts: list[str]) -> list[list[float]]:
 
 
 # ── Registry helpers (track collection creation times for TTL pruning) ─────────
+#
+# Backed by Redis instead of a local file: this module runs in ephemeral
+# containers with no shared volume (see docker-compose.yml — the app service
+# mounts nothing), so a local-file registry silently orphans every collection
+# created before the container was last recreated, permanently defeating
+# prune_old_collections. Redis is already required for any multi-worker
+# Qdrant deployment (session store, rate limiter), so it's available whenever
+# this actually matters. Uses a plain sync `redis` client — this module is
+# intentionally sync (chromadb parity; callers already run it in a thread
+# pool) while services.cache's shared client is asyncio-only.
+
+_REGISTRY_KEY = "qdrant:collection_registry"
+_registry_redis: "redis.Redis | None" = None
+_registry_redis_checked = False
+
+
+def _get_registry_redis() -> "redis.Redis | None":
+    """Best-effort sync Redis client for the registry, or None if REDIS_URL
+    isn't set / Redis isn't reachable. Absence just disables TTL pruning
+    tracking (embed/search/delete all work fine without it)."""
+    global _registry_redis, _registry_redis_checked
+    if _registry_redis_checked:
+        return _registry_redis
+    _registry_redis_checked = True
+    url = os.environ.get("REDIS_URL")
+    if not url:
+        return None
+    try:
+        client = redis.from_url(url, decode_responses=True, socket_connect_timeout=5, socket_timeout=5)
+        client.ping()
+        _registry_redis = client
+    except Exception as exc:
+        logger.debug("registry Redis unavailable, pruning tracking disabled: %s", str(exc)[:120])
+        _registry_redis = None
+    return _registry_redis
 
 
 def _load_registry() -> dict[str, float]:
+    r = _get_registry_redis()
+    if not r:
+        return {}
     try:
-        return json.loads(_REGISTRY_PATH.read_text())
-    except Exception:
+        return {name: float(ts) for name, ts in r.hgetall(_REGISTRY_KEY).items()}
+    except Exception as exc:
+        logger.debug("registry read failed: %s", exc)
         return {}
 
 
 def _save_registry(reg: dict[str, float]) -> None:
+    """Overwrite the full registry — used by tests to seed state directly."""
+    r = _get_registry_redis()
+    if not r:
+        return
     try:
-        _REGISTRY_PATH.write_text(json.dumps(reg))
+        r.delete(_REGISTRY_KEY)
+        if reg:
+            r.hset(_REGISTRY_KEY, mapping={name: str(ts) for name, ts in reg.items()})
     except Exception as exc:
         logger.debug("registry write failed: %s", exc)
 
 
 def _register_collection(name: str) -> None:
-    with _lock:
-        reg = _load_registry()
-        reg[name] = time.time()
-        _save_registry(reg)
+    r = _get_registry_redis()
+    if not r:
+        return
+    try:
+        r.hset(_REGISTRY_KEY, name, str(time.time()))
+    except Exception as exc:
+        logger.debug("registry register failed: %s", exc)
+
+
+def _unregister_collection(name: str) -> None:
+    r = _get_registry_redis()
+    if not r:
+        return
+    try:
+        r.hdel(_REGISTRY_KEY, name)
+    except Exception as exc:
+        logger.debug("registry unregister failed: %s", exc)
 
 
 # ── Language detection for metadata (mirrors chroma_utils) ─────────────────────
@@ -490,14 +540,22 @@ def search_codebase(
     return results[:n_results]
 
 
+def collection_exists(name: str) -> bool:
+    """Whether a collection is still present in Qdrant — cheap existence
+    check for callers that just need to know if it survived, without paying
+    for a full search."""
+    try:
+        return get_client().collection_exists(name)
+    except Exception:
+        return False
+
+
 def delete_collection(name: str) -> None:
     """Remove a collection from Qdrant and local tracking state."""
     client = get_client()
     with _lock:
         _ready_collections.discard(name)
-        reg = _load_registry()
-        reg.pop(name, None)
-        _save_registry(reg)
+    _unregister_collection(name)
     invalidate_bm25(name)
     try:
         client.delete_collection(name)
@@ -521,9 +579,7 @@ def prune_old_collections(max_age_seconds: int = _COLLECTION_TTL) -> int:
             invalidate_bm25(name)
             with _lock:
                 _ready_collections.discard(name)
-                reg = _load_registry()
-                reg.pop(name, None)
-                _save_registry(reg)
+            _unregister_collection(name)
             removed += 1
             logger.info("Pruned old collection '%s' (qdrant)", name)
         except Exception:

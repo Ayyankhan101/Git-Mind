@@ -14,12 +14,43 @@ from qdrant_client import QdrantClient
 import qdrant_utils
 
 
+class FakeSyncRedis:
+    """Minimal sync Redis stand-in (hash ops only) with real storage — the
+    registry is a Redis hash keyed by collection name, see qdrant_utils.py's
+    Registry helpers section."""
+
+    def __init__(self):
+        self.hashes: dict[str, dict[str, str]] = {}
+
+    def ping(self):
+        return True
+
+    def hgetall(self, key):
+        return dict(self.hashes.get(key, {}))
+
+    def hset(self, key, field=None, value=None, mapping=None):
+        bucket = self.hashes.setdefault(key, {})
+        if mapping:
+            bucket.update({k: str(v) for k, v in mapping.items()})
+        if field is not None:
+            bucket[field] = str(value)
+
+    def hdel(self, key, *fields):
+        bucket = self.hashes.get(key, {})
+        for f in fields:
+            bucket.pop(f, None)
+
+    def delete(self, key):
+        self.hashes.pop(key, None)
+
+
 @pytest.fixture(autouse=True)
-def isolated_qdrant(tmp_path, monkeypatch):
+def isolated_qdrant(monkeypatch):
     """Fresh in-memory Qdrant client + clean module state per test."""
     client = QdrantClient(location=":memory:")
     monkeypatch.setattr(qdrant_utils, "_client", client)
-    monkeypatch.setattr(qdrant_utils, "_REGISTRY_PATH", tmp_path / "registry.json")
+    monkeypatch.setattr(qdrant_utils, "_registry_redis", FakeSyncRedis())
+    monkeypatch.setattr(qdrant_utils, "_registry_redis_checked", True)
     qdrant_utils._ready_collections.clear()
     qdrant_utils._embed_events.clear()
     yield client
@@ -86,6 +117,44 @@ class TestDeleteCollection:
 
     def test_missing_collection_is_a_noop(self):
         qdrant_utils.delete_collection("never_existed")  # should not raise
+
+
+class TestCollectionExists:
+    def test_true_for_embedded_collection(self):
+        qdrant_utils.embed_codebase(FILES, "col_exists_check")
+        assert qdrant_utils.collection_exists("col_exists_check") is True
+
+    def test_false_for_missing_collection(self):
+        assert qdrant_utils.collection_exists("never_embedded") is False
+
+
+class TestRegistryRedisUnavailable:
+    """No REDIS_URL / unreachable Redis must degrade to a no-op registry —
+    embed/search/delete all still work, pruning just can't track anything."""
+
+    def test_operations_are_noop_without_redis(self, monkeypatch):
+        monkeypatch.setattr(qdrant_utils, "_registry_redis", None)
+        monkeypatch.setattr(qdrant_utils, "_registry_redis_checked", True)
+
+        qdrant_utils._register_collection("col_no_redis")  # must not raise
+        assert qdrant_utils._load_registry() == {}
+        qdrant_utils._unregister_collection("col_no_redis")  # must not raise
+
+    def test_embed_codebase_succeeds_without_redis(self, monkeypatch):
+        monkeypatch.setattr(qdrant_utils, "_registry_redis", None)
+        monkeypatch.setattr(qdrant_utils, "_registry_redis_checked", True)
+
+        name = qdrant_utils.embed_codebase(FILES, "col_embed_no_redis")
+        assert qdrant_utils.get_client().collection_exists(name)
+
+
+class TestDeleteCollectionUnregisters:
+    def test_removes_registry_entry(self):
+        qdrant_utils.embed_codebase(FILES, "col_delete_registry")
+        assert "col_delete_registry" in qdrant_utils._load_registry()
+
+        qdrant_utils.delete_collection("col_delete_registry")
+        assert "col_delete_registry" not in qdrant_utils._load_registry()
 
 
 class TestPruneOldCollections:
