@@ -162,6 +162,17 @@ export async function fetchRepos(username, token = null) {
   return data.repos;
 }
 
+// Short-lived signed ticket minted server-side for the WS handshake —
+// replaces a static secret that used to be hardcoded in this bundle.
+export async function fetchWsTicket() {
+  try {
+    const data = await _apiFetch(`${BASE}/ws-ticket`, {}, 8_000);
+    return data.ticket || null;
+  } catch {
+    return null;
+  }
+}
+
 export function fetchSummary(sessionId) {
   return _post(
     `${BASE}/summary`,

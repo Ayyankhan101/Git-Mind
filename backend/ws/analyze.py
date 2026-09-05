@@ -13,7 +13,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 from agents.blame import enrich_findings_with_blame
 from agents.health import compute_health
 from orchestrator import graph
-from services.auth import hash_token
+from services.auth import hash_token, verify_ws_ticket
 from services.cache import get_redis
 from services.rate_limiter import check_rate_limit
 from services.session import initial_state, persist_analysis, put_session
@@ -103,17 +103,9 @@ async def handle_analyze(ws: WebSocket) -> None:
             return
         logger.warning("WS_AUTH_SECRET not set — WebSocket auth disabled (dev mode)")
     else:
-        import hmac
-
-        client_secret = payload.get("ws_auth_secret", "")
-        client_ts = payload.get("ws_auth_ts", 0)
-        # Reject if secret missing or timestamp older than 5 minutes (replay protection)
-        if not client_secret or not hmac.compare_digest(client_secret, _ws_auth_secret):
-            await ws.send_json({"error": "WebSocket auth secret mismatch"})
-            await ws.close(code=1008)
-            return
-        if isinstance(client_ts, (int, float)) and abs(time.time() - client_ts) > 300:
-            await ws.send_json({"error": "WebSocket auth token expired"})
+        client_ticket = payload.get("ws_auth_ticket", "")
+        if not verify_ws_ticket(client_ticket):
+            await ws.send_json({"error": "WebSocket auth ticket invalid or expired"})
             await ws.close(code=1008)
             return
 

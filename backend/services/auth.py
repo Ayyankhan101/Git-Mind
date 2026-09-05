@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import os
 import re
+import time
 from typing import NoReturn
 
 from fastapi import HTTPException, Request
@@ -22,9 +23,43 @@ def _is_valid_service_key(service_key: str) -> bool:
     return bool(real_key) and hmac.compare_digest(service_key, real_key)
 
 
+def mint_ws_ticket() -> str | None:
+    """Short-lived signed ticket for the /ws/analyze handshake.
+
+    Replaces a static shared secret that used to be hardcoded in the public
+    frontend bundle — anyone reading the JS source got a value that never
+    expired and worked from any client. This ticket is `{ts}.{hmac}`, only
+    valid for 5 minutes, and the server secret (WS_AUTH_SECRET) never leaves
+    the backend. Returns None when WS_AUTH_SECRET isn't configured (dev mode,
+    where the ws handler already accepts unauthenticated connections).
+    """
+    secret = os.environ.get("WS_AUTH_SECRET")
+    if not secret:
+        return None
+    ts = str(int(time.time()))
+    sig = hmac.new(secret.encode(), ts.encode(), hashlib.sha256).hexdigest()
+    return f"{ts}.{sig}"
+
+
+def verify_ws_ticket(ticket: str) -> bool:
+    secret = os.environ.get("WS_AUTH_SECRET")
+    if not secret or not ticket or "." not in ticket:
+        return False
+    ts_raw, _, sig = ticket.partition(".")
+    expected = hmac.new(secret.encode(), ts_raw.encode(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(sig, expected):
+        return False
+    try:
+        return abs(time.time() - int(ts_raw)) <= 300
+    except ValueError:
+        return False
+
+
 # ── Public paths — no auth required ─────────────────────────────────────────
 # These are intentionally open: health checks, docs, and OpenAPI spec.
 # /analysis/* are public because they only read session data (no GitHub access).
+# /ws-ticket is public because it only hands out a 5-minute-lived anti-abuse
+# ticket, not a real credential — the WS handler still needs it to connect.
 # WebSocket auth is enforced inside the ws handlers (see ws/analyze.py, ws/crisis.py).
 _PUBLIC_PATHS = frozenset(
     {
@@ -37,6 +72,7 @@ _PUBLIC_PATHS = frozenset(
         "/chat",
         "/chat/stream",
         "/incident-report",
+        "/ws-ticket",
     }
 )
 _PUBLIC_PATH_PREFIXES = ("/repos", "/analysis/", "/proxy", "/pr-list", "/monitor/status", "/auth/github")

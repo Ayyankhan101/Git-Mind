@@ -15,6 +15,7 @@ import PostProcessing from "./components/PostProcessing";
 import {
   WS_BASE,
   fetchRepos,
+  fetchWsTicket,
   loadSharedAnalysis,
   generateFix,
   exchangeGithubOAuthCode,
@@ -339,7 +340,7 @@ export default function App() {
 
   // ── Analyze ──────────────────────────────────────────────
   const handleAnalyze = useCallback(
-    (url, tokenOverride) => {
+    async (url, tokenOverride) => {
       if (!url) return;
       cleanup();
       dispatch({ type: "START_ANALYSIS", url });
@@ -358,6 +359,8 @@ export default function App() {
           sec: Math.floor((Date.now() - startRef.current) / 1000),
         });
       }, 1000);
+
+      const wsTicket = await fetchWsTicket();
 
       let ws;
       try {
@@ -395,8 +398,7 @@ export default function App() {
           JSON.stringify({
             repo_url: url,
             session_id: SESSION_ID,
-            ws_auth_secret: "gitmind-ws-2026",
-            ws_auth_ts: Math.floor(Date.now() / 1000),
+            ...(wsTicket ? { ws_auth_ticket: wsTicket } : {}),
             ...(gh ? { gh_token: gh } : {}),
           }),
         );

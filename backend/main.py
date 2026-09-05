@@ -313,11 +313,17 @@ _CORS_ORIGINS_ENV = os.getenv("CORS_ORIGINS", "")
 _ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
 _CORS_ORIGINS = _resolve_cors_origins(_CORS_ORIGINS_ENV, _ENVIRONMENT)
 
+# Scoped to THIS Cloudflare Pages project's own preview/branch deploys
+# (cloudflare/wrangler-action deploys with --branch=<git ref name>, producing
+# both a per-deploy hash subdomain and a branch-alias subdomain). `pages.dev`
+# is Cloudflare's shared public namespace — `gitmind-.*` used to trust ANY
+# project anyone could register there.
+_CORS_ORIGIN_REGEX = r"^https://([a-f0-9]{8}|main|develop)\.gitmind-frontend\.pages\.dev$"
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_CORS_ORIGINS,
-    allow_origin_regex=r"^https://gitmind-.*\.pages\.dev$",
+    allow_origin_regex=_CORS_ORIGIN_REGEX,
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type", "X-GH-Token", "X-Request-ID", "Authorization"],
 )
