@@ -252,7 +252,7 @@ def run_code_audit(file_tree: list[str], file_contents: dict[str, str]) -> list[
         if not matching:
             continue
         lang_result = _audit_language(lang, cfg, matching, file_contents)
-        if lang_result and lang_result.get("findings"):
+        if lang_result and (lang_result.get("findings") or lang_result.get("triage_failed")):
             results.append(lang_result)
     return results
 
@@ -260,10 +260,12 @@ def run_code_audit(file_tree: list[str], file_contents: dict[str, str]) -> list[
 def _audit_language(lang: str, cfg: AuditorDef, matching: list[str], file_contents: dict[str, str]) -> dict:
     file_count = len(matching)
     tool_name: str | None = cfg.tool_name
+    raw_tool_hits = 0
 
     if cfg.tool and shutil.which(cfg.tool[0]):
         tool_results = _run_tool(cfg.tool, matching, file_contents, lang)
         if tool_results:
+            raw_tool_hits = len(tool_results)
             findings = _triage_with_llm(cfg.llm_prompt, tool_results, lang)
             if findings:
                 return {
@@ -276,6 +278,26 @@ def _audit_language(lang: str, cfg: AuditorDef, matching: list[str], file_conten
 
     findings = _run_llm_fallback(cfg.llm_prompt, matching, file_contents, lang)
     if not findings:
+        if raw_tool_hits:
+            # The static tool found real issues but every LLM triage attempt
+            # (tool-result triage, then the raw-content fallback) failed —
+            # reporting finding_count=0 here would silently present a
+            # language with real, un-triaged findings as clean.
+            logger.error(
+                "%s audit: %s found %d raw issue(s) but triage failed on every attempt",
+                lang,
+                tool_name,
+                raw_tool_hits,
+            )
+            return {
+                "language": lang,
+                "tool": tool_name,
+                "findings": [],
+                "file_count": file_count,
+                "finding_count": 0,
+                "triage_failed": True,
+                "raw_issue_count": raw_tool_hits,
+            }
         return {
             "language": lang,
             "tool": None,

@@ -35,9 +35,20 @@ def run_git_audit(
         return _empty()
 
     owner, repo = m.group(1), m.group(2)
-    commits = _fetch_commits(owner, repo, token)
     sensitive_files = scan_sensitive_files(file_tree)
     secret_findings = scan_secrets(file_contents)
+
+    # scan_secrets/scan_sensitive_files are local and always succeed; only
+    # the GitHub commits fetch can fail (network/rate-limit). Keep the real
+    # local findings even if that fails, but don't let a failed fetch
+    # present as "0 bad commit messages" — that's a positive, false signal.
+    try:
+        commits = _fetch_commits(owner, repo, token)
+        commits_unavailable = False
+    except Exception as exc:
+        logger.warning("Git audit: commit history unavailable — %s", exc)
+        commits = []
+        commits_unavailable = True
 
     bad = sum(1 for c in commits if c["msg_quality"] == "bad")
     warn = sum(1 for c in commits if c["msg_quality"] == "warn")
@@ -46,6 +57,7 @@ def run_git_audit(
         "commits": commits,
         "sensitive_files": sensitive_files,
         "secret_findings": secret_findings,
+        "commits_unavailable": commits_unavailable,
         "stats": {
             "total": len(commits),
             "bad_messages": bad,
@@ -60,20 +72,15 @@ def _fetch_commits(owner: str, repo: str, token: str | None) -> list:
     headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "GitMind"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    try:
-        with httpx.Client(timeout=20.0) as client:
-            resp = client.get(
-                f"https://api.github.com/repos/{owner}/{repo}/commits",
-                params={"per_page": 100},
-                headers=headers,
-            )
-            if resp.is_error:
-                logger.warning("GitHub commits API returned %d", resp.status_code)
-                return []
-            raw = resp.json()
-    except Exception as exc:
-        logger.warning("Failed to fetch commits: %s", exc)
-        return []
+    with httpx.Client(timeout=20.0) as client:
+        resp = client.get(
+            f"https://api.github.com/repos/{owner}/{repo}/commits",
+            params={"per_page": 100},
+            headers=headers,
+        )
+        if resp.is_error:
+            raise RuntimeError(f"GitHub commits API returned {resp.status_code}")
+        raw = resp.json()
 
     out = []
     for c in raw:

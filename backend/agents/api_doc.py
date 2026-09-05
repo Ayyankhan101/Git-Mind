@@ -63,8 +63,10 @@ def run_api_doc_agent(file_contents: dict[str, str]) -> list[dict]:
 
     results: list[dict] = []
     seen: set[tuple[str, str]] = set()  # dedup on (METHOD, route)
+    files_attempted = list(api_files.items())[:_MAX_FILES]
+    failures = 0
 
-    for fp, content in list(api_files.items())[:_MAX_FILES]:
+    for fp, content in files_attempted:
         try:
             endpoints = run_dspy_cached(
                 _predictor,
@@ -75,6 +77,7 @@ def run_api_doc_agent(file_contents: dict[str, str]) -> list[dict]:
             )
         except Exception as exc:
             logger.warning("API doc agent: parse failed for %s — %s", fp, exc)
+            failures += 1
             endpoints = []
 
         for item in endpoints:
@@ -82,6 +85,13 @@ def run_api_doc_agent(file_contents: dict[str, str]) -> list[dict]:
             if key not in seen:
                 seen.add(key)
                 results.append(item)
+
+    if not results and failures and failures == len(files_attempted):
+        # Route-like files exist (scan_route_files already filtered for
+        # that), but every single extraction attempt crashed — an LLM
+        # outage, not "this repo has no API". "No endpoints detected"
+        # would be indistinguishable from a genuinely API-less repo.
+        raise RuntimeError(f"API doc extraction failed on all {failures} candidate file(s)")
 
     logger.info(
         "API doc agent: found %d unique endpoints across %d files",

@@ -314,8 +314,14 @@ def test_security_falls_back_to_degraded_finding():
     assert findings[0]["id"] == "scan-incomplete"
 
 
-def test_api_doc_falls_back_to_empty_endpoints():
+def test_api_doc_raises_when_every_candidate_file_fails_to_parse():
+    """Regression: this used to silently return [] — indistinguishable from
+    "this repo has no API". scan_route_files already confirmed this file
+    looks like a route handler, so a parse failure on every candidate file
+    must surface as a real failure, not a fabricated "no endpoints" result."""
     from unittest.mock import patch
+
+    import pytest
 
     from agents import api_doc
 
@@ -329,9 +335,11 @@ def test_api_doc_falls_back_to_empty_endpoints():
             "    return {'uid': uid}\n"
         )
     }
-    with patch.object(api_doc, "_LM", FakeLM(GARBAGE)):
-        result = api_doc.run_api_doc_agent(contents)
-    assert result == []
+    with (
+        patch.object(api_doc, "_LM", FakeLM(GARBAGE)),
+        pytest.raises(Exception, match="failed on all"),
+    ):
+        api_doc.run_api_doc_agent(contents)
 
 
 def test_impact_falls_back_to_safe_prediction():

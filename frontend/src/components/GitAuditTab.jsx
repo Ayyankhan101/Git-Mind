@@ -290,6 +290,17 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
         </div>
       </div>
 
+      {audit?.commits_unavailable && (
+        <div
+          className="error-banner-inline error-banner-inline--warning"
+          role="status"
+        >
+          Commit history could not be fetched (GitHub API error or rate limit) —
+          secret and sensitive-file findings below are still real, but
+          commit-message stats are unavailable, not zero.
+        </div>
+      )}
+
       {/* Stats row */}
       <div className="git-stats">
         <StatPill label="Commits" value={stats.total || 0} />

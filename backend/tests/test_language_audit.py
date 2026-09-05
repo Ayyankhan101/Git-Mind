@@ -126,6 +126,31 @@ class TestRunCodeAudit:
         assert results[0]["tool"] is None
         assert results[0]["findings"][0]["id"] == "f2"
 
+    @patch("agents.language_audit.shutil.which")
+    @patch("agents.language_audit.subprocess.run")
+    @patch("agents.language_audit.run_dspy_cached")
+    def test_tool_finds_issues_but_triage_fails_reports_incomplete_not_clean(
+        self, mock_run_cached, mock_run, mock_which
+    ):
+        """Regression: pylint found a real issue, but the LLM triage call
+        (and the raw-content fallback, which also goes through
+        run_dspy_cached) both crashed. The old code collapsed this to
+        finding_count=0 — indistinguishable from a genuinely clean file.
+        It must now report the raw hit count and flag triage_failed."""
+        mock_which.return_value = "/usr/bin/pylint"
+        mock_run.return_value = MagicMock(
+            stdout=json.dumps([{"message": "Unused import os", "symbol": "W0611", "path": "src/main.py", "line": 1}])
+        )
+        mock_run_cached.side_effect = RuntimeError("LLM API unavailable")
+
+        results = run_code_audit(["src/main.py"], {"src/main.py": "import os\n"})
+
+        assert len(results) == 1
+        assert results[0]["findings"] == []
+        assert results[0]["finding_count"] == 0
+        assert results[0]["triage_failed"] is True
+        assert results[0]["raw_issue_count"] == 1
+
     @patch("agents.language_audit.shutil.which", return_value=None)
     @patch("agents.language_audit.run_dspy_cached")
     def test_llm_returns_empty_findings(self, mock_run_cached, mock_which):
