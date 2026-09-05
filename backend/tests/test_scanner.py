@@ -273,3 +273,48 @@ class TestCloneCacheIntegration:
         args = mock_store.call_args[0]
         assert args[0] == URL
         assert args[1] == "resolved123"  # stores under the real head, not the (possibly stale) hint
+
+
+class TestFileExtensionCoverage:
+    """Regression: C/C++/C#/Swift/Kotlin repos used to be scanned as if
+    nearly empty — the downstream parsers (fallback_parser.py) and language
+    detection (architecture.py) already supported these languages, but the
+    scanner's own extension allowlist silently dropped every source file
+    before file_contents was ever built, so no agent (architecture, chat/RAG,
+    code audit) ever saw the actual codebase."""
+
+    def _clone_with_files(self, files: dict[str, str]):
+        def _fake_clone(_url, dest, **_kwargs):
+            for relpath, content in files.items():
+                full = os.path.join(dest, relpath)
+                os.makedirs(os.path.dirname(full), exist_ok=True)
+                with open(full, "w") as f:
+                    f.write(content)
+            return _fake_repo()
+
+        return patch("agents.scanner.git.Repo.clone_from", side_effect=_fake_clone)
+
+    @pytest.mark.parametrize(
+        "filename",
+        [
+            "main.c",
+            "header.h",
+            "app.cc",
+            "app.cxx",
+            "widget.hpp",
+            "widget.hxx",
+            "Program.cs",
+            "App.swift",
+            "Main.kt",
+            "script.kts",
+        ],
+    )
+    def test_previously_excluded_languages_are_now_scanned(self, filename):
+        with self._clone_with_files({filename: "// real source content\n"}):
+            result = clone_and_scan(URL)
+        assert filename in result["file_contents"]
+
+    def test_binary_and_unlisted_extensions_still_excluded(self):
+        with self._clone_with_files({"image.png": "not text", "readme.rst": "docs"}):
+            result = clone_and_scan(URL)
+        assert result["file_contents"] == {}
