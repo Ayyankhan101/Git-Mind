@@ -98,7 +98,6 @@
 
 /* ── Global Theme Transition ───────────────────────────────────── */
 body,
-.command-bar,
 .nav-rail,
 .nav-item,
 .main,
@@ -220,8 +219,7 @@ select,
 h1,
 h2,
 h3,
-.tab-header-title,
-.cb-wordmark {
+.tab-header-title {
   text-wrap: balance;
 }
 
@@ -244,33 +242,6 @@ h3,
   min-height: 100vh;
   min-height: 100dvh;
   overflow: visible;
-}
-
-/* ── Command Bar (Top Bar) ───────────────────────────────────── */
-.command-bar {
-  grid-column: 1 / -1;
-  grid-row: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 48px;
-  padding: 0 16px;
-  background: var(--glass-bg, var(--surface));
-  border-bottom: 1px solid var(--border-s);
-  backdrop-filter: blur(12px) saturate(1.2);
-  position: sticky;
-  top: 0;
-  z-index: 50;
-}
-
-/* ── Command Bar: wordmark ──────────────────────────────────── */
-.cb-wordmark {
-  font-family: var(--font-mono);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-1);
-  letter-spacing: -0.02em;
-  white-space: nowrap;
 }
 
 /* ── Command Bar: input groups ──────────────────────────────── */
@@ -314,52 +285,6 @@ h3,
 .cb-input--token {
   flex: 0 0 190px;
   max-width: 190px;
-}
-
-/* ── Command bar: flexible spacer ────────────────────────────── */
-/* Pushes the trailing actions right on desktop; on mobile the username
-   input claims the freed space instead (see the responsive block). */
-.cb-spacer {
-  flex: 1;
-}
-
-/* ── Command Bar: status ────────────────────────────────────── */
-.cb-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border-radius: var(--radius-full);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-3);
-  background: var(--surface-hover);
-  white-space: nowrap;
-}
-.cb-status.running {
-  color: var(--accent);
-  background: var(--accent-dim);
-}
-.cb-status.running::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  animation: pulse 1.5s ease-in-out infinite;
-}
-.cb-status.done {
-  color: var(--success);
-  background: var(--success-bg);
-}
-.cb-status.done::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--success);
 }
 
 /* ── Top Nav ─────────────────────────────────────────────────── */
@@ -4836,19 +4761,6 @@ button:disabled {
     grid-row: 1;
     min-height: 0;
     padding-bottom: calc(64px + env(safe-area-inset-bottom));
-  }
-  /* The desktop spacer pushes the trailing actions right; on mobile the
-     username input should claim the freed space instead. */
-  .cb-spacer {
-    flex: 0 0 8px;
-  }
-  .command-bar .btn-ghost {
-    font-size: 0;
-    width: 32px;
-    padding: 6px;
-  }
-  .cb-status {
-    display: none;
   }
   .theme-btn span {
     display: none;

@@ -10,6 +10,8 @@ import {
 import { fs } from "../typeScale";
 import { BASE, isValidGhToken } from "../api";
 import * as tokenManager from "../tokenManager";
+import { useEscClose } from "../hooks/useEscClose";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import ThemeSwitcher from "./ThemeSwitcher";
 
 const IS_MAC = /Mac/i.test(
@@ -45,16 +47,12 @@ export default function NavRail({
         setTokenOpen(false);
       }
     };
-    const onKeyDown = (e) => {
-      if (e.key === "Escape") setTokenOpen(false);
-    };
     document.addEventListener("mousedown", onMouseDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onMouseDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
+    return () => document.removeEventListener("mousedown", onMouseDown);
   }, [tokenOpen]);
+
+  useEscClose(tokenOpen, () => setTokenOpen(false));
+  const tokenPanelRef = useFocusTrap(tokenOpen);
 
   return (
     <nav
@@ -159,7 +157,7 @@ export default function NavRail({
             />
           </button>
           {tokenOpen && (
-            <div className="token-popover">
+            <div className="token-popover" ref={tokenPanelRef}>
               <a className="lp-token-toggle" href={`${BASE}/auth/github/login`}>
                 <Github size={12} />
                 Sign in with GitHub

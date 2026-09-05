@@ -9,8 +9,8 @@
 ## Layout
 
 ```
-.app grid: 52px nav-rail | 1fr main     (nav-rail expands to 180px on hover)
-           48px command-bar | 1fr content
+.app grid: 56px nav-rail
+           1fr content
            height: 100vh
 ```
 
@@ -79,11 +79,11 @@ body 15px/400 sans | .t-label 11px/600 0.12em uppercase | .t-mono 13px mono | st
 
 ### Theme switcher
 
-`src/components/ThemeSwitcher.jsx` — grid of 13 theme swatches, rendered in the command bar's token popover AND the landing footer. `src/themeLoader.js` lazy-loads per-theme CSS from `src/themes/*.css`.
+`src/components/ThemeSwitcher.jsx` — grid of 13 theme swatches, rendered in NavRail's token popover AND the landing footer. `src/themeLoader.js` lazy-loads per-theme CSS from `src/themes/*.css`.
 
-### Command bar
+### Nav rail
 
-48px tall, contains wordmark (14px/700) + chrome UI items, `.cb-input` (13px), `.cb-status` (12px); hosts the token popover (theme grid + density control) opened from the wordmark/chrome area
+`src/components/NavRail.jsx` — 56px tall, `.nav-item` entries for each tab/action; hosts the token popover (`.cb-input`, theme grid + density control) opened from its own nav item
 
 ### Tabs
 
