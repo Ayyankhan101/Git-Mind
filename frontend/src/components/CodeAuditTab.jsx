@@ -146,8 +146,14 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
 }
 
 function LangSection({ langResult, onFix, fixLoading, fixResult }) {
-  const { language, tool, findings, file_count, triage_failed, raw_issue_count } =
-    langResult;
+  const {
+    language,
+    tool,
+    findings,
+    file_count,
+    triage_failed,
+    raw_issue_count,
+  } = langResult;
   const [langExpanded, setLangExpanded] = useState(true);
   const cap = useVisibleCap(findings.length);
   const color = LANG_COLORS[language] || "#888";

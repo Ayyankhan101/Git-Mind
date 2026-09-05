@@ -295,9 +295,9 @@ export default function GitAuditTab({ audit, isAnalyzing, analyzed }) {
           className="error-banner-inline error-banner-inline--warning"
           role="status"
         >
-          Commit history could not be fetched (GitHub API error or rate
-          limit) — secret and sensitive-file findings below are still real,
-          but commit-message stats are unavailable, not zero.
+          Commit history could not be fetched (GitHub API error or rate limit) —
+          secret and sensitive-file findings below are still real, but
+          commit-message stats are unavailable, not zero.
         </div>
       )}
 
