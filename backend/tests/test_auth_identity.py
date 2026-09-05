@@ -65,6 +65,24 @@ def test_require_gh_token_or_service_key_rejects_request_without_header():
     assert exc.value.status_code == 401
 
 
+def test_require_gh_token_or_service_key_rejects_wrong_service_key():
+    """A non-empty but incorrect X-Service-Key must not be accepted.
+
+    Regression: this used to accept ANY non-empty header value as a valid
+    service key, bypassing the >24h-snapshot auth gate on /analysis/{id},
+    /analysis/previous, /task/{id}, and /webhook/notify.
+    """
+    req = _request({"X-Service-Key": "not-the-real-key"})
+    with pytest.raises(HTTPException) as exc:
+        auth.require_gh_token_or_service_key(req)
+    assert exc.value.status_code == 401
+
+
+def test_require_gh_token_or_service_key_accepts_correct_service_key():
+    req = _request({"X-Service-Key": "svc_server_key_placeholder"})
+    assert auth.require_gh_token_or_service_key(req) is None
+
+
 def test_get_service_key_returns_none_without_header():
     assert auth.get_service_key(_request()) is None
 

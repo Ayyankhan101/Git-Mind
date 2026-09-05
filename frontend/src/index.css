@@ -4697,6 +4697,20 @@ button:disabled {
 }
 
 /* ── Responsive ───────────────────────────────────────────────── */
+/* At 11 tabs, icon+label overflows .nav-items on common laptop widths
+   (~1280px) before the mobile breakpoint kicks in — the row silently
+   clips the last tab mid-render instead of wrapping/scrolling visibly.
+   Icon-only (tooltips still carry the label) fits comfortably and reads
+   as an intentional compact nav rather than a layout bug. */
+@media (max-width: 1360px) {
+  .nav-items .nav-label {
+    display: none;
+  }
+  .nav-items .nav-item {
+    padding: 0 8px;
+  }
+}
+
 @media (max-width: 768px) {
   .app {
     grid-template-columns: 1fr;

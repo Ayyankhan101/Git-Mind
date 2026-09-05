@@ -1,4 +1,5 @@
 import hashlib
+import hmac
 import os
 import re
 from typing import NoReturn
@@ -8,6 +9,18 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 _GH_TOKEN_RE = re.compile(r"^(gh[pousr]_|github_pat_)[A-Za-z0-9_]+$")
+
+
+def _is_valid_service_key(service_key: str) -> bool:
+    """Constant-time check against the real server secret.
+
+    A service key header is only meaningful if it matches
+    GITMIND_SERVICE_KEY — an unset server secret must never match an
+    empty/arbitrary caller-supplied value.
+    """
+    real_key = os.environ.get("GITMIND_SERVICE_KEY", "")
+    return bool(real_key) and hmac.compare_digest(service_key, real_key)
+
 
 # ── Public paths — no auth required ─────────────────────────────────────────
 # These are intentionally open: health checks, docs, and OpenAPI spec.
@@ -115,14 +128,14 @@ def require_gh_token(request) -> str:
 
 
 def require_gh_token_or_service_key(request) -> str | None:
-    """Require a caller-supplied GitHub PAT or service key. Returns token or raises 401."""
+    """Require a caller-supplied GitHub PAT or a valid service key. Returns token or raises 401."""
     token = _extract_token(request)
     service_key = (request.headers.get("X-Service-Key") or "").strip()
     if token:
         return token
-    if service_key:
-        return None  # service key accepted, no token needed
-    _auth_error("Authentication required — send Authorization: Bearer <token> or X-Service-Key")
+    if service_key and _is_valid_service_key(service_key):
+        return None  # valid service key, no token needed
+    _auth_error("Authentication required — send Authorization: Bearer <token> or a valid X-Service-Key")
 
 
 def hash_token(token: str) -> str:
@@ -158,11 +171,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
         token = _extract_token(request)
         service_key = (request.headers.get("X-Service-Key") or "").strip()
 
-        if not token and not service_key:
+        if not token and not _is_valid_service_key(service_key):
             return JSONResponse(
                 status_code=401,
                 content={
-                    "error": "Authentication required — send Authorization: Bearer <token> header or X-Service-Key",
+                    "error": "Authentication required — send Authorization: Bearer <token> or a valid X-Service-Key",
                 },
             )
 

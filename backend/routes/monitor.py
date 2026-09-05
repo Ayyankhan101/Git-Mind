@@ -28,6 +28,9 @@ async def subscribe_repo(req: MonitorSubscribeRequest, request: Request):
     if not is_valid_gh_url(repo_url):
         return error_response("Invalid GitHub URL — must be https://github.com/{owner}/{repo}", 400)
 
+    if req.slack_webhook_url and not req.slack_webhook_url.startswith("https://hooks.slack.com/"):
+        return error_response("Invalid Slack webhook URL — must start with https://hooks.slack.com/", 400)
+
     from sqlalchemy import select
 
     from models.db import MonitoredRepo

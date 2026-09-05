@@ -39,8 +39,17 @@ root.render(
   </React.StrictMode>,
 );
 
-// Register service worker for offline support
+// Register service worker for offline support. A new SW takes over
+// (skipWaiting + clients.claim) as soon as it activates, which orphans
+// this tab's already-loaded JS against a new backend/contract — reload
+// once so an open tab never runs indefinitely on a stale bundle.
 if ("serviceWorker" in navigator) {
+  let reloading = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (reloading) return;
+    reloading = true;
+    window.location.reload();
+  });
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/sw.js").catch(() => {});
   });
