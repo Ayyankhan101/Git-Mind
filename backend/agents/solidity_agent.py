@@ -175,6 +175,12 @@ def solidity_agent(state: dict) -> dict:
     findings = _merge_findings(llm_findings, ml_findings)
 
     if not findings and not parsed_contracts:
+        if not sidecar_ok and _get_ml_classifier() is None:
+            # sol_files is non-empty here — there IS Solidity in this repo,
+            # but neither the sidecar nor the ML classifier ever ran, so
+            # nothing was actually audited. Returning None here would read
+            # as "no Solidity in this repository", which is false.
+            raise RuntimeError("Solidity audit tooling unavailable (sidecar unreachable, ML classifier not loaded)")
         return {"solidity_audit": None}
 
     return {

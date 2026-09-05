@@ -146,7 +146,8 @@ function FindingRow({ finding, onFix, fixLoading, fixResult }) {
 }
 
 function LangSection({ langResult, onFix, fixLoading, fixResult }) {
-  const { language, tool, findings, file_count } = langResult;
+  const { language, tool, findings, file_count, triage_failed, raw_issue_count } =
+    langResult;
   const [langExpanded, setLangExpanded] = useState(true);
   const cap = useVisibleCap(findings.length);
   const color = LANG_COLORS[language] || "#888";
@@ -212,6 +213,18 @@ function LangSection({ langResult, onFix, fixLoading, fixResult }) {
 
       {langExpanded && (
         <div className="row-list" style={{ marginTop: 4 }}>
+          {triage_failed && (
+            <div
+              className="error-banner-inline error-banner-inline--warning"
+              role="status"
+              style={{ margin: "0 28px 8px" }}
+            >
+              {tool} found {raw_issue_count} raw issue
+              {raw_issue_count !== 1 ? "s" : ""} in {language}, but the AI
+              triage step failed — results are incomplete, not clean. Try
+              re-running the analysis.
+            </div>
+          )}
           {findings.slice(0, cap.visible).map((f, i) => (
             <FindingRow
               key={f.id || i}
@@ -263,6 +276,7 @@ export default function CodeAuditTab({
   }, [codeAudit]);
 
   const totalFindings = allFindings.length;
+  const hasTriageFailure = !!codeAudit?.some((r) => r.triage_failed);
 
   if (!analyzed && !isAnalyzing) {
     return (
@@ -279,7 +293,7 @@ export default function CodeAuditTab({
 
   if (isAnalyzing && !codeAudit?.length) return <SkeletonRows />;
 
-  if (analyzed && !totalFindings) {
+  if (analyzed && !totalFindings && !hasTriageFailure) {
     return (
       <div className="empty">
         <Code size={20} className="empty-icon" />

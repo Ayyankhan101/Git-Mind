@@ -65,8 +65,12 @@ def run_cve_scanner(file_contents: dict[str, str]) -> list[dict]:
         resp.raise_for_status()
         batch = resp.json().get("results", [])
     except Exception as exc:
+        # Do not swallow this to [] — that's indistinguishable from "checked
+        # every dependency, found nothing." Raise so run_agent_node surfaces
+        # a real "cve_scanner agent failed" warning instead of the UI
+        # silently claiming a clean dependency audit that never happened.
         logger.warning("CVE scanner: OSV.dev unreachable — %s", exc)
-        return []
+        raise RuntimeError(f"OSV.dev unreachable: {exc}") from exc
 
     if len(deps) != len(batch):
         logger.warning(
