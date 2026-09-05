@@ -111,6 +111,42 @@ class TestWsAnalyze:
             assert "error" in data2
 
 
+class TestWsAnalyzeScannerFailure:
+    """A failed clone/scan used to let every downstream (skipped) agent
+    report empty/default results, which compute_health and the /summary
+    LLM then presented as a normal-looking "clean" analysis — including an
+    LLM-fabricated tech-stack description with zero real grounding (observed
+    live: a Python/FastAPI repo confidently described as "Node.js/Express +
+    PostgreSQL"). A scanner failure must hard-abort with a real error before
+    any of that misleading downstream output is ever computed or sent."""
+
+    @patch("ws.analyze.check_rate_limit", return_value=(True, 30, 0))
+    @patch("ws.analyze.get_remote_sha", return_value=None)
+    @patch("ws.analyze.graph")
+    @patch.dict(os.environ, {"ENVIRONMENT": "test"})
+    def test_scanner_failure_aborts_before_health_or_done(self, mock_graph, _mock_sha, _mock_rate):
+        async def _failed_scan_stream(*args, **kwargs):
+            yield {
+                "scanner": {
+                    "events": [{"agent": "scanner", "status": "error", "detail": "Git clone failed: repo not found"}]
+                }
+            }
+            # Never reached — the abort must return before further chunks.
+            yield {"architecture": {"events": [{"agent": "architecture", "status": "skipped"}]}}
+
+        mock_graph.astream = _failed_scan_stream
+
+        with client.websocket_connect("/ws/analyze") as ws:
+            ws.send_json({"repo_url": "https://github.com/user/repo", "gh_token": "ghp_test"})
+            data = ws.receive_json()
+            assert data == {"agent_status": {"scanner": "running"}}
+            data2 = ws.receive_json()
+            assert "clone failed" in data2.get("error", "").lower()
+            assert "health" not in data2
+            with pytest.raises(Exception):
+                ws.receive_json()  # connection closed — no health/done ever sent
+
+
 class TestWsAnalyzeAbortPaths:
     """A stream timeout used to `break` out of the astream loop, which —
     since break isn't an exception — still fell into the try/else clause:

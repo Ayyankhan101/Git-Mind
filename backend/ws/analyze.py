@@ -276,6 +276,31 @@ async def handle_analyze(ws: WebSocket) -> None:
                 return
             for node, update in chunk.items():
                 has_error = any(ev.get("status") == "error" for ev in update.get("events", []))
+
+                if node == "scanner" and has_error:
+                    # The clone/scan itself failed — nothing downstream has
+                    # real data. Every other agent will report empty/default
+                    # results (0 findings, "clean" health score, a
+                    # plausible-sounding LLM summary with no actual code
+                    # grounding it) that look like a genuine successful
+                    # analysis instead of a failure. Stop immediately with a
+                    # real error instead of letting that misleading output
+                    # reach the user.
+                    detail = next(
+                        (ev.get("detail") for ev in update.get("events", []) if ev.get("status") == "error"),
+                        None,
+                    )
+                    logger.warning("Scanner failed — aborting analysis", session=session_id, detail=detail)
+                    with contextlib.suppress(Exception):
+                        await ws.send_json(
+                            {
+                                "error": f"Could not scan this repository: {detail or 'clone failed'}",
+                                "session_id": session_id,
+                            }
+                        )
+                        await ws.close()
+                    return
+
                 raw_statuses = _STATUS_MAP.get(node, {})
                 node_statuses = (
                     {k: ("error" if v == "done" else v) for k, v in raw_statuses.items()} if has_error else raw_statuses

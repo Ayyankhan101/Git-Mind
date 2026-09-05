@@ -11,6 +11,13 @@ import {
 } from "../icons";
 import { fs } from "../typeScale";
 
+function formatElapsed(sec) {
+  if (sec < 100) return `${sec}s`;
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}m${s.toString().padStart(2, "0")}s`;
+}
+
 const AGENTS = [
   { key: "scanner", label: "REPO SCANNER", Icon: Search },
   { key: "architecture", label: "ARCHITECTURE", Icon: GitBranch },
@@ -112,7 +119,7 @@ export default function AgentPipeline({
               <span className="pipe-name">{agent.label}</span>
               <span className="pipe-time" data-testid="pipe-time">
                 {rowStatus === "done" && (
-                  <>{elapsedSec > 0 ? `${Math.min(elapsedSec, 99)}s` : "✓"}</>
+                  <>{elapsedSec > 0 ? formatElapsed(elapsedSec) : "✓"}</>
                 )}
                 {rowStatus === "running" && (
                   <span className="spinner" data-testid="agent-spinner" />

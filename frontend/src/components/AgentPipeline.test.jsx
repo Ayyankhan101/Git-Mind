@@ -51,7 +51,11 @@ test("shows elapsed time on done agents", () => {
   ).toBe(true);
 });
 
-test("caps elapsed time at 99s per agent row", () => {
+test("shows minutes:seconds past 99s instead of freezing at 99s", () => {
+  // Regression: a hard Math.min(sec, 99) cap froze every completed agent's
+  // row at "99s" forever once the real elapsed time passed 99 seconds,
+  // reading as "the counter stopped working" — e.g. RAG/Knowledge running
+  // long while every other agent showed the same frozen "99s".
   render(
     <AgentPipeline
       status={{ scanner: "done" }}
@@ -64,7 +68,7 @@ test("caps elapsed time at 99s per agent row", () => {
   expect(
     screen
       .getAllByTestId("pipe-time")
-      .some((el) => el.textContent.includes("99s")),
+      .some((el) => el.textContent.includes("3m20s")),
   ).toBe(true);
 });
 

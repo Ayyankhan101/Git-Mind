@@ -145,17 +145,33 @@ async def summary_endpoint(req: SummaryRequest, request: Request):
 
     audit_context, stats = _build_summary_audit_context(session)
 
-    prompt = (
-        f"Repo: {session['repo_name']}\n\n"
-        f"Key code context:\n{context}\n\n"
-        f"{audit_context}\n"
-        "Write exactly 3 sentences as a technical executive summary:\n"
-        "1. What this codebase is and does (be specific about tech stack / purpose)\n"
-        "2. Key architectural patterns\n"
-        "3. Overall quality posture — cover security, git hygiene, Solidity (if any), and code-audit findings; "
-        "name critical issues if present, else confirm the area is clean\n\n"
-        "No bullet points. No headers. Just 3 sentences. Be precise and technical."
-    )
+    if not chunks:
+        # No retrievable code — the scanner/RAG step failed, is still
+        # running, or the repo genuinely had nothing embeddable. Asking the
+        # LLM to "be specific about tech stack / purpose" with zero grounding
+        # produces a confident, plausible, and entirely fabricated answer
+        # (observed live: a Python/FastAPI repo described as a "Node.js/
+        # Express + PostgreSQL SaaS platform"). Do not guess.
+        instruction = (
+            "No code context is available for this repository (the scan may have failed, still be "
+            "indexing, or the codebase may not have any embeddable source files). Write exactly 2 "
+            "sentences: (1) explicitly say the codebase's specific purpose/tech stack could not be "
+            "determined because no source content is available — do not invent or guess any framework, "
+            "language, or purpose; (2) report only the audit posture below (security/git/Solidity/code-audit), "
+            "using 'not yet available' if a category has no data. No bullet points. No headers."
+        )
+    else:
+        instruction = (
+            "Write exactly 3 sentences as a technical executive summary:\n"
+            "1. What this codebase is and does (be specific about tech stack / purpose) — base this ONLY on "
+            "the code context above, never invent details not shown there\n"
+            "2. Key architectural patterns\n"
+            "3. Overall quality posture — cover security, git hygiene, Solidity (if any), and code-audit findings; "
+            "name critical issues if present, else confirm the area is clean\n\n"
+            "No bullet points. No headers. Just 3 sentences. Be precise and technical."
+        )
+
+    prompt = f"Repo: {session['repo_name']}\n\nKey code context:\n{context}\n\n{audit_context}\n{instruction}"
 
     def _gen() -> str:
         return invoke_with_retry(_LLM, prompt).content.strip()
