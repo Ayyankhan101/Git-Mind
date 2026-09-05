@@ -94,8 +94,7 @@ def clone_and_scan(
     head_sha = None
     from services.clone_cache import store, try_restore
 
-    restored = bool(sha_hint) and try_restore(repo_url, sha_hint, dest)
-    if restored:
+    if sha_hint and try_restore(repo_url, sha_hint, dest):
         head_sha = sha_hint
         logger.info("Scanner: restored %s@%s from clone cache — skipped git clone", repo_url, sha_hint[:8])
     else:

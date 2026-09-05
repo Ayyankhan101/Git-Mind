@@ -44,7 +44,7 @@ TEMPERATURES = {
 
 
 def _build_groq(model: str, temp: float, json_mode: bool) -> Runnable:
-    llm = ChatGroq(model=model, temperature=temp)
+    llm: Runnable = ChatGroq(model=model, temperature=temp)
     if json_mode:
         llm = llm.bind(response_format={"type": "json_object"})
     return llm

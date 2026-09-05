@@ -154,7 +154,8 @@ def _load_registry() -> dict[str, float]:
     if not r:
         return {}
     try:
-        return {name: float(ts) for name, ts in r.hgetall(_REGISTRY_KEY).items()}
+        raw = cast("dict[str, str]", r.hgetall(_REGISTRY_KEY))
+        return {name: float(ts) for name, ts in raw.items()}
     except Exception as exc:
         logger.debug("registry read failed: %s", exc)
         return {}
@@ -434,7 +435,10 @@ def search_codebase(
     if count == 0:
         return []
 
-    conditions = []
+    # list[Any]: qmodels.Filter.must's declared type is an invariant list of a
+    # broad condition union — list[FieldCondition] doesn't satisfy it even
+    # though FieldCondition is a member (see mypy's list-invariance docs).
+    conditions: list[Any] = []
     if layer_filter:
         conditions.append(qmodels.FieldCondition(key="layer", match=qmodels.MatchValue(value=layer_filter)))
     if language_filter:
