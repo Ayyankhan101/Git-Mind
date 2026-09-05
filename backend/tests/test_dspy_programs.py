@@ -294,7 +294,7 @@ def test_wrong_type_rejected(case):
 # validation/parse failure and returns its documented fallback.
 
 
-def test_security_falls_back_to_synthetic_finding():
+def test_security_falls_back_to_degraded_finding():
     from unittest.mock import patch
 
     from agents import security
@@ -311,8 +311,7 @@ def test_security_falls_back_to_synthetic_finding():
                 }
             ]
         )
-    assert findings == security._synthetic_finding()
-    assert findings[0]["id"] == "demo01"
+    assert findings[0]["id"] == "scan-incomplete"
 
 
 def test_api_doc_falls_back_to_empty_endpoints():

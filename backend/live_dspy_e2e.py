@@ -340,7 +340,7 @@ async def verify_graph():
         # The agent nodes catch LLM failures internally and degrade — detect those
         # fallback markers so a rate-limited run isn't reported as live output.
         live_arch = "Analysis Incomplete" not in arch
-        live_sec = bool(sec) and not any(f.get("id") == "demo01" for f in sec)
+        live_sec = bool(sec) and not any(f.get("id") == "scan-incomplete" for f in sec)
         if live_arch:
             langs = [r["language"] for r in ca or []]
             record(

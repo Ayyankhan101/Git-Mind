@@ -26,9 +26,12 @@ class TestArchitectureAgent:
 
 
 class TestSecurityAgent:
-    @patch("agents.security.shutil.which", return_value=None)
-    def test_security_returns_list(self, mock_which):
-        from agents.security import run_security_agent
+    def test_security_returns_list_when_semgrep_missing(self):
+        """_SEMGREP is resolved once at import time — patching shutil.which
+        after import is a no-op, so the module global itself must be patched."""
+        from agents import security
 
-        result = run_security_agent("/tmp/repo")
+        with patch.object(security, "_SEMGREP", None):
+            result = security.run_security_agent("/tmp/repo")
         assert isinstance(result, list)
+        assert result[0]["id"] == "scan-incomplete"
