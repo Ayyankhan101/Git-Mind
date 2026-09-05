@@ -43,6 +43,21 @@ _ALLOWED_EXTENSIONS = {
     ".sol",
     ".vy",
     ".rs",
+    # Below: parsers/fallback_parser.py and agents/architecture.py already
+    # have language mappings for these — the scanner just never collected
+    # the files, so C/C++/C#/Swift/Kotlin repos got analyzed as if they
+    # were nearly empty (only stray docs/config matched the old list).
+    ".c",
+    ".h",
+    ".cc",
+    ".cpp",
+    ".cxx",
+    ".hpp",
+    ".hxx",
+    ".cs",
+    ".swift",
+    ".kt",
+    ".kts",
 }
 
 _SKIP_DIRS = {

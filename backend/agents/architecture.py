@@ -85,9 +85,14 @@ _EXT_TO_LANG = {
     ".rs": "Rust",
     ".cs": "C#",
     ".cpp": "C++",
+    ".cc": "C++",
+    ".cxx": "C++",
+    ".hpp": "C++",
+    ".hxx": "C++",
     ".c": "C",
     ".swift": "Swift",
     ".kt": "Kotlin",
+    ".kts": "Kotlin",
 }
 
 
