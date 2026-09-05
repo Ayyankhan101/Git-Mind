@@ -268,6 +268,7 @@ export default function DashboardLayout({
             >
               {activeTab === "summary" && (
                 <SummaryTab
+                  key={repoName}
                   sessionId={sessionId}
                   enabled={analyzed}
                   repoName={repoName}

@@ -287,9 +287,14 @@ export function appReducer(state, action) {
       return { ...state, recents: next };
     }
     case "ADD_LOADED_USER": {
+      // GitHub usernames are case-insensitive server-side, so "Torvalds"
+      // and "torvalds" are the same account — compare case-insensitively
+      // here too, or the same user shows up twice in this recent list.
       const next = [
         action.user,
-        ...state.loadedUsers.filter((x) => x !== action.user),
+        ...state.loadedUsers.filter(
+          (x) => x.toLowerCase() !== action.user.toLowerCase(),
+        ),
       ].slice(0, 6);
       try {
         localStorage.setItem("gm-users", JSON.stringify(next));
