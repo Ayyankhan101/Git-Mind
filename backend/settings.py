@@ -10,7 +10,14 @@ from langchain_core.runnables import Runnable
 from langchain_groq import ChatGroq
 
 # ── Model configuration ───────────────────────────────────────────────────────
-LLM_MODEL = os.environ.get("LLM_MODEL", "qwen/qwen3.6-27b")
+# gpt-oss-120b is a Groq "production" model. The previous default,
+# qwen/qwen3.6-27b, scores higher on raw intelligence but is a Groq
+# "preview" model — Groq's own docs say preview models are "for evaluation
+# purposes only" and not meant for production traffic. Given this app has
+# already been burned twice (see LLM_MODEL_FALLBACK below) by a model
+# getting pulled/deprecated/rate-limited out from under it, production-tier
+# stability wins over the intelligence gap here.
+LLM_MODEL = os.environ.get("LLM_MODEL", "openai/gpt-oss-120b")
 
 # Same-provider fallback — Groq only, no second vendor/SDK/API key needed.
 # Doesn't cover a full Groq-platform outage, but does cover the more common

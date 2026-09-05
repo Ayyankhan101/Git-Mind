@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import ErrorBoundary from "./ErrorBoundary";
 import SceneManager from "./SceneManager";
 import HealthGauge3D from "./HealthGauge3D";
 
@@ -90,24 +91,29 @@ export default function HealthCard({ health, variant, static: isStatic }) {
         <div className="health-grade-ring">
           {/* static variant (landing sample card) skips WebGL — no
               context boot for decorative preview content. */}
+          {/* fallback={null}: the SVG ring below still shows the score on
+              its own, so a WebGL failure here should just skip the 3D
+              gauge overlay, not cascade up and take the whole tab down. */}
           {!isStatic && (
-            <SceneManager
-              style={{
-                position: "absolute",
-                inset: 0,
-                zIndex: 1,
-                pointerEvents: "none",
-              }}
-            >
-              {({ sceneRef, subscribe, prefersReduced }) => (
-                <HealthGauge3D
-                  sceneRef={sceneRef}
-                  subscribe={subscribe}
-                  score={health.score}
-                  prefersReduced={prefersReduced}
-                />
-              )}
-            </SceneManager>
+            <ErrorBoundary fallback={null}>
+              <SceneManager
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  zIndex: 1,
+                  pointerEvents: "none",
+                }}
+              >
+                {({ sceneRef, subscribe, prefersReduced }) => (
+                  <HealthGauge3D
+                    sceneRef={sceneRef}
+                    subscribe={subscribe}
+                    score={health.score}
+                    prefersReduced={prefersReduced}
+                  />
+                )}
+              </SceneManager>
+            </ErrorBoundary>
           )}
           <svg
             viewBox="0 0 96 96"
