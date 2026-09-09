@@ -37,12 +37,14 @@ SRC = FRONTEND / "src"
 
 # All CSS that ends up in the built app:
 #   index.css + design-tokens.css  (imported by index.jsx)
-#   components/LandingPage.css     (imported by LandingPage.jsx)
+#   components/**/*.css            (imported by their sibling component)
 #   themes/*.css                   (lazy chunks loaded by themeLoader.js)
+# Globbed rather than listed so regrouping components does not silently empty
+# this list and turn every class into a false "dead class" report.
 CSS_GLOBS = [
     "index.css",
     "design-tokens.css",
-    "components/LandingPage.css",
+    "components/**/*.css",
     "themes/*.css",
 ]
 
