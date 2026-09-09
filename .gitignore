@@ -13,7 +13,6 @@ backend/optimized/
 backend/analyses/
 backend/gitmind.db
 *.pyc
-.env
 graphify-out/
 graphify-out.zip
 
@@ -63,3 +62,12 @@ backend/rust-gitmind/
 
 # Freebuff desktop app's local project marker (unrelated tool, not ours)
 .freebuff/
+
+# Tool caches — these self-ignore via their own inner .gitignore, but listing
+# them here keeps `git status --ignored` readable.
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.serena/
+.gstack/
+.superpowers/
