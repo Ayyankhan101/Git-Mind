@@ -420,6 +420,18 @@ async def health():
             checks["redis"] = False
     else:
         checks["redis"] = False
+
+    # A reachable Redis is not necessarily a working one. When the request quota
+    # is exhausted the client stays connected and PING may still answer while
+    # every other command is rejected — during the production incident this
+    # endpoint reported redis:true throughout. Fold the degraded latch in so the
+    # check reflects whether Redis can actually serve work.
+    from services.cache import redis_degraded
+
+    _degraded = redis_degraded()
+    if _degraded:
+        checks["redis"] = False
+        checks["redis_degraded_reason"] = _degraded
     _webhook_secret = os.getenv("GITHUB_APP_WEBHOOK_SECRET")
     checks["webhook_hmac"] = bool(_webhook_secret)
     from app.orchestrator import get_circuit_breaker_state
@@ -427,7 +439,8 @@ async def health():
     checks["circuit_breaker"] = get_circuit_breaker_state()
     from services.cache import redis_required
 
-    _excluded = {"circuit_breaker"} if redis_required() else {"redis", "circuit_breaker"}
+    _always_excluded = {"circuit_breaker", "redis_degraded_reason"}
+    _excluded = _always_excluded if redis_required() else _always_excluded | {"redis"}
     mandatory = {k: v for k, v in checks.items() if k not in _excluded}
     all_ok = all(mandatory.values())
     result = {"status": "ok" if all_ok else "degraded"}

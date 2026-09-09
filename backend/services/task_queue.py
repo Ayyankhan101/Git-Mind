@@ -20,7 +20,7 @@ import orjson
 import structlog
 from prometheus_client import Counter
 
-from services.cache import get_redis
+from services.cache import clear_redis_degraded, get_redis, is_quota_error, mark_redis_degraded, redis_op
 
 logger = structlog.get_logger(__name__)
 
@@ -36,7 +36,19 @@ _WORKER_COUNT = int(os.getenv("TASK_WORKERS", "3"))
 _QUEUE_KEY = "queue:tasks"
 _TASK_PREFIX = "task:"
 _POLL_INTERVAL = 0.5  # seconds between empty-queue RPOP retries
-_ERROR_RETRY_DELAY = 1.0  # seconds to back off after an RPOP error
+
+# Backoff after a failed RPOP, doubling up to the cap. A flat 1s here was how a
+# quota-exhausted Redis stayed exhausted: three workers retrying once a second
+# is ~259k requests a day spent on calls that cannot succeed, which is more
+# than half a free tier's monthly allowance burned on nothing. It also drowned
+# the log — 567 of 600 lines in the production incident were this one warning,
+# hiding the errors someone actually needed to read.
+_ERROR_RETRY_MIN = 1.0
+_ERROR_RETRY_MAX = 60.0
+
+# A usage cap is not a transient failure; it clears on the provider's schedule,
+# not ours. Park for this long between probes rather than polling a wall.
+_QUOTA_RETRY_DELAY = 300.0
 _worker_tasks: list[asyncio.Task] = []
 _prune_task: asyncio.Task | None = None
 _reap_task: asyncio.Task | None = None
@@ -52,15 +64,24 @@ tasks_submitted = Counter("tasks_submitted_total", "Background tasks submitted")
 tasks_completed = Counter("tasks_completed_total", "Background tasks completed", ["status"])
 
 
-async def _persist_task(task: dict) -> None:
-    """Persist task state to Redis."""
+async def _persist_task(task: dict) -> bool:
+    """Persist task state to Redis. Returns whether the write landed.
+
+    Callers differ on how much they care: submit() must fail loudly if the task
+    never got written, while a worker updating status mid-run is best-effort.
+    """
     r = get_redis()
-    if r:
-        await r.set(
-            f"{_TASK_PREFIX}{task['id']}",
-            orjson.dumps(task, default=str).decode(),
-            ex=_TASK_TTL,
-        )
+    if not r:
+        return False
+    written = await redis_op(
+        "persist task",
+        r.set,
+        f"{_TASK_PREFIX}{task['id']}",
+        orjson.dumps(task, default=str).decode(),
+        ex=_TASK_TTL,
+        default=None,
+    )
+    return written is not None
 
 
 async def _worker():
@@ -70,17 +91,28 @@ async def _worker():
         logger.error("No Redis — worker cannot start")
         return
 
+    backoff = _ERROR_RETRY_MIN
     while True:
         try:
             payload = await r.rpop(_QUEUE_KEY)
             if payload is None:
+                backoff = _ERROR_RETRY_MIN
+                clear_redis_degraded()
                 await asyncio.sleep(_POLL_INTERVAL)
                 continue
+            backoff = _ERROR_RETRY_MIN
+            clear_redis_degraded()
         except asyncio.CancelledError:
             raise
         except Exception as exc:
-            logger.warning("RPOP failed", error=str(exc)[:100])
-            await asyncio.sleep(_ERROR_RETRY_DELAY)
+            # _mark_degraded logs once per episode, so a persistent outage
+            # produces one line rather than one per attempt.
+            mark_redis_degraded(exc)
+            if is_quota_error(exc):
+                await asyncio.sleep(_QUOTA_RETRY_DELAY)
+            else:
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, _ERROR_RETRY_MAX)
             continue
 
         try:
@@ -91,8 +123,9 @@ async def _worker():
             logger.warning("Invalid queue entry", error=str(exc)[:100])
             continue
 
-        # Load task state
-        raw = await r.get(f"{_TASK_PREFIX}{task_id}")
+        # Load task state. Degrades to None, which the existing falsy check
+        # already treats as "skip this entry".
+        raw = await redis_op("load task state", r.get, f"{_TASK_PREFIX}{task_id}")
         if not raw:
             continue
         task = orjson.loads(raw)
@@ -136,7 +169,11 @@ async def _handle_task_failure(task: dict, task_id: str, retries_left: int, r, e
         task["status"] = "pending"
         delay = 2 ** (_MAX_RETRIES - retries_left)
         await asyncio.sleep(delay)
-        await r.lpush(
+        # Best-effort: if the requeue is lost, _periodic_reap sweeps the task up
+        # later rather than the worker dying on the way out of a failure path.
+        await redis_op(
+            "requeue failed task",
+            r.lpush,
             _QUEUE_KEY,
             orjson.dumps(
                 {
@@ -212,14 +249,24 @@ async def submit(task_type: str, args: dict | None = None) -> str:
         "error": None,
         "retries": _MAX_RETRIES,
     }
-    await _persist_task(task)
+    # submit() stays loud on purpose. Everywhere else in this module a lost
+    # Redis write costs a status update or a retry; here it would mean handing
+    # the caller a task_id for work that was never queued and will never run.
+    # The caller already handles TaskQueueUnavailableError from the None check
+    # above, so raise rather than degrade.
+    if not await _persist_task(task):
+        raise TaskQueueUnavailableError(f"Redis rejected the task write — cannot submit {task_type}")
     entry = {
         "task_id": task_id,
         "type": task_type,
         "args": args or {},
         "retries": _MAX_RETRIES,
     }
-    await r.lpush(_QUEUE_KEY, orjson.dumps(entry).decode())
+    try:
+        await r.lpush(_QUEUE_KEY, orjson.dumps(entry).decode())
+    except Exception as exc:
+        mark_redis_degraded(exc)
+        raise TaskQueueUnavailableError(f"Redis rejected the queue push — cannot submit {task_type}") from exc
     tasks_submitted.inc()
     logger.debug("Task submitted", task_id=task_id, type=task_type)
     return task_id
@@ -230,7 +277,7 @@ async def get_task(task_id: str) -> dict | None:
     r = get_redis()
     if not r:
         return None
-    raw = await r.get(f"{_TASK_PREFIX}{task_id}")
+    raw = await redis_op("get task", r.get, f"{_TASK_PREFIX}{task_id}")
     if raw:
         return orjson.loads(raw)
     return None
@@ -271,7 +318,9 @@ async def _reap_stale_task(task: dict, r) -> None:
         task["status"] = "pending"
         task.pop("running_since", None)
         await _persist_task(task)
-        await r.lpush(
+        await redis_op(
+            "requeue reaped task",
+            r.lpush,
             _QUEUE_KEY,
             orjson.dumps(
                 {

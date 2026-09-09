@@ -9,7 +9,7 @@ import {
   Copy,
   Check as CheckIcon,
 } from "../../icons";
-import { WS_BASE, fetchIncidentReport } from "../../api";
+import { IS_LOCAL_BACKEND, WS_BASE, fetchIncidentReport } from "../../api";
 import { Download } from "../../icons";
 
 const ROLE_COLOR = {
@@ -99,7 +99,11 @@ export default function CrisisChat({ finding, sessionId, onClose, repoName }) {
 
     ws.onerror = () => {
       if (mounted) {
-        setError("Cannot reach backend on port 8002.");
+        setError(
+          IS_LOCAL_BACKEND
+            ? "Cannot reach backend on port 8002."
+            : "Can't reach the backend. It may be waking up — try again in a moment.",
+        );
         setConnected(false);
       }
     };

@@ -14,7 +14,7 @@ from agents.blame import enrich_findings_with_blame
 from agents.health import compute_health
 from app.orchestrator import graph
 from services.auth import hash_token, verify_ws_ticket
-from services.cache import get_redis
+from services.cache import get_redis, redis_op
 from services.rate_limiter import check_rate_limit
 from services.session import initial_state, persist_analysis, put_session
 from services.sha_cache import find_cached_snapshot, get_remote_sha
@@ -32,6 +32,10 @@ HEARTBEAT_TIMEOUT = 10  # seconds to wait for pong
 _ANALYZE_LOCK_TTL = 300  # generous upper bound on one full pipeline run
 _ANALYZE_LOCK_WAIT_POLL = 2
 _ANALYZE_LOCK_WAIT_MAX = 240
+
+# Sentinel: tells "Redis cannot serve the lock" apart from "another run holds
+# it". Both are falsy-ish, but only the second one is worth waiting on.
+_LOCK_UNAVAILABLE = object()
 
 
 def _analyze_lock_key(repo_url: str, sha: str) -> str:
@@ -231,8 +235,29 @@ async def handle_analyze(ws: WebSocket) -> None:
         if _lock_redis:
             candidate_key = _analyze_lock_key(repo_url, sha)
             candidate_token = str(uuid.uuid4())
-            acquired = await _lock_redis.set(candidate_key, candidate_token, nx=True, ex=_ANALYZE_LOCK_TTL)
-            if acquired:
+            # Through redis_op, not a bare await: `_lock_redis` being non-None
+            # only proves the client connected, not that it can serve commands.
+            # A quota-exhausted Redis raises here, and this used to escape the
+            # handler and close the WebSocket mid-analysis — the user saw
+            # "Connection dropped unexpectedly". Degrading instead means we
+            # simply run uncontended, which is what the comment above promises.
+            acquired = await redis_op(
+                "analyze single-flight lock",
+                _lock_redis.set,
+                candidate_key,
+                candidate_token,
+                nx=True,
+                ex=_ANALYZE_LOCK_TTL,
+                default=_LOCK_UNAVAILABLE,
+            )
+            if acquired is _LOCK_UNAVAILABLE:
+                # Redis could not serve the lock at all. Run uncontended and
+                # hold no lock to release. Deliberately NOT the `else` branch
+                # below: a failed acquire is not contention, and waiting
+                # _ANALYZE_LOCK_WAIT_MAX (240s) for a holder that does not
+                # exist would add four minutes to every analysis.
+                logger.info("Single-flight lock unavailable — running uncontended", session=session_id)
+            elif acquired:
                 _lock_key, _lock_token = candidate_key, candidate_token
             else:
                 waited = 0.0

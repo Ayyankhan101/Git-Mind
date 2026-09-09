@@ -111,7 +111,8 @@ class TestWorker:
 
     async def test_survives_rpop_errors_and_keeps_polling(self, fake_redis, monkeypatch):
         monkeypatch.setattr(tq, "_POLL_INTERVAL", 0.01)
-        monkeypatch.setattr(tq, "_ERROR_RETRY_DELAY", 0.01)
+        monkeypatch.setattr(tq, "_ERROR_RETRY_MIN", 0.01)
+        monkeypatch.setattr(tq, "_ERROR_RETRY_MAX", 0.02)
 
         calls = {"n": 0}
         real_rpop = fake_redis.rpop
@@ -189,3 +190,112 @@ class TestPeriodicReap:
         task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
             await task  # should not raise
+
+
+class TestQuotaExhaustedRedis:
+    """A connected client whose every command is rejected.
+
+    This is the third Redis state — not "unavailable" (get_redis() returns a
+    client) and not "healthy". It is what a managed Redis does once its request
+    quota runs out, and in production it dropped analysis WebSockets and buried
+    the log under 567 identical retry warnings.
+    """
+
+    QUOTA_ERR = "max requests limit exceeded. Limit: 500000, Usage: 500000."
+
+    @staticmethod
+    def _quota_redis():
+        class _R:
+            def __init__(self):
+                self.calls = 0
+
+            def _boom(self, *a, **k):
+                self.calls += 1
+                raise ConnectionError(TestQuotaExhaustedRedis.QUOTA_ERR)
+
+            async def rpop(self, *a, **k):
+                return self._boom()
+
+            async def get(self, *a, **k):
+                return self._boom()
+
+            async def set(self, *a, **k):
+                return self._boom()
+
+            async def lpush(self, *a, **k):
+                return self._boom()
+
+        return _R()
+
+    def test_quota_error_is_recognised(self):
+        from services.cache import is_quota_error
+
+        assert is_quota_error(ConnectionError(self.QUOTA_ERR))
+        assert not is_quota_error(ConnectionError("connection reset by peer"))
+
+    async def test_worker_parks_instead_of_hammering(self, monkeypatch):
+        """The whole point: a hard cap must not be retried on a tight timer."""
+        from services import cache
+
+        cache.clear_redis_degraded()
+        r = self._quota_redis()
+        monkeypatch.setattr(tq, "get_redis", lambda: r)
+        monkeypatch.setattr(tq, "_QUOTA_RETRY_DELAY", 0.5)
+        monkeypatch.setattr(tq, "_ERROR_RETRY_MIN", 0.001)
+
+        worker = asyncio.create_task(tq._worker())
+        await asyncio.sleep(0.15)
+        worker.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await worker
+
+        assert r.calls == 1, f"quota error must park on _QUOTA_RETRY_DELAY, not retry — saw {r.calls} calls in 0.15s"
+        assert cache.redis_degraded() == "quota exhausted"
+        cache.clear_redis_degraded()
+
+    async def test_transient_error_still_backs_off_and_escalates(self, monkeypatch):
+        """A blip is not a cap — it must keep retrying, just not at a flat rate."""
+        from services import cache
+
+        cache.clear_redis_degraded()
+
+        class _R:
+            def __init__(self):
+                self.calls = 0
+
+            async def rpop(self, *a, **k):
+                self.calls += 1
+                raise ConnectionError("connection reset by peer")
+
+        r = _R()
+        monkeypatch.setattr(tq, "get_redis", lambda: r)
+        monkeypatch.setattr(tq, "_ERROR_RETRY_MIN", 0.01)
+        monkeypatch.setattr(tq, "_ERROR_RETRY_MAX", 0.02)
+
+        worker = asyncio.create_task(tq._worker())
+        await asyncio.sleep(0.12)
+        worker.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await worker
+
+        assert r.calls > 1, "a transient error must keep the worker retrying"
+        cache.clear_redis_degraded()
+
+    async def test_submit_raises_rather_than_accepting_work_it_cannot_queue(self, monkeypatch):
+        from services import cache
+
+        cache.clear_redis_degraded()
+        r = self._quota_redis()
+        monkeypatch.setattr(tq, "get_redis", lambda: r)
+
+        with pytest.raises(tq.TaskQueueUnavailableError):
+            await tq.submit("some_task", {"x": 1})
+        cache.clear_redis_degraded()
+
+    async def test_get_task_degrades_to_none(self, monkeypatch):
+        from services import cache
+
+        cache.clear_redis_degraded()
+        monkeypatch.setattr(tq, "get_redis", lambda: self._quota_redis())
+        assert await tq.get_task("whatever") is None
+        cache.clear_redis_degraded()
