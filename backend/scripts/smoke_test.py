@@ -115,9 +115,17 @@ if api_key and not _skip_live_checks:
 
         from core.settings import LLM_MODEL
 
-        llm = ChatGroq(model=LLM_MODEL, temperature=0, max_tokens=5)
+        # LLM_MODEL is a reasoning model (openai/gpt-oss-120b). Reasoning tokens
+        # come out of max_tokens before any visible text does, so a tight budget
+        # returns an empty completion and this check fails on a live, healthy API.
+        llm = ChatGroq(model=LLM_MODEL, temperature=0, max_tokens=64)
         resp = llm.invoke("Reply with the single word: OK")
-        check("Groq API reachable", len(resp.content) > 0, resp.content)  # type: ignore[arg-type]
+        content = str(resp.content)
+        check(
+            "Groq API reachable",
+            len(content) > 0,
+            "API answered but returned an empty completion — raise max_tokens",
+        )
     except Exception as exc:
         check("Groq API reachable", False, str(exc))
 else:
