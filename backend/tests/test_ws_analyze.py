@@ -1,8 +1,10 @@
 import os
+import threading
 from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 # Ensure ENVIRONMENT is test before importing app
 os.environ.setdefault("ENVIRONMENT", "test")
@@ -361,3 +363,62 @@ class TestWsAnalyzeSingleFlight:
         assert fake_redis.set_calls == 1, "the lock acquire should still be attempted once"
         assert cache.redis_degraded() == "quota exhausted"
         cache.clear_redis_degraded()
+
+    @patch("ws.analyze.check_rate_limit", return_value=(True, 30, 0))
+    @patch("ws.analyze.get_remote_sha", return_value=None)
+    @patch("ws.analyze.find_cached_snapshot", return_value=None)
+    @patch("ws.analyze.graph")
+    @patch("ws.analyze.get_redis", return_value=None)
+    @patch.dict(os.environ, {"ENVIRONMENT": "test"})
+    def test_successful_run_closes_the_socket_cleanly(self, _mock_redis, mock_graph, _mock_find, _mock_sha, _mock_rate):
+        """A completed analysis must close with 1000, not drop the connection.
+
+        Every error path in ws/analyze.py calls ws.close() explicitly; the two
+        `done` paths used to just return. Returning tears the socket down with
+        no close handshake, so a client sees close code 1006 (abnormal) on a
+        SUCCESSFUL run — indistinguishable from a network failure. Confirmed
+        against production before the fix: the explicit-close paths delivered
+        1000 and 1008 with proper frames while the done path delivered 1006
+        with no frame received in either direction.
+        """
+
+        async def _stream(*_args, **_kwargs):
+            for chunk in ({"scanner_node": {"repo_name": "x", "file_contents": {}}},):
+                yield chunk
+
+        mock_graph.astream = _stream
+
+        # Bounded in a worker thread: if the handler stops closing, receive()
+        # blocks forever, and a hanging test reports nothing useful.
+        result = {}
+
+        def _drive():
+            try:
+                with client.websocket_connect("/ws/analyze") as ws:
+                    ws.send_json({"repo_url": "https://github.com/user/repo", "gh_token": "ghp_test"})
+                    for _ in range(40):
+                        msg = ws.receive_json()
+                        if msg.get("done"):
+                            result["saw_done"] = True
+                        if msg.get("error"):
+                            result["error"] = msg["error"]
+                            return
+            except WebSocketDisconnect as exc:
+                result["close_code"] = exc.code
+            except Exception as exc:  # noqa: BLE001 — surfaced via the assert below
+                result["exception"] = f"{type(exc).__name__}: {exc}"
+
+        t = threading.Thread(target=_drive, daemon=True)
+        t.start()
+        t.join(timeout=20)
+
+        assert not t.is_alive(), (
+            "handler never closed the socket — receive() blocked until the timeout. "
+            "A completed run must call ws.close(); without it the client hangs or "
+            "eventually sees an abnormal 1006."
+        )
+        assert result.get("saw_done"), f"expected a done frame, got {result}"
+        assert result.get("close_code") == 1000, (
+            f"a completed run must close with 1000, got {result.get('close_code')} — "
+            "returning without ws.close() surfaces as an abnormal drop"
+        )
