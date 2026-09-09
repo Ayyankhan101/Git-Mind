@@ -31,10 +31,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# This script lives in backend/scripts/. Backend modules are imported lazily
+# further down, so the backend root goes on sys.path unconditionally.
+_BACKEND = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_BACKEND))
+
 # Make the venv's tools (semgrep, etc.) findable when run via venv/bin/python
-_venv_bin = Path(__file__).parent / "venv" / "bin"
+_venv_bin = _BACKEND / "venv" / "bin"
 if _venv_bin.exists():
-    sys.path.insert(0, str(Path(__file__).parent))
     os.environ["PATH"] = f"{_venv_bin}:{os.environ.get('PATH', '')}"
 
 REPO = "https://github.com/pallets/itsdangerous"

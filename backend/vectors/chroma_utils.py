@@ -48,8 +48,12 @@ def _writable(path: Path) -> bool:
         return False
 
 
-_PREFERRED_CHROMA = Path(__file__).parent / ".chroma"
-_PREFERRED_REGISTRY = Path(__file__).parent / ".chroma_registry.json"
+# Anchored on the backend root, not this file's directory — these persist
+# directories are addressed as backend/.chroma and backend/.chroma_registry.json
+# by .gitignore, the compose volumes, and every operator runbook.
+_BACKEND_ROOT = Path(__file__).resolve().parent.parent
+_PREFERRED_CHROMA = _BACKEND_ROOT / ".chroma"
+_PREFERRED_REGISTRY = _BACKEND_ROOT / ".chroma_registry.json"
 
 if _writable(_PREFERRED_CHROMA):
     _CHROMA_PATH = _PREFERRED_CHROMA

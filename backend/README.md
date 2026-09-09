@@ -100,7 +100,7 @@ venv/bin/python -m optimization.run --agent security --auto none --candidates 1 
 venv/bin/python -m optimization.run --rollback security
 # live e2e compile — cap the gold valset when the window is tight
 # (baseline eval costs ~650 tokens per example):
-venv/bin/python live_dspy_e2e.py --optimize security --min-gold 2
+venv/bin/python scripts/live_dspy_e2e.py --optimize security --min-gold 2
 ```
 
 The CLI loads `.env` itself and imports the 7 agents (nothing else does).
@@ -112,7 +112,7 @@ only as good as the `--budget` / `GROQ_DAILY_REMAINING` value you feed it.
 `--agent` and `--rollback` are mutually exclusive — `--rollback <agent>`
 reverts to the previous promoted artifact from `active.json` rollback history
 (keeps the last 3) and exits before any harvest/compile work.
-`live_dspy_e2e.py --optimize` also takes `--min-gold N` to cap the gold
+`scripts/live_dspy_e2e.py --optimize` also takes `--min-gold N` to cap the gold
 valset to its first N examples (refused when the curated set has fewer than
 N) — the baseline eval costs ~650 tokens per example, so a tight Groq window
 can gate on a 2-example valset and reach the compile phase.

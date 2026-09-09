@@ -35,6 +35,10 @@ import sys
 import time
 from pathlib import Path
 
+# This script lives in backend/scripts/ and drives live_dspy_e2e.py, which
+# expects to run with the backend root as its working directory.
+_BACKEND = Path(__file__).resolve().parent.parent
+
 _TPD_LIMIT = 100_000
 _TARGET_FREE = 35_000  # baseline (~8K) + bootstrap + candidate search
 
@@ -55,7 +59,7 @@ def main() -> int:
         default=_TARGET_FREE,
         help="min free tokens before expecting success",
     )
-    ap.add_argument("--log", default=Path(__file__).parent / ".optimize_watch.log")
+    ap.add_argument("--log", default=_BACKEND / ".optimize_watch.log")
     args = ap.parse_args()
 
     log = Path(args.log)
@@ -68,13 +72,13 @@ def main() -> int:
             f.write(line + "\n")
         print(line, flush=True)
 
-    cmd = [sys.executable, "live_dspy_e2e.py", "--optimize", args.agent]
+    cmd = [sys.executable, str(Path(__file__).resolve().parent / "live_dspy_e2e.py"), "--optimize", args.agent]
     note(f"watcher started: agent={args.agent} poll={args.poll}s target_free={args.target_free}")
 
     for attempt in range(1, args.max_attempts + 1):
         note(f"[{attempt}] attempting e2e ($ {' '.join(cmd)})")
         with open(e2e_log, "w", encoding="utf-8") as f:
-            proc = subprocess.run(cmd, cwd=str(Path(__file__).parent), stdout=f, stderr=subprocess.STDOUT)
+            proc = subprocess.run(cmd, cwd=str(_BACKEND), stdout=f, stderr=subprocess.STDOUT)
 
         text = e2e_log.read_text(encoding="utf-8", errors="replace")
         used_values = sorted({int(m) for m in re.findall(r"Used (\d+)", text)}, reverse=True)

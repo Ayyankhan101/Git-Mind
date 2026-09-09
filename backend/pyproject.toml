@@ -13,6 +13,9 @@ quote-style = "double"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+# Without this, a bare `pytest` collects scripts/ and dies with
+# INTERNALERROR SystemExit:0 the moment smoke_test.py hits its sys.exit().
+testpaths = ["tests"]
 
 [tool.mypy]
 python_version = "3.11"

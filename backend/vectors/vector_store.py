@@ -12,7 +12,7 @@ the backend can be swapped in one place.
 import os
 
 if os.getenv("QDRANT_URL"):
-    from qdrant_utils import (  # noqa: F401
+    from vectors.qdrant_utils import (  # noqa: F401
         collection_exists,
         delete_collection,
         embed_codebase,
@@ -22,7 +22,7 @@ if os.getenv("QDRANT_URL"):
 
     BACKEND = "qdrant"
 else:
-    from chroma_utils import (  # noqa: F401
+    from vectors.chroma_utils import (  # noqa: F401
         collection_exists,
         delete_collection,
         embed_codebase,

@@ -400,7 +400,7 @@ def test_promoted_program_passes_typed_contract(tmp_path):
 def test_verify_optimize_min_gold_caps_valset(tmp_path):
     """live_dspy_e2e.verify_optimize(agent, min_gold=N) must hand compile_agent
     a valset capped to the first N gold examples (window-saving baseline)."""
-    import live_dspy_e2e as e2e
+    from scripts import live_dspy_e2e as e2e
 
     gold = trainsets.load_gold("security")
     assert len(gold) >= 5
@@ -423,7 +423,7 @@ def test_verify_optimize_min_gold_caps_valset(tmp_path):
 
 def test_verify_optimize_min_gold_refuses_when_gold_small(tmp_path):
     """min_gold larger than the curated gold set must refuse to run (floor)."""
-    import live_dspy_e2e as e2e
+    from scripts import live_dspy_e2e as e2e
 
     with patch.object(e2e, "record") as rec:
         e2e.verify_optimize("security", min_gold=10_000)

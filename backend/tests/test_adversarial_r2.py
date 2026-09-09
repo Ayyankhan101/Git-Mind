@@ -137,7 +137,7 @@ class TestDataCorruption:
 
         with (
             patch("routes.chat.run_chat_agent", return_value=("👍 Done", [])),
-            patch("chroma_utils._client") as mock_chroma,
+            patch("vectors.chroma_utils._client") as mock_chroma,
         ):
             mock_chroma.get_collection.return_value = MagicMock()
             resp = client.post(

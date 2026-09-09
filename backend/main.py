@@ -66,7 +66,7 @@ async def _periodic_prune_loop():
         except Exception as exc:
             logger.warning("Could not prune in-memory sessions", error=str(exc))
         try:
-            from vector_store import prune_old_collections
+            from vectors.vector_store import prune_old_collections
 
             removed = await asyncio.to_thread(prune_old_collections)
             if removed:
@@ -235,7 +235,7 @@ async def lifespan(_app: FastAPI):
     logger.info("Background task worker started")
     await _prune_old_analyses()
     try:
-        from vector_store import prune_old_collections
+        from vectors.vector_store import prune_old_collections
 
         removed = await asyncio.to_thread(prune_old_collections)
         if removed:
@@ -451,15 +451,15 @@ async def health():
 
         checks["groq_key"] = bool(os.getenv("GROQ_API_KEY"))
         checks["semgrep"] = bool(shutil.which("semgrep"))
-        from vector_store import BACKEND
+        from vectors.vector_store import BACKEND
 
         try:
             if BACKEND == "qdrant":
-                from qdrant_utils import get_client
+                from vectors.qdrant_utils import get_client
 
                 get_client().get_collections()
             else:
-                from chroma_utils import _client
+                from vectors.chroma_utils import _client
 
                 _client.list_collections()
             checks[f"vector_store_{BACKEND}"] = True

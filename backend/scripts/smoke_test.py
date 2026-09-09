@@ -16,6 +16,12 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+# This script lives in backend/scripts/ but imports backend modules (lazily,
+# inside the checks below) and probes backend/venv, so anchor both to the
+# backend root rather than to __file__'s own directory.
+_BACKEND = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_BACKEND))
+
 load_dotenv()
 
 _PASS = "[PASS]"
@@ -59,7 +65,7 @@ else:
         api_key.startswith("gsk_"),
         f"Got prefix: {api_key[:6]!r}",
     )
-_venv_semgrep = Path(__file__).parent / "venv" / "bin" / "semgrep"
+_venv_semgrep = _BACKEND / "venv" / "bin" / "semgrep"
 check(
     "semgrep available",
     shutil.which("semgrep") is not None or _venv_semgrep.exists(),

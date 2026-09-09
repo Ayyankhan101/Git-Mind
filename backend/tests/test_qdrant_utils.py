@@ -11,7 +11,7 @@ ranking) is exactly what would silently break in a hand-rolled fake.
 import pytest
 from qdrant_client import QdrantClient
 
-import qdrant_utils
+from vectors import qdrant_utils
 
 
 class FakeSyncRedis:

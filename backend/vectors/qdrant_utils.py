@@ -86,7 +86,13 @@ def get_client() -> QdrantClient:
     return _client
 
 
-_PREFERRED_FASTEMBED_CACHE = Path(__file__).parent / ".fastembed_cache"
+# Anchored on the backend root, NOT on this file's own directory. Both
+# Dockerfiles pre-download the ONNX weights into /app/.fastembed_cache, and
+# /app is the backend root (they do `COPY backend/ .`). Resolving this
+# relative to vectors/ would miss the baked cache and re-download the model
+# at boot — the failure that took the HF Space down in 241a4fe.
+_BACKEND_ROOT = Path(__file__).resolve().parent.parent
+_PREFERRED_FASTEMBED_CACHE = _BACKEND_ROOT / ".fastembed_cache"
 if _writable(_PREFERRED_FASTEMBED_CACHE):
     _FASTEMBED_CACHE_DIR = str(_PREFERRED_FASTEMBED_CACHE)
 else:
