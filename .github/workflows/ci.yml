@@ -101,7 +101,7 @@ jobs:
           DATABASE_URL: "sqlite+aiosqlite:///:memory:"
           ENVIRONMENT: "development"
           DEBUG: "1"
-        run: python smoke_test.py
+        run: python scripts/smoke_test.py
 
   frontend-tests:
     runs-on: ubuntu-latest

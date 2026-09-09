@@ -3,19 +3,19 @@ import { MemoryRouter } from "react-router-dom";
 import App from "./App";
 import { loadSharedAnalysis, exchangeGithubOAuthCode } from "./api";
 
-jest.mock("./components/LandingPage", () => {
+jest.mock("./components/landing/LandingPage", () => {
   return function MockLandingPage() {
     return <div>GitMind</div>;
   };
 });
 
-jest.mock("./components/SceneManager", () => {
+jest.mock("./components/scene/SceneManager", () => {
   return function MockSceneManager({ children }) {
     return children?.({ prefersReduced: false }) || null;
   };
 });
 
-jest.mock("./components/DashboardLayout", () => {
+jest.mock("./components/layout/DashboardLayout", () => {
   return function MockDashboardLayout() {
     return (
       <nav>
@@ -27,7 +27,7 @@ jest.mock("./components/DashboardLayout", () => {
   };
 });
 
-jest.mock("./components/PostProcessing", () => {
+jest.mock("./components/scene/PostProcessing", () => {
   return function MockPostProcessing() {
     return null;
   };

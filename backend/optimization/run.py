@@ -26,12 +26,12 @@ from pathlib import Path
 
 import structlog
 
-from dspy_setup import dspy
+from core.dspy_setup import dspy
+from core.settings import get_dspy_lm
 from optimization import budget, registry
 from optimization.budget import estimate_compile_tokens, guard_budget
 from optimization.metrics import make_metric
 from optimization.trainsets import harvest, load_gold
-from settings import get_dspy_lm
 
 logger = structlog.get_logger(__name__)
 

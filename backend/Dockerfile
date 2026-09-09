@@ -61,9 +61,10 @@ tf=tarfile.open(arc); tf.extractall(DEST); tf.close(); \
 arc.unlink(); print('ChromaDB ONNX model cached.')"
 
 # Pre-download fastembed's ONNX model into the exact cache_dir
-# qdrant_utils.py resolves at runtime (backend/.fastembed_cache — see
-# _PREFERRED_FASTEMBED_CACHE there). This is the model the Qdrant backend
-# actually uses for the Knowledge/RAG step (vector_store.py switches to it
+# vectors/qdrant_utils.py resolves at runtime (backend/.fastembed_cache — see
+# _PREFERRED_FASTEMBED_CACHE there, anchored on _BACKEND_ROOT rather than on
+# the module's own directory). This is the model the Qdrant backend actually
+# uses for the Knowledge/RAG step (vectors/vector_store.py switches to it
 # whenever QDRANT_URL is set); the ChromaDB pre-download above never covered
 # it, so every fresh/redeployed container paid a cold model download inside
 # the first analysis's RAG step instead of at build time — the Knowledge
@@ -84,4 +85,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
 
 # CACHEBUSTER 2026-06-24 — force rebuild after webhook asyncio fix
 # Start Redis in background, then start the app
-CMD ["sh", "-c", "redis-server --daemonize yes && uvicorn main:app --host 0.0.0.0 --port 7860"]
+CMD ["sh", "-c", "redis-server --daemonize yes && uvicorn app.main:app --host 0.0.0.0 --port 7860"]

@@ -10,7 +10,7 @@ import re
 
 import pytest
 
-from main import _CORS_ORIGIN_REGEX, _resolve_cors_origins
+from app.main import _CORS_ORIGIN_REGEX, _resolve_cors_origins
 
 
 def test_wildcard_raises_in_production():

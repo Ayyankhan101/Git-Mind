@@ -21,7 +21,7 @@ import agents.language_audit as _language_audit
 import agents.pr_review as _pr_review
 import agents.security as _security
 import agents.solidity_agent as _solidity
-from llm_cache import run_dspy_cached
+from core.llm_cache import run_dspy_cached
 
 # ── Fake LM ──────────────────────────────────────────────────────────────────
 
@@ -249,9 +249,9 @@ def _no_cache():
     from unittest.mock import patch
 
     with (
-        patch("llm_cache.get_cached", return_value=None),
-        patch("llm_cache.set_cached"),
-        patch("llm_cache._record_harvest"),  # fake LMs must not pollute the harvest log
+        patch("core.llm_cache.get_cached", return_value=None),
+        patch("core.llm_cache.set_cached"),
+        patch("core.llm_cache._record_harvest"),  # fake LMs must not pollute the harvest log
     ):
         yield
 

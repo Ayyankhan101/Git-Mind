@@ -7,7 +7,7 @@ import structlog
 from fastapi import WebSocket, WebSocketDisconnect
 
 from agents.crisis.reporter import reporter_loop
-from orchestrator import crisis_graph
+from app.orchestrator import crisis_graph
 from services.rate_limiter import check_rate_limit
 from services.session import get_session, initial_state
 

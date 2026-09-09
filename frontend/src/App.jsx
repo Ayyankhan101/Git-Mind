@@ -8,11 +8,12 @@ import React, {
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import LandingPage from "./components/LandingPage";
+import LandingPage from "./components/landing/LandingPage";
 import ErrorBoundary from "./components/ErrorBoundary";
-import ToastSystem from "./components/ToastSystem";
-import PostProcessing from "./components/PostProcessing";
+import ToastSystem from "./components/overlays/ToastSystem";
+import PostProcessing from "./components/scene/PostProcessing";
 import {
+  IS_LOCAL_BACKEND,
   WS_BASE,
   fetchRepos,
   fetchWsTicket,
@@ -27,18 +28,26 @@ import { useEscClose } from "./hooks/useEscClose";
 
 // three.js (~150KB gz) is pulled in through SceneManager — keep it out of
 // the main bundle so the landing page paints without the WebGL stack.
-const SceneManager = lazy(() => import("./components/SceneManager"));
-const DashboardScene = lazy(() => import("./components/DashboardScene"));
+const SceneManager = lazy(() => import("./components/scene/SceneManager"));
+const DashboardScene = lazy(() => import("./components/scene/DashboardScene"));
 
 // Dashboard shell (NavRail/Sidebar + all tabs) is lazy-loaded so the landing
 // page doesn't ship the full 400KB+ dashboard bundle.
-const DashboardLayout = lazy(() => import("./components/DashboardLayout"));
-const CrisisChat = lazy(() => import("./components/CrisisChat"));
-const KeyboardHelp = lazy(() => import("./components/KeyboardHelp"));
-const FilePreviewDrawer = lazy(() => import("./components/FilePreviewDrawer"));
-const OrgAuditModal = lazy(() => import("./components/OrgAuditModal"));
-const CommandPalette = lazy(() => import("./components/CommandPalette"));
-const ShareErrorOverlay = lazy(() => import("./components/ShareErrorOverlay"));
+const DashboardLayout = lazy(
+  () => import("./components/layout/DashboardLayout"),
+);
+const CrisisChat = lazy(() => import("./components/overlays/CrisisChat"));
+const KeyboardHelp = lazy(() => import("./components/overlays/KeyboardHelp"));
+const FilePreviewDrawer = lazy(
+  () => import("./components/overlays/FilePreviewDrawer"),
+);
+const OrgAuditModal = lazy(() => import("./components/overlays/OrgAuditModal"));
+const CommandPalette = lazy(
+  () => import("./components/overlays/CommandPalette"),
+);
+const ShareErrorOverlay = lazy(
+  () => import("./components/overlays/ShareErrorOverlay"),
+);
 
 const IS_MAC = /Mac/i.test(
   navigator.userAgentData?.platform ?? navigator.platform,
@@ -486,8 +495,10 @@ export default function App() {
         analyzingRef.current = false;
         dispatch({
           type: "ANALYSIS_ERROR",
-          error:
-            "Cannot reach the backend on port 8002. Start it with:\n  cd backend && uvicorn main:app --port 8002 --reload",
+          error: IS_LOCAL_BACKEND
+            ? "Cannot reach the backend on port 8002. Start it with:\n  cd backend && uvicorn app.main:app --port 8002 --reload"
+            : "Can't reach the analysis backend. It may be waking up or briefly down — try again in a moment.",
+          retryUrl: url,
         });
       };
 
@@ -497,8 +508,10 @@ export default function App() {
           analyzingRef.current = false;
           dispatch({
             type: "ANALYSIS_ERROR",
-            error:
-              "Connection dropped unexpectedly. Check the backend terminal for errors.",
+            error: IS_LOCAL_BACKEND
+              ? "Connection dropped unexpectedly. Check the backend terminal for errors."
+              : "Connection dropped before the analysis finished. Try again — if it keeps happening the backend may be restarting.",
+            retryUrl: url,
           });
         }
       };

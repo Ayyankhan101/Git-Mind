@@ -8,10 +8,10 @@ import httpx
 import structlog
 from pydantic import BaseModel
 
-from dspy_setup import dspy
-from llm_cache import run_dspy_cached
+from core.dspy_setup import dspy
+from core.llm_cache import run_dspy_cached
+from core.settings import LLM_MODEL, get_dspy_lm
 from optimization.registry import define_program
-from settings import LLM_MODEL, get_dspy_lm
 
 # ML classifier path
 _ML_DIR = Path(__file__).parent.parent.parent / "ml" / "solidity_classifier"

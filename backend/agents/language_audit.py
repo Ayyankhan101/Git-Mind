@@ -10,16 +10,19 @@ from pathlib import Path
 import structlog
 from pydantic import BaseModel
 
-from dspy_setup import dspy
-from llm_cache import run_dspy_cached
+from core.dspy_setup import dspy
+from core.llm_cache import run_dspy_cached
+from core.settings import LLM_MODEL_CHEAP, get_dspy_lm_pair
 from optimization.registry import define_program
-from settings import LLM_MODEL_CHEAP, get_dspy_lm
 
 logger = structlog.get_logger(__name__)
 
 # Cheap tier — triaging lint/static-analysis output that's already computed
 # is summarization, not judgment; see settings.py's LLM_MODEL_CHEAP comment.
-_LM = get_dspy_lm(temperature_key="code_audit", cheap=True)
+# Flagship LM is the retry path — see agents/api_doc.py. This agent degrades
+# quietly (returns []) rather than raising, so a dead cheap tier here produced
+# empty triage that looked like a clean audit.
+_LM, _FALLBACK_LM = get_dspy_lm_pair(temperature_key="code_audit")
 _CACHE_NS = f"{LLM_MODEL_CHEAP}:lang_audit:json"
 _MAX_FINDINGS = 40
 
@@ -432,6 +435,7 @@ def _triage_with_llm(prompt_template: str, tool_results: list[dict], lang: str) 
             _predictor,
             _CACHE_NS,
             lm=_LM,
+            fallback_lm=_FALLBACK_LM,
             output_field="findings",
             guidance=_audit_guidance(prompt_template),
             context=json.dumps(truncated, indent=2),
@@ -457,6 +461,7 @@ def _run_llm_fallback(
             _predictor,
             _CACHE_NS,
             lm=_LM,
+            fallback_lm=_FALLBACK_LM,
             output_field="findings",
             guidance=_audit_guidance(prompt_template),
             context=json.dumps(sources, indent=2),

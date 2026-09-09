@@ -20,7 +20,7 @@ import orjson
 import structlog
 from prometheus_client import Counter
 
-from services.cache import get_redis
+from services.cache import clear_redis_degraded, get_redis, is_quota_error, mark_redis_degraded, redis_op
 
 logger = structlog.get_logger(__name__)
 
@@ -35,8 +35,53 @@ _MAX_RETRIES = 3
 _WORKER_COUNT = int(os.getenv("TASK_WORKERS", "3"))
 _QUEUE_KEY = "queue:tasks"
 _TASK_PREFIX = "task:"
-_POLL_INTERVAL = 0.5  # seconds between empty-queue RPOP retries
-_ERROR_RETRY_DELAY = 1.0  # seconds to back off after an RPOP error
+# Seconds a worker waits on an empty queue before asking Redis again.
+#
+# This is the single biggest Redis cost in the app, and it used to be 0.5s.
+# RPOP is a write, and three workers polling twice a second is 518,400 writes a
+# day whether or not any work exists — it consumed a 500,000/month free tier in
+# under a day of uptime, and 93.7% of the account's entire monthly usage was
+# this loop finding nothing.
+#
+# It can be this long only because submit() below signals _work_ready directly:
+# anything queued by this process starts immediately, so the poll is purely a
+# safety net for work pushed by another replica. BRPOP would be the textbook
+# answer and is not available — the managed tier rejects it ("this user has no
+# permissions to run the 'brpop' command").
+_POLL_INTERVAL = float(os.getenv("TASK_POLL_INTERVAL", "60"))
+
+# Set by submit() so idle workers wake on local work without touching Redis.
+#
+# Created lazily and re-created if the running loop changes. An asyncio.Event
+# binds to the loop that first awaits it, so a module-level instance built at
+# import time raises "is bound to a different event loop" anywhere the loop is
+# not the one that imported this module — under uvicorn --reload, or across
+# tests. Bind it to the loop actually running the workers instead.
+_work_ready: asyncio.Event | None = None
+_work_ready_loop: asyncio.AbstractEventLoop | None = None
+
+
+def _work_signal() -> asyncio.Event:
+    global _work_ready, _work_ready_loop
+    loop = asyncio.get_running_loop()
+    if _work_ready is None or _work_ready_loop is not loop:
+        _work_ready = asyncio.Event()
+        _work_ready_loop = loop
+    return _work_ready
+
+
+# Backoff after a failed RPOP, doubling up to the cap. A flat 1s here was how a
+# quota-exhausted Redis stayed exhausted: three workers retrying once a second
+# is ~259k requests a day spent on calls that cannot succeed, which is more
+# than half a free tier's monthly allowance burned on nothing. It also drowned
+# the log — 567 of 600 lines in the production incident were this one warning,
+# hiding the errors someone actually needed to read.
+_ERROR_RETRY_MIN = 1.0
+_ERROR_RETRY_MAX = 60.0
+
+# A usage cap is not a transient failure; it clears on the provider's schedule,
+# not ours. Park for this long between probes rather than polling a wall.
+_QUOTA_RETRY_DELAY = 300.0
 _worker_tasks: list[asyncio.Task] = []
 _prune_task: asyncio.Task | None = None
 _reap_task: asyncio.Task | None = None
@@ -52,15 +97,24 @@ tasks_submitted = Counter("tasks_submitted_total", "Background tasks submitted")
 tasks_completed = Counter("tasks_completed_total", "Background tasks completed", ["status"])
 
 
-async def _persist_task(task: dict) -> None:
-    """Persist task state to Redis."""
+async def _persist_task(task: dict) -> bool:
+    """Persist task state to Redis. Returns whether the write landed.
+
+    Callers differ on how much they care: submit() must fail loudly if the task
+    never got written, while a worker updating status mid-run is best-effort.
+    """
     r = get_redis()
-    if r:
-        await r.set(
-            f"{_TASK_PREFIX}{task['id']}",
-            orjson.dumps(task, default=str).decode(),
-            ex=_TASK_TTL,
-        )
+    if not r:
+        return False
+    written = await redis_op(
+        "persist task",
+        r.set,
+        f"{_TASK_PREFIX}{task['id']}",
+        orjson.dumps(task, default=str).decode(),
+        ex=_TASK_TTL,
+        default=None,
+    )
+    return written is not None
 
 
 async def _worker():
@@ -70,17 +124,38 @@ async def _worker():
         logger.error("No Redis — worker cannot start")
         return
 
+    backoff = _ERROR_RETRY_MIN
     while True:
+        # Cleared BEFORE the pop, never after, and outside the try below. A
+        # submit() landing between the pop and the clear would otherwise have
+        # its signal erased and the worker would sleep the full _POLL_INTERVAL
+        # with work sitting in the queue. Outside the try because only Redis
+        # calls belong in a block whose handler reports Redis degradation.
+        signal = _work_signal()
+        signal.clear()
         try:
             payload = await r.rpop(_QUEUE_KEY)
             if payload is None:
-                await asyncio.sleep(_POLL_INTERVAL)
+                backoff = _ERROR_RETRY_MIN
+                clear_redis_degraded()
+                # Local work wakes us immediately; the timeout is only there to
+                # catch work pushed by another replica.
+                with contextlib.suppress(TimeoutError):
+                    await asyncio.wait_for(signal.wait(), timeout=_POLL_INTERVAL)
                 continue
+            backoff = _ERROR_RETRY_MIN
+            clear_redis_degraded()
         except asyncio.CancelledError:
             raise
         except Exception as exc:
-            logger.warning("RPOP failed", error=str(exc)[:100])
-            await asyncio.sleep(_ERROR_RETRY_DELAY)
+            # _mark_degraded logs once per episode, so a persistent outage
+            # produces one line rather than one per attempt.
+            mark_redis_degraded(exc)
+            if is_quota_error(exc):
+                await asyncio.sleep(_QUOTA_RETRY_DELAY)
+            else:
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, _ERROR_RETRY_MAX)
             continue
 
         try:
@@ -91,8 +166,9 @@ async def _worker():
             logger.warning("Invalid queue entry", error=str(exc)[:100])
             continue
 
-        # Load task state
-        raw = await r.get(f"{_TASK_PREFIX}{task_id}")
+        # Load task state. Degrades to None, which the existing falsy check
+        # already treats as "skip this entry".
+        raw = await redis_op("load task state", r.get, f"{_TASK_PREFIX}{task_id}")
         if not raw:
             continue
         task = orjson.loads(raw)
@@ -136,7 +212,12 @@ async def _handle_task_failure(task: dict, task_id: str, retries_left: int, r, e
         task["status"] = "pending"
         delay = 2 ** (_MAX_RETRIES - retries_left)
         await asyncio.sleep(delay)
-        await r.lpush(
+        # Best-effort: if the requeue is lost, _periodic_reap sweeps the task up
+        # later rather than the worker dying on the way out of a failure path.
+        _work_signal().set()
+        await redis_op(
+            "requeue failed task",
+            r.lpush,
             _QUEUE_KEY,
             orjson.dumps(
                 {
@@ -212,15 +293,28 @@ async def submit(task_type: str, args: dict | None = None) -> str:
         "error": None,
         "retries": _MAX_RETRIES,
     }
-    await _persist_task(task)
+    # submit() stays loud on purpose. Everywhere else in this module a lost
+    # Redis write costs a status update or a retry; here it would mean handing
+    # the caller a task_id for work that was never queued and will never run.
+    # The caller already handles TaskQueueUnavailableError from the None check
+    # above, so raise rather than degrade.
+    if not await _persist_task(task):
+        raise TaskQueueUnavailableError(f"Redis rejected the task write — cannot submit {task_type}")
     entry = {
         "task_id": task_id,
         "type": task_type,
         "args": args or {},
         "retries": _MAX_RETRIES,
     }
-    await r.lpush(_QUEUE_KEY, orjson.dumps(entry).decode())
+    try:
+        await r.lpush(_QUEUE_KEY, orjson.dumps(entry).decode())
+    except Exception as exc:
+        mark_redis_degraded(exc)
+        raise TaskQueueUnavailableError(f"Redis rejected the queue push — cannot submit {task_type}") from exc
     tasks_submitted.inc()
+    # Wake the workers now rather than letting them discover this up to
+    # _POLL_INTERVAL later. Same process, so this costs nothing.
+    _work_signal().set()
     logger.debug("Task submitted", task_id=task_id, type=task_type)
     return task_id
 
@@ -230,7 +324,7 @@ async def get_task(task_id: str) -> dict | None:
     r = get_redis()
     if not r:
         return None
-    raw = await r.get(f"{_TASK_PREFIX}{task_id}")
+    raw = await redis_op("get task", r.get, f"{_TASK_PREFIX}{task_id}")
     if raw:
         return orjson.loads(raw)
     return None
@@ -271,7 +365,10 @@ async def _reap_stale_task(task: dict, r) -> None:
         task["status"] = "pending"
         task.pop("running_since", None)
         await _persist_task(task)
-        await r.lpush(
+        _work_signal().set()
+        await redis_op(
+            "requeue reaped task",
+            r.lpush,
             _QUEUE_KEY,
             orjson.dumps(
                 {

@@ -20,8 +20,8 @@ from pathlib import Path
 
 import structlog
 
-from dspy_setup import dspy
-from llm_cache import _harvest_path
+from core.dspy_setup import dspy
+from core.llm_cache import _harvest_path
 from optimization.metrics import validate_output
 from optimization.registry import get_spec
 

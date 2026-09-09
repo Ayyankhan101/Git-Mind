@@ -49,7 +49,7 @@ bare-restart:
 
 # ── Dev tooling ────────────────────────────────────────────────────────────────
 smoke:
-	cd backend && venv/bin/python3 smoke_test.py
+	cd backend && venv/bin/python3 scripts/smoke_test.py
 
 smoke-frontend:
 	cd frontend && python3 e2e/smoke_test.py --browser auto

@@ -4,16 +4,20 @@ build
 
 backend/venv/
 backend/__pycache__/
-backend/.chroma/
-backend/.chroma_registry.json
-backend/.fastembed_cache/
-backend/.llm_cache/
-backend/.dspy_harvest/
 backend/optimized/
 backend/analyses/
 backend/gitmind.db
+
+# Runtime caches and persist dirs. Matched anywhere under the tree, not just at
+# backend/ — a module that moves into a subpackage must never be able to drop
+# a 30k-line model blob somewhere git is still watching.
+**/.chroma/
+**/.chroma_registry.json
+**/.fastembed_cache/
+**/.llm_cache/
+**/.dspy_harvest/
+**/__pycache__/
 *.pyc
-.env
 graphify-out/
 graphify-out.zip
 
@@ -63,3 +67,12 @@ backend/rust-gitmind/
 
 # Freebuff desktop app's local project marker (unrelated tool, not ours)
 .freebuff/
+
+# Tool caches — these self-ignore via their own inner .gitignore, but listing
+# them here keeps `git status --ignored` readable.
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.serena/
+.gstack/
+.superpowers/

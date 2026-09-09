@@ -11,8 +11,8 @@ from collections import OrderedDict
 
 import structlog
 
+from core.state import initial_state  # noqa: F401 — re-export for backward compatibility
 from services.cache import get_redis, redis_required
-from state import initial_state  # noqa: F401 — re-export for backward compatibility
 
 logger = structlog.get_logger(__name__)
 

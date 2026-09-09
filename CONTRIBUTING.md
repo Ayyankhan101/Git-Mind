@@ -14,7 +14,7 @@ Thanks for your interest in contributing! This document covers how to get starte
 cd backend
 pip install -r requirements.txt
 cp .env.example .env  # fill in your GitHub token
-uvicorn main:app --reload --port 8002
+uvicorn app.main:app --reload --port 8002
 ```
 
 ### Frontend

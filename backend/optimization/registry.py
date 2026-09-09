@@ -29,7 +29,7 @@ from pathlib import Path
 
 import structlog
 
-from dspy_setup import dspy
+from core.dspy_setup import dspy
 
 logger = structlog.get_logger(__name__)
 

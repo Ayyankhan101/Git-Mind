@@ -8,8 +8,8 @@ from fastapi import APIRouter, Request
 
 from agents.blame import enrich_findings_with_blame
 from agents.health import compute_health
+from app.orchestrator import graph
 from models.requests import AnalyzeRequest
-from orchestrator import graph
 from routes._errors import error_response, is_valid_gh_url
 from services.auth import get_service_key, hash_token, mint_ws_ticket
 from services.rate_limit_response import rate_limit_response

@@ -11,7 +11,7 @@ handoff) well enough to debug or extend any of them.
 
 - A GitHub account
 - Git-Mind's backend and frontend running locally:
-  - Backend: `cd backend && uvicorn main:app --port 8002 --reload`
+  - Backend: `cd backend && uvicorn app.main:app --port 8002 --reload`
   - Frontend: `cd frontend && npm start` (defaults to `http://localhost:3000`)
 - A local Redis instance reachable via `REDIS_URL` — this flow has no
   in-memory fallback (see [why](./explanation.md#why-this-needs-redis-with-no-fallback)).

@@ -14,7 +14,7 @@ os.environ["ENVIRONMENT"] = "test"
 
 @pytest.fixture
 def app():
-    from main import app
+    from app.main import app
 
     return app
 

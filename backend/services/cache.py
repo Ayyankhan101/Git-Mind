@@ -100,3 +100,96 @@ async def close_redis() -> None:
 def get_redis():
     """Return Redis client or None (dev fallback only)."""
     return _redis
+
+
+# ── Live-but-failing Redis ────────────────────────────────────────────────────
+# There is a third state beyond "connected" and "not configured": a client that
+# connected fine and then rejects every operation. A managed Redis that has run
+# out of its request quota behaves exactly this way — get_redis() hands back a
+# healthy client object and each command raises.
+#
+# Every `if get_redis():` guard in this codebase was written for the None case,
+# so that third state used to escape as an unhandled exception from whatever
+# call site touched Redis next. In production it took down the analysis
+# WebSocket mid-run, because ws/analyze.py's single-flight lock — documented in
+# place as "an optimization, not a correctness requirement" — raised straight
+# through the handler.
+
+_QUOTA_MARKERS = (
+    "max requests limit exceeded",
+    "max daily request limit",
+    "quota exceeded",
+    "exceeded the maximum",
+)
+
+_degraded_reason: str | None = None
+
+
+def is_quota_error(exc: BaseException) -> bool:
+    """Whether `exc` is a hard usage cap rather than a transient failure.
+
+    Worth separating: a network blip is worth retrying in a second, a monthly
+    request cap is not. Polling a hard cap on a timer is what kept the
+    production quota pinned at 100% and buried every other log line under
+    retry warnings.
+    """
+    text = str(exc).lower()
+    return any(marker in text for marker in _QUOTA_MARKERS)
+
+
+def redis_degraded() -> str | None:
+    """Reason Redis is rejecting operations, or None if it is healthy.
+
+    Distinct from `get_redis() is None`, which means Redis was never configured.
+    """
+    return _degraded_reason
+
+
+def mark_redis_degraded(exc: BaseException, label: str = "redis operation") -> None:
+    """Latch the degraded state, logging once per episode rather than per call.
+
+    `label` names the operation that first tripped it, which is the difference
+    between a log that says what broke and 567 identical lines that do not.
+    """
+    global _degraded_reason
+    reason = "quota exhausted" if is_quota_error(exc) else "operations failing"
+    if _degraded_reason == reason:
+        return
+    _degraded_reason = reason
+    logger.warning("Redis degraded", reason=reason, first_failure=label, error=str(exc)[:160])
+
+
+def clear_redis_degraded() -> None:
+    global _degraded_reason
+    if _degraded_reason is not None:
+        logger.info("Redis recovered", previous_reason=_degraded_reason)
+        _degraded_reason = None
+
+
+async def redis_op(label: str, fn, *args, default=None, **kwargs):
+    """Run one Redis command, degrading to `default` instead of raising.
+
+    Use this at every call site where Redis is an optimization — caches, locks,
+    de-duplication — so that "Redis is broken" degrades the feature instead of
+    failing the request.
+
+    `fn` is a bound method on the caller's own client (e.g. `r.set`). This
+    deliberately does not look the client up itself: callers already hold one,
+    and re-resolving it here would ignore the client they passed and silently
+    bypass the operation entirely.
+
+    Honours REQUIRE_REDIS: when that is set the caller has asked to fail closed,
+    so the exception is re-raised rather than swallowed. CancelledError always
+    propagates; swallowing it would break task shutdown.
+    """
+    try:
+        result = await fn(*args, **kwargs)
+    except asyncio.CancelledError:
+        raise
+    except Exception as exc:
+        mark_redis_degraded(exc, label)
+        if _REQUIRE_REDIS:
+            raise
+        return default
+    clear_redis_degraded()
+    return result

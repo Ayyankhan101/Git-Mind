@@ -1,6 +1,6 @@
 """Tests for state.py initial_state and PUBLIC_FIELDS."""
 
-from state import _DEFAULTS, _INTERNAL_FIELDS, PUBLIC_FIELDS, initial_state
+from core.state import _DEFAULTS, _INTERNAL_FIELDS, PUBLIC_FIELDS, initial_state
 
 
 class TestInitialState:

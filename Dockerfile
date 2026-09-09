@@ -35,9 +35,10 @@ COPY backend/ .
 # Pre-download fastembed's ONNX model too (same all-MiniLM-L6-v2 weights,
 # via a different loader) for the optional Qdrant vector-store backend
 # (QDRANT_URL) — same zero-first-request-latency goal as the block above.
-# cache_dir must match qdrant_utils.py's default: Path(__file__).parent /
-# ".fastembed_cache", which resolves to /app/.fastembed_cache here since
-# backend/ was just copied into WORKDIR /app.
+# cache_dir must match vectors/qdrant_utils.py's default, which is anchored on
+# the backend root (_BACKEND_ROOT / ".fastembed_cache"), not on its own
+# directory — that resolves to /app/.fastembed_cache here, since backend/ was
+# just copied into WORKDIR /app.
 RUN python3 -c "\
 from fastembed import TextEmbedding; \
 TextEmbedding(model_name='sentence-transformers/all-MiniLM-L6-v2', cache_dir='/app/.fastembed_cache'); \
@@ -87,4 +88,4 @@ COPY nginx.conf /etc/nginx/nginx.conf
 EXPOSE 8001 80
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD curl -sf http://localhost:8001/health | python3 -c "import sys,json; d=json.load(sys.stdin); sys.exit(0 if d.get('status')=='ok' else 1)"
-CMD sh -c "nginx && uvicorn main:app --host 0.0.0.0 --port 8001"
+CMD sh -c "nginx && uvicorn app.main:app --host 0.0.0.0 --port 8001"

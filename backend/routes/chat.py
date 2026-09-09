@@ -76,7 +76,7 @@ async def chat_endpoint(req: ChatRequest, request: Request):
         return error_response("Knowledge base not ready — RAG setup may have failed.", 503)
 
     # Defensive: check the vector store collection still exists (ephemeral storage)
-    from vector_store import collection_exists
+    from vectors.vector_store import collection_exists
 
     collection_name = session["chroma_collection_name"]
     if not collection_exists(collection_name):
@@ -152,7 +152,7 @@ async def chat_stream_endpoint(req: ChatRequest, request: Request):
             return
 
         # Defensive: check the vector store collection still exists (ephemeral storage)
-        from vector_store import collection_exists
+        from vectors.vector_store import collection_exists
 
         collection_name = session["chroma_collection_name"]
         if not collection_exists(collection_name):

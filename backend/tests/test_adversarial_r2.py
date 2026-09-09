@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi.testclient import TestClient
 
-from main import app
+from app.main import app
 
 client = TestClient(app, raise_server_exceptions=False)
 AUTH = {"Authorization": "Bearer ghp_test_placeholder"}
@@ -137,7 +137,7 @@ class TestDataCorruption:
 
         with (
             patch("routes.chat.run_chat_agent", return_value=("👍 Done", [])),
-            patch("chroma_utils._client") as mock_chroma,
+            patch("vectors.chroma_utils._client") as mock_chroma,
         ):
             mock_chroma.get_collection.return_value = MagicMock()
             resp = client.post(

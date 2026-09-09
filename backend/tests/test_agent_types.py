@@ -1,6 +1,6 @@
 """Tests for agent_types validation."""
 
-from agent_types import validate_agent_output
+from app.agent_types import validate_agent_output
 
 
 class TestValidateAgentOutput:

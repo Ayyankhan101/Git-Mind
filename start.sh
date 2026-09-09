@@ -59,8 +59,9 @@ echo ""
 echo "Starting backend on http://127.0.0.1:8002 ..."
 (
   cd "$ROOT/backend" || exit
+  # shellcheck source=/dev/null
   source venv/bin/activate
-  exec uvicorn main:app --host 127.0.0.1 --port 8002 --reload \
+  exec uvicorn app.main:app --host 127.0.0.1 --port 8002 --reload \
     >> "$LOG_DIR/backend.log" 2>&1
 ) &
 BACKEND_PID=$!

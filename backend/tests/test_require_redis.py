@@ -106,3 +106,49 @@ class TestSessionRaisesWithoutRedis:
         with patch("services.database.get_analysis_db", new_callable=AsyncMock, return_value=db_snap):
             result = await session.get_session("00000000-0000-0000-0000-000000000007")
         assert result["repo_name"] == "recovered"
+
+
+class TestRedisOpHonoursRequireRedis:
+    """redis_op degrades by default, but REQUIRE_REDIS=true means fail closed.
+
+    The degradation added for the quota incident must not quietly punch a hole
+    in the opt-in hard requirement — a deployment that asked to fail closed
+    still has to.
+    """
+
+    @staticmethod
+    async def _boom(*_a, **_k):
+        raise ConnectionError("max requests limit exceeded. Limit: 500000, Usage: 500000.")
+
+    async def test_degrades_to_default_when_not_required(self, monkeypatch):
+        from services import cache
+
+        monkeypatch.setattr(cache, "_REQUIRE_REDIS", False)
+        cache.clear_redis_degraded()
+        result = await cache.redis_op("probe", self._boom, default="fell-back")
+        assert result == "fell-back"
+        assert cache.redis_degraded() == "quota exhausted"
+        cache.clear_redis_degraded()
+
+    async def test_raises_when_required(self, monkeypatch):
+        from services import cache
+
+        monkeypatch.setattr(cache, "_REQUIRE_REDIS", True)
+        cache.clear_redis_degraded()
+        with pytest.raises(ConnectionError):
+            await cache.redis_op("probe", self._boom, default="fell-back")
+        cache.clear_redis_degraded()
+
+    async def test_cancellation_is_never_swallowed(self, monkeypatch):
+        """Swallowing CancelledError here would wedge worker shutdown."""
+        import asyncio
+
+        from services import cache
+
+        monkeypatch.setattr(cache, "_REQUIRE_REDIS", False)
+
+        async def _cancelled(*_a, **_k):
+            raise asyncio.CancelledError()
+
+        with pytest.raises(asyncio.CancelledError):
+            await cache.redis_op("probe", _cancelled, default="fell-back")

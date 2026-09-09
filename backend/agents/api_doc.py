@@ -2,10 +2,10 @@ import structlog
 from gitmind_core import scan_route_files
 from pydantic import BaseModel
 
-from dspy_setup import dspy
-from llm_cache import run_dspy_cached
+from core.dspy_setup import dspy
+from core.llm_cache import run_dspy_cached
+from core.settings import LLM_MODEL_CHEAP, get_dspy_lm_pair
 from optimization.registry import define_program
-from settings import LLM_MODEL_CHEAP, get_dspy_lm
 
 logger = structlog.get_logger(__name__)
 
@@ -14,7 +14,9 @@ _MAX_FILE_CHARS = 6_000
 # Cheap tier — extracting endpoints from source is pattern-matching, not
 # judgment; see settings.py's LLM_MODEL_CHEAP comment.
 _CACHE_NAMESPACE = f"{LLM_MODEL_CHEAP}:api_doc:json"
-_LM = get_dspy_lm(temperature=0, cheap=True)
+# Flagship LM is the retry path — a cheap model that stops being callable used
+# to raise straight through as "extraction failed on all N candidate file(s)".
+_LM, _FALLBACK_LM = get_dspy_lm_pair(temperature=0)
 
 
 class ApiEndpoint(BaseModel):
@@ -72,6 +74,7 @@ def run_api_doc_agent(file_contents: dict[str, str]) -> list[dict]:
                 _predictor,
                 _CACHE_NAMESPACE,
                 lm=_LM,
+                fallback_lm=_FALLBACK_LM,
                 output_field="endpoints",
                 source_code=f"File: {fp}\n\n{content[:_MAX_FILE_CHARS]}",
             )

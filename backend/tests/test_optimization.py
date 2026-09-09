@@ -21,8 +21,8 @@ import agents.language_audit  # noqa: F401
 import agents.pr_review  # noqa: F401
 import agents.security  # noqa: F401
 import agents.solidity_agent  # noqa: F401
-from dspy_setup import dspy
-from llm_cache import _dspy_key, _record_harvest, run_dspy_cached
+from core.dspy_setup import dspy
+from core.llm_cache import _dspy_key, _record_harvest, run_dspy_cached
 from optimization import budget, metrics, registry, run, trainsets
 
 ALL_AGENTS = registry.agent_names()
@@ -132,7 +132,7 @@ def test_harvest_round_trip(tmp_path):
             "cwe": "CWE-1",
         }
     ]
-    with patch("llm_cache._HARVEST_DIR", tmp_path / ".dspy_harvest"):
+    with patch("core.llm_cache._HARVEST_DIR", tmp_path / ".dspy_harvest"):
         _record_harvest("security", "SecurityTriage", inputs, output)
         exs = trainsets.harvest("security")
     assert len(exs) == 1
@@ -144,7 +144,7 @@ def test_harvest_round_trip(tmp_path):
 
 def test_harvest_dedupes_same_inputs(tmp_path):
     inputs = {"raw_findings": "[]"}
-    with patch("llm_cache._HARVEST_DIR", tmp_path / ".dspy_harvest"):
+    with patch("core.llm_cache._HARVEST_DIR", tmp_path / ".dspy_harvest"):
         for _ in range(3):
             _record_harvest("security", "SecurityTriage", inputs, [])
         exs = trainsets.harvest("security")
@@ -152,7 +152,7 @@ def test_harvest_dedupes_same_inputs(tmp_path):
 
 
 def test_harvest_rejects_invalid_output(tmp_path):
-    with patch("llm_cache._HARVEST_DIR", tmp_path / ".dspy_harvest"):
+    with patch("core.llm_cache._HARVEST_DIR", tmp_path / ".dspy_harvest"):
         _record_harvest("security", "SecurityTriage", {"raw_findings": "[]"}, {"bad": 1})
         exs = trainsets.harvest("security")
     assert exs == []
@@ -231,9 +231,9 @@ def test_run_dspy_cached_version_bump_changes_key():
         return None
 
     with (
-        patch("llm_cache.get_cached", side_effect=fake_get),
-        patch("llm_cache.set_cached"),
-        patch("llm_cache._record_harvest"),
+        patch("core.llm_cache.get_cached", side_effect=fake_get),
+        patch("core.llm_cache.set_cached"),
+        patch("core.llm_cache._record_harvest"),
     ):
         prog = registry.build_program("security")
         run_dspy_cached(
@@ -383,9 +383,9 @@ def test_promoted_program_passes_typed_contract(tmp_path):
                 return [known_good]
 
         with (
-            patch("llm_cache.get_cached", return_value=None),
-            patch("llm_cache.set_cached"),
-            patch("llm_cache._record_harvest"),
+            patch("core.llm_cache.get_cached", return_value=None),
+            patch("core.llm_cache.set_cached"),
+            patch("core.llm_cache._record_harvest"),
         ):
             payload = run_dspy_cached(
                 prog,
@@ -400,7 +400,7 @@ def test_promoted_program_passes_typed_contract(tmp_path):
 def test_verify_optimize_min_gold_caps_valset(tmp_path):
     """live_dspy_e2e.verify_optimize(agent, min_gold=N) must hand compile_agent
     a valset capped to the first N gold examples (window-saving baseline)."""
-    import live_dspy_e2e as e2e
+    from scripts import live_dspy_e2e as e2e
 
     gold = trainsets.load_gold("security")
     assert len(gold) >= 5
@@ -423,7 +423,7 @@ def test_verify_optimize_min_gold_caps_valset(tmp_path):
 
 def test_verify_optimize_min_gold_refuses_when_gold_small(tmp_path):
     """min_gold larger than the curated gold set must refuse to run (floor)."""
-    import live_dspy_e2e as e2e
+    from scripts import live_dspy_e2e as e2e
 
     with patch.object(e2e, "record") as rec:
         e2e.verify_optimize("security", min_gold=10_000)

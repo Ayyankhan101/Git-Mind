@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 os.environ.setdefault("ENVIRONMENT", "test")
 
 import ws.analyze as ws_analyze
-from main import app
+from app.main import app
 
 client = TestClient(app)
 
@@ -297,3 +297,67 @@ class TestWsAnalyzeSingleFlight:
 
         assert fake_redis.set_calls == 1
         assert fake_redis.store == {}  # released, not left dangling for the TTL
+
+    @patch("ws.analyze.check_rate_limit", return_value=(True, 30, 0))
+    @patch("ws.analyze.get_remote_sha", return_value="abc123")
+    @patch("ws.analyze.find_cached_snapshot", return_value=None)
+    @patch("ws.analyze.graph")
+    @patch("ws.analyze.get_redis")
+    @patch.dict(os.environ, {"ENVIRONMENT": "test"})
+    def test_quota_exhausted_redis_does_not_drop_the_websocket(
+        self, mock_get_redis, mock_graph, _mock_find, mock_sha, _mock_rate, monkeypatch
+    ):
+        """Regression: the reported production bug.
+
+        A Redis that has run out of request quota stays connected and raises on
+        every command. get_redis() returns a live client, so the `if _lock_redis:`
+        guard passes and the unguarded SET used to raise straight out of the
+        WebSocket handler — the socket closed uncleanly and the frontend showed
+        "Connection dropped unexpectedly. Check the backend terminal for errors."
+
+        The single-flight lock is an optimization. Losing it must cost the
+        de-duplication, not the analysis.
+        """
+        from services import cache
+
+        cache.clear_redis_degraded()
+
+        class QuotaExhaustedRedis:
+            def __init__(self):
+                self.set_calls = 0
+
+            async def set(self, *a, **k):
+                self.set_calls += 1
+                raise ConnectionError("max requests limit exceeded. Limit: 500000, Usage: 500000.")
+
+            async def get(self, *a, **k):
+                raise ConnectionError("max requests limit exceeded. Limit: 500000, Usage: 500000.")
+
+            async def delete(self, *a, **k):
+                raise ConnectionError("max requests limit exceeded. Limit: 500000, Usage: 500000.")
+
+        fake_redis = QuotaExhaustedRedis()
+        mock_get_redis.return_value = fake_redis
+
+        # Would add 4 minutes per analysis if a failed acquire were mistaken for
+        # contention, so keep the window short enough that the test would notice.
+        monkeypatch.setattr(ws_analyze, "_ANALYZE_LOCK_WAIT_POLL", 0.01)
+        monkeypatch.setattr(ws_analyze, "_ANALYZE_LOCK_WAIT_MAX", 0.05)
+
+        async def _raise(*args, **kwargs):
+            raise RuntimeError("pipeline crashed")
+
+        mock_graph.astream = _raise
+
+        with client.websocket_connect("/ws/analyze") as ws:
+            ws.send_json({"repo_url": "https://github.com/user/repo", "gh_token": "ghp_test"})
+            data = ws.receive_json()
+            # Reaching this at all is the assertion: before the fix the handler
+            # raised here and the client saw a WebSocketDisconnect instead.
+            assert data.get("agent_status") == {"scanner": "running"}
+            data2 = ws.receive_json()
+            assert "error" in data2, "expected the pipeline error, delivered over a live socket"
+
+        assert fake_redis.set_calls == 1, "the lock acquire should still be attempted once"
+        assert cache.redis_degraded() == "quota exhausted"
+        cache.clear_redis_degraded()

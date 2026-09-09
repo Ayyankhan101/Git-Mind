@@ -55,9 +55,9 @@ than shipping silently:
 
 Each agent keeps its public `run_*(...)` signature, so orchestration, routes, and the
 frontend contract are unchanged. Orchestration stays on LangGraph; chat and crisis agents
-still use LangChain (`settings.get_llm`).
+still use LangChain (`core.settings.get_llm`).
 
-**`dspy_setup.py` import guard** — DSPy 3.x lazy-imports optional deps by swapping a
+**`core/dspy_setup.py` import guard** — DSPy 3.x lazy-imports optional deps by swapping a
 `_LazyModule` proxy into `sys.modules`. The numpy proxy breaks chromadb's
 `from numpy.typing import NDArray` submodule import (`TypeError: data type 'bool' not
 understood`). Loading the real numpy *before* dspy prevents the proxy from being created, so
@@ -100,7 +100,7 @@ venv/bin/python -m optimization.run --agent security --auto none --candidates 1 
 venv/bin/python -m optimization.run --rollback security
 # live e2e compile — cap the gold valset when the window is tight
 # (baseline eval costs ~650 tokens per example):
-venv/bin/python live_dspy_e2e.py --optimize security --min-gold 2
+venv/bin/python scripts/live_dspy_e2e.py --optimize security --min-gold 2
 ```
 
 The CLI loads `.env` itself and imports the 7 agents (nothing else does).
@@ -112,7 +112,7 @@ only as good as the `--budget` / `GROQ_DAILY_REMAINING` value you feed it.
 `--agent` and `--rollback` are mutually exclusive — `--rollback <agent>`
 reverts to the previous promoted artifact from `active.json` rollback history
 (keeps the last 3) and exits before any harvest/compile work.
-`live_dspy_e2e.py --optimize` also takes `--min-gold N` to cap the gold
+`scripts/live_dspy_e2e.py --optimize` also takes `--min-gold N` to cap the gold
 valset to its first N examples (refused when the curated set has fewer than
 N) — the baseline eval costs ~650 tokens per example, so a tight Groq window
 can gate on a 2-example valset and reach the compile phase.
@@ -171,9 +171,9 @@ Set these in **Settings → Variables and secrets**:
 | `REPORTER_INTERVAL_SEC`       | `45`                               | Crisis Mode reporter check interval                                           |
 | `MAX_REQUEST_BODY_BYTES`      | `5242880` (5 MB)                   | Max request body size                                                         |
 | `RERANKER_MODEL`              | `cross-encoder/ms-marco-MiniLM-L-6-v2` | Cross-encoder reranker model                                             |
-| `LLM_MODEL`                   | `qwen/qwen3.6-27b`                 | Override Groq model for all agents                                            |
-| `LLM_MODEL_FALLBACK`          | `llama-3.1-8b-instant`             | Same-provider fallback model — tried automatically if LLM_MODEL fails         |
-| `LLM_MODEL_CHEAP`             | `llama-3.1-8b-instant`             | Cheap tier — API doc extraction + lint triage only; everything else stays on LLM_MODEL |
+| `LLM_MODEL`                   | `openai/gpt-oss-120b`              | Override Groq model for all agents                                            |
+| `LLM_MODEL_FALLBACK`          | `openai/gpt-oss-20b`               | Same-provider fallback model — tried automatically if LLM_MODEL fails         |
+| `LLM_MODEL_CHEAP`             | `openai/gpt-oss-20b`               | Cheap tier — API doc extraction + lint triage only; everything else stays on LLM_MODEL |
 | `SMTP_HOST` / `SMTP_PORT`     | `587`                              | SMTP server for monitoring email alerts                                       |
 | `SMTP_USER` / `SMTP_PASSWORD` | —                                  | SMTP credentials                                                              |
 | `SMTP_FROM`                   | —                                  | SMTP sender address                                                           |

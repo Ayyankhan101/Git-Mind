@@ -40,6 +40,14 @@ function deriveHttpBase() {
 export const BASE = deriveHttpBase();
 export const WS_BASE = BASE.replace(/^http/, "ws");
 
+// Whether the backend is a developer's own machine. Error copy branches on
+// this: telling a deployed user to "start the backend on port 8002" or "check
+// the backend terminal" is nonsense — there is no terminal, the backend is a
+// hosted service.
+export const IS_LOCAL_BACKEND = /^https?:\/\/(localhost|127\.0\.0\.1)/.test(
+  BASE,
+);
+
 const GH_TOKEN_RE = /^(gh[pousr]_|github_pat_)[A-Za-z0-9_]+$/;
 
 export function isValidGhToken(token) {

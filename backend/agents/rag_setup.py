@@ -4,7 +4,7 @@ import time
 
 import structlog
 
-from vector_store import embed_codebase
+from vectors.vector_store import embed_codebase
 
 logger = structlog.get_logger(__name__)
 
