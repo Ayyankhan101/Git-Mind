@@ -289,7 +289,7 @@ def verify_impact():
 async def verify_graph():
     """Full LangGraph pipeline on a small real repo."""
     from agents.health import compute_health
-    from orchestrator import graph
+    from app.orchestrator import graph
     from services.session import initial_state
 
     final: dict = {}
@@ -425,7 +425,7 @@ def verify_optimize(agent: str, min_gold: int | None = None) -> None:
     """
     from unittest.mock import patch
 
-    from dspy_setup import dspy
+    from core.dspy_setup import dspy
     from optimization import registry as opt_registry
     from optimization import run as opt_run
     from optimization.trainsets import harvest, load_gold
@@ -479,7 +479,7 @@ def verify_optimize(agent: str, min_gold: int | None = None) -> None:
         assert getattr(prog, "_opt_version", ""), "promoted program lost its cache-key version stamp"
         from dspy import BaseLM as _BaseLM
 
-        from llm_cache import run_dspy_cached as _run_cached
+        from core.llm_cache import run_dspy_cached as _run_cached
         from optimization.metrics import validate_output as _validate_output
         from optimization.registry import get_spec as _get_spec
 
@@ -495,9 +495,9 @@ def verify_optimize(agent: str, min_gold: int | None = None) -> None:
                 return [known_good]
 
         with (
-            patch("llm_cache.get_cached", return_value=None),
-            patch("llm_cache.set_cached"),
-            patch("llm_cache._record_harvest"),
+            patch("core.llm_cache.get_cached", return_value=None),
+            patch("core.llm_cache.set_cached"),
+            patch("core.llm_cache._record_harvest"),
         ):
             payload = _run_cached(
                 prog,

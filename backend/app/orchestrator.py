@@ -13,7 +13,7 @@ from agents.rag_setup import run_rag_setup
 from agents.scanner import clone_and_scan
 from agents.security import _degraded_finding, run_security_agent
 from agents.solidity_agent import solidity_agent
-from state import RepoState
+from core.state import RepoState
 
 logger = structlog.get_logger(__name__)
 
@@ -95,7 +95,7 @@ def run_agent_node(
         default: Safe default dict on scanner-fail or circuit-breaker open.
         fallback: Optional callable(state, exc) -> dict for custom error recovery.
     """
-    from agent_types import validate_agent_output
+    from app.agent_types import validate_agent_output
 
     if state.get("_scanner_failed"):
         return {

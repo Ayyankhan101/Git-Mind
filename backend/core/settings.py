@@ -99,7 +99,7 @@ def get_dspy_lm(
         Use LLM_MODEL_CHEAP instead of LLM_MODEL — see its module comment
         for which tasks that's appropriate for.
     """
-    from dspy_setup import dspy
+    from core.dspy_setup import dspy
 
     temp = temperature if temperature is not None else TEMPERATURES.get(temperature_key, 0.1)
     model = LLM_MODEL_CHEAP if cheap else LLM_MODEL

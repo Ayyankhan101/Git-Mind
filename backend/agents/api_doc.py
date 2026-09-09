@@ -2,10 +2,10 @@ import structlog
 from gitmind_core import scan_route_files
 from pydantic import BaseModel
 
-from dspy_setup import dspy
-from llm_cache import run_dspy_cached
+from core.dspy_setup import dspy
+from core.llm_cache import run_dspy_cached
+from core.settings import LLM_MODEL_CHEAP, get_dspy_lm
 from optimization.registry import define_program
-from settings import LLM_MODEL_CHEAP, get_dspy_lm
 
 logger = structlog.get_logger(__name__)
 

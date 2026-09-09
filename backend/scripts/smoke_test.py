@@ -89,7 +89,7 @@ except Exception as exc:
 # ── 3. LLM cache ───────────────────────────────────────────────────────────────
 print("\n[ LLM Cache ]")
 try:
-    from llm_cache import get_cached, set_cached
+    from core.llm_cache import get_cached, set_cached
 
     set_cached("_smoke", "ping", "pong")
     check("diskcache write + read", get_cached("_smoke", "ping") == "pong")
@@ -113,7 +113,7 @@ if api_key and not _skip_live_checks:
     try:
         from langchain_groq import ChatGroq
 
-        from settings import LLM_MODEL
+        from core.settings import LLM_MODEL
 
         llm = ChatGroq(model=LLM_MODEL, temperature=0, max_tokens=5)
         resp = llm.invoke("Reply with the single word: OK")
@@ -139,7 +139,7 @@ except Exception as exc:
 # ── 7. LangGraph graph compiles ────────────────────────────────────────────────
 print("\n[ LangGraph ]")
 try:
-    from orchestrator import graph
+    from app.orchestrator import graph
 
     check("LangGraph analysis graph compiles", graph is not None)
     # Verify all 9 agent nodes are wired up

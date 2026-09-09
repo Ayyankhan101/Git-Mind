@@ -59,7 +59,11 @@ def _get_sync_redis() -> "_redis_sync.Redis | None":
 # sha-256 hashes of the inputs, so the inputs are unrecoverable from the cache
 # — this side log is the only replayable record of live calls.
 
-_HARVEST_DIR = Path(__file__).parent / ".dspy_harvest"
+# Anchored on the backend root, not on core/ — the harvest dir and the cache
+# dir are addressed as backend/.dspy_harvest and backend/.llm_cache by
+# .gitignore, the compose volumes, and the optimization runbooks.
+_BACKEND_ROOT = Path(__file__).resolve().parent.parent
+_HARVEST_DIR = _BACKEND_ROOT / ".dspy_harvest"
 _MAX_HARVEST_BYTES = 25 * 1024 * 1024  # rotate a log once it exceeds this
 
 
@@ -102,7 +106,7 @@ def _trim_harvest(path: Path) -> None:
 
 # ── Diskcache setup (fallback) ───────────────────────────────────────────────
 
-_PREFERRED_DIR = Path(__file__).parent / ".llm_cache"
+_PREFERRED_DIR = _BACKEND_ROOT / ".llm_cache"
 try:
     _PREFERRED_DIR.mkdir(exist_ok=True)
     _test = _PREFERRED_DIR / ".write_test"
@@ -205,7 +209,7 @@ def run_dspy_cached(program, cache_namespace: str, *, lm, output_field: str, **i
     inputs:
         Keyword inputs for the program.
     """
-    from dspy_setup import dspy
+    from core.dspy_setup import dspy
 
     sig_name = getattr(program, "signature", type(program).__name__)
     # MIPROv2 changes a signature's instructions/demos but not its class name, so

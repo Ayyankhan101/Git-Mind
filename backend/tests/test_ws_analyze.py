@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 os.environ.setdefault("ENVIRONMENT", "test")
 
 import ws.analyze as ws_analyze
-from main import app
+from app.main import app
 
 client = TestClient(app)
 

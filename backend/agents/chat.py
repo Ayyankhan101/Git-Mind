@@ -1,7 +1,7 @@
 import structlog
 
-from llm_cache import invoke_with_retry
-from settings import get_llm
+from core.llm_cache import invoke_with_retry
+from core.settings import get_llm
 from vectors.vector_store import search_codebase
 
 logger = structlog.get_logger(__name__)

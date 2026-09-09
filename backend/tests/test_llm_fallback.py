@@ -6,7 +6,7 @@ actually wired up.
 
 import importlib
 
-import settings
+from core import settings
 
 
 def test_fallback_wired_by_default():

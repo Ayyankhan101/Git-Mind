@@ -55,9 +55,9 @@ than shipping silently:
 
 Each agent keeps its public `run_*(...)` signature, so orchestration, routes, and the
 frontend contract are unchanged. Orchestration stays on LangGraph; chat and crisis agents
-still use LangChain (`settings.get_llm`).
+still use LangChain (`core.settings.get_llm`).
 
-**`dspy_setup.py` import guard** — DSPy 3.x lazy-imports optional deps by swapping a
+**`core/dspy_setup.py` import guard** — DSPy 3.x lazy-imports optional deps by swapping a
 `_LazyModule` proxy into `sys.modules`. The numpy proxy breaks chromadb's
 `from numpy.typing import NDArray` submodule import (`TypeError: data type 'bool' not
 understood`). Loading the real numpy *before* dspy prevents the proxy from being created, so

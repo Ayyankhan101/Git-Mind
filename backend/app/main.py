@@ -243,7 +243,7 @@ async def lifespan(_app: FastAPI):
     except Exception as exc:
         logger.warning("Could not prune old collections", error=str(exc))
     logger.info("GitMind backend starting — GROQ_API_KEY present")
-    from orchestrator import reset_circuit_breaker
+    from app.orchestrator import reset_circuit_breaker
 
     reset_circuit_breaker()
     global _periodic_prune_task, _monitoring_task
@@ -422,7 +422,7 @@ async def health():
         checks["redis"] = False
     _webhook_secret = os.getenv("GITHUB_APP_WEBHOOK_SECRET")
     checks["webhook_hmac"] = bool(_webhook_secret)
-    from orchestrator import get_circuit_breaker_state
+    from app.orchestrator import get_circuit_breaker_state
 
     checks["circuit_breaker"] = get_circuit_breaker_state()
     from services.cache import redis_required

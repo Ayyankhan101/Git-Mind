@@ -12,7 +12,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 
 from agents.blame import enrich_findings_with_blame
 from agents.health import compute_health
-from orchestrator import graph
+from app.orchestrator import graph
 from services.auth import hash_token, verify_ws_ticket
 from services.cache import get_redis
 from services.rate_limiter import check_rate_limit

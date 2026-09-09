@@ -9,10 +9,10 @@ from pydantic import BaseModel
 
 _SEMGREP = shutil.which("semgrep")
 
-from dspy_setup import dspy  # noqa: E402
-from llm_cache import run_dspy_cached  # noqa: E402
+from core.dspy_setup import dspy  # noqa: E402
+from core.llm_cache import run_dspy_cached  # noqa: E402
+from core.settings import LLM_MODEL, get_dspy_lm  # noqa: E402
 from optimization.registry import define_program  # noqa: E402
-from settings import LLM_MODEL, get_dspy_lm  # noqa: E402
 
 logger = structlog.get_logger(__name__)
 

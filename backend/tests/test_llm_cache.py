@@ -13,7 +13,7 @@ silently in production.
 
 import pytest
 
-import llm_cache
+from core import llm_cache
 
 
 class FakeSyncRedis:

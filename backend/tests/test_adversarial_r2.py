@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi.testclient import TestClient
 
-from main import app
+from app.main import app
 
 client = TestClient(app, raise_server_exceptions=False)
 AUTH = {"Authorization": "Bearer ghp_test_placeholder"}

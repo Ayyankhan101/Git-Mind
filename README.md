@@ -169,19 +169,27 @@ Git-Mind/
 ├── start.sh / stop.sh              ← Bare-metal launcher
 │
 ├── backend/
-│   ├── main.py                     ← FastAPI app
-│   ├── orchestrator.py             ← LangGraph analysis + crisis graphs (9-agent DAG)
-│   ├── state.py                    ← RepoState TypedDict
-│   ├── settings.py                 ← Centralized LLM config (model, temps, factory)
-│   ├── llm_cache.py                ← diskcache + invoke_json_with_retry
-│   ├── chroma_utils.py             ← ChromaDB helpers + hybrid search
+│   ├── app/                        ← ASGI entrypoint (uvicorn app.main:app)
+│   │   ├── main.py                 ← FastAPI app
+│   │   ├── orchestrator.py         ← LangGraph analysis + crisis graphs (9-agent DAG)
+│   │   └── agent_types.py          ← Shared agent TypedDicts
+│   ├── core/                       ← Cross-cutting config and caching
+│   │   ├── settings.py             ← Centralized LLM config (model, temps, factory)
+│   │   ├── state.py                ← RepoState TypedDict
+│   │   ├── llm_cache.py            ← diskcache + invoke_json_with_retry
+│   │   └── dspy_setup.py           ← DSPy import guard
+│   ├── vectors/                    ← RAG storage backends
+│   │   ├── vector_store.py         ← Facade — picks a backend from QDRANT_URL
+│   │   ├── chroma_utils.py         ← ChromaDB helpers + hybrid search
+│   │   └── qdrant_utils.py         ← Qdrant + fastembed
 │   ├── agents/                     ← 9 LangGraph agent nodes + crisis sub-agents
 │   ├── routes/                     ← REST API endpoints
 │   ├── ws/                         ← WebSocket handlers (analyze, crisis)
 │   ├── models/                     ← SQLAlchemy + Pydantic
 │   ├── services/                   ← Auth, cache, rate limiter, BM25 FTS5, reranker
+│   ├── scripts/                    ← smoke_test, live DSPy e2e + optimize watcher
 │   ├── alembic/                    ← Database migrations
-│   └── tests/                      ← 405 pytest tests
+│   └── tests/                      ← 608 pytest tests
 │
 ├── rust-gitmind/                   ← PyO3 native module (gitmind_core)
 │   └── src/
@@ -204,8 +212,14 @@ Git-Mind/
         ├── api.js                  ← All API calls (postChatStream with sources)
         ├── pdfBuilder.js           ← PDF generation + caching + syntax highlighting
         ├── tokenManager.js         ← Encrypted PAT storage (AES-GCM)
-        ├── components/             ← Tab components + CommandPalette
-        └── ...                     ← 181 Jest tests
+        ├── components/
+        │   ├── tabs/               ← The 11 dashboard tabs
+        │   ├── scene/              ← three / R3F surface
+        │   ├── layout/             ← DashboardLayout, NavRail, Sidebar, ThemeSwitcher
+        │   ├── overlays/           ← Modals, drawers, palette, toasts
+        │   ├── landing/            ← LandingPage and its cards
+        │   └── diagram/            ← @xyflow custom nodes and edges
+        └── ...                     ← 192 Jest tests
 ```
 
 </details>

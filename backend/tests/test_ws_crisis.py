@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 # Ensure ENVIRONMENT is test before importing app
 os.environ.setdefault("ENVIRONMENT", "test")
 
-from main import app
+from app.main import app
 
 client = TestClient(app)
 

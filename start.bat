@@ -44,7 +44,7 @@ if not exist "frontend\node_modules" (
 REM ── Backend ───────────────────────────────────────────────────────────────
 
 echo Starting backend on http://127.0.0.1:8002 ...
-start "GitMind Backend" cmd /k "cd /d %~dp0backend && call venv\Scripts\activate.bat && uvicorn main:app --host 127.0.0.1 --port 8002 --reload"
+start "GitMind Backend" cmd /k "cd /d %~dp0backend && call venv\Scripts\activate.bat && uvicorn app.main:app --host 127.0.0.1 --port 8002 --reload"
 
 REM Wait briefly for backend to come up
 timeout /t 5 /nobreak >nul
