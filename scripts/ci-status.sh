@@ -47,7 +47,7 @@ case "${1:-}" in
   --commit)
     SHA="${2:?usage: ci-status.sh --commit <sha>}"
     # GitHub's head_sha filter needs the full SHA; expand abbreviations locally.
-    FULL="$(git rev-parse --verify "$SHA"^{commit} 2>/dev/null || echo "$SHA")"
+    FULL="$(git rev-parse --verify "${SHA}^{commit}" 2>/dev/null || echo "$SHA")"
     gh run list --repo "$REPO" --commit "$FULL" --limit 20 \
       --json databaseId,workflowName,event,status,conclusion,headSha \
       --jq '.[] | [.databaseId, .workflowName, .event, .status, (.conclusion // "in progress"), (.headSha[0:7])] | @tsv'
