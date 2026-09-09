@@ -35,7 +35,40 @@ _MAX_RETRIES = 3
 _WORKER_COUNT = int(os.getenv("TASK_WORKERS", "3"))
 _QUEUE_KEY = "queue:tasks"
 _TASK_PREFIX = "task:"
-_POLL_INTERVAL = 0.5  # seconds between empty-queue RPOP retries
+# Seconds a worker waits on an empty queue before asking Redis again.
+#
+# This is the single biggest Redis cost in the app, and it used to be 0.5s.
+# RPOP is a write, and three workers polling twice a second is 518,400 writes a
+# day whether or not any work exists — it consumed a 500,000/month free tier in
+# under a day of uptime, and 93.7% of the account's entire monthly usage was
+# this loop finding nothing.
+#
+# It can be this long only because submit() below signals _work_ready directly:
+# anything queued by this process starts immediately, so the poll is purely a
+# safety net for work pushed by another replica. BRPOP would be the textbook
+# answer and is not available — the managed tier rejects it ("this user has no
+# permissions to run the 'brpop' command").
+_POLL_INTERVAL = float(os.getenv("TASK_POLL_INTERVAL", "60"))
+
+# Set by submit() so idle workers wake on local work without touching Redis.
+#
+# Created lazily and re-created if the running loop changes. An asyncio.Event
+# binds to the loop that first awaits it, so a module-level instance built at
+# import time raises "is bound to a different event loop" anywhere the loop is
+# not the one that imported this module — under uvicorn --reload, or across
+# tests. Bind it to the loop actually running the workers instead.
+_work_ready: asyncio.Event | None = None
+_work_ready_loop: asyncio.AbstractEventLoop | None = None
+
+
+def _work_signal() -> asyncio.Event:
+    global _work_ready, _work_ready_loop
+    loop = asyncio.get_running_loop()
+    if _work_ready is None or _work_ready_loop is not loop:
+        _work_ready = asyncio.Event()
+        _work_ready_loop = loop
+    return _work_ready
+
 
 # Backoff after a failed RPOP, doubling up to the cap. A flat 1s here was how a
 # quota-exhausted Redis stayed exhausted: three workers retrying once a second
@@ -93,12 +126,22 @@ async def _worker():
 
     backoff = _ERROR_RETRY_MIN
     while True:
+        # Cleared BEFORE the pop, never after, and outside the try below. A
+        # submit() landing between the pop and the clear would otherwise have
+        # its signal erased and the worker would sleep the full _POLL_INTERVAL
+        # with work sitting in the queue. Outside the try because only Redis
+        # calls belong in a block whose handler reports Redis degradation.
+        signal = _work_signal()
+        signal.clear()
         try:
             payload = await r.rpop(_QUEUE_KEY)
             if payload is None:
                 backoff = _ERROR_RETRY_MIN
                 clear_redis_degraded()
-                await asyncio.sleep(_POLL_INTERVAL)
+                # Local work wakes us immediately; the timeout is only there to
+                # catch work pushed by another replica.
+                with contextlib.suppress(TimeoutError):
+                    await asyncio.wait_for(signal.wait(), timeout=_POLL_INTERVAL)
                 continue
             backoff = _ERROR_RETRY_MIN
             clear_redis_degraded()
@@ -171,6 +214,7 @@ async def _handle_task_failure(task: dict, task_id: str, retries_left: int, r, e
         await asyncio.sleep(delay)
         # Best-effort: if the requeue is lost, _periodic_reap sweeps the task up
         # later rather than the worker dying on the way out of a failure path.
+        _work_signal().set()
         await redis_op(
             "requeue failed task",
             r.lpush,
@@ -268,6 +312,9 @@ async def submit(task_type: str, args: dict | None = None) -> str:
         mark_redis_degraded(exc)
         raise TaskQueueUnavailableError(f"Redis rejected the queue push — cannot submit {task_type}") from exc
     tasks_submitted.inc()
+    # Wake the workers now rather than letting them discover this up to
+    # _POLL_INTERVAL later. Same process, so this costs nothing.
+    _work_signal().set()
     logger.debug("Task submitted", task_id=task_id, type=task_type)
     return task_id
 
@@ -318,6 +365,7 @@ async def _reap_stale_task(task: dict, r) -> None:
         task["status"] = "pending"
         task.pop("running_since", None)
         await _persist_task(task)
+        _work_signal().set()
         await redis_op(
             "requeue reaped task",
             r.lpush,

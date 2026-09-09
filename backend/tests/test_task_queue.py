@@ -299,3 +299,101 @@ class TestQuotaExhaustedRedis:
         monkeypatch.setattr(tq, "get_redis", lambda: self._quota_redis())
         assert await tq.get_task("whatever") is None
         cache.clear_redis_degraded()
+
+
+class TestIdlePollingCost:
+    """The empty-queue poll is the app's single largest Redis expense.
+
+    At the old _POLL_INTERVAL of 0.5s, three workers issued 518,400 RPOPs a day
+    finding nothing — RPOP is a write, and 93.7% of the account's entire monthly
+    usage was this loop. It consumed a 500,000/month free tier in under a day of
+    uptime. These tests pin the two properties that keep that from recurring.
+    """
+
+    async def test_idle_worker_does_not_poll_in_a_tight_loop(self, fake_redis, monkeypatch):
+        monkeypatch.setattr(tq, "_POLL_INTERVAL", 5.0)
+        tq._work_ready = None  # force a fresh, loop-bound event per test
+
+        calls = {"n": 0}
+        real_rpop = fake_redis.rpop
+
+        async def _counting_rpop(key):
+            calls["n"] += 1
+            return await real_rpop(key)
+
+        monkeypatch.setattr(fake_redis, "rpop", _counting_rpop)
+
+        worker = asyncio.create_task(tq._worker())
+        await asyncio.sleep(0.2)
+        worker.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await worker
+
+        assert calls["n"] == 1, (
+            f"an idle worker must wait, not spin — {calls['n']} RPOPs in 0.2s "
+            f"extrapolates to {calls['n'] * 5 * 86400:,.0f}/day per worker"
+        )
+
+    async def test_submit_wakes_an_idle_worker_immediately(self, fake_redis, monkeypatch):
+        """The slow poll is only affordable because local work skips it."""
+        monkeypatch.setattr(tq, "_POLL_INTERVAL", 30.0)
+        tq._work_ready = None  # force a fresh, loop-bound event per test
+
+        async def _noop(_args):
+            return {"ok": True}
+
+        monkeypatch.setitem(tq._TASK_REGISTRY, "noop", _noop)
+
+        worker = asyncio.create_task(tq._worker())
+        await asyncio.sleep(0.05)  # settle into the idle wait
+
+        task_id = await tq.submit("noop", {})
+        await asyncio.sleep(0.1)  # far below _POLL_INTERVAL
+
+        worker.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await worker
+
+        task = await tq.get_task(task_id)
+        assert task["status"] != "pending", (
+            "a locally submitted task must not wait out _POLL_INTERVAL — "
+            "the in-process wakeup is what makes a 60s poll affordable"
+        )
+
+    async def test_submit_during_the_pop_is_not_lost(self, fake_redis, monkeypatch):
+        """Regression: clearing the event after the pop erases a racing submit.
+
+        If _work_ready is cleared after RPOP returns None rather than before it
+        runs, a submit landing in that window has its signal wiped and the task
+        sits idle for the full poll interval.
+        """
+        monkeypatch.setattr(tq, "_POLL_INTERVAL", 30.0)
+        tq._work_ready = None  # force a fresh, loop-bound event per test
+
+        async def _noop(_args):
+            return {"ok": True}
+
+        monkeypatch.setitem(tq._TASK_REGISTRY, "noop", _noop)
+
+        real_rpop = fake_redis.rpop
+        fired = {"done": False}
+
+        async def _rpop_then_submit(key):
+            result = await real_rpop(key)
+            if result is None and not fired["done"]:
+                fired["done"] = True
+                # Lands in the window between the pop and the idle wait.
+                await tq.submit("noop", {})
+            return result
+
+        monkeypatch.setattr(fake_redis, "rpop", _rpop_then_submit)
+
+        worker = asyncio.create_task(tq._worker())
+        await asyncio.sleep(0.15)
+        worker.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await worker
+
+        assert not fake_redis.lists.get(tq._QUEUE_KEY), (
+            "the racing submit was never picked up — the worker slept through it"
+        )
