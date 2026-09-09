@@ -214,6 +214,13 @@ async def handle_analyze(ws: WebSocket) -> None:
             },
         )
         await ws.send_json({"done": True, "session_id": session_id, "cached": True})
+        # Close explicitly, like every error path in this handler does. Returning
+        # without closing tears the socket down with no close handshake, so the
+        # client sees 1006 (abnormal) on a *successful* run — indistinguishable
+        # from a dropped connection. Verified against production: the explicit
+        # close paths deliver 1000/1008 with a proper frame, this one did not.
+        with contextlib.suppress(Exception):
+            await ws.close()
 
     sha = await asyncio.to_thread(get_remote_sha, repo_url)
     if sha:
@@ -435,4 +442,7 @@ async def handle_analyze(ws: WebSocket) -> None:
     await persist_analysis(session_id, final_state, repo_url, sha, owner_hash)
     with contextlib.suppress(Exception):
         await ws.send_json({"done": True, "session_id": session_id})
+        # See the cached-replay branch above — a success must close as cleanly
+        # as a failure does, or callers cannot tell completion from a drop.
+        await ws.close()
     logger.info("Analysis complete", session=session_id, repo=final_state["repo_name"])
