@@ -60,8 +60,8 @@
 | Variable                   | Default                                | Description                                            |
 | -------------------------- | -------------------------------------- | ------------------------------------------------------ |
 | `LLM_MODEL`                | `openai/gpt-oss-120b`                  | Override Groq model for all agents                     |
-| `LLM_MODEL_FALLBACK`       | `llama-3.1-8b-instant`                 | Same-provider fallback — tried automatically if `LLM_MODEL` fails (deprecation, rate-limit); set to `""` to disable |
-| `LLM_MODEL_CHEAP`          | `llama-3.1-8b-instant`                 | Cheap tier for high-volume, low-judgment agents only (API doc extraction, lint triage) — everything security-critical or user-facing (chat, fix, PR review, security/Solidity triage, incident reports) always uses `LLM_MODEL` |
+| `LLM_MODEL_FALLBACK`       | `openai/gpt-oss-20b`                   | Same-provider fallback — tried automatically if `LLM_MODEL` fails (deprecation, rate-limit, loss of account access); set to `""` to disable |
+| `LLM_MODEL_CHEAP`          | `openai/gpt-oss-20b`                   | Cheap tier for high-volume, low-judgment agents only (API doc extraction, lint triage) — everything security-critical or user-facing (chat, fix, PR review, security/Solidity triage, incident reports) always uses `LLM_MODEL` |
 | `RERANKER_MODEL`           | `cross-encoder/ms-marco-MiniLM-L-6-v2` | Cross-encoder reranker model                           |
 | `SIDECAR_URL`              | `http://127.0.0.1:8003`                | Solidity parser sidecar endpoint                       |
 | `TASK_WORKERS`             | `3`                                    | Background task queue worker count                     |

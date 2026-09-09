@@ -114,3 +114,79 @@ class TestGetSyncRedis:
         monkeypatch.setenv("REDIS_URL", "redis://example.invalid:6379")
         second = llm_cache._get_sync_redis()
         assert first is second is None
+
+
+class TestCheapTierFallback:
+    """run_dspy_cached(fallback_lm=...) — the cheap-tier agents' retry path.
+
+    Regression coverage for a live incident: LLM_MODEL_CHEAP pointed at a model
+    this account could no longer call (404 model_not_found). api_doc raised
+    "API doc extraction failed on all N candidate file(s)" straight to the user,
+    and language_audit quietly returned no findings at all. With a fallback LM
+    wired, a dead cheap tier degrades to the flagship instead.
+    """
+
+    @staticmethod
+    def _program(fail_on):
+        """A stand-in dspy program that raises under one LM and succeeds under others."""
+
+        class _Result:
+            endpoints = [{"method": "GET", "route": "/x"}]
+
+        def program(**_inputs):
+            import dspy
+
+            if dspy.settings.lm is fail_on:
+                raise RuntimeError("404 model_not_found")
+            return _Result()
+
+        return program
+
+    @staticmethod
+    def _lm(name):
+        from dspy.clients.base_lm import BaseLM
+
+        class _LM(BaseLM):
+            def __init__(self):
+                super().__init__(model=name, model_type="chat", temperature=0.0)
+
+            def __call__(self, *a, **k):
+                return ["{}"]
+
+        return _LM()
+
+    def test_falls_back_when_cheap_lm_raises(self):
+        cheap, flagship = self._lm("groq/dead-cheap"), self._lm("groq/flagship")
+        payload = llm_cache.run_dspy_cached(
+            self._program(fail_on=cheap),
+            "ns:fallback:json",
+            lm=cheap,
+            fallback_lm=flagship,
+            output_field="endpoints",
+            source_code="x",
+        )
+        assert payload == [{"method": "GET", "route": "/x"}]
+
+    def test_raises_when_no_fallback_configured(self):
+        cheap = self._lm("groq/dead-cheap")
+        with pytest.raises(RuntimeError, match="404 model_not_found"):
+            llm_cache.run_dspy_cached(
+                self._program(fail_on=cheap),
+                "ns:nofallback:json",
+                lm=cheap,
+                fallback_lm=None,
+                output_field="endpoints",
+                source_code="x",
+            )
+
+    def test_fallback_is_not_used_when_cheap_lm_works(self):
+        cheap, flagship = self._lm("groq/healthy-cheap"), self._lm("groq/flagship")
+        payload = llm_cache.run_dspy_cached(
+            self._program(fail_on=flagship),  # flagship would raise if reached
+            "ns:nofallbackneeded:json",
+            lm=cheap,
+            fallback_lm=flagship,
+            output_field="endpoints",
+            source_code="x",
+        )
+        assert payload == [{"method": "GET", "route": "/x"}]

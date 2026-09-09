@@ -188,7 +188,7 @@ def invoke_with_retry(llm, prompt, max_retries: int = 2, base_delay: float = 2.0
     raise last_exc  # type: ignore[misc]
 
 
-def run_dspy_cached(program, cache_namespace: str, *, lm, output_field: str, **inputs):
+def run_dspy_cached(program, cache_namespace: str, *, lm, output_field: str, fallback_lm=None, **inputs):
     """Run a DSPy program behind the existing Redis → diskcache LLM cache.
 
     The cache key is derived from the program signature plus the serialized
@@ -206,6 +206,11 @@ def run_dspy_cached(program, cache_namespace: str, *, lm, output_field: str, **i
         The dspy.LM to use for this call (per-agent temperature).
     output_field:
         Name of the signature's output field to return (e.g. "findings").
+    fallback_lm:
+        Optional second dspy.LM, retried once if `lm` raises. Used by the
+        cheap-tier agents (api_doc, language_audit) so a cheap model that stops
+        being callable degrades to the flagship instead of taking the agent
+        down. `settings.get_dspy_lm_pair` builds the pair.
     inputs:
         Keyword inputs for the program.
     """
@@ -225,10 +230,28 @@ def run_dspy_cached(program, cache_namespace: str, *, lm, output_field: str, **i
         logger.debug("DSPy program cache hit: %s", sig_name)
         return json.loads(cached)
 
-    with dspy.context(lm=lm):
-        result = program(**inputs)
+    try:
+        with dspy.context(lm=lm):
+            result = program(**inputs)
+    except Exception as exc:
+        if fallback_lm is None:
+            raise
+        logger.warning(
+            "DSPy program %s failed on %s (%s) — retrying on %s",
+            sig_name,
+            getattr(lm, "model", "?"),
+            exc,
+            getattr(fallback_lm, "model", "?"),
+        )
+        with dspy.context(lm=fallback_lm):
+            result = program(**inputs)
 
     payload = _to_plain(getattr(result, output_field))
+    # Stored under `cache_namespace`, which the caller derives from the model it
+    # *intended* to use. A fallback result therefore lands in the cheap model's
+    # namespace and will be replayed for a later cheap-model call. Acceptable —
+    # it is the stronger model's answer — but worth knowing before it surprises
+    # someone reading cache contents.
     set_cached(cache_namespace, key, json.dumps(payload, default=str, ensure_ascii=False))
     # Misses only — we want actual LLM outputs, not replays. The harvest log is
     # named by the program's agent (stamped by the registry) when available, else

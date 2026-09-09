@@ -108,28 +108,46 @@ except Exception as exc:
     check("tiktoken encodes text (cl100k_base)", False, str(exc))
 
 # ── 5. Groq API reachability ───────────────────────────────────────────────────
+# One check per *configured* model, not one for "the API". A reachable API says
+# nothing about whether the models this app names are still callable: Groq
+# silently dropped llama-3.1-8b-instant from this account, which took out
+# api_doc entirely and left language_audit returning empty triage, while a
+# single blanket "Groq API reachable" check stayed green the whole time.
 print("\n[ Groq API ]")
 if api_key and not _skip_live_checks:
-    try:
-        from langchain_groq import ChatGroq
+    from core import settings
 
-        from core.settings import LLM_MODEL
+    _seen: dict[str, str] = {}
+    for _var in ("LLM_MODEL", "LLM_MODEL_FALLBACK", "LLM_MODEL_CHEAP"):
+        _model = getattr(settings, _var)
+        _label = f"{_var} reachable ({_model or 'disabled'})"
+        if not _model:
+            skip(_label, "not configured")
+            continue
+        if _model in _seen:
+            # Two vars naming the same model — already proven callable above.
+            check(_label, True)
+            continue
+        try:
+            from langchain_groq import ChatGroq
 
-        # LLM_MODEL is a reasoning model (openai/gpt-oss-120b). Reasoning tokens
-        # come out of max_tokens before any visible text does, so a tight budget
-        # returns an empty completion and this check fails on a live, healthy API.
-        llm = ChatGroq(model=LLM_MODEL, temperature=0, max_tokens=64)
-        resp = llm.invoke("Reply with the single word: OK")
-        content = str(resp.content)
-        check(
-            "Groq API reachable",
-            len(content) > 0,
-            "API answered but returned an empty completion — raise max_tokens",
-        )
-    except Exception as exc:
-        check("Groq API reachable", False, str(exc))
+            # These are reasoning models. Reasoning tokens come out of max_tokens
+            # before any visible text does, so a tight budget returns an empty
+            # completion and this check fails against a live, healthy API.
+            _resp = ChatGroq(model=_model, temperature=0, max_tokens=64).invoke("Reply with the single word: OK")
+            _content = str(_resp.content)
+            check(
+                _label,
+                len(_content) > 0,
+                "model answered but returned an empty completion — raise max_tokens",
+            )
+            if _content:
+                _seen[_model] = _var
+        except Exception as exc:
+            check(_label, False, str(exc))
 else:
-    skip("Groq API reachable", "CI smoke mode / no live key")
+    for _var in ("LLM_MODEL", "LLM_MODEL_FALLBACK", "LLM_MODEL_CHEAP"):
+        skip(f"{_var} reachable", "CI smoke mode / no live key")
 
 # ── 6. GitPython clone ─────────────────────────────────────────────────────────
 print("\n[ GitPython ]")

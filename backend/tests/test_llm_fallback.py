@@ -46,17 +46,44 @@ def test_json_mode_applies_to_both_primary_and_fallback(monkeypatch):
 
 
 def test_default_fallback_env_var_reads_module_default():
+    """The fallback must be set and must not be the primary.
+
+    Deliberately does NOT pin the literal model name. The previous version of
+    this test asserted == "llama-3.1-8b-instant" and stayed green for the entire
+    time that model was returning 404 model_not_found in production — it was
+    asserting a constant equals itself, never that the model was usable. Live
+    reachability is checked by scripts/smoke_test.py, which actually calls it.
+    """
     importlib.reload(settings)
-    assert settings.LLM_MODEL_FALLBACK == "llama-3.1-8b-instant"
-    assert settings.LLM_MODEL_FALLBACK != settings.LLM_MODEL
+    assert settings.LLM_MODEL_FALLBACK, "a fallback model must be configured"
+    assert settings.LLM_MODEL_FALLBACK != settings.LLM_MODEL, "falling back to the primary model is not a fallback"
 
 
 class TestCheapTier:
     """get_dspy_lm(cheap=True) — high-volume, low-judgment agents (api_doc,
     language_audit) route to LLM_MODEL_CHEAP instead of the flagship model."""
 
-    def test_cheap_defaults_to_fallback_model(self):
-        assert settings.LLM_MODEL_CHEAP == settings.LLM_MODEL_FALLBACK
+    def test_cheap_tier_is_configured_and_not_the_flagship(self):
+        """The cheap tier exists and is genuinely a different model.
+
+        Does not assert LLM_MODEL_CHEAP == LLM_MODEL_FALLBACK. They name the
+        same model today, but they are separate settings on purpose: chaining
+        the cheap default off the fallback meant retuning one silently retuned
+        which model every api_doc and language_audit call went to.
+        """
+        assert settings.LLM_MODEL_CHEAP, "a cheap-tier model must be configured"
+        assert settings.LLM_MODEL_CHEAP != settings.LLM_MODEL
+
+    def test_cheap_is_independently_overridable(self, monkeypatch):
+        monkeypatch.setenv("LLM_MODEL_CHEAP", "only-cheap-changed")
+        monkeypatch.delenv("LLM_MODEL_FALLBACK", raising=False)
+        importlib.reload(settings)
+        try:
+            assert settings.LLM_MODEL_CHEAP == "only-cheap-changed"
+            assert settings.LLM_MODEL_FALLBACK != "only-cheap-changed"
+        finally:
+            monkeypatch.undo()
+            importlib.reload(settings)
 
     def test_cheap_true_uses_cheap_model(self, monkeypatch):
         monkeypatch.setattr(settings, "LLM_MODEL", "flagship-model")
