@@ -1,25 +1,25 @@
 fastapi[standard]==0.141.1
-uvicorn[standard]==0.52.3  # transitive: server runner (no direct import)
+uvicorn[standard]==0.54.0  # transitive: server runner (no direct import)
 prometheus_client>=0.25.0,<1.0
 structlog>=24.1.0,<25.0
-langgraph==1.2.11  # bump: langchain 1.3.9 requires >=1.2.4
-langchain==1.3.15  # bump: PYSEC-2026-2192 fixed in 1.3.9
+langgraph==1.2.12  # bump: langchain 1.3.9 requires >=1.2.4
+langchain==1.4.3  # bump: PYSEC-2026-2192 fixed in 1.3.9
 langchain-groq==1.1.3
 langchain-text-splitters==1.1.2
 chromadb==1.5.9
-qdrant-client==1.19.0  # optional Qdrant vector store, active when QDRANT_URL is set (see vector_store.py)
-fastembed==0.8.0  # local embedding for the Qdrant backend (Qdrant itself does not embed)
+qdrant-client==1.19.1  # optional Qdrant vector store, active when QDRANT_URL is set (see vector_store.py)
+fastembed==0.8.1  # local embedding for the Qdrant backend (Qdrant itself does not embed)
 boto3>=1.34,<2.0  # optional S3-compatible clone cache, active when CLONE_CACHE_BUCKET is set (see services/clone_cache.py)
-gitpython==3.1.59  # bump: 10 GHSA advisories fixed in 3.1.51-3.1.58
-tiktoken==0.13.0
-python-dotenv==1.2.2
+gitpython==3.1.62  # bump: 10 GHSA advisories fixed in 3.1.51-3.1.58
+tiktoken==0.14.0
+python-dotenv==1.2.3
 diskcache==5.6.3
-dspy==3.3.0
+dspy==3.4.0
 optuna>=4.9.0  # MIPROv2 compile requires it (dspy[optuna])
 websockets==15.0.1  # transitive: uvicorn/starlette WebSocket support (no direct import); langgraph-sdk 0.4.2 caps <16
-semgrep==1.173.0  # bump: 1.172.0 hard-pins vulnerable mcp==1.23.3; 1.173.0 pins fixed mcp==1.29.0
+semgrep==1.178.0  # bump: 1.172.0 hard-pins vulnerable mcp==1.23.3; 1.173.0 pins fixed mcp==1.29.0
 httpx==0.28.1
-sqlalchemy[asyncio]==2.0.52
+sqlalchemy[asyncio]==2.1.1
 aiosqlite==0.22.1
 asyncpg==0.31.0  # transitive: SQLAlchemy async PostgreSQL dialect (no direct import)
 alembic>=1.14.0,<2.0
